@@ -955,16 +955,19 @@ if (SpeechAPI) {
   recognition.lang           = 'he-IL';
 
   recognition.onresult = (e) => {
-    let interim = '';
+    let finalText = '';
+    let interimText = '';
     for (let i = e.resultIndex; i < e.results.length; i++) {
-      const t = e.results[i][0].transcript;
-      if (e.results[i].isFinal) {
-        if (!finalTranscript.endsWith(t.trim())) finalTranscript += (finalTranscript ? ' ' : '') + t.trim();
+      const result = e.results[i];
+      const text = result[0].transcript;
+      if (result.isFinal) {
+        finalText += text + ' ';
       } else {
-        interim = t;
+        interimText += text;
       }
     }
-    const display = (finalTranscript + (interim ? ' ' + interim : '')).trim();
+    finalTranscript += finalText;
+    const display = (finalTranscript + interimText).trim();
     if (display) showBubble(display);
   };
 
