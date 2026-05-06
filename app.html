@@ -411,6 +411,22 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 .t-share-name{font-size:13px;font-weight:800;color:#5a3e2b;flex:1;letter-spacing:.1px;}
 .t-share-arrow{font-size:15px;color:#b8a090;line-height:1;flex-shrink:0;}
 
+/* ── User switcher ── */
+.user-sw-btn{width:34px;height:34px;border-radius:50%;border:2.5px solid #e07c3a;background:rgba(255,255,255,.8);font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;transition:transform .15s;}
+.user-sw-btn:active{transform:scale(.88);}
+.usw-bg{position:fixed;inset:0;z-index:950;background:rgba(28,17,10,.32);opacity:0;pointer-events:none;transition:opacity .22s;}
+.usw-bg.open{opacity:1;pointer-events:auto;}
+.usw-drawer{position:fixed;bottom:0;left:0;right:0;z-index:951;background:#fff9f5;border-radius:24px 24px 0 0;padding:10px 20px 36px;box-shadow:0 -6px 32px rgba(100,60,20,.14);transform:translateY(100%);transition:transform .3s cubic-bezier(.34,1.1,.64,1);}
+.usw-bg.open .usw-drawer{transform:translateY(0);}
+.usw-handle{width:36px;height:4px;border-radius:2px;background:#e0d4c8;margin:0 auto 14px;}
+.usw-title{font-size:13px;font-weight:800;color:#9e8878;text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px;}
+.usw-row{display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:14px;cursor:pointer;transition:background .13s;margin-bottom:4px;}
+.usw-row:active{background:rgba(224,124,58,.08);}
+.usw-row.active{background:rgba(224,124,58,.12);border:1.5px solid rgba(224,124,58,.3);}
+.usw-em{font-size:22px;line-height:1;}
+.usw-name{font-size:15px;font-weight:800;color:#2d2018;flex:1;}
+.usw-check{font-size:16px;color:#e07c3a;}
+
 /* ── Share drawer ── */
 .share-bg{position:absolute;inset:0;z-index:920;background:rgba(28,17,10,.3);display:flex;align-items:flex-end;pointer-events:none;opacity:0;transition:opacity .22s ease;}
 .share-bg.open{opacity:1;pointer-events:auto;}
@@ -616,7 +632,10 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
     <div class="t-header">
       <div class="t-header-top">
         <div class="t-greeting" id="tGreeting">Tuesday, May 6 ☀️</div>
-        <button class="cal-btn" id="calBtn">📅</button>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button class="user-sw-btn" id="userSwBtn">👨</button>
+          <button class="cal-btn" id="calBtn">📅</button>
+        </div>
       </div>
       <div class="t-title">Good morning,<br>Cohen Family 🏠</div>
       <div class="t-date-badge" id="tDateBadge">Today</div>
@@ -685,6 +704,15 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 </div>
 
 <!-- ════ SHARE DRAWER ════ -->
+<!-- User switcher drawer -->
+<div class="usw-bg" id="uswBg">
+  <div class="usw-drawer" id="uswDrawer">
+    <div class="usw-handle"></div>
+    <div class="usw-title">Who are you?</div>
+    <div id="uswRows"></div>
+  </div>
+</div>
+
 <div class="share-bg" id="shareBg">
   <div class="share-drawer">
     <div class="drawer-pill"></div>
@@ -773,6 +801,35 @@ const ALL_MEMBER_IDS = FAMILY.map(f => f.id);
 const PERSON_TO_ID   = { Mom:'mom', Dad:'dad', Dudi:'dudi', Yonatan:'yonatan' };
 const ID_TO_PERSON   = { mom:'Mom', dad:'Dad', dudi:'Dudi', yonatan:'Yonatan' };
 
+const USER_KEY = 'family-app-user';
+let currentUser = localStorage.getItem(USER_KEY) || 'dad';
+
+function saveCurrentUser() { localStorage.setItem(USER_KEY, currentUser); }
+
+function openUserSwitcher() {
+  const bg = document.getElementById('uswBg');
+  const rows = document.getElementById('uswRows');
+  rows.innerHTML = '';
+  FAMILY.forEach(f => {
+    const row = document.createElement('div');
+    row.className = 'usw-row' + (f.id === currentUser ? ' active' : '');
+    row.innerHTML = `<span class="usw-em">${f.emoji}</span><span class="usw-name">${f.label}</span>${f.id === currentUser ? '<span class="usw-check">✓</span>' : ''}`;
+    row.addEventListener('click', () => {
+      currentUser = f.id;
+      saveCurrentUser();
+      closeUserSwitcher();
+      document.getElementById('userSwBtn').textContent = FAMILY.find(x => x.id === currentUser).emoji;
+      renderToday();
+    });
+    rows.appendChild(row);
+  });
+  bg.classList.add('open');
+}
+
+function closeUserSwitcher() {
+  document.getElementById('uswBg').classList.remove('open');
+}
+
 function taskPerson(t) {
   const key = (t.assignedTo && ID_TO_PERSON[t.assignedTo]) || t.person;
   return PEOPLE[key] || PEOPLE.Mom;
@@ -793,11 +850,11 @@ function assignedLabel(t) {
 function makeMockTasks() {
   const base = Date.now();
   return [
-    { id:base+1, title:'White laundry',                     person:'Mom', assignedTo:'mom', createdBy:'dad', mins:8*60+30,  completed:false, notify:true, visibleTo:[...ALL_MEMBER_IDS], notifyTo:['mom'], reminderOffsetMinutes:10, overdueReminderOffsets:[5,10,15], sentInitialReminder:false, sentReminderStages:[], lastReminderSentAt:null, timeSource:'suggested', date:todayDate(), recurrence:{type:'none'} },
-    { id:base+2, title:'Pick up Yonatan from kindergarten', person:'Dad', assignedTo:'dad', createdBy:'dad', mins:15*60,    completed:false, notify:true, visibleTo:[...ALL_MEMBER_IDS], notifyTo:['dad'], reminderOffsetMinutes:10, overdueReminderOffsets:[5,10,15], sentInitialReminder:false, sentReminderStages:[], lastReminderSentAt:null, timeSource:'explicit',  date:todayDate(), recurrence:{type:'none'} },
-    { id:base+3, title:'Take Dudi to class in Nahariya',    person:'Mom', assignedTo:'mom', createdBy:'dad', mins:16*60,    completed:false, notify:true, visibleTo:[...ALL_MEMBER_IDS], notifyTo:['mom'], reminderOffsetMinutes:10, overdueReminderOffsets:[5,10,15], sentInitialReminder:false, sentReminderStages:[], lastReminderSentAt:null, timeSource:'explicit',  date:todayDate(), recurrence:{type:'none'} },
-    { id:base+4, title:'Buy groceries',                     person:'Dad', assignedTo:'dad', createdBy:'dad', mins:17*60+30, completed:false, notify:true, visibleTo:[...ALL_MEMBER_IDS], notifyTo:['dad'], reminderOffsetMinutes:10, overdueReminderOffsets:[5,10,15], sentInitialReminder:false, sentReminderSentAt:null, timeSource:'suggested', date:todayDate(), recurrence:{type:'none'} },
-    { id:base+5, title:'City report',                       person:'Dad', assignedTo:'dad', createdBy:'dad', mins:19*60,    completed:false, notify:true, visibleTo:[...ALL_MEMBER_IDS], notifyTo:['dad'], reminderOffsetMinutes:10, overdueReminderOffsets:[5,10,15], sentInitialReminder:false, sentReminderStages:[], lastReminderSentAt:null, timeSource:'explicit',  date:todayDate(), recurrence:{type:'none'} },
+    { id:base+1, title:'White laundry',                     person:'Mom', assignedTo:'mom', createdBy:'mom', mins:8*60+30,  completed:false, notify:true, visibleTo:['mom','dad'], notifyTo:['mom'], reminderOffsetMinutes:10, overdueReminderOffsets:[5,10,15], sentInitialReminder:false, sentReminderStages:[], lastReminderSentAt:null, timeSource:'suggested', date:todayDate(), recurrence:{type:'none'} },
+    { id:base+2, title:'Pick up Yonatan from kindergarten', person:'Dad', assignedTo:'dad', createdBy:'dad', mins:15*60,    completed:false, notify:true, visibleTo:['dad','mom'],   notifyTo:['dad'], reminderOffsetMinutes:10, overdueReminderOffsets:[5,10,15], sentInitialReminder:false, sentReminderStages:[], lastReminderSentAt:null, timeSource:'explicit',  date:todayDate(), recurrence:{type:'none'} },
+    { id:base+3, title:'Take Dudi to class in Nahariya',    person:'Mom', assignedTo:'mom', createdBy:'mom', mins:16*60,    completed:false, notify:true, visibleTo:['mom'],         notifyTo:['mom'], reminderOffsetMinutes:10, overdueReminderOffsets:[5,10,15], sentInitialReminder:false, sentReminderStages:[], lastReminderSentAt:null, timeSource:'explicit',  date:todayDate(), recurrence:{type:'none'} },
+    { id:base+4, title:'Buy groceries',                     person:'Dad', assignedTo:'dad', createdBy:'dad', mins:17*60+30, completed:false, notify:true, visibleTo:['dad'],          notifyTo:['dad'], reminderOffsetMinutes:10, overdueReminderOffsets:[5,10,15], sentInitialReminder:false, sentReminderSentAt:null, timeSource:'suggested', date:todayDate(), recurrence:{type:'none'} },
+    { id:base+5, title:'City report',                       person:'Dad', assignedTo:'dad', createdBy:'dad', mins:19*60,    completed:false, notify:true, visibleTo:['dad'],          notifyTo:['dad'], reminderOffsetMinutes:10, overdueReminderOffsets:[5,10,15], sentInitialReminder:false, sentReminderStages:[], lastReminderSentAt:null, timeSource:'explicit',  date:todayDate(), recurrence:{type:'none'} },
   ];
 }
 
@@ -1556,15 +1613,18 @@ document.getElementById('btnAdjust').addEventListener('click', () => {
 function activeTasks() {
   const dt  = new Date(activeDate + 'T00:00:00');
   const dow = dt.getDay();
+  const isVisible = t => t.createdBy === currentUser || (t.visibleTo && t.visibleTo.includes(currentUser));
   const regular = AppState.tasks.filter(t =>
     (t.date || todayDate()) === activeDate &&
-    (!t.recurrence || t.recurrence.type === 'none')
+    (!t.recurrence || t.recurrence.type === 'none') &&
+    isVisible(t)
   );
   const recurring = AppState.tasks
     .filter(t =>
       t.recurrence?.type === 'weekly' &&
       t.recurrence.dayOfWeek === dow &&
-      (t.date || todayDate()) <= activeDate
+      (t.date || todayDate()) <= activeDate &&
+      isVisible(t)
     )
     .map(t => ({
       ...t,
@@ -1969,6 +2029,9 @@ function updateDateBadge() {
 }
 
 document.getElementById('calBtn').addEventListener('click', openCalDrawer);
+document.getElementById('userSwBtn').textContent = FAMILY.find(f => f.id === currentUser).emoji;
+document.getElementById('userSwBtn').addEventListener('click', openUserSwitcher);
+document.getElementById('uswBg').addEventListener('click', e => { if (e.target === document.getElementById('uswBg')) closeUserSwitcher(); });
 document.getElementById('calBg').addEventListener('click', e => { if (e.target === document.getElementById('calBg')) closeCalDrawer(); });
 document.getElementById('calPrev').addEventListener('click', () => { calViewMonth--; if (calViewMonth < 0) { calViewMonth=11; calViewYear--; } renderCalGrid(); });
 document.getElementById('calNext').addEventListener('click', () => { calViewMonth++; if (calViewMonth > 11) { calViewMonth=0; calViewYear++; } renderCalGrid(); });
