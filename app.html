@@ -412,7 +412,7 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 .t-share-arrow{font-size:15px;color:#b8a090;line-height:1;flex-shrink:0;}
 
 /* ── User switcher ── */
-.user-sw-btn{width:34px;height:34px;border-radius:50%;border:2.5px solid #e07c3a;background:rgba(255,255,255,.8);font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;transition:transform .15s;}
+.user-sw-btn{width:28px;height:28px;border-radius:50%;border:1.5px dashed #c4ae9f;background:rgba(255,255,255,.6);font-size:15px;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;transition:transform .15s;opacity:.7;}
 .user-sw-btn:active{transform:scale(.88);}
 .usw-bg{position:fixed;inset:0;z-index:950;background:rgba(28,17,10,.32);opacity:0;pointer-events:none;transition:opacity .22s;}
 .usw-bg.open{opacity:1;pointer-events:auto;}
@@ -708,7 +708,7 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 <div class="usw-bg" id="uswBg">
   <div class="usw-drawer" id="uswDrawer">
     <div class="usw-handle"></div>
-    <div class="usw-title">Who are you?</div>
+    <div class="usw-title">Switch user <span style="font-size:10px;background:#f0d8c8;color:#9e6040;border-radius:4px;padding:1px 5px;font-weight:700;vertical-align:middle;">DEMO</span></div>
     <div id="uswRows"></div>
   </div>
 </div>
