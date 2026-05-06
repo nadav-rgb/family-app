@@ -1275,12 +1275,18 @@ function dpRender(animate) {
         <div class="card-body"><div class="card-title">${t.title}</div><div class="card-chip"><span class="chip-dot" style="background:${p.color}"></span>${t.person}</div></div>
         <div class="card-av" style="background:${p.bg}">${p.emoji}</div>
         <div class="card-bell${t.notify===false?' off':''}">${t.notify===false?'🔕':'🔔'}</div>
-      </div>
-      <div class="card-share">
-        <span class="card-share-lbl">Assigned to</span>
-        <span class="card-share-name">${assignedLabel(t)}</span>
-        <span class="card-share-arrow">›</span>
       </div>`;
+    const shareFooter = document.createElement('div');
+    shareFooter.className = 'card-share';
+    shareFooter.style.cssText = 'display:flex!important;padding:10px 14px 12px 18px;align-items:center;gap:8px;cursor:pointer;border-top:2px solid #f0d8c8;background:#fdf3ec;';
+    shareFooter.innerHTML = `<span style="font-size:11px;font-weight:700;color:#a8917f;">Assigned to</span><span class="card-share-name" style="font-size:13px;font-weight:800;color:#5a3e2b;flex:1;margin-left:6px;">${assignedLabel(t)}</span><span style="font-size:15px;color:#b8a090;">›</span>`;
+    shareFooter.addEventListener('click', e => {
+      e.stopPropagation();
+      openShareDrawer(t, () => {
+        shareFooter.querySelector('.card-share-name').textContent = assignedLabel(t);
+      });
+    });
+    c.appendChild(shareFooter);
     c.querySelector('.card-time-col').addEventListener('click', () => {
       if (!dpAdjustMode) return;
       openTimeStrip(t.id, c);
@@ -1291,12 +1297,6 @@ function dpRender(animate) {
       const bell = c.querySelector('.card-bell');
       bell.textContent = t.notify ? '🔔' : '🔕';
       bell.classList.toggle('off', !t.notify);
-    });
-    c.querySelector('.card-share').addEventListener('click', e => {
-      e.stopPropagation();
-      openShareDrawer(t, () => {
-        c.querySelector('.card-share-name').textContent = assignedLabel(t);
-      });
     });
     list.appendChild(c);
   });
