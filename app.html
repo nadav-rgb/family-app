@@ -896,22 +896,19 @@ let vTranscript  = '';
 
 if (SpeechAPI) {
   recognition = new SpeechAPI();
-  recognition.continuous     = true;
+  recognition.continuous     = false;
   recognition.interimResults = true;
   recognition.lang           = 'he-IL';
 
   recognition.onresult = (e) => {
-    let interim = '', confirmed = '';
-    for (let i = e.resultIndex; i < e.results.length; i++) {
-      const t = e.results[i][0].transcript;
-      if (e.results[i].isFinal) confirmed += t + ' ';
-      else interim += t;
-    }
-    vTranscript += confirmed;
-    const display = (vTranscript + interim).trim();
-    if (display) {
-      ltxt.textContent = display;
-      ltxt.className   = 'ltxt active';
+    const result = e.results[0];
+    const text   = result[0].transcript.trim();
+    if (!text || text === vTranscript) return;
+    vTranscript = text;
+    ltxt.textContent = text;
+    ltxt.className   = 'ltxt active';
+    if (result.isFinal) {
+      try { recognition.stop(); } catch(_) {}
     }
   };
 
