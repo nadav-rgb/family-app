@@ -84,6 +84,18 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 .rec .btn-blob{animation:blobRec 1.1s ease-in-out infinite;filter:drop-shadow(0 14px 42px rgba(147,51,234,.72));}
 
 .listen-sec{text-align:center;flex-shrink:0;min-height:50px;display:flex;flex-direction:column;align-items:center;gap:10px;animation:fadeUp .4s ease .18s both;}
+/* ── Speech bubble ── */
+.speech-bubble{margin:0 22px;padding:13px 17px 13px;background:rgba(255,250,245,.97);border:1.5px solid rgba(255,165,110,.28);border-radius:20px;box-shadow:0 4px 22px rgba(220,100,40,.09);opacity:0;transform:translateY(8px);transition:opacity .3s ease,transform .3s ease;pointer-events:none;display:none;}
+.speech-bubble.on{opacity:1;transform:translateY(0);pointer-events:auto;display:block;}
+.speech-bubble.fading{opacity:0;transform:translateY(4px);}
+.sb-label{font-size:10.5px;font-weight:900;color:#e07c3a;letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px;}
+.sb-text{font-size:14.5px;font-weight:600;color:#2d2018;line-height:1.55;direction:rtl;text-align:right;min-height:22px;word-break:break-word;}
+.sb-text:empty::after{content:'…';color:#c4ae9f;}
+.sb-dots{display:inline-flex;gap:4px;align-items:center;vertical-align:middle;margin-right:4px;}
+.sb-dots span{display:inline-block;width:5px;height:5px;border-radius:50%;background:#e07c3a;animation:sbDot 1.1s ease-in-out infinite;}
+.sb-dots span:nth-child(2){animation-delay:.18s;}
+.sb-dots span:nth-child(3){animation-delay:.36s;}
+@keyframes sbDot{0%,100%{opacity:.3;transform:scale(.7);}50%{opacity:1;transform:scale(1.2);}}
 .v-type-row{text-align:center;flex-shrink:0;animation:fadeUp .4s ease .28s both;}
 .v-type-toggle{display:inline-block;font-size:14px;font-weight:800;color:#e07c3a;cursor:pointer;padding:6px 0;letter-spacing:.01em;border-bottom:1.5px solid rgba(224,124,58,.3);transition:opacity .15s;}
 .v-type-toggle:active{opacity:.6;}
@@ -577,6 +589,11 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
     </div>
   </div>
   <div class="sp"></div>
+  <div class="speech-bubble" id="speechBubble">
+    <div class="sb-label">Listening…</div>
+    <div class="sb-text" id="sbText"></div>
+    <div class="sb-dots"><span></span><span></span><span></span></div>
+  </div>
   <div class="listen-sec">
     <div class="ltxt" id="ltxt">Tap to speak</div>
     <div class="wdots" id="wdots"><div class="wd wd1"></div><div class="wd wd2"></div><div class="wd wd3"></div><div class="wd wd4"></div><div class="wd wd5"></div></div>
@@ -894,33 +911,53 @@ const SpeechAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
 let recognition = null;
 let vTranscript  = '';
 
+const sbBubble = document.getElementById('speechBubble');
+const sbText   = document.getElementById('sbText');
+let finalTranscript = '';
+
+function showBubble(text) {
+  sbText.textContent = text || '';
+  sbBubble.classList.add('on');
+  sbBubble.classList.remove('fading');
+  ltxt.style.opacity = '0';
+  wdots.classList.remove('on');
+}
+
+function hideBubble(immediate) {
+  ltxt.style.opacity = '';
+  if (immediate) { sbBubble.classList.remove('on'); return; }
+  sbBubble.classList.add('fading');
+  setTimeout(() => sbBubble.classList.remove('on','fading'), 320);
+}
+
 if (SpeechAPI) {
   recognition = new SpeechAPI();
-  recognition.continuous     = false;
+  recognition.continuous     = true;
   recognition.interimResults = true;
   recognition.lang           = 'he-IL';
 
   recognition.onresult = (e) => {
-    const result = e.results[0];
-    const text   = result[0].transcript.trim();
-    if (!text || text === vTranscript) return;
-    vTranscript = text;
-    ltxt.textContent = text;
-    ltxt.className   = 'ltxt active';
-    if (result.isFinal) {
-      try { recognition.stop(); } catch(_) {}
+    let interim = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      const t = e.results[i][0].transcript;
+      if (e.results[i].isFinal) {
+        if (!finalTranscript.endsWith(t.trim())) finalTranscript += (finalTranscript ? ' ' : '') + t.trim();
+      } else {
+        interim = t;
+      }
     }
+    const display = (finalTranscript + (interim ? ' ' + interim : '')).trim();
+    if (display) showBubble(display);
   };
 
   recognition.onerror = (e) => {
     if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
       vListening = false;
       zone.classList.remove('rec');
-      wdots.classList.remove('on');
+      hideBubble(true);
       ltxt.textContent = '🎤 Microphone access denied';
       ltxt.className   = 'ltxt';
     }
-    // 'no-speech', 'aborted', 'network' handled by onend restart
   };
 
   recognition.onend = () => {
@@ -1258,12 +1295,11 @@ zone.addEventListener('click', () => {
 });
 
 function vStart() {
+  finalTranscript = '';
   vTranscript  = '';
   vListening   = true;
   zone.classList.add('rec');
-  ltxt.textContent = 'Listening...';
-  ltxt.className   = 'ltxt active';
-  wdots.classList.add('on');
+  showBubble('');
   if (vMode === 'star') vBurst();
   if (recognition) {
     try { recognition.start(); } catch(_) {}
@@ -1276,9 +1312,10 @@ function vStop() {
   clearTimeout(vTimer);
   vListening = false;
   zone.classList.remove('rec');
-  wdots.classList.remove('on');
   if (recognition) { try { recognition.stop(); } catch(_) {} }
-  vOrganize();
+  vTranscript = finalTranscript.trim();
+  hideBubble(false);
+  setTimeout(() => vOrganize(), 300);
 }
 
 function vOrganize() {
@@ -1603,6 +1640,8 @@ function resetVoiceScreen() {
   clearTimeout(vTimer);
   zone.style.animation = '';
   zone.classList.remove('recede', 'rec');
+  finalTranscript = '';
+  hideBubble(true);
   const toggle = document.getElementById('vTypeToggle');
   const area   = document.getElementById('vTypeArea');
   const inp    = document.getElementById('vTypeInp');
