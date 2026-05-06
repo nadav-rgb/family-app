@@ -1287,6 +1287,7 @@ function dpRender(animate) {
       });
     });
     c.appendChild(shareFooter);
+    console.log('shareFooter appended, children:', c.children.length, 'shareFooter height:', shareFooter.offsetHeight);
     c.querySelector('.card-time-col').addEventListener('click', () => {
       if (!dpAdjustMode) return;
       openTimeStrip(t.id, c);
