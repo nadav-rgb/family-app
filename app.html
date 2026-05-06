@@ -889,6 +889,50 @@ const zone  = document.getElementById('micZone');
 const ltxt  = document.getElementById('ltxt');
 const wdots = document.getElementById('wdots');
 
+// ─── Speech Recognition ───────────────────────────────────────────
+const SpeechAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+let recognition = null;
+let vTranscript  = '';
+
+if (SpeechAPI) {
+  recognition = new SpeechAPI();
+  recognition.continuous     = true;
+  recognition.interimResults = true;
+  recognition.lang           = 'he-IL';
+
+  recognition.onresult = (e) => {
+    let interim = '', confirmed = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      const t = e.results[i][0].transcript;
+      if (e.results[i].isFinal) confirmed += t + ' ';
+      else interim += t;
+    }
+    vTranscript += confirmed;
+    const display = (vTranscript + interim).trim();
+    if (display) {
+      ltxt.textContent = display;
+      ltxt.className   = 'ltxt active';
+    }
+  };
+
+  recognition.onerror = (e) => {
+    if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
+      vListening = false;
+      zone.classList.remove('rec');
+      wdots.classList.remove('on');
+      ltxt.textContent = '🎤 Microphone access denied';
+      ltxt.className   = 'ltxt';
+    }
+    // 'no-speech', 'aborted', 'network' handled by onend restart
+  };
+
+  recognition.onend = () => {
+    if (vListening) {
+      try { recognition.start(); } catch(_) {}
+    }
+  };
+}
+
 document.getElementById('vTypeToggle').addEventListener('click', () => {
   if (vListening) vStop(false);
   document.getElementById('vTypeToggle').style.display = 'none';
@@ -909,6 +953,7 @@ document.getElementById('vTypeInp').addEventListener('input', function() {
 function vTypeSubmit() {
   const val = document.getElementById('vTypeInp').value.trim();
   if (!val) return;
+  vTranscript = val;
   vOrganize();
 }
 
@@ -1206,36 +1251,45 @@ document.getElementById('shareBg').addEventListener('click', e => {
   }
 })();
 
-zone.addEventListener('click', () => { vListening ? vStop(false) : vStart(); });
+zone.addEventListener('click', () => {
+  if (!SpeechAPI) {
+    ltxt.textContent = 'Voice not supported — use typing ↓';
+    ltxt.className   = 'ltxt';
+    return;
+  }
+  vListening ? vStop() : vStart();
+});
 
 function vStart() {
-  vListening = true;
+  vTranscript  = '';
+  vListening   = true;
   zone.classList.add('rec');
   ltxt.textContent = 'Listening...';
-  ltxt.className = 'ltxt active';
+  ltxt.className   = 'ltxt active';
   wdots.classList.add('on');
   if (vMode === 'star') vBurst();
-  vTimer = setTimeout(() => vOrganize(), 1800);
+  if (recognition) {
+    try { recognition.start(); } catch(_) {}
+  } else {
+    vTimer = setTimeout(() => vOrganize(), 1800);
+  }
 }
 
-function vStop(doOrganize) {
+function vStop() {
   clearTimeout(vTimer);
   vListening = false;
   zone.classList.remove('rec');
   wdots.classList.remove('on');
-  if (doOrganize) {
-    vOrganize();
-  } else {
-    ltxt.textContent = 'Got it ✓';
-    ltxt.className = 'ltxt done';
-    setTimeout(() => { ltxt.textContent = 'Tap to speak'; ltxt.className = 'ltxt'; }, 1800);
-  }
+  if (recognition) { try { recognition.stop(); } catch(_) {} }
+  vOrganize();
 }
 
 function vOrganize() {
   vListening = false;
+  if (recognition) { try { recognition.stop(); } catch(_) {} }
   wdots.classList.remove('on');
-  ltxt.textContent = 'Organizing your day ✨';
+  const spokenText = vTranscript.trim();
+  ltxt.textContent = spokenText ? 'Organizing your day ✨' : 'Organizing your day ✨';
   ltxt.className = 'ltxt organizing';
   dpAdjustMode = false;
   AppState.previewTasks = makeMockTasks();
@@ -1546,8 +1600,12 @@ function openManualTimeModal(task, onDone) {
 
 
 function resetVoiceScreen() {
+  vListening  = false;
+  vTranscript = '';
+  if (recognition) { try { recognition.abort(); } catch(_) {} }
+  clearTimeout(vTimer);
   zone.style.animation = '';
-  zone.classList.remove('recede');
+  zone.classList.remove('recede', 'rec');
   const toggle = document.getElementById('vTypeToggle');
   const area   = document.getElementById('vTypeArea');
   const inp    = document.getElementById('vTypeInp');
