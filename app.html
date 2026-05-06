@@ -540,6 +540,20 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 .t-hero-card.refreshing .t-htask{animation:heroRefIn .28s ease .11s both;}
 .t-hero-card.refreshing .t-hwho{animation:heroRefIn .28s ease .17s both;}
 .t-hero-card.refreshing .t-hpill{animation:heroRefIn .28s ease .17s both;}
+
+/* ── Recording stop hint ── */
+@keyframes stopHintPulse{0%,100%{opacity:.72;}50%{opacity:1;}}
+.ltxt.v-stop-hint{color:#ff5c8a;font-size:14px;font-weight:800;animation:stopHintPulse 1.35s ease-in-out infinite;}
+
+/* ── Avatar task-count badge ── */
+.av-badge{position:absolute;top:-3px;right:-3px;min-width:17px;height:17px;background:linear-gradient(135deg,#ff9a4e,#ff5e14);border-radius:10px;border:2px solid white;font-size:9px;font-weight:900;color:white;display:flex;align-items:center;justify-content:center;padding:0 3px;pointer-events:none;box-shadow:0 2px 6px rgba(255,94,20,.3);}
+
+/* ── Today empty state ── */
+.today-empty{padding:36px 0 16px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:5px;}
+.today-empty-icon{font-size:50px;animation:emptyFloat 3s ease-in-out infinite;}
+@keyframes emptyFloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-8px);}}
+.today-empty-msg{font-size:16px;font-weight:800;color:#7a6055;margin-top:6px;}
+.today-empty-sub{font-size:13px;font-weight:700;color:#c4ae9f;}
 </style>
 </head>
 <body>
@@ -654,7 +668,7 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
           <button class="cal-btn" id="calBtn">📅</button>
         </div>
       </div>
-      <div class="t-title">Good morning,<br>Cohen Family 🏠</div>
+      <div class="t-title" id="tTitle">Good morning,<br>Cohen Family 🏠</div>
       <div class="t-date-badge" id="tDateBadge">Today</div>
     </div>
     <div class="t-avatars">
@@ -919,12 +933,16 @@ function showBubble(text) {
   sbText.textContent = text || '';
   sbBubble.classList.add('on');
   sbBubble.classList.remove('fading');
-  ltxt.style.opacity = '0';
-  wdots.classList.remove('on');
+  ltxt.textContent = '✋ Tap to stop';
+  ltxt.className   = 'ltxt v-stop-hint';
+  ltxt.style.opacity = '';
 }
 
 function hideBubble(immediate) {
+  ltxt.textContent = 'Tap to speak';
+  ltxt.className   = 'ltxt';
   ltxt.style.opacity = '';
+  wdots.classList.remove('on');
   if (immediate) { sbBubble.classList.remove('on'); return; }
   sbBubble.classList.add('fading');
   setTimeout(() => sbBubble.classList.remove('on','fading'), 320);
@@ -1299,6 +1317,7 @@ function vStart() {
   vTranscript  = '';
   vListening   = true;
   zone.classList.add('rec');
+  wdots.classList.add('on');
   showBubble('');
   if (vMode === 'star') vBurst();
   if (recognition) {
@@ -1753,12 +1772,31 @@ function updateProgress() {
 }
 
 function renderToday() {
+  updateTodayTitle();
+  updateDateBadge();
   const tasks     = activeTasks();
   const container = document.getElementById('tTasks');
   container.innerHTML = '';
 
+  // Avatar task-count badges
+  const avMap = { mom:'av-mom', dad:'av-dad', dudi:'av-dudi', yonatan:'av-yona' };
+  const taskCounts = {};
+  tasks.forEach(t => {
+    const id = t.assignedTo || PERSON_TO_ID[t.person];
+    if (id) taskCounts[id] = (taskCounts[id] || 0) + 1;
+  });
+  FAMILY.forEach(f => {
+    const avEl = document.querySelector(`#s-today .${avMap[f.id]}`);
+    if (!avEl) return;
+    let badge = avEl.querySelector('.av-badge');
+    if (!badge) { badge = document.createElement('div'); badge.className = 'av-badge'; avEl.appendChild(badge); }
+    const count = taskCounts[f.id] || 0;
+    badge.textContent = count || '';
+    badge.style.display = count > 0 ? '' : 'none';
+  });
+
   if (!tasks.length) {
-    container.innerHTML = '<div style="padding:24px 0;text-align:center;color:#c4ae9f;font-size:14px;font-weight:700;">No tasks yet — tap + to add some!</div>';
+    container.innerHTML = `<div class="today-empty"><div class="today-empty-icon">📋</div><div class="today-empty-msg">No tasks yet</div><div class="today-empty-sub">Tap + to plan your day ✨</div></div>`;
     document.querySelector('.t-pcnt').textContent = 'No tasks yet';
     document.getElementById('tPfill').style.width = '0%';
     // Hide hero card when no tasks
@@ -2113,13 +2151,29 @@ function renderCalGrid() {
     addDay(d, fmtDate(calViewYear, calViewMonth + 1, d), true);
 }
 
+function skyEmoji() {
+  const h = new Date().getHours();
+  if (h < 5)  return '🌙';
+  if (h < 8)  return '🌅';
+  if (h < 17) return '☀️';
+  if (h < 20) return '🌆';
+  return '🌙';
+}
+
 function updateDateBadge() {
   document.getElementById('tDateBadge').textContent = dateLabelFor(activeDate);
   const dt   = new Date(activeDate + 'T00:00:00');
   const days  = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
   const mons  = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   document.getElementById('tGreeting').textContent =
-    `${days[dt.getDay()]}, ${mons[dt.getMonth()]} ${dt.getDate()} ☀️`;
+    `${days[dt.getDay()]}, ${mons[dt.getMonth()]} ${dt.getDate()} ${skyEmoji()}`;
+}
+
+function updateTodayTitle() {
+  const h = new Date().getHours();
+  const greet = h < 5 ? 'Good night' : h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : h < 21 ? 'Good evening' : 'Good night';
+  const f = FAMILY.find(x => x.id === currentUser) || { label: 'Family', emoji: '🏠' };
+  document.getElementById('tTitle').innerHTML = `${greet},<br>${f.label} ${f.emoji}`;
 }
 
 document.getElementById('calBtn').addEventListener('click', openCalDrawer);
