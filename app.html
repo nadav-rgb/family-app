@@ -136,6 +136,10 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 .v-type-area.closing{display:flex;animation:typeAreaOut .42s cubic-bezier(.22,1,.36,1) both;}
 .v-type-inp{width:100%;border:none;outline:none;font-family:'Rubik','Nunito',sans-serif;font-size:16.5px;font-weight:600;color:#7c3a1c;background:transparent;line-height:2;direction:rtl;text-align:right;min-height:80px;max-height:165px;box-sizing:border-box;overflow-y:auto;white-space:pre-wrap;word-break:break-word;cursor:text;letter-spacing:.01em;}
 .v-type-inp:empty:before{content:"כתוב בחופשיות — נסדר הכל בשבילך ✨";color:#cbb5a8;font-style:italic;font-weight:400;pointer-events:none;display:block;}
+.v-type-inp::-webkit-scrollbar{width:3px;}
+.v-type-inp::-webkit-scrollbar-track{background:transparent;}
+.v-type-inp::-webkit-scrollbar-thumb{background:rgba(180,100,50,.28);border-radius:8px;}
+.v-type-inp::-webkit-scrollbar-thumb:hover{background:rgba(180,100,50,.5);}
 .v-type-helper{font-size:11px;font-weight:700;color:#c4ae9f;text-align:center;padding-bottom:2px;}
 .v-voice-back{font-size:13px;font-weight:800;color:#9e8878;text-align:center;cursor:pointer;padding-top:4px;letter-spacing:.01em;border-bottom:1.5px solid rgba(158,136,120,.35);display:inline-block;transition:color .15s;}
 .v-voice-back:active{color:#6b4f3a;}
@@ -1171,6 +1175,8 @@ vTypeInpEl.addEventListener('input', function() {
   r.selectNodeContents(this); r.collapse(false);
   const sel = window.getSelection();
   sel.removeAllRanges(); sel.addRange(r);
+  // Scroll so cursor is always visible
+  this.scrollTop = this.scrollHeight;
 });
 
 function vTypeSubmit() {
