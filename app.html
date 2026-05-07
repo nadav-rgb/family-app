@@ -891,6 +891,7 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 
 
 </div><!-- /phone -->
+<script src="parser.js"></script>
 <script>
 // ─── State ────────────────────────────────────────────────────────
 const STORAGE_KEY = 'family-app-v1';
@@ -1200,6 +1201,42 @@ function setLang(lang) {
   }
 }
 
+// Convert a HebrewParser result → app task shape
+function parsedToTask(p, idx) {
+  const assignedTo = p.assignedTo || currentUser;
+  const person     = ID_TO_PERSON[assignedTo] || 'Dad';
+  const dateStr    = p.date && p.date.date
+    ? dateToYMD(p.date.date)
+    : todayDate();
+  return {
+    id:                    Date.now() + idx,
+    title:                 p.title,
+    person,
+    assignedTo,
+    createdBy:             currentUser,
+    mins:                  p.mins,
+    completed:             false,
+    notify:                true,
+    visibleTo:             ALL_MEMBER_IDS,
+    notifyTo:              [assignedTo],
+    reminderOffsetMinutes: 10,
+    overdueReminderOffsets:[5, 10, 15],
+    sentInitialReminder:   false,
+    sentReminderStages:    [],
+    lastReminderSentAt:    null,
+    timeSource:            p.timeFromText ? 'explicit' : 'suggested',
+    date:                  dateStr,
+    recurrence:            { type: 'none' },
+  };
+}
+
+function dateToYMD(d) {
+  return d.getFullYear() + '-' +
+    String(d.getMonth() + 1).padStart(2, '0') + '-' +
+    String(d.getDate()).padStart(2, '0');
+}
+
+// Kept for the demo nav button only (Today screen preview)
 function makeMockTasks() {
   const base = Date.now();
   const isHe = AppState.lang === 'he';
@@ -2000,12 +2037,19 @@ function vOrganize() {
   ltxt.textContent = t('voice_organizing');
   ltxt.className = 'ltxt organizing';
   dpAdjustMode = false;
-  AppState.previewTasks = makeMockTasks();
-  // Apply detected time to first task — sets mins + marks timeSource as explicit
-  const detectedMins = extractTimeFromText(spokenText);
-  if (detectedMins !== null && AppState.previewTasks.length > 0) {
-    AppState.previewTasks[0].mins       = detectedMins;
-    AppState.previewTasks[0].timeSource = 'explicit';
+
+  // Real parsing — replace mock tasks with what the user actually said
+  const parsed = spokenText ? HebrewParser.parse(spokenText) : [];
+  if (parsed.length > 0) {
+    AppState.previewTasks = parsed.map(parsedToTask);
+  } else {
+    // Fallback: one task with raw text and a smart default time
+    AppState.previewTasks = [parsedToTask({
+      title: spokenText || t('voice_tap'),
+      mins: null, date: { date: new Date(), fromText: false },
+      assignedTo: null, type: 'task',
+      timeFromText: false, dateFromText: false, assigneeFromText: false,
+    }, 0)];
   }
   setTimeout(() => {
     zone.classList.remove('rec');
