@@ -1060,8 +1060,21 @@ const FAMILY = [
   { id:'yonatan', label:'Yonatan', emoji:'👶' },
 ];
 const ALL_MEMBER_IDS = FAMILY.map(f => f.id);
-const PERSON_TO_ID   = { Mom:'mom', Dad:'dad', Dudi:'dudi', Yonatan:'yonatan' };
-const ID_TO_PERSON   = { mom:'Mom', dad:'Dad', dudi:'Dudi', yonatan:'Yonatan' };
+const PERSON_TO_ID   = Object.fromEntries(FAMILY.map(f => [f.label, f.id]));
+const ID_TO_PERSON   = Object.fromEntries(FAMILY.map(f => [f.id,    f.label]));
+
+// Single source of truth for the parser — built from FAMILY + I18N.
+// Any new member added to FAMILY is automatically recognized by the parser.
+function buildParserPeople() {
+  return FAMILY.map(f => ({
+    id:    f.id,
+    names: [
+      (I18N.he || {})['family_' + f.id],   // Hebrew name  (e.g. "אמא")
+      (I18N.en || {})['family_' + f.id],   // English name (e.g. "Mom")
+      f.id,                                  // ID itself    (e.g. "mom")
+    ].filter(Boolean),
+  }));
+}
 
 const USER_KEY = 'family-app-user';
 let currentUser = localStorage.getItem(USER_KEY) || 'dad';
@@ -2039,7 +2052,7 @@ function vOrganize() {
   dpAdjustMode = false;
 
   // Real parsing — replace mock tasks with what the user actually said
-  const parsed = spokenText ? HebrewParser.parse(spokenText) : [];
+  const parsed = spokenText ? HebrewParser.parse(spokenText, { people: buildParserPeople() }) : [];
   if (parsed.length > 0) {
     AppState.previewTasks = parsed.map(parsedToTask);
   } else {

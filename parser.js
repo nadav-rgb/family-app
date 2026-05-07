@@ -22,9 +22,10 @@
     ראשון: 0, שני: 1, שלישי: 2, רביעי: 3, חמישי: 4, שישי: 5, שבת: 6,
   };
 
-  // ─── Family member aliases → internal ID ──────────────────────────────────
-  // Sorted longest-name-first to prevent partial-match (e.g. "אמא" before "מא")
-  const PERSON_ALIASES = [
+  // ─── Family member aliases — fallback for standalone / test use ──────────
+  // In production the app passes opts.people built from its own FAMILY + I18N,
+  // so this list is never used at runtime. It exists only for the dev tests below.
+  const DEFAULT_PEOPLE = [
     { names: ['יונתן', 'yonatan', 'Yonatan'], id: 'yonatan' },
     { names: ['דודי',  'dudi',    'Dudi'   ], id: 'dudi'    },
     { names: ['אמא',   'mom',     'Mom'    ], id: 'mom'     },
@@ -140,16 +141,14 @@
   //
   // Three-tier priority:
   //   1. Subject-first: sentence STARTS with a known name → it's the doer
-  //      "אמא תקנה חלב"   "יונתן יסדר את החדר"
   //   2. Name + explicit agent-verb anywhere in sentence
-  //      "יקח שי את הילדים"
   //   3. Name appears anywhere — but only if NOT preceded by "את" (direct object)
-  //      "תזכיר לי להתקשר לאמא" → אמא is assignee
-  //      "שי ייקח את יונתן" → יונתן is NOT assignee (it's the object)
   //
-  function extractAssignee(text) {
+  // `people` comes from opts.people (app's FAMILY+I18N) or DEFAULT_PEOPLE.
+  //
+  function extractAssignee(text, people) {
     // Tier 1 — subject at sentence start
-    for (const { names, id } of PERSON_ALIASES) {
+    for (const { names, id } of people) {
       for (const name of names) {
         if (isSubjectAtStart(text, name)) {
           return { id, fromText: true, match: name };
@@ -158,7 +157,7 @@
     }
 
     // Tier 2 — name + agent verb (anywhere in sentence)
-    for (const { names, id } of PERSON_ALIASES) {
+    for (const { names, id } of people) {
       for (const name of names) {
         if (new RegExp(name + '\\s+(?:' + AGENT_VERBS_RE.source + ')').test(text)) {
           return { id, fromText: true, match: name };
@@ -166,8 +165,8 @@
       }
     }
 
-    // Tier 3 — bare mention, but guard against direct-object position ("את NAME")
-    for (const { names, id } of PERSON_ALIASES) {
+    // Tier 3 — bare mention, but NOT if preceded by "את" (direct object)
+    for (const { names, id } of people) {
       for (const name of names) {
         const isObject = new RegExp('את\\s+' + name).test(text);
         if (!isObject && text.includes(name)) {
@@ -235,10 +234,10 @@
   }
 
   // ─── Parse one segment ────────────────────────────────────────────────────
-  function parseSegment(text, now) {
+  function parseSegment(text, now, people) {
     const time     = extractTime(text, now);
     const date     = extractDate(text, now);
-    const assignee = extractAssignee(text);
+    const assignee = extractAssignee(text, people);
     const type     = detectType(text);
 
     const title = cleanTitle(text, [time.match, date.match, assignee.match]);
@@ -267,9 +266,10 @@
    * opts.now — override current time (useful for testing), default: new Date()
    */
   function parse(text, opts) {
-    const now = (opts && opts.now) || new Date();
+    const now    = (opts && opts.now)    || new Date();
+    const people = (opts && opts.people) || DEFAULT_PEOPLE;
     if (!text || !text.trim()) return [];
-    return splitSegments(text.trim()).map(seg => parseSegment(seg, now));
+    return splitSegments(text.trim()).map(seg => parseSegment(seg, now, people));
   }
 
   // ─── Helpers ──────────────────────────────────────────────────────────────
@@ -286,7 +286,15 @@
 if (typeof window !== 'undefined' &&
     (location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
   (function runTests() {
-    const NOW = new Date('2026-05-08T10:00:00'); // fixed reference time
+    const NOW = new Date('2026-05-08T10:00:00');
+
+    // Mirrors what app.html passes via buildParserPeople()
+    const PEOPLE = [
+      { id: 'yonatan', names: ['יונתן', 'Yonatan', 'yonatan'] },
+      { id: 'dudi',    names: ['דודי',  'Dudi',    'dudi'   ] },
+      { id: 'mom',     names: ['אמא',   'Mom',     'mom'    ] },
+      { id: 'dad',     names: ['אבא',   'Dad',     'dad'    ] },
+    ];
 
     const CASES = [
       {
@@ -322,7 +330,7 @@ if (typeof window !== 'undefined' &&
     console.group('🔍 HebrewParser tests');
     let passed = 0;
     CASES.forEach(({ input, expectAssignee, titleIncludes, expectMins }) => {
-      const [r] = window.HebrewParser.parse(input, { now: NOW });
+      const [r] = window.HebrewParser.parse(input, { now: NOW, people: PEOPLE });
       const okA = r.assignedTo === expectAssignee;
       const okT = r.title.includes(titleIncludes);
       const okM = expectMins === undefined || r.mins === expectMins;
