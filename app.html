@@ -927,9 +927,6 @@ let vTranscript  = '';
 
 const sbBubble = document.getElementById('speechBubble');
 const sbText   = document.getElementById('sbText');
-let finalTranscript    = '';
-let sessionFinal       = '';
-let lastCommittedIndex = 0;
 
 function showBubble(text) {
   sbText.textContent = text || '';
@@ -957,23 +954,9 @@ if (SpeechAPI) {
   recognition.lang           = 'he-IL';
 
   recognition.onresult = (e) => {
-    // Build display by reading ALL results directly — no manual accumulation.
-    // This prevents duplication when interim results include already-finalized text.
-    let sessionDisplay = '';
-    for (let i = 0; i < e.results.length; i++) {
-      const txt = e.results[i][0].transcript.trim();
-      if (txt) sessionDisplay += (sessionDisplay ? ' ' : '') + txt;
-    }
-    const display = [finalTranscript.trim(), sessionDisplay].filter(s => s).join(' ');
-    if (display) showBubble(display);
-
-    // Track finals separately so vStop can save the correct text.
-    for (let i = lastCommittedIndex; i < e.results.length; i++) {
-      if (e.results[i].isFinal) {
-        sessionFinal += e.results[i][0].transcript.trim() + ' ';
-        lastCommittedIndex = i + 1;
-      }
-    }
+    const last = e.results[e.results.length - 1][0].transcript;
+    vTranscript = last;
+    showBubble(last);
   };
 
   recognition.onerror = (e) => {
@@ -987,13 +970,7 @@ if (SpeechAPI) {
   };
 
   recognition.onend = () => {
-    if (vListening) {
-      const combined  = [finalTranscript.trim(), sessionFinal.trim()].filter(s => s).join(' ');
-      finalTranscript    = combined;
-      sessionFinal       = '';
-      lastCommittedIndex = 0;
-      try { recognition.start(); } catch(_) {}
-    }
+    if (vListening) { try { recognition.start(); } catch(_) {} }
   };
 }
 
@@ -1325,9 +1302,6 @@ zone.addEventListener('click', () => {
 });
 
 function vStart() {
-  finalTranscript    = '';
-  sessionFinal       = '';
-  lastCommittedIndex = 0;
   vTranscript  = '';
   vListening   = true;
   zone.classList.add('rec');
@@ -1346,9 +1320,6 @@ function vStop() {
   vListening = false;
   zone.classList.remove('rec');
   if (recognition) { try { recognition.stop(); } catch(_) {} }
-  vTranscript = sbText.textContent.trim() ||
-                [finalTranscript.trim(), sessionFinal.trim()].filter(s => s).join(' ');
-  sessionFinal = '';
   hideBubble(false);
   setTimeout(() => vOrganize(), 300);
 }
@@ -1675,9 +1646,7 @@ function resetVoiceScreen() {
   clearTimeout(vTimer);
   zone.style.animation = '';
   zone.classList.remove('recede', 'rec');
-  finalTranscript    = '';
-  sessionFinal       = '';
-  lastCommittedIndex = 0;
+  vTranscript = '';
   hideBubble(true);
   const toggle = document.getElementById('vTypeToggle');
   const area   = document.getElementById('vTypeArea');
