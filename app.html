@@ -999,10 +999,19 @@ if (SpeechAPI) {
       ltxt.textContent = '🎤 Microphone access denied';
       ltxt.className   = 'ltxt';
     }
+    // All other errors (no-speech, network, etc.) are silently ignored —
+    // onend will fire next and restart the session without touching the UI.
   };
 
+  let _restartTimer = null;
   recognition.onend = () => {
-    if (vListening) { try { recognition.start(); } catch(_) {} }
+    if (!vListening) return;
+    // Debounce: prevents rapid restart loops that cause browser beeps.
+    // UI is never touched here — transcript stays, bubble stays, state stays.
+    clearTimeout(_restartTimer);
+    _restartTimer = setTimeout(() => {
+      if (vListening) { try { recognition.start(); } catch(_) {} }
+    }, 200);
   };
 }
 
@@ -1349,16 +1358,22 @@ function vStart() {
 
 function vStop() {
   clearTimeout(vTimer);
+  clearTimeout(_restartTimer);
   vListening = false;
   zone.classList.remove('rec');
-  if (recognition) { try { recognition.stop(); } catch(_) {} }
-  hideBubble(false);
-  setTimeout(() => vOrganize(), 300);
+  wdots.classList.remove('on');
+  // abort() cancels immediately and silently — no final-result event, no browser sound.
+  if (recognition) { try { recognition.abort(); } catch(_) {} }
+  // Remove the live glow but keep bubble visible so user sees their frozen transcript.
+  sbBubble.classList.remove('bubble-live');
+  setTimeout(() => {
+    hideBubble(false);
+    setTimeout(() => vOrganize(), 320);
+  }, 480);
 }
 
 function vOrganize() {
   vListening = false;
-  if (recognition) { try { recognition.stop(); } catch(_) {} }
   wdots.classList.remove('on');
   const spokenText = vTranscript.trim();
   ltxt.textContent = spokenText ? 'Organizing your day ✨' : 'Organizing your day ✨';
