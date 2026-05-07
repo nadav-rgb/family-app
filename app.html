@@ -973,6 +973,7 @@ let vTranscript    = '';
 let vCarryOver     = '';  // confirmed text from previous recognition sessions
 let vSessionFinal  = '';  // isFinal-confirmed words within the current recognition session
 let _freshSession  = false; // true right after onend restart — used to skip cross-session repeats
+let _lastAcceptedFinal = ''; // replay/cumulative guard: last isFinal transcript we processed
 let _dbgLog = [];          // diagnostic: last 25 onresult events
 let _dbgEventNum = 0;      // diagnostic: running event counter
 
@@ -1113,7 +1114,18 @@ if (SpeechAPI) {
 
     // ── Normal accumulation ───────────────────────────────────────────
     // isFinal results are reliable — accumulate them; show current interim alongside.
-    if (newFinal) vSessionFinal = vSessionFinal ? vSessionFinal + ' ' + newFinal : newFinal;
+    // Guard 1: exact duplicate — Android re-fires the same final (e.g. E5/E6 above).
+    // Guard 2: cumulative segment — Android embeds ALL previous words in each new
+    //          segment (e.g. segment[3]="שלום שלום" after segment[2]="שלום").
+    //          When newFinal already starts with what we have, replace instead of append.
+    if (newFinal && newFinal !== _lastAcceptedFinal) {
+      if (vSessionFinal && newFinal.startsWith(vSessionFinal)) {
+        vSessionFinal = newFinal;                              // cumulative: replace
+      } else {
+        vSessionFinal = vSessionFinal ? vSessionFinal + ' ' + newFinal : newFinal; // standard
+      }
+      _lastAcceptedFinal = newFinal;
+    }
 
     vTranscript = [vCarryOver, vSessionFinal, latestInterim].filter(Boolean).join(' ');
     showBubble(vTranscript);
@@ -1567,10 +1579,11 @@ zone.addEventListener('click', () => {
 });
 
 function vStart() {
-  vTranscript   = '';
-  vCarryOver    = '';
-  vSessionFinal = '';
-  _freshSession = false;
+  vTranscript         = '';
+  vCarryOver          = '';
+  vSessionFinal       = '';
+  _freshSession       = false;
+  _lastAcceptedFinal  = '';
   vListening    = true;
   zone.classList.add('rec');
   wdots.classList.add('on');
