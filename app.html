@@ -1113,16 +1113,32 @@ if (SpeechAPI) {
     _freshSession = false;
 
     // ── Normal accumulation ───────────────────────────────────────────
-    // isFinal results are reliable — accumulate them; show current interim alongside.
-    // Guard 1: exact duplicate — Android re-fires the same final (e.g. E5/E6 above).
-    // Guard 2: cumulative segment — Android embeds ALL previous words in each new
-    //          segment (e.g. segment[3]="שלום שלום" after segment[2]="שלום").
-    //          When newFinal already starts with what we have, replace instead of append.
+    // Android Chrome vs Desktop Chrome behave DIFFERENTLY for isFinal segments:
+    //
+    //   Desktop: each segment = only the NEW words (incremental)
+    //            e.g. seg[0]="שלום"  seg[1]="שלום"  seg[2]="בדיקה"
+    //
+    //   Android: each segment = ALL words spoken so far (cumulative)
+    //            e.g. seg[2]="שלום"  seg[3]="שלום שלום"  seg[4]="שלום שלום"
+    //                 seg[6]="שלום שלום בדיקה"
+    //            (proven by on-device DBG panel, 2026-05-07)
+    //
+    // Two guards protect against Android duplication — DO NOT REMOVE:
+    //
+    // Guard 1 (exact duplicate): Android sometimes re-fires the same final text
+    //   multiple times (e.g. seg[4] and seg[5] both = "שלום שלום").
+    //   → skip if newFinal === _lastAcceptedFinal
+    //
+    // Guard 2 (cumulative segment): newFinal already contains everything in
+    //   vSessionFinal plus the new word — REPLACE, do not append.
+    //   → if newFinal.startsWith(vSessionFinal): vSessionFinal = newFinal
+    //
+    // Desktop is unaffected: its incremental segments never trigger startsWith.
     if (newFinal && newFinal !== _lastAcceptedFinal) {
       if (vSessionFinal && newFinal.startsWith(vSessionFinal)) {
-        vSessionFinal = newFinal;                              // cumulative: replace
+        vSessionFinal = newFinal;                              // Android cumulative → replace
       } else {
-        vSessionFinal = vSessionFinal ? vSessionFinal + ' ' + newFinal : newFinal; // standard
+        vSessionFinal = vSessionFinal ? vSessionFinal + ' ' + newFinal : newFinal; // Desktop/standard
       }
       _lastAcceptedFinal = newFinal;
     }
