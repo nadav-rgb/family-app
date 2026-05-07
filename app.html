@@ -957,21 +957,23 @@ if (SpeechAPI) {
   recognition.lang           = 'he-IL';
 
   recognition.onresult = (e) => {
-    let interimText = '';
+    // Build display by reading ALL results directly — no manual accumulation.
+    // This prevents duplication when interim results include already-finalized text.
+    let sessionDisplay = '';
     for (let i = 0; i < e.results.length; i++) {
-      const result = e.results[i];
-      const text   = result[0].transcript;
-      if (result.isFinal) {
-        if (i >= lastCommittedIndex) {
-          sessionFinal += text + ' ';
-          lastCommittedIndex = i + 1;
-        }
-      } else {
-        interimText = text;
+      const txt = e.results[i][0].transcript.trim();
+      if (txt) sessionDisplay += (sessionDisplay ? ' ' : '') + txt;
+    }
+    const display = [finalTranscript.trim(), sessionDisplay].filter(s => s).join(' ');
+    if (display) showBubble(display);
+
+    // Track finals separately so vStop can save the correct text.
+    for (let i = lastCommittedIndex; i < e.results.length; i++) {
+      if (e.results[i].isFinal) {
+        sessionFinal += e.results[i][0].transcript.trim() + ' ';
+        lastCommittedIndex = i + 1;
       }
     }
-    const display = (finalTranscript + sessionFinal + interimText).trim();
-    if (display) showBubble(display);
   };
 
   recognition.onerror = (e) => {
@@ -986,7 +988,8 @@ if (SpeechAPI) {
 
   recognition.onend = () => {
     if (vListening) {
-      finalTranscript   += sessionFinal;
+      const combined  = [finalTranscript.trim(), sessionFinal.trim()].filter(s => s).join(' ');
+      finalTranscript    = combined;
       sessionFinal       = '';
       lastCommittedIndex = 0;
       try { recognition.start(); } catch(_) {}
@@ -1343,7 +1346,8 @@ function vStop() {
   vListening = false;
   zone.classList.remove('rec');
   if (recognition) { try { recognition.stop(); } catch(_) {} }
-  vTranscript = (finalTranscript + sessionFinal).trim();
+  vTranscript = sbText.textContent.trim() ||
+                [finalTranscript.trim(), sessionFinal.trim()].filter(s => s).join(' ');
   sessionFinal = '';
   hideBubble(false);
   setTimeout(() => vOrganize(), 300);
