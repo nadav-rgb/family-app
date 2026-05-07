@@ -959,16 +959,29 @@ const sbBubble = document.getElementById('speechBubble');
 const sbText   = document.getElementById('sbText');
 
 function showBubble(text) {
-  const prev   = sbText.textContent;
-  const prevWC = prev.trim()         ? prev.trim().split(/\s+/).length         : 0;
-  const newWC  = (text||'').trim()   ? (text||'').trim().split(/\s+/).length   : 0;
-  const newWord = text && newWC > prevWC;
+  const prev    = sbText.textContent;
+  const prevW   = prev.trim()       ? prev.trim().split(/\s+/)       : [];
+  const newW    = (text||'').trim() ? (text||'').trim().split(/\s+/) : [];
+  const newWord = text && newW.length > prevW.length;
+
   if (newWord) {
-    sbText.classList.remove('word-in');
-    void sbText.offsetWidth;
+    // Only animate the newly added word(s) — leave existing text untouched
+    const oldPart = newW.slice(0, prevW.length).join(' ');
+    const newPart = newW.slice(prevW.length).join(' ');
+    sbText.innerHTML = '';
+    if (oldPart) {
+      const s = document.createElement('span');
+      s.textContent = oldPart + ' ';
+      sbText.appendChild(s);
+    }
+    const s = document.createElement('span');
+    s.className   = 'word-in';
+    s.textContent = newPart;
+    sbText.appendChild(s);
+  } else {
+    sbText.textContent = text || '';
   }
-  sbText.textContent = text || '';
-  if (newWord) sbText.classList.add('word-in');
+
   sbBubble.classList.add('on', 'bubble-live');
   sbBubble.classList.remove('fading');
   ltxt.textContent = '✋ Tap to stop';
