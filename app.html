@@ -646,7 +646,7 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
     </div>
   </div>
   <div class="v-topbar">
-    <button class="back-btn" onclick="goto('s-today','txLeaveFade','txEnterFade')"><svg width="8" height="14" viewBox="0 0 8 14" fill="none"><path d="M7 1L1 7l6 6" stroke="#9e8878" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Today</button>
+    <button class="back-btn" onclick="goto('s-today','txLeaveFade','txEnterFade')"><svg width="8" height="14" viewBox="0 0 8 14" fill="none"><path d="M7 1L1 7l6 6" stroke="#9e8878" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span id="vBackTxt">Today</span></button>
     <button class="v-settings-btn" id="vSettingsBtn"><svg width="20" height="16" viewBox="0 0 20 16" fill="none"><line x1="1" y1="2.5" x2="19" y2="2.5" stroke="#9e8878" stroke-width="1.8" stroke-linecap="round"/><circle cx="14" cy="2.5" r="2.2" fill="#fffaf5" stroke="#9e8878" stroke-width="1.6"/><line x1="1" y1="8" x2="19" y2="8" stroke="#9e8878" stroke-width="1.8" stroke-linecap="round"/><circle cx="6" cy="8" r="2.2" fill="#fffaf5" stroke="#9e8878" stroke-width="1.6"/><line x1="1" y1="13.5" x2="19" y2="13.5" stroke="#9e8878" stroke-width="1.8" stroke-linecap="round"/><circle cx="14" cy="13.5" r="2.2" fill="#fffaf5" stroke="#9e8878" stroke-width="1.6"/></svg></button>
   </div>
   <div class="sp"></div>
@@ -680,7 +680,7 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
   </div>
   <div class="sp"></div>
   <div class="speech-bubble" id="speechBubble">
-    <div class="sb-label">Listening…</div>
+    <div class="sb-label" id="sbLabel">Listening…</div>
     <div class="sb-text" id="sbText"></div>
     <div class="sb-dots"><span></span><span></span><span></span></div>
   </div>
@@ -692,7 +692,7 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
     <div class="v-type-toggle" id="vTypeToggle">Or type it instead</div>
     <div class="v-type-area" id="vTypeArea">
       <div class="v-type-inp" id="vTypeInp" contenteditable="true" role="textbox" aria-multiline="true" spellcheck="false"></div>
-      <div class="v-type-helper">Write freely — we'll organize it for you</div>
+      <div class="v-type-helper" id="vTypeHelper">Write freely — we'll organize it for you</div>
       <button class="v-type-btn" id="vTypeBtn" disabled>Organize my day ✨</button>
       <div class="v-voice-back" id="vVoiceBack">🎙 Use voice instead</div>
     </div>
@@ -710,10 +710,10 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
       <svg width="26" height="12" viewBox="0 0 26 12" fill="none"><rect x=".5" y=".5" width="22" height="11" rx="3.5" stroke="#2d2018" stroke-opacity=".35"/><rect x="1.5" y="1.5" width="18" height="9" rx="2.5" fill="#2d2018"/><path d="M24 4.5v3a2 2 0 0 1 0-3Z" fill="#2d2018" fill-opacity=".4"/></svg>
     </div>
   </div>
-  <div class="dp-topbar"><button class="back-btn" id="dpBack"><svg width="8" height="14" viewBox="0 0 8 14" fill="none"><path d="M7 1L1 7l6 6" stroke="#9e8878" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Back</button></div>
+  <div class="dp-topbar"><button class="back-btn" id="dpBack"><svg width="8" height="14" viewBox="0 0 8 14" fill="none"><path d="M7 1L1 7l6 6" stroke="#9e8878" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span id="dpBackTxt">Back</span></button></div>
   <div class="dp-hero">
-    <div class="dp-tag">✨ Ready</div>
-    <div class="dp-h1">We organized<br>your day <span class="sparkle-emoji">✨</span></div>
+    <div class="dp-tag" id="dpTag">✨ Ready</div>
+    <div class="dp-h1" id="dpH1">We organized<br>your day <span class="sparkle-emoji">✨</span></div>
     <div class="dp-sub" id="dpSub">Feel free to tweak anything</div>
     <div class="dp-meta"><span class="dp-pill">📋 4 tasks</span><span class="dp-pill">👩 Mom · 👨 Dad</span></div>
   </div>
@@ -754,22 +754,22 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
       <div class="t-mem"><div class="t-av av-yona">👶</div><span class="t-avname">Yonatan</span></div>
     </div>
     <div class="t-prog">
-      <div class="t-prow"><span class="t-plbl">Today's tasks</span><span class="t-pcnt">1 of 5 done ✨</span></div>
+      <div class="t-prow"><span class="t-plbl" id="tPlbl">Today's tasks</span><span class="t-pcnt">1 of 5 done ✨</span></div>
       <div class="t-pbg"><div class="t-pfill" id="tPfill"></div></div>
     </div>
-    <div class="t-slabel">✨ Coming up</div>
+    <div class="t-slabel" id="tComingLbl">✨ Coming up</div>
     <div class="t-hero-card">
-      <div class="t-heyebrow">Coming up at</div>
+      <div class="t-heyebrow" id="tHeyebrow">Coming up at</div>
       <div class="t-htime">15:00</div>
       <div class="t-htask">Pick up Yonatan<br>from kindergarten</div>
       <div class="t-hfoot"><div class="t-hwho"><div class="t-hav">👨</div><span class="t-hname">Dad</span></div><div class="t-hpill">in 58 min</div></div>
     </div>
-    <div class="t-slabel">📋 All Tasks</div>
+    <div class="t-slabel" id="tAllLbl">📋 All Tasks</div>
     <div class="t-tasks" id="tTasks"></div>
   </div>
   <div class="notif-toast" id="notifToast">
     <span class="notif-icon">🔔</span>
-    <div class="notif-body"><div class="notif-lbl">Reminder</div><div class="notif-msg" id="notifMsg"></div></div>
+    <div class="notif-body"><div class="notif-lbl" id="notifLbl">Reminder</div><div class="notif-msg" id="notifMsg"></div></div>
     <span class="notif-close" id="notifClose">✕</span>
   </div>
   <div class="undo-toast" id="undoToast">
@@ -777,9 +777,9 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
     <button class="undo-btn" id="undoBtn">Undo</button>
   </div>
   <div class="t-nav">
-    <div class="t-ntab on"><span class="t-ni">☀️</span><span class="t-nl">Today</span></div>
+    <div class="t-ntab on"><span class="t-ni">☀️</span><span class="t-nl" id="navTodayLbl">Today</span></div>
     <div class="t-nadd" id="tNavAdd">+</div>
-    <div class="t-ntab"><span class="t-ni">👨‍👩‍👧‍👦</span><span class="t-nl">Family</span></div>
+    <div class="t-ntab"><span class="t-ni">👨‍👩‍👧‍👦</span><span class="t-nl" id="navFamilyLbl">Family</span></div>
   </div>
 </div>
 
@@ -800,7 +800,7 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 <div class="style-bg" id="styleBg">
   <div class="style-drawer" id="styleDrawer">
     <div class="drawer-pill"></div>
-    <div class="drawer-ttl">Choose your mic style</div>
+    <div class="drawer-ttl" id="micDrawerTtl">Choose your mic style</div>
     <div class="drawer-opts" id="drawerOpts">
       <div class="dopt sel" data-mode="heart"><span class="dopt-em">❤️</span><span class="dopt-lbl">Heart</span><span class="dopt-ck">✓</span></div>
       <div class="dopt"     data-mode="star"> <span class="dopt-em">⭐</span><span class="dopt-lbl">Star</span><span class="dopt-ck">✓</span></div>
@@ -815,7 +815,7 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 <div class="usw-bg" id="uswBg">
   <div class="usw-drawer" id="uswDrawer">
     <div class="usw-handle"></div>
-    <div class="usw-title">Switch user <span style="font-size:10px;background:#f0d8c8;color:#9e6040;border-radius:4px;padding:1px 5px;font-weight:700;vertical-align:middle;">DEMO</span></div>
+    <div class="usw-title" id="uswTitle">Switch user <span style="font-size:10px;background:#f0d8c8;color:#9e6040;border-radius:4px;padding:1px 5px;font-weight:700;vertical-align:middle;">DEMO</span></div>
     <div id="uswRows"></div>
   </div>
 </div>
@@ -824,28 +824,28 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
   <div class="share-drawer">
     <div class="drawer-pill"></div>
     <div class="drawer-ttl" id="shareDrawerTitle">Share Task</div>
-    <div class="share-sec">Who is responsible?</div>
+    <div class="share-sec" id="shareResponsibleSec">Who is responsible?</div>
     <div id="shareAssignedRows"></div>
     <div class="share-sec" id="shareVisSec">Who can see this?</div>
     <div id="shareVisRows"></div>
     <div class="share-sec" id="shareNotifySec">Who gets notified?</div>
     <div id="shareNotRows"></div>
     <div class="share-more-toggle" id="shareMoreToggle">
-      <span class="share-more-lbl">More options</span>
+      <span class="share-more-lbl" id="shareMoreLbl">More options</span>
       <span class="share-more-arrow">›</span>
     </div>
     <div class="share-more-body" id="shareMoreBody">
       <div class="share-remind-block" id="shareReminderBlock">
-        <div class="share-sec">When to remind?</div>
+        <div class="share-sec" id="shareWhenRemindLbl">When to remind?</div>
         <div class="reminder-opts" id="reminderOpts"></div>
         <div class="reminder-custom" id="reminderCustomRow" style="display:none">
           <input type="number" class="reminder-custom-inp" id="reminderCustomInp" min="1" max="1440" placeholder="—">
-          <span class="reminder-custom-lbl">minutes before</span>
+          <span class="reminder-custom-lbl" id="reminderCustomLbl">minutes before</span>
         </div>
-        <div class="reminder-note">If not completed on time, we'll remind the assigned person and visible family members after 5, 10, and 15 minutes.</div>
+        <div class="reminder-note" id="reminderNote">If not completed on time, we'll remind the assigned person and visible family members after 5, 10, and 15 minutes.</div>
       </div>
       <div class="share-remind-block" id="shareRepeatBlock">
-        <div class="share-sec">Repeat</div>
+        <div class="share-sec" id="shareRepeatLbl">Repeat</div>
         <div class="repeat-opts" id="repeatTypeOpts"></div>
         <div class="repeat-dow-row" id="repeatDowRow" style="display:none"></div>
       </div>
@@ -857,20 +857,132 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 <!-- Warm flash overlay -->
 <div id="txFlash"></div>
 
-<!-- DEBUG LABEL — remove after mobile verification -->
-<div id="dbgVer" style="position:absolute;bottom:6px;right:8px;font-size:9px;font-family:monospace;color:rgba(0,0,0,.28);pointer-events:none;z-index:9999;letter-spacing:0;">f72b7eb</div>
-<!-- END DEBUG -->
-
-<!-- DIAGNOSTIC PANEL — remove after diagnosis -->
-<div id="dbgPanel" style="display:none;position:absolute;bottom:44px;left:6px;right:6px;max-height:280px;overflow-y:auto;background:rgba(255,255,255,.97);border-radius:12px;padding:8px 10px;font-size:10px;font-family:monospace;line-height:1.55;z-index:9998;box-shadow:0 4px 18px rgba(0,0,0,.22);word-break:break-all;"></div>
-<button id="dbgToggle" onclick="(function(){var p=document.getElementById('dbgPanel');p.style.display=(p.style.display==='none'?'block':'none');if(p.style.display!=='none')_dbgUpdate();})()" style="position:absolute;bottom:24px;left:8px;font-size:9px;font-family:monospace;background:rgba(0,0,0,.22);color:#fff;border:none;border-radius:8px;padding:3px 8px;z-index:9999;cursor:pointer;">DBG</button>
-<!-- END DIAGNOSTIC PANEL -->
 
 </div><!-- /phone -->
 <script>
 // ─── State ────────────────────────────────────────────────────────
 const STORAGE_KEY = 'family-app-v1';
 const AppState = { tasks: [], previewTasks: [], recurringCompletions: {}, lang: 'en' };
+
+// ─── Translations ─────────────────────────────────────────────────
+const I18N = {
+  en: {
+    voice_eyebrow:'✨ Voice Input', voice_prompt:'Tell me what needs<br>to happen today',
+    voice_back:'Today', voice_listening:'Listening…', voice_tap:'Tap to speak',
+    voice_stop:'✋ Tap to stop', voice_type_toggle:'Or type it instead',
+    voice_type_helper:"Write freely — we'll organize it for you",
+    voice_type_btn:'Organize my day ✨', voice_back_btn:'🎙 Use voice instead',
+    voice_mic_denied:'🎤 Microphone access denied',
+    voice_not_supported:'Voice not supported — use typing ↓',
+    voice_organizing:'Organizing your day ✨',
+    dp_back:'Back', dp_tag:'✨ Ready', dp_h1:'We organized<br>your day ✨',
+    dp_sub:'Feel free to tweak anything',
+    dp_adj_banner:'✏️ Editing schedule — tap any time to change it',
+    dp_ok:'Looks good ✓', dp_ok_done:'✓ Your day is set!', dp_adjust:'Adjust',
+    dp_tap_time:'Tap a time to edit ✏️', dp_perfect:'Perfect ✨',
+    dp_time_explicit:'From your words', dp_time_suggested:'Suggested',
+    dp_time_manual:'Adjusted', dp_edit_manually:'✏️\nEdit manually', dp_tasks_lbl:'tasks',
+    today_tasks:"Today's tasks", today_coming:'✨ Coming up',
+    today_coming_at:'Coming up at', today_all:'📋 All Tasks',
+    today_nav:'Today', family_nav:'Family',
+    greet_night:'Good night', greet_morning:'Good morning',
+    greet_afternoon:'Good afternoon', greet_evening:'Good evening',
+    time_now:'now', time_in_min:'in {n} min', time_in_hr:'in {n}h',
+    marked_done:'"{t}" marked done',
+    notif_label:'Reminder', notif_starting:'starting now',
+    notif_overdue:'{n} min overdue', notif_undo:'Undo',
+    mic_title:'Choose your mic style',
+    mic_heart:'Heart', mic_star:'Star', mic_classic:'Classic', mic_blob:'Blob',
+    share_title:'Share Task', share_responsible:'Who is responsible?',
+    share_visible:'Who can see this?', share_notified:'Who gets notified?',
+    share_more:'More options', share_when_remind:'When to remind?',
+    share_mins_before:'minutes before',
+    share_note:"If not completed on time, we'll remind the assigned person and visible family members after 5, 10, and 15 minutes.",
+    share_repeat:'Repeat', share_done:'Done',
+    remind_at_time:'At task time', remind_10:'10 min before',
+    remind_30:'30 min before', remind_60:'1 hour before', remind_custom:'Custom',
+    repeat_none:'None', repeat_weekly:'Weekly',
+    user_switch:'Switch user',
+    family_mom:'Mom', family_dad:'Dad', family_dudi:'Dudi', family_yonatan:'Yonatan',
+    date_today:'Today', date_tomorrow:'Tomorrow',
+    months:['January','February','March','April','May','June','July','August','September','October','November','December'],
+    months_short:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+    days:['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'],
+    days_short:['Su','Mo','Tu','We','Th','Fr','Sa'],
+    period_morning:'Morning ☀️', period_afternoon:'Afternoon 🌤',
+    period_evening:'Evening 🌆', period_night:'Night 🌙',
+    tp_title:'Set time', tp_invalid:'Invalid time',
+    tp_hint0:'Enter hour then minutes', tp_hint1:'Enter second digit of hour',
+    tp_hint2:'Now enter minutes', tp_hint3:'Enter second digit of minutes',
+    tp_cancel:'Cancel',
+    empty_title:'No tasks yet', empty_sub:'Tap + to plan your day ✨',
+    empty_all_done:'All done! 🏆', empty_of:'{d} of {t} done {e}',
+    assigned_to:'Assigned to',
+  },
+  he: {
+    voice_eyebrow:'✨ קלט קולי', voice_prompt:'ספר לי מה<br>צריך לקרות היום',
+    voice_back:'היום', voice_listening:'מאזין…', voice_tap:'לחץ לדיבור',
+    voice_stop:'✋ לחץ לעצירה', voice_type_toggle:'או הקלד במקום',
+    voice_type_helper:'כתוב בחופשיות — נסדר עבורך',
+    voice_type_btn:'סדר לי את היום ✨', voice_back_btn:'🎙 חזור לדיבור',
+    voice_mic_denied:'🎤 אין גישה למיקרופון',
+    voice_not_supported:'זיהוי קולי לא נתמך — השתמש בהקלדה ↓',
+    voice_organizing:'מסדר את היום ✨',
+    dp_back:'חזרה', dp_tag:'✨ מוכן', dp_h1:'סידרנו לך<br>את היום ✨',
+    dp_sub:'אפשר לשנות כל דבר',
+    dp_adj_banner:'✏️ עריכת לוח זמנים — לחץ על שעה לשינוי',
+    dp_ok:'נראה טוב ✓', dp_ok_done:'✓ היום מוכן!', dp_adjust:'שנה',
+    dp_tap_time:'לחץ על שעה לעריכה ✏️', dp_perfect:'מושלם ✨',
+    dp_time_explicit:'מדבריך', dp_time_suggested:'מוצע',
+    dp_time_manual:'מעודכן', dp_edit_manually:'✏️\nעריכה ידנית', dp_tasks_lbl:'משימות',
+    today_tasks:'משימות היום', today_coming:'✨ הבא בתור',
+    today_coming_at:'הבא בתור בשעה', today_all:'📋 כל המשימות',
+    today_nav:'היום', family_nav:'משפחה',
+    greet_night:'לילה טוב', greet_morning:'בוקר טוב',
+    greet_afternoon:'צהריים טובים', greet_evening:'ערב טוב',
+    time_now:'עכשיו', time_in_min:'בעוד {n} דק\'', time_in_hr:'בעוד {n} שע\'',
+    marked_done:'"{t}" סומנה כהושלמה',
+    notif_label:'תזכורת', notif_starting:'מתחיל עכשיו',
+    notif_overdue:'איחור של {n} דק\'', notif_undo:'בטל',
+    mic_title:'בחר סגנון מיקרופון',
+    mic_heart:'לב', mic_star:'כוכב', mic_classic:'קלאסי', mic_blob:'בלוב',
+    share_title:'שיתוף משימה', share_responsible:'מי אחראי?',
+    share_visible:'מי יכול לראות?', share_notified:'מי מקבל התראה?',
+    share_more:'עוד אפשרויות', share_when_remind:'מתי להזכיר?',
+    share_mins_before:'דקות לפני',
+    share_note:'אם לא יושלם בזמן, נזכיר את האחראי ובני המשפחה לאחר 5, 10 ו-15 דקות.',
+    share_repeat:'חזרה', share_done:'סיום',
+    remind_at_time:'בזמן המשימה', remind_10:'10 דקות לפני',
+    remind_30:'30 דקות לפני', remind_60:'שעה לפני', remind_custom:'מותאם אישית',
+    repeat_none:'ללא', repeat_weekly:'שבועי',
+    user_switch:'החלף משתמש',
+    family_mom:'אמא', family_dad:'אבא', family_dudi:'דודי', family_yonatan:'יונתן',
+    date_today:'היום', date_tomorrow:'מחר',
+    months:['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'],
+    months_short:['ינו','פבר','מרץ','אפר','מאי','יוני','יולי','אוג','ספט','אוק','נוב','דצמ'],
+    days:['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'],
+    days_short:['א\'','ב\'','ג\'','ד\'','ה\'','ו\'','ש\''],
+    period_morning:'בוקר ☀️', period_afternoon:'צהריים 🌤',
+    period_evening:'ערב 🌆', period_night:'לילה 🌙',
+    tp_title:'קבע שעה', tp_invalid:'שעה לא תקינה',
+    tp_hint0:'הזן שעה ואחר כך דקות', tp_hint1:'הזן ספרה שנייה של השעה',
+    tp_hint2:'עכשיו הזן דקות', tp_hint3:'הזן ספרה שנייה של הדקות',
+    tp_cancel:'ביטול',
+    empty_title:'אין משימות עדיין', empty_sub:'לחץ + לתכנון היום ✨',
+    empty_all_done:'הכל הושלם! 🏆', empty_of:'{d} מתוך {t} הושלמו {e}',
+    assigned_to:'משויך ל',
+  }
+};
+function t(key) { return (I18N[AppState.lang] || I18N.en)[key] || key; }
+function tFmt(key, vars) {
+  let s = t(key);
+  Object.entries(vars).forEach(([k,v]) => { s = s.replace('{'+k+'}', v); });
+  return s;
+}
+function personLabel(nameOrId) {
+  const id = PERSON_TO_ID[nameOrId] || nameOrId;
+  return t('family_' + id) || nameOrId;
+}
 
 function todayDate() {
   const d = new Date();
@@ -884,10 +996,11 @@ function dateLabelFor(dateStr) {
   const td = todayDate();
   const d  = new Date(new Date().setDate(new Date().getDate() + 1));
   const tm = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-  if (dateStr === td) return 'Today';
-  if (dateStr === tm) return 'Tomorrow';
+  if (dateStr === td) return t('date_today');
+  if (dateStr === tm) return t('date_tomorrow');
   const dt = new Date(dateStr + 'T00:00:00');
-  return dt.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' });
+  const lng = (I18N[AppState.lang] || I18N.en);
+  return `${lng.days_short[dt.getDay()]} ${lng.months_short[dt.getMonth()]} ${dt.getDate()}`;
 }
 
 let activeDate = todayDate();
@@ -929,7 +1042,7 @@ function openUserSwitcher() {
   FAMILY.forEach(f => {
     const row = document.createElement('div');
     row.className = 'usw-row' + (f.id === currentUser ? ' active' : '');
-    row.innerHTML = `<span class="usw-em">${f.emoji}</span><span class="usw-name">${f.label}</span>${f.id === currentUser ? '<span class="usw-check">✓</span>' : ''}`;
+    row.innerHTML = `<span class="usw-em">${f.emoji}</span><span class="usw-name">${t('family_' + f.id)}</span>${f.id === currentUser ? '<span class="usw-check">✓</span>' : ''}`;
     row.addEventListener('click', () => {
       currentUser = f.id;
       saveCurrentUser();
@@ -968,11 +1081,69 @@ const LANG_KEY = 'family-app-lang';
 
 function _applyLang() {
   const isHe = AppState.lang === 'he';
-  const eyebrow = document.getElementById('vPromptEyebrow');
-  const ptxt    = document.getElementById('vPromptText');
-  if (eyebrow) eyebrow.textContent = isHe ? '✨ קלט קולי' : '✨ Voice Input';
-  if (ptxt)    ptxt.innerHTML      = isHe ? 'ספר לי מה<br>צריך לקרות היום' : 'Tell me what needs<br>to happen today';
   document.getElementById('s-voice').dir = isHe ? 'rtl' : '';
+  // Apply all translatable strings to the DOM
+  const set = (id, val, html) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (html) el.innerHTML = val; else el.textContent = val;
+  };
+  // Voice screen
+  set('vPromptEyebrow', t('voice_eyebrow'));
+  set('vPromptText',    t('voice_prompt'), true);
+  set('vBackTxt',       t('voice_back'));
+  set('sbLabel',        t('voice_listening'));
+  set('ltxt',           t('voice_tap'));
+  set('vTypeToggle',    t('voice_type_toggle'));
+  set('vTypeHelper',    t('voice_type_helper'));
+  set('vTypeBtn',       t('voice_type_btn'));
+  set('vVoiceBack',     t('voice_back_btn'));
+  // Day preview
+  set('dpBackTxt',   t('dp_back'));
+  set('dpTag',       t('dp_tag'));
+  set('dpH1',        t('dp_h1'), true);
+  set('dpSub',       t('dp_sub'));
+  set('adjBanner',   t('dp_adj_banner'));
+  set('btnOk',       t('dp_ok'));
+  set('btnAdjust',   t('dp_adjust'));
+  // Today screen
+  set('tPlbl',       t('today_tasks'));
+  set('tComingLbl',  t('today_coming'));
+  set('tHeyebrow',   t('today_coming_at'));
+  set('tAllLbl',     t('today_all'));
+  set('navTodayLbl', t('today_nav'));
+  set('navFamilyLbl',t('family_nav'));
+  // Toasts
+  set('notifLbl',    t('notif_label'));
+  set('undoBtn',     t('notif_undo'));
+  // Mic drawer
+  set('micDrawerTtl', t('mic_title'));
+  const modeLabels = {heart:'mic_heart',star:'mic_star',classic:'mic_classic',blob:'mic_blob'};
+  document.querySelectorAll('#drawerOpts .dopt-lbl').forEach(el => {
+    const mode = el.closest('.dopt')?.dataset?.mode;
+    if (mode && modeLabels[mode]) el.textContent = t(modeLabels[mode]);
+  });
+  // Share drawer
+  set('shareDrawerTitle',    t('share_title'));
+  set('shareResponsibleSec', t('share_responsible'));
+  set('shareVisSec',         t('share_visible'));
+  set('shareNotifySec',      t('share_notified'));
+  set('shareMoreLbl',        t('share_more'));
+  set('reminderCustomLbl',   t('share_mins_before'));
+  set('reminderNote',        t('share_note'));
+  set('shareDoneBtn',        t('share_done'));
+  set('shareWhenRemindLbl',  t('share_when_remind'));
+  set('shareRepeatLbl',      t('share_repeat'));
+  // User switcher
+  const uswTitle = document.getElementById('uswTitle');
+  if (uswTitle) uswTitle.innerHTML = t('user_switch') + ' <span style="font-size:10px;background:#f0d8c8;color:#9e6040;border-radius:4px;padding:1px 5px;font-weight:700;vertical-align:middle;">DEMO</span>';
+  // Avatar names
+  const avNames = {mom:'av-mom', dad:'av-dad', dudi:'av-dudi', yonatan:'av-yona'};
+  document.querySelectorAll('#s-today .t-avname').forEach((el, i) => {
+    const f = FAMILY[i];
+    if (f) el.textContent = t('family_' + f.id);
+  });
+  // tDateBadge & date-related are updated in updateDateBadge()
 }
 
 function setLang(lang) {
@@ -1099,8 +1270,6 @@ let vCarryOver     = '';  // confirmed text from previous recognition sessions
 let vSessionFinal  = '';  // isFinal-confirmed words within the current recognition session
 let _freshSession  = false; // true right after onend restart — used to skip cross-session repeats
 let _lastAcceptedFinal = ''; // replay/cumulative guard: last isFinal transcript we processed
-let _dbgLog = [];          // diagnostic: last 25 onresult events
-let _dbgEventNum = 0;      // diagnostic: running event counter
 
 const sbBubble = document.getElementById('speechBubble');
 const sbText   = document.getElementById('sbText');
@@ -1143,14 +1312,14 @@ function showBubble(text) {
   }
   sbBubble.classList.add('on', 'bubble-live');
   sbBubble.classList.remove('fading');
-  ltxt.textContent = '✋ Tap to stop';
+  ltxt.textContent = t('voice_stop');
   ltxt.className   = 'ltxt v-stop-hint';
   ltxt.style.opacity = '';
 }
 
 function hideBubble(immediate) {
   _sbRendered = '';
-  ltxt.textContent = 'Tap to speak';
+  ltxt.textContent = t('voice_tap');
   ltxt.className   = 'ltxt';
   ltxt.style.opacity = '';
   wdots.classList.remove('on');
@@ -1164,22 +1333,6 @@ function hideBubble(immediate) {
   setTimeout(() => { sbBubble.classList.remove('on','fading'); }, 320);
 }
 
-// ── DEBUG MARKER — remove after mobile verification ──────────────
-console.log('SPEECH_VERSION: f72b7eb_restored_240712a');
-// ─────────────────────────────────────────────────────────────────
-
-// ── DIAGNOSTIC PANEL RENDERER — remove after diagnosis ───────────
-function _dbgUpdate() {
-  const p = document.getElementById('dbgPanel');
-  if (!p || p.style.display === 'none') return;
-  p.innerHTML = _dbgLog.slice().reverse().map(ev => {
-    const rows = ev.res.map(r =>
-      '<span style="color:' + (r.f ? '#080' : '#888') + '">[' + r.i + ']' + (r.f ? '✓' : '~') + ' ' + r.t + '</span>'
-    ).join('<br>');
-    return '<div style="border-bottom:1px solid rgba(0,0,0,.1);padding:3px 0"><b style="color:#c30">E' + ev.n + '</b> ri=' + ev.ri + ' rl=' + ev.rl + '<br>' + rows + '</div>';
-  }).join('');
-}
-// ─────────────────────────────────────────────────────────────────
 
 if (SpeechAPI) {
   recognition = new SpeechAPI();
@@ -1188,18 +1341,6 @@ if (SpeechAPI) {
   recognition.lang           = 'he-IL';
 
   recognition.onresult = (e) => {
-    // ── DIAGNOSTIC (read-only) ────────────────────────────────────────
-    _dbgEventNum++;
-    _dbgLog.push({
-      n: _dbgEventNum, ri: e.resultIndex, rl: e.results.length,
-      res: Array.from({length: e.results.length}, function(_, i) {
-        return { i: i, f: e.results[i].isFinal, t: e.results[i][0].transcript.trim().slice(0, 28) };
-      })
-    });
-    if (_dbgLog.length > 25) _dbgLog.shift();
-    _dbgUpdate();
-    // ─────────────────────────────────────────────────────────────────
-
     // ── Collect new finals + current interim from this event ─────────
     // Only iterate from e.resultIndex to avoid re-processing confirmed segments.
     let newFinal      = '';   // isFinal text confirmed in THIS event
@@ -1277,7 +1418,7 @@ if (SpeechAPI) {
       vListening = false;
       zone.classList.remove('rec');
       hideBubble(true);
-      ltxt.textContent = '🎤 Microphone access denied';
+      ltxt.textContent = t('voice_mic_denied');
       ltxt.className   = 'ltxt';
     }
     // All other errors (no-speech, network, etc.) are silently ignored —
@@ -1452,7 +1593,7 @@ document.getElementById('vVoiceBack').addEventListener('click', () => {
     setTimeout(() => toggle.classList.remove('v-toggle-in'), 400);
   }, 450);
 
-  ltxt.textContent = 'Tap to speak';
+  ltxt.textContent = t('voice_tap');
   ltxt.className   = 'ltxt';
   wdots.classList.remove('on');
 });
@@ -1518,18 +1659,18 @@ function openShareDrawer(task, onSave) {
 }
 
 function renderAssignedSection() {
-  const t    = shareTask;
+  const task = shareTask;
   const cont = document.getElementById('shareAssignedRows');
   cont.innerHTML = '';
   FAMILY.forEach(f => {
     const row = document.createElement('div');
     row.className = 'share-member';
-    const sel = t.assignedTo === f.id;
-    row.innerHTML = `<span class="share-em">${f.emoji}</span><span class="share-lbl">${f.label}</span><span class="share-radio${sel?' on':''}"></span>`;
+    const sel = task.assignedTo === f.id;
+    row.innerHTML = `<span class="share-em">${f.emoji}</span><span class="share-lbl">${t('family_' + f.id)}</span><span class="share-radio${sel?' on':''}"></span>`;
     row.addEventListener('click', () => {
-      t.assignedTo = f.id;
-      if (!t.visibleTo.includes(f.id)) t.visibleTo.push(f.id);
-      if (!t.notifyTo.includes(f.id))  t.notifyTo.push(f.id);
+      task.assignedTo = f.id;
+      if (!task.visibleTo.includes(f.id)) task.visibleTo.push(f.id);
+      if (!task.notifyTo.includes(f.id))  task.notifyTo.push(f.id);
       renderAssignedSection();
       renderShareRows();
     });
@@ -1538,21 +1679,21 @@ function renderAssignedSection() {
 }
 
 const REMINDER_PRESETS = [
-  { label:'At task time', val:0 },
-  { label:'10 min before', val:10 },
-  { label:'30 min before', val:30 },
-  { label:'1 hour before', val:60 },
-  { label:'Custom', val:null },
+  { labelKey:'remind_at_time', val:0 },
+  { labelKey:'remind_10', val:10 },
+  { labelKey:'remind_30', val:30 },
+  { labelKey:'remind_60', val:60 },
+  { labelKey:'remind_custom', val:null },
 ];
 
 function renderReminderSection() {
-  const t       = shareTask;
+  const task    = shareTask;
   const opts    = document.getElementById('reminderOpts');
   const custRow = document.getElementById('reminderCustomRow');
   const custInp = document.getElementById('reminderCustomInp');
   const block   = document.getElementById('shareReminderBlock');
 
-  const isPreset = REMINDER_PRESETS.slice(0,-1).some(p => p.val === t.reminderOffsetMinutes);
+  const isPreset = REMINDER_PRESETS.slice(0,-1).some(p => p.val === task.reminderOffsetMinutes);
   const isCustom = !isPreset;
 
   opts.innerHTML = '';
@@ -1560,16 +1701,16 @@ function renderReminderSection() {
     const chip = document.createElement('div');
     chip.className = 'reminder-chip' + (
       p.val === null ? (isCustom ? ' sel' : '') :
-      p.val === t.reminderOffsetMinutes ? ' sel' : ''
+      p.val === task.reminderOffsetMinutes ? ' sel' : ''
     );
-    chip.textContent = p.label;
+    chip.textContent = t(p.labelKey);
     chip.addEventListener('click', () => {
       if (p.val === null) {
-        t.reminderOffsetMinutes = parseInt(custInp.value) || 10;
+        task.reminderOffsetMinutes = parseInt(custInp.value) || 10;
         custRow.style.display = '';
         setTimeout(() => custInp.focus(), 40);
       } else {
-        t.reminderOffsetMinutes = p.val;
+        task.reminderOffsetMinutes = p.val;
         custRow.style.display = 'none';
       }
       renderReminderSection();
@@ -1578,38 +1719,37 @@ function renderReminderSection() {
   });
 
   custRow.style.display = isCustom ? '' : 'none';
-  if (isCustom) custInp.value = t.reminderOffsetMinutes;
+  if (isCustom) custInp.value = task.reminderOffsetMinutes;
 
   custInp.oninput = () => {
     const v = parseInt(custInp.value);
-    if (!isNaN(v) && v >= 0) t.reminderOffsetMinutes = v;
+    if (!isNaN(v) && v >= 0) task.reminderOffsetMinutes = v;
   };
 
-  block.classList.toggle('dim', t.notify === false);
+  block.classList.toggle('dim', task.notify === false);
 }
 
 const REPEAT_TYPES = [
-  { label: 'None',    val: 'none'   },
-  { label: 'Weekly',  val: 'weekly' },
+  { labelKey: 'repeat_none',   val: 'none'   },
+  { labelKey: 'repeat_weekly', val: 'weekly' },
 ];
-const DOW_LABELS = ['Su','Mo','Tu','We','Th','Fr','Sa'];
 
 function renderRepeatSection() {
-  const t       = shareTask;
+  const task    = shareTask;
   const typeEl  = document.getElementById('repeatTypeOpts');
   const dowRow  = document.getElementById('repeatDowRow');
-  const rec     = t.recurrence || { type: 'none' };
+  const rec     = task.recurrence || { type: 'none' };
 
   typeEl.innerHTML = '';
   REPEAT_TYPES.forEach(r => {
     const chip = document.createElement('div');
     chip.className = 'repeat-chip' + (rec.type === r.val ? ' sel' : '');
-    chip.textContent = r.label;
+    chip.textContent = t(r.labelKey);
     chip.addEventListener('click', () => {
-      t.recurrence = { type: r.val };
+      task.recurrence = { type: r.val };
       if (r.val === 'weekly') {
         const dt = new Date(activeDate + 'T00:00:00');
-        t.recurrence.dayOfWeek = dt.getDay();
+        task.recurrence.dayOfWeek = dt.getDay();
       }
       renderRepeatSection();
     });
@@ -1619,12 +1759,13 @@ function renderRepeatSection() {
   if (rec.type === 'weekly') {
     dowRow.style.display = '';
     dowRow.innerHTML = '';
-    DOW_LABELS.forEach((lbl, i) => {
+    const dowLabels = (I18N[AppState.lang] || I18N.en).days_short;
+    dowLabels.forEach((lbl, i) => {
       const chip = document.createElement('div');
       chip.className = 'repeat-dow-chip' + (rec.dayOfWeek === i ? ' sel' : '');
       chip.textContent = lbl;
       chip.addEventListener('click', () => {
-        t.recurrence.dayOfWeek = i;
+        task.recurrence.dayOfWeek = i;
         renderRepeatSection();
       });
       dowRow.appendChild(chip);
@@ -1635,40 +1776,40 @@ function renderRepeatSection() {
 }
 
 function renderShareRows() {
-  const t = shareTask;
-  const notifyOff = t.notify === false;
+  const task = shareTask;
+  const notifyOff = task.notify === false;
 
   ['Vis', 'Not'].forEach(which => {
     const cont = document.getElementById(which === 'Vis' ? 'shareVisRows' : 'shareNotRows');
     cont.innerHTML = '';
     FAMILY.forEach(f => {
-      const inVis = t.visibleTo.includes(f.id);
-      const inNot = t.notifyTo.includes(f.id);
+      const inVis = task.visibleTo.includes(f.id);
+      const inNot = task.notifyTo.includes(f.id);
       const row   = document.createElement('div');
       row.className  = 'share-member';
       row.dataset.id = f.id;
 
       if (which === 'Vis') {
-        row.innerHTML = `<span class="share-em">${f.emoji}</span><span class="share-lbl">${f.label}</span><span class="share-cb${inVis?' on':''}"></span>`;
+        row.innerHTML = `<span class="share-em">${f.emoji}</span><span class="share-lbl">${t('family_' + f.id)}</span><span class="share-cb${inVis?' on':''}"></span>`;
         row.addEventListener('click', () => {
-          if (t.visibleTo.includes(f.id)) {
-            t.visibleTo = t.visibleTo.filter(id => id !== f.id);
-            t.notifyTo  = t.notifyTo.filter(id => id !== f.id);
+          if (task.visibleTo.includes(f.id)) {
+            task.visibleTo = task.visibleTo.filter(id => id !== f.id);
+            task.notifyTo  = task.notifyTo.filter(id => id !== f.id);
           } else {
-            t.visibleTo.push(f.id);
+            task.visibleTo.push(f.id);
           }
           renderShareRows();
         });
       } else {
         const disabled = !inVis || notifyOff;
-        row.innerHTML = `<span class="share-em">${f.emoji}</span><span class="share-lbl">${f.label}</span><span class="share-ntog${!inNot?' off':''}${disabled?' dim':''}">${inNot?'🔔':'🔕'}</span>`;
+        row.innerHTML = `<span class="share-em">${f.emoji}</span><span class="share-lbl">${t('family_' + f.id)}</span><span class="share-ntog${!inNot?' off':''}${disabled?' dim':''}">${inNot?'🔔':'🔕'}</span>`;
         if (!disabled) {
           row.querySelector('.share-ntog').addEventListener('click', e => {
             e.stopPropagation();
-            if (t.notifyTo.includes(f.id)) {
-              t.notifyTo = t.notifyTo.filter(id => id !== f.id);
+            if (task.notifyTo.includes(f.id)) {
+              task.notifyTo = task.notifyTo.filter(id => id !== f.id);
             } else {
-              t.notifyTo.push(f.id);
+              task.notifyTo.push(f.id);
             }
             renderShareRows();
           });
@@ -1713,7 +1854,7 @@ document.getElementById('shareBg').addEventListener('click', e => {
 
 zone.addEventListener('click', () => {
   if (!SpeechAPI) {
-    ltxt.textContent = 'Voice not supported — use typing ↓';
+    ltxt.textContent = t('voice_not_supported');
     ltxt.className   = 'ltxt';
     return;
   }
@@ -1818,7 +1959,7 @@ function vOrganize() {
   vListening = false;
   wdots.classList.remove('on');
   const spokenText = vTranscript.trim();
-  ltxt.textContent = spokenText ? 'Organizing your day ✨' : 'Organizing your day ✨';
+  ltxt.textContent = t('voice_organizing');
   ltxt.className = 'ltxt organizing';
   dpAdjustMode = false;
   AppState.previewTasks = makeMockTasks();
@@ -1833,7 +1974,7 @@ function vOrganize() {
     ltxt.className = 'ltxt';
     // Reset Day Preview UI state
     document.getElementById('dpSub').style.color = '';
-    document.getElementById('dpSub').textContent = 'Feel free to tweak anything';
+    document.getElementById('dpSub').textContent = t('dp_sub');
     document.getElementById('btnAdjust').style.display = '';
     dpRender(true);
     const sh = document.querySelector('#s-dp .list-shimmer');
@@ -1888,7 +2029,10 @@ const PEOPLE = {
 };
 let dpAdjustMode = false;
 function m2t(m) { return `${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`; }
-function ampm(m) { return m < 12*60 ? 'AM' : 'PM'; }
+function ampm(m) {
+  if (AppState.lang === 'he') return m < 12*60 ? 'לפנה"צ' : 'אחה"צ';
+  return m < 12*60 ? 'AM' : 'PM';
+}
 
 function dpRender(animate) {
   const tasks = AppState.previewTasks;
@@ -1898,59 +2042,59 @@ function dpRender(animate) {
   document.getElementById('adjBanner').classList.toggle('on', dpAdjustMode);
 
   // Update meta pill
-  const people = [...new Set(tasks.map(t => PEOPLE[t.person].emoji + ' ' + t.person))];
+  const people = [...new Set(tasks.map(task => PEOPLE[task.person].emoji + ' ' + personLabel(task.person)))];
   document.querySelector('.dp-meta').innerHTML =
-    `<span class="dp-pill">📋 ${tasks.length} tasks</span><span class="dp-pill">${people.join(' · ')}</span>`;
+    `<span class="dp-pill">📋 ${tasks.length} ${t('dp_tasks_lbl')}</span><span class="dp-pill">${people.join(' · ')}</span>`;
 
-  tasks.forEach((t, i) => {
-    const p = taskPerson(t);
+  tasks.forEach((task, i) => {
+    const p = taskPerson(task);
     const c = document.createElement('div');
     c.className  = 'task-card ' + (animate ? 'entering' : 'settling');
-    c.dataset.id = t.id;
+    c.dataset.id = task.id;
     if (animate)  c.style.animationDelay = `${0.32 + i * 0.13}s`;
     else          c.style.animationDelay = `${i * 0.04}s`;
-    if (!t.visibleTo)   t.visibleTo  = [...ALL_MEMBER_IDS];
-    if (!t.notifyTo)    t.notifyTo   = [PERSON_TO_ID[t.person] || 'mom'];
-    if (t.reminderOffsetMinutes === undefined) t.reminderOffsetMinutes = 10;
-    if (!t.timeSource)  t.timeSource = 'suggested';
-    const tsLabel = { explicit:'From your words', suggested:'Suggested', manual:'Adjusted' };
+    if (!task.visibleTo)   task.visibleTo  = [...ALL_MEMBER_IDS];
+    if (!task.notifyTo)    task.notifyTo   = [PERSON_TO_ID[task.person] || 'mom'];
+    if (task.reminderOffsetMinutes === undefined) task.reminderOffsetMinutes = 10;
+    if (!task.timeSource)  task.timeSource = 'suggested';
+    const tsLabel = { explicit:t('dp_time_explicit'), suggested:t('dp_time_suggested'), manual:t('dp_time_manual') };
     c.innerHTML = `
       <div class="card-inner">
         <div class="card-accent" style="background:${p.color}"></div>
-        <div class="card-time-col"><span class="card-time">${m2t(t.mins)}</span><span class="card-ampm">${ampm(t.mins)}</span><span class="card-ts ${t.timeSource}">${tsLabel[t.timeSource]}</span></div>
+        <div class="card-time-col"><span class="card-time">${m2t(task.mins)}</span><span class="card-ampm">${ampm(task.mins)}</span><span class="card-ts ${task.timeSource}">${tsLabel[task.timeSource]}</span></div>
         <div class="card-vline"></div>
-        <div class="card-body"><div class="card-title">${t.title}</div><div class="card-chip"><span class="chip-dot" style="background:${p.color}"></span>${t.person}</div></div>
+        <div class="card-body"><div class="card-title">${task.title}</div><div class="card-chip"><span class="chip-dot" style="background:${p.color}"></span>${personLabel(task.person)}</div></div>
         <div class="card-av" style="background:${p.bg}">${p.emoji}</div>
-        <div class="card-bell${t.notify===false?' off':''}">${t.notify===false?'🔕':'🔔'}</div>
+        <div class="card-bell${task.notify===false?' off':''}">${task.notify===false?'🔕':'🔔'}</div>
       </div>`;
     const shareFooter = document.createElement('div');
     shareFooter.className = 'card-share';
     shareFooter.style.cssText = 'display:flex!important;padding:10px 14px 12px 18px;align-items:center;gap:8px;cursor:pointer;border-top:2px solid #f0d8c8;background:#fdf3ec;';
-    shareFooter.innerHTML = `<span style="font-size:11px;font-weight:700;color:#a8917f;">Assigned to</span><span class="card-share-name" style="font-size:13px;font-weight:800;color:#5a3e2b;flex:1;margin-left:6px;">${assignedLabel(t)}</span><span style="font-size:15px;color:#b8a090;">›</span>`;
+    shareFooter.innerHTML = `<span style="font-size:11px;font-weight:700;color:#a8917f;">${t('assigned_to')}</span><span class="card-share-name" style="font-size:13px;font-weight:800;color:#5a3e2b;flex:1;margin-left:6px;">${assignedLabel(task)}</span><span style="font-size:15px;color:#b8a090;">›</span>`;
     shareFooter.addEventListener('click', e => {
       e.stopPropagation();
-      openShareDrawer(t, () => {
-        shareFooter.querySelector('.card-share-name').textContent = assignedLabel(t);
+      openShareDrawer(task, () => {
+        shareFooter.querySelector('.card-share-name').textContent = assignedLabel(task);
       });
     });
     c.appendChild(shareFooter);
     c.querySelector('.card-time-col').addEventListener('click', () => {
       if (!dpAdjustMode) return;
-      openTimeStrip(t.id, c);
+      openTimeStrip(task.id, c);
     });
     c.querySelector('.card-bell').addEventListener('click', e => {
       e.stopPropagation();
-      t.notify = t.notify === false ? true : false;
+      task.notify = task.notify === false ? true : false;
       const bell = c.querySelector('.card-bell');
-      bell.textContent = t.notify ? '🔔' : '🔕';
-      bell.classList.toggle('off', !t.notify);
+      bell.textContent = task.notify ? '🔔' : '🔕';
+      bell.classList.toggle('off', !task.notify);
     });
     // Inline title editing — tap to edit, Enter/blur to confirm
     const titleEl = c.querySelector('.card-title');
     titleEl.setAttribute('contenteditable', 'plaintext-only');
     titleEl.addEventListener('input', () => {
       const updated = titleEl.textContent.trim();
-      if (updated) t.title = updated;
+      if (updated) task.title = updated;
     });
     titleEl.addEventListener('keydown', e => {
       if (e.key === 'Enter') { e.preventDefault(); titleEl.blur(); }
@@ -1970,7 +2114,7 @@ function updateCardTime(taskId) {
   card.querySelector('.card-time').textContent = m2t(task.mins);
   card.querySelector('.card-ampm').textContent = ampm(task.mins);
   const badge = card.querySelector('.card-ts');
-  if (badge) { badge.className = 'card-ts manual'; badge.textContent = 'Adjusted'; }
+  if (badge) { badge.className = 'card-ts manual'; badge.textContent = t('dp_time_manual'); }
   const col = card.querySelector('.card-time-col');
   col.classList.remove('accepted'); void col.offsetWidth; col.classList.add('accepted');
 }
@@ -2005,7 +2149,7 @@ function openTimeStrip(taskId, cardEl) {
 
   const manualBtn = document.createElement('div');
   manualBtn.className   = 'ts-manual-btn';
-  manualBtn.innerHTML = '✏️<br>Edit manually';
+  manualBtn.innerHTML = t('dp_edit_manually').replace('\n','<br>');
   manualBtn.addEventListener('click', e => {
     e.stopPropagation();
     openManualTimeModal(task, () => {
@@ -2073,7 +2217,7 @@ function openManualTimeModal(task, onDone) {
   bg.className = 'ts-modal-bg ts-bg-in';
   bg.innerHTML = `
     <div class="ts-modal ts-modal-in">
-      <div class="kp-label">Set time</div>
+      <div class="kp-label">${t('tp_title')}</div>
       <div class="kp-display" id="kpDisp"></div>
       <div class="kp-hint" id="kpHint"></div>
       <div class="kp-grid">
@@ -2090,7 +2234,7 @@ function openManualTimeModal(task, onDone) {
         <button class="kp-btn kp-num" data-d="0">0</button>
         <button class="kp-btn kp-ok"  id="kpOk">✓</button>
       </div>
-      <button class="kp-cancel" id="kpCancel">Cancel</button>
+      <button class="kp-cancel" id="kpCancel">${t('tp_cancel')}</button>
     </div>`;
   phone.appendChild(bg);
 
@@ -2106,11 +2250,11 @@ function openManualTimeModal(task, onDone) {
     const hint = bg.querySelector('#kpHint');
     if (digits.length === 4) {
       const h = parseInt(digits[0]+digits[1]), m = parseInt(digits[2]+digits[3]);
-      if (h > 23 || m > 59) hint.style.color = '#ff4444', hint.textContent = 'Invalid time';
-      else hint.style.color = '#34c759', hint.textContent = h < 12 ? 'Morning ☀️' : h < 17 ? 'Afternoon 🌤' : h < 21 ? 'Evening 🌆' : 'Night 🌙';
+      if (h > 23 || m > 59) hint.style.color = '#ff4444', hint.textContent = t('tp_invalid');
+      else hint.style.color = '#34c759', hint.textContent = h < 12 ? t('period_morning') : h < 17 ? t('period_afternoon') : h < 21 ? t('period_evening') : t('period_night');
     } else {
       hint.style.color = '#c4ae9f';
-      hint.textContent = digits.length === 0 ? 'Enter hour then minutes' : digits.length < 2 ? 'Enter second digit of hour' : digits.length === 2 ? 'Now enter minutes' : 'Enter second digit of minutes';
+      hint.textContent = digits.length === 0 ? t('tp_hint0') : digits.length < 2 ? t('tp_hint1') : digits.length === 2 ? t('tp_hint2') : t('tp_hint3');
     }
   }
 
@@ -2162,7 +2306,7 @@ function resetVoiceScreen() {
   inp.innerHTML = '';
   _typeTracked = '';
   document.getElementById('vTypeBtn').disabled = true;
-  ltxt.textContent = 'Tap to speak';
+  ltxt.textContent = t('voice_tap');
   ltxt.className   = 'ltxt';
   wdots.classList.remove('on');
 }
@@ -2173,14 +2317,14 @@ document.getElementById('dpBack').addEventListener('click', () => {
 });
 
 document.getElementById('btnOk').addEventListener('click', function() {
-  this.textContent = '✓ Your day is set!';
+  this.textContent = t('dp_ok_done');
   this.classList.add('success');
   document.querySelectorAll('#dpList .task-card').forEach((c,i) => {
     setTimeout(() => { c.classList.remove('success-anim'); void c.offsetWidth; c.classList.add('success-anim'); }, i*72);
   });
   const sub = document.getElementById('dpSub');
   sub.style.color = '#e07c3a';
-  sub.textContent = 'Perfect ✨';
+  sub.textContent = t('dp_perfect');
   setTimeout(() => {
     // Commit preview → main tasks, preserving other dates
     const newTasks  = AppState.previewTasks.map(t => ({ ...t, completed: false, date: activeDate }));
@@ -2211,7 +2355,7 @@ document.getElementById('btnAdjust').addEventListener('click', () => {
   });
   const sub = document.getElementById('dpSub');
   sub.style.color = '#e07c3a';
-  sub.textContent = 'Tap a time to edit ✏️';
+  sub.textContent = t('dp_tap_time');
   document.getElementById('btnAdjust').style.display = 'none';
 });
 
@@ -2253,13 +2397,12 @@ function updateProgress() {
   fill.classList.remove('pop'); void fill.offsetWidth; fill.classList.add('pop');
 
   let label;
-  if (!total)          label = 'No tasks yet';
-  else if (done === total) label = 'All done! 🏆';
+  if (!total)          label = t('empty_title');
+  else if (done === total) label = t('empty_all_done');
   else {
     const emojis = ['✨','🎉','💪','🔥'];
-    label = done === 0
-      ? `0 of ${total} done`
-      : `${done} of ${total} done ${emojis[(done-1) % emojis.length]}`;
+    const e = done === 0 ? '' : emojis[(done-1) % emojis.length];
+    label = tFmt('empty_of', {d: done, t: total, e}).trim();
   }
   document.querySelector('.t-pcnt').textContent = label;
 }
@@ -2289,8 +2432,8 @@ function renderToday() {
   });
 
   if (!tasks.length) {
-    container.innerHTML = `<div class="today-empty"><div class="today-empty-icon">📋</div><div class="today-empty-msg">No tasks yet</div><div class="today-empty-sub">Tap + to plan your day ✨</div></div>`;
-    document.querySelector('.t-pcnt').textContent = 'No tasks yet';
+    container.innerHTML = `<div class="today-empty"><div class="today-empty-icon">📋</div><div class="today-empty-msg">${t('empty_title')}</div><div class="today-empty-sub">${t('empty_sub')}</div></div>`;
+    document.querySelector('.t-pcnt').textContent = t('empty_title');
     document.getElementById('tPfill').style.width = '0%';
     // Hide hero card when no tasks
     document.querySelector('#s-today .t-hero-card').style.display = 'none';
@@ -2311,11 +2454,11 @@ function renderToday() {
     const now = new Date();
     const nowMins = now.getHours()*60 + now.getMinutes();
     const diff = nextTask.mins - nowMins;
-    const pill = diff <= 0 ? 'now' : diff < 60 ? `in ${diff} min` : `in ${Math.round(diff/60)}h`;
+    const pill = diff <= 0 ? t('time_now') : diff < 60 ? tFmt('time_in_min',{n:diff}) : tFmt('time_in_hr',{n:Math.round(diff/60)});
     document.querySelector('.t-htime').textContent  = m2t(nextTask.mins);
     document.querySelector('.t-htask').textContent  = nextTask.title;
     document.querySelector('.t-hav').textContent    = p.emoji;
-    document.querySelector('.t-hname').textContent  = nextTask.person;
+    document.querySelector('.t-hname').textContent  = personLabel(nextTask.person);
     document.querySelector('.t-hpill').textContent  = pill;
   } else {
     // All done — hide hero
@@ -2340,12 +2483,12 @@ function renderToday() {
         <div class="t-ck ${t.completed?'ck-done':isNx?'ck-nxt':'ck-open'}">${t.completed?'<span style="color:white;font-size:14px;font-weight:900;">✓</span>':''}</div>
         <div class="t-tcol"><div class="t-ttime${isNx&&!t.completed?' ora':''}">${m2t(t.mins)}</div><div class="t-tampm">${ampm(t.mins)}</div></div>
         <div class="t-tvline"></div>
-        <div class="t-tbody"><div class="t-ttitle">${t.title}</div><div class="t-tchip"><span class="t-dot" style="background:${p.color}"></span>${t.person}</div></div>
+        <div class="t-tbody"><div class="t-ttitle">${t.title}</div><div class="t-tchip"><span class="t-dot" style="background:${p.color}"></span>${personLabel(t.person)}</div></div>
         <div class="t-miniav" style="background:${p.bg}">${p.emoji}</div>
         <div class="t-bell${t.notify===false?' off':''}">${t.notify===false?'🔕':'🔔'}</div>
       </div>
       <div class="t-share">
-        <span class="t-share-lbl">Assigned to</span>
+        <span class="t-share-lbl">${t('assigned_to')}</span>
         <span class="t-share-name">${assignedLabel(t)}</span>
         <span class="t-share-arrow">›</span>
       </div>`;
@@ -2377,11 +2520,11 @@ function renderToday() {
 
 document.getElementById('tNavAdd').addEventListener('click', () => {
   // Reset voice + btnOk before showing voice screen
-  ltxt.textContent = 'Tap to speak'; ltxt.className = 'ltxt';
+  ltxt.textContent = t('voice_tap'); ltxt.className = 'ltxt';
   wdots.classList.remove('on'); zone.classList.remove('rec');
   vListening = false; clearTimeout(vTimer);
   const btnOk = document.getElementById('btnOk');
-  btnOk.textContent = 'Looks good'; btnOk.classList.remove('success');
+  btnOk.textContent = t('dp_ok'); btnOk.classList.remove('success');
   resetVoiceScreen();
   goto('s-voice','txLeaveFade','txEnterFade');
 });
@@ -2394,7 +2537,7 @@ function showUndoToast(taskId, title) {
   clearUndoToast(false);
   undoTaskId = taskId;
   const toast = document.getElementById('undoToast');
-  document.getElementById('undoMsg').textContent = `"${title}" marked done`;
+  document.getElementById('undoMsg').textContent = tFmt('marked_done', {t: title});
   toast.classList.remove('hide');
   toast.classList.add('show');
   undoTimer = setTimeout(() => clearUndoToast(true), 3500);
@@ -2479,8 +2622,8 @@ document.getElementById('tTasks').addEventListener('click', e => {
         document.querySelector('.t-htime').textContent = m2t(nextTask.mins);
         document.querySelector('.t-htask').textContent = nextTask.title;
         document.querySelector('.t-hav').textContent   = p.emoji;
-        document.querySelector('.t-hname').textContent = nextTask.person;
-        document.querySelector('.t-hpill').textContent = diff<=0?'now':diff<60?`in ${diff} min`:`in ${Math.round(diff/60)}h`;
+        document.querySelector('.t-hname').textContent = personLabel(nextTask.person);
+        document.querySelector('.t-hpill').textContent = diff<=0?t('time_now'):diff<60?tFmt('time_in_min',{n:diff}):tFmt('time_in_hr',{n:Math.round(diff/60)});
       }
     } else {
       // All done — hide hero + celebrate
@@ -2559,7 +2702,7 @@ document.getElementById('tTasks').addEventListener('click', e => {
       document.querySelector('.t-htime').textContent  = m2t(nextTask.mins);
       document.querySelector('.t-htask').textContent  = nextTask.title;
       document.querySelector('.t-hav').textContent    = p.emoji;
-      document.querySelector('.t-hname').textContent  = nextTask.person;
+      document.querySelector('.t-hname').textContent  = personLabel(nextTask.person);
       document.querySelector('.t-hpill').textContent  = diff<=0?'now':diff<60?`in ${diff} min`:`in ${Math.round(diff/60)}h`;
     } else {
       ckEl.className = 't-ck ck-open';
@@ -2571,8 +2714,7 @@ document.getElementById('tTasks').addEventListener('click', e => {
 
 // ─── Calendar drawer ──────────────────────────────────────────────
 let calViewYear, calViewMonth;
-const CAL_MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-const CAL_DAYS   = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+// CAL_MONTHS and CAL_DAYS are now computed from I18N at render time (see renderCalGrid)
 
 function openCalDrawer() {
   const sel    = new Date(activeDate + 'T00:00:00');
@@ -2589,7 +2731,8 @@ function closeCalDrawer() {
 function renderCalGrid() {
   const grid = document.getElementById('calGrid');
   grid.innerHTML = '';
-  document.getElementById('calMonthLbl').textContent = `${CAL_MONTHS[calViewMonth]} ${calViewYear}`;
+  const lng = (I18N[AppState.lang] || I18N.en);
+  document.getElementById('calMonthLbl').textContent = `${lng.months[calViewMonth]} ${calViewYear}`;
 
   const taskDates = new Set(AppState.tasks.map(t => t.date).filter(Boolean));
   // Add dates covered by weekly recurring tasks for the displayed month
@@ -2612,7 +2755,7 @@ function renderCalGrid() {
   const daysInMo  = new Date(calViewYear, calViewMonth + 1, 0).getDate();
   const daysInPrev= new Date(calViewYear, calViewMonth, 0).getDate();
 
-  CAL_DAYS.forEach(d => {
+  lng.days_short.forEach(d => {
     const h = document.createElement('div');
     h.className = 'cal-dow'; h.textContent = d;
     grid.appendChild(h);
@@ -2656,17 +2799,16 @@ function skyEmoji() {
 function updateDateBadge() {
   document.getElementById('tDateBadge').textContent = dateLabelFor(activeDate);
   const dt   = new Date(activeDate + 'T00:00:00');
-  const days  = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-  const mons  = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const lng = (I18N[AppState.lang] || I18N.en);
   document.getElementById('tGreeting').textContent =
-    `${days[dt.getDay()]}, ${mons[dt.getMonth()]} ${dt.getDate()} ${skyEmoji()}`;
+    `${lng.days[dt.getDay()]}, ${lng.months_short[dt.getMonth()]} ${dt.getDate()} ${skyEmoji()}`;
 }
 
 function updateTodayTitle() {
   const h = new Date().getHours();
-  const greet = h < 5 ? 'Good night' : h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : h < 21 ? 'Good evening' : 'Good night';
-  const f = FAMILY.find(x => x.id === currentUser) || { label: 'Family', emoji: '🏠' };
-  document.getElementById('tTitle').innerHTML = `${greet},<br>${f.label} ${f.emoji}`;
+  const greet = h < 5 ? t('greet_night') : h < 12 ? t('greet_morning') : h < 17 ? t('greet_afternoon') : h < 21 ? t('greet_evening') : t('greet_night');
+  const f = FAMILY.find(x => x.id === currentUser) || { id:'', label: 'Family', emoji: '🏠' };
+  document.getElementById('tTitle').innerHTML = `${greet},<br>${t('family_' + f.id) || f.label} ${f.emoji}`;
 }
 
 document.getElementById('calBtn').addEventListener('click', openCalDrawer);
@@ -2725,7 +2867,7 @@ function checkOverdueReminders() {
     if (!task.sentInitialReminder && nowMins >= fireMins && nowMins < task.mins + 30) {
       task.sentInitialReminder = true;
       task.lastReminderSentAt  = now.toISOString();
-      const label = offset === 0 ? 'starting now' : `in ${offset} min`;
+      const label = offset === 0 ? t('notif_starting') : tFmt('time_in_min',{n:offset});
       showNotifToast(`${task.title} — ${label}`);
       changed = true;
     }
@@ -2738,7 +2880,7 @@ function checkOverdueReminders() {
       if (elapsedMins >= stageOffset && !task.sentReminderStages.includes(idx)) {
         task.sentReminderStages.push(idx);
         task.lastReminderSentAt = now.toISOString();
-        showNotifToast(`${task.title} — ${stageOffset} min overdue`);
+        showNotifToast(`${task.title} — ${tFmt('notif_overdue',{n:stageOffset})}`);
         changed = true;
       }
     });
