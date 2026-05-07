@@ -1109,12 +1109,12 @@ let _typeTracked = '';
 let _isComposing = false;
 const vTypeInpEl = document.getElementById('vTypeInp');
 
-// Walk the DOM to read text — skips phantom <br> markers, counts real <br> as \n
+// Walk the DOM to read text — counts <br> as \n
 function _getInpText(el) {
   let text = '';
   el.childNodes.forEach(node => {
     if (node.nodeType === Node.TEXT_NODE) { text += node.textContent; }
-    else if (node.nodeName === 'BR')     { if (!node.dataset.phantom) text += '\n'; }
+    else if (node.nodeName === 'BR')     { text += '\n'; }
     else if (node.nodeName === 'SPAN')   { text += node.textContent; }
   });
   return text;
@@ -1164,12 +1164,6 @@ vTypeInpEl.addEventListener('input', function() {
   this.innerHTML = '';
   if (ci > 0) _appendNodes(this, current.slice(0, ci), false);
   _appendNodes(this, current.slice(ci), true);
-  // When text ends with \n the cursor needs a phantom <br> to sit on a visible new line
-  if (current.endsWith('\n')) {
-    const ph = document.createElement('br');
-    ph.dataset.phantom = 'true';
-    this.appendChild(ph);
-  }
   _typeTracked = current;
 
   // Place caret at logical end (works for both RTL and LTR)
