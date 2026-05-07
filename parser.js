@@ -203,6 +203,13 @@
   function freeSpeechToIntentSegments(text, opts) {
     const people = (opts && opts.people) || DEFAULT_PEOPLE;
     const now    = (opts && opts.now)    || new Date();
+    const lang   = (opts && opts.lang)   || 'he';
+
+    // Non-Hebrew: skip smart splitting — one segment, basic parsing only.
+    // Phase 2 will add a real EnglishParser with LANG_CONFIG.en.
+    if (lang !== 'he') {
+      return [{ text: text.trim(), splitReason: 'lang_fallback', preambleDate: null }];
+    }
 
     // Hard splits first (semicolons, "ובנוסף") — user was explicit there
     const hardParts = text.split(/[;؛]\s*|\s+ובנוסף\s+/).map(s => s.trim()).filter(Boolean);
@@ -276,6 +283,16 @@
   // ─── Extract time ─────────────────────────────────────────────────────────
   function extractTime(text, now) {
     let m;
+
+    // HH:MM am/pm (English) — must precede bare HH:MM to take priority
+    m = text.match(/\b([01]?\d|2[0-3]):([0-5]\d)\s*(am|pm)\b/i);
+    if (m) {
+      let h = +m[1], min = +m[2];
+      const pm = m[3].toLowerCase() === 'pm';
+      if (pm && h < 12) h += 12;
+      if (!pm && h === 12) h = 0;
+      return { mins: h * 60 + min, match: m[0], fromText: true };
+    }
 
     m = text.match(/\b([01]?\d|2[0-3]):([0-5]\d)\b/);
     if (m) return { mins: +m[1] * 60 + +m[2], match: m[0], fromText: true };

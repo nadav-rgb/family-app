@@ -2052,7 +2052,7 @@ function vOrganize() {
   dpAdjustMode = false;
 
   // Real parsing — replace mock tasks with what the user actually said
-  const parsed = spokenText ? HebrewParser.parse(spokenText, { people: buildParserPeople() }) : [];
+  const parsed = spokenText ? HebrewParser.parse(spokenText, { people: buildParserPeople(), lang: AppState.lang }) : [];
   if (parsed.length > 0) {
     AppState.previewTasks = parsed.map(parsedToTask);
   } else {
