@@ -958,11 +958,10 @@ const wdots = document.getElementById('wdots');
 // ─── Speech Recognition ───────────────────────────────────────────
 const SpeechAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
 let recognition = null;
-let vTranscript   = '';
-let vCarryOver    = '';  // confirmed text from previous recognition sessions
-let vInterimBuf   = '';  // locally committed interim words within current session
-let vLastInterim  = '';  // the last interim text we received from the API
-let _freshSession = false; // true right after onend restart — used to skip cross-session repeats
+let vTranscript    = '';
+let vCarryOver     = '';  // confirmed text from previous recognition sessions
+let vSessionFinal  = '';  // isFinal-confirmed words within the current recognition session
+let _freshSession  = false; // true right after onend restart — used to skip cross-session repeats
 
 const sbBubble = document.getElementById('speechBubble');
 const sbText   = document.getElementById('sbText');
@@ -1033,73 +1032,48 @@ if (SpeechAPI) {
   recognition.lang           = 'he-IL';
 
   recognition.onresult = (e) => {
+    // ── Collect new finals + current interim from this event ─────────
+    // Only iterate from e.resultIndex to avoid re-processing confirmed segments.
+    let newFinal      = '';   // isFinal text confirmed in THIS event
+    let latestInterim = '';   // latest non-final (in-progress) text
 
-    // ── Desktop Chrome multi-segment path ───────────────────────────
-    // Desktop Chrome with continuous=true accumulates results: when the user
-    // pauses, the current segment is marked isFinal and a new one starts.
-    // e.results grows to [final0, final1, …, currentInterim].
-    // Joining ALL of them gives the complete session transcript — no manual
-    // accumulation needed. This also naturally avoids within-session duplication.
-    if (e.results.length > 1) {
-      _freshSession = false;
-      const sessionText = Array.from(e.results)
-        .map(r => r[0].transcript.trim()).filter(Boolean).join(' ');
-      vLastInterim = e.results[e.results.length - 1][0].transcript;
-      vTranscript  = [vCarryOver, sessionText].filter(Boolean).join(' ');
-      showBubble(vTranscript);
-      return;
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      const t = e.results[i][0].transcript.trim();
+      if (e.results[i].isFinal) newFinal = newFinal ? newFinal + ' ' + t : t;
+      else latestInterim = t;
     }
 
-    // ── Single-result path (Android Chrome + early desktop) ─────────
-    const interim = e.results[0][0].transcript;
-
-    // Cross-session dedup after onend restart:
-    // Android sends short prefix repeats; Desktop sends full phrase including carryOver.
+    // ── Cross-session dedup after onend restart ───────────────────────
+    // Android replays short prefix words; Desktop replays the full previous
+    // transcript as a new interim. Skip both until genuinely new content arrives.
     if (_freshSession && vCarryOver) {
-      const ti = interim.trim();
-      if (vCarryOver.startsWith(ti)) {
-        // Android Chrome: replaying a prefix of carryOver — skip.
-        vLastInterim = interim;
+      const candidate = [vSessionFinal, newFinal || latestInterim].filter(Boolean).join(' ').trim();
+      if (!candidate) { showBubble(vTranscript); return; }
+
+      if (vCarryOver.startsWith(candidate)) {
+        // Android-style: still replaying a prefix of carryOver — skip.
         showBubble(vTranscript);
-        return;                       // keep _freshSession=true for next event
+        return; // keep _freshSession=true
       }
       _freshSession = false;
-      if (ti.startsWith(vCarryOver)) {
-        // Desktop Chrome single-segment restart: full text already includes carryOver.
-        vCarryOver = ''; vInterimBuf = ''; vLastInterim = interim;
-        vTranscript = ti;
+      if (candidate.startsWith(vCarryOver)) {
+        // Desktop-style: new session text already embeds the full carryOver.
+        // Clear carryOver so it won't be prepended again, start session fresh.
+        vCarryOver    = '';
+        vSessionFinal = newFinal || '';
+        vTranscript   = [vSessionFinal, latestInterim].filter(Boolean).join(' ');
         showBubble(vTranscript);
         return;
       }
+      // Diverged from carryOver: fall through to normal accumulation.
     }
     _freshSession = false;
 
-    if (interim !== vLastInterim) {
-      const grew     = interim.startsWith(vLastInterim);
-      const shrank   = vLastInterim.startsWith(interim);
-      const bufMatch = vInterimBuf && interim.startsWith(vInterimBuf);
+    // ── Normal accumulation ───────────────────────────────────────────
+    // isFinal results are reliable — accumulate them; show current interim alongside.
+    if (newFinal) vSessionFinal = vSessionFinal ? vSessionFinal + ' ' + newFinal : newFinal;
 
-      if (vLastInterim && !grew && !shrank && !bufMatch) {
-        // Commit previous interim — but avoid double-counting if the new
-        // interim is already the tail of the previous (API dropped its beginning).
-        const trimInterim = interim.trim();
-        if (vLastInterim.endsWith(' ' + trimInterim)) {
-          const cut = vLastInterim.lastIndexOf(' ' + trimInterim);
-          if (cut > 0) vInterimBuf = (vInterimBuf + ' ' + vLastInterim.slice(0, cut)).trim();
-        } else {
-          vInterimBuf = (vInterimBuf + ' ' + vLastInterim).trim();
-        }
-      }
-      vLastInterim = interim;
-    }
-
-    // If the latest text already contains our buffer (e.g. full sentence arrived)
-    // show only the latest text to avoid duplication
-    if (vInterimBuf && interim.startsWith(vInterimBuf)) {
-      vTranscript = [vCarryOver, interim].filter(Boolean).join(' ');
-    } else {
-      vTranscript = [vCarryOver, vInterimBuf, interim].filter(Boolean).join(' ');
-    }
+    vTranscript = [vCarryOver, vSessionFinal, latestInterim].filter(Boolean).join(' ');
     showBubble(vTranscript);
   };
 
@@ -1119,9 +1093,8 @@ if (SpeechAPI) {
     if (!vListening) return;
     // Session ended — carry full transcript, reset per-session state
     vCarryOver    = vTranscript;
-    vInterimBuf   = '';
-    vLastInterim  = '';
-    _freshSession = !!vCarryOver; // flag: skip cross-session repeats in next onresult
+    vSessionFinal = '';
+    _freshSession = !!vCarryOver; // skip cross-session repeats in next onresult
     clearTimeout(_restartTimer);
     _restartTimer = setTimeout(() => {
       if (vListening) { try { recognition.start(); } catch(_) {} }
@@ -1552,11 +1525,11 @@ zone.addEventListener('click', () => {
 });
 
 function vStart() {
-  vTranscript  = '';
-  vCarryOver   = '';
-  vInterimBuf  = '';
-  vLastInterim = '';
-  vListening   = true;
+  vTranscript   = '';
+  vCarryOver    = '';
+  vSessionFinal = '';
+  _freshSession = false;
+  vListening    = true;
   zone.classList.add('rec');
   wdots.classList.add('on');
   showBubble('');
