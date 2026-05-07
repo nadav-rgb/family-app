@@ -115,9 +115,9 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 }
 .sb-text:empty::after{content:'…';color:#cbb5a8;font-style:italic;font-weight:400;}
 
-/* New-word gentle fade — opacity only, zero movement */
-@keyframes sbWordIn{from{opacity:.35;}to{opacity:1;}}
-.sb-text.word-in{animation:sbWordIn .28s ease both;}
+/* Per-character fade: bright warm → real text color */
+@keyframes charFadeIn{from{color:#ead8cc;}to{color:inherit;}}
+.char-new{animation:charFadeIn .38s ease-out both;display:inline;}
 
 /* Pulsing dots — softer, smaller, slower */
 .sb-dots{display:flex;gap:4px;align-items:center;margin-top:10px;height:10px;}
@@ -133,8 +133,8 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 @keyframes typeAreaOut{from{opacity:1;transform:translateY(0);} to{opacity:0;transform:translateY(10px);}}
 .v-type-area.open{display:flex;animation:typeAreaIn .32s cubic-bezier(.34,1.2,.64,1) both;}
 .v-type-area.closing{display:flex;animation:typeAreaOut .42s cubic-bezier(.22,1,.36,1) both;}
-.v-type-inp{width:100%;border:none;outline:none;font-family:'Nunito',sans-serif;font-size:15px;font-weight:600;color:#1c110a;background:transparent;resize:none;line-height:1.65;min-height:88px;box-sizing:border-box;overflow:hidden;}
-.v-type-inp::placeholder{color:#c4ae9f;font-weight:600;}
+.v-type-inp{width:100%;border:none;outline:none;font-family:'Nunito',sans-serif;font-size:15px;font-weight:600;color:#1c110a;background:transparent;line-height:1.65;min-height:88px;box-sizing:border-box;overflow:hidden;white-space:pre-wrap;word-break:break-word;cursor:text;}
+.v-type-inp:empty:before{content:"e.g. Laundry, pick up Yonatan at 3,\A Dudi class at 4, buy groceries...";white-space:pre;color:#c4ae9f;font-weight:600;pointer-events:none;display:block;}
 .v-type-helper{font-size:11px;font-weight:700;color:#c4ae9f;text-align:center;padding-bottom:2px;}
 .v-voice-back{font-size:13px;font-weight:800;color:#9e8878;text-align:center;cursor:pointer;padding-top:4px;letter-spacing:.01em;border-bottom:1.5px solid rgba(158,136,120,.35);display:inline-block;transition:color .15s;}
 .v-voice-back:active{color:#6b4f3a;}
@@ -644,7 +644,7 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
   <div class="v-type-row" id="vTypeRow">
     <div class="v-type-toggle" id="vTypeToggle">Or type it instead</div>
     <div class="v-type-area" id="vTypeArea">
-      <textarea class="v-type-inp" id="vTypeInp" rows="4" placeholder="e.g. Laundry, pick up Yonatan at 3,&#10;Dudi class at 4, buy groceries..."></textarea>
+      <div class="v-type-inp" id="vTypeInp" contenteditable="true" role="textbox" aria-multiline="true" spellcheck="false"></div>
       <div class="v-type-helper">Write freely — we'll organize it for you</div>
       <button class="v-type-btn" id="vTypeBtn" disabled>Organize my day ✨</button>
       <div class="v-voice-back" id="vVoiceBack">🎙 Use voice instead</div>
@@ -958,30 +958,37 @@ let vCarryOver   = '';  // text confirmed at end of previous session
 const sbBubble = document.getElementById('speechBubble');
 const sbText   = document.getElementById('sbText');
 
-function showBubble(text) {
-  const prev    = sbText.textContent;
-  const prevW   = prev.trim()       ? prev.trim().split(/\s+/)       : [];
-  const newW    = (text||'').trim() ? (text||'').trim().split(/\s+/) : [];
-  const newWord = text && newW.length > prevW.length;
+// Tracks what is currently rendered inside sbText so we only animate truly new chars
+let _sbRendered = '';
 
-  if (newWord) {
-    // Only animate the newly added word(s) — leave existing text untouched
-    const oldPart = newW.slice(0, prevW.length).join(' ');
-    const newPart = newW.slice(prevW.length).join(' ');
-    sbText.innerHTML = '';
-    if (oldPart) {
-      const s = document.createElement('span');
-      s.textContent = oldPart + ' ';
-      sbText.appendChild(s);
-    }
+function _appendAnimChars(parent, str) {
+  for (let i = 0; i < str.length; i++) {
     const s = document.createElement('span');
-    s.className   = 'word-in';
-    s.textContent = newPart;
-    sbText.appendChild(s);
-  } else {
-    sbText.textContent = text || '';
+    s.className = 'char-new';
+    s.textContent = str[i];
+    s.style.animationDelay = (i * 0.028) + 's';
+    parent.appendChild(s);
   }
+}
 
+function showBubble(text) {
+  const incoming = text || '';
+  if (!incoming) {
+    sbText.innerHTML = '';
+    _sbRendered = '';
+  } else if (incoming.startsWith(_sbRendered)) {
+    // Common path: text only grew — append new chars, leave existing spans alone
+    _appendAnimChars(sbText, incoming.slice(_sbRendered.length));
+    _sbRendered = incoming;
+  } else {
+    // Text changed at an earlier point — find common prefix and rebuild
+    let ci = 0;
+    while (ci < _sbRendered.length && ci < incoming.length && _sbRendered[ci] === incoming[ci]) ci++;
+    sbText.innerHTML = '';
+    if (ci > 0) { const s = document.createElement('span'); s.textContent = incoming.slice(0, ci); sbText.appendChild(s); }
+    _appendAnimChars(sbText, incoming.slice(ci));
+    _sbRendered = incoming;
+  }
   sbBubble.classList.add('on', 'bubble-live');
   sbBubble.classList.remove('fading');
   ltxt.textContent = '✋ Tap to stop';
@@ -990,14 +997,15 @@ function showBubble(text) {
 }
 
 function hideBubble(immediate) {
+  _sbRendered = '';
   ltxt.textContent = 'Tap to speak';
   ltxt.className   = 'ltxt';
   ltxt.style.opacity = '';
   wdots.classList.remove('on');
   sbBubble.classList.remove('bubble-live');
-  if (immediate) { sbBubble.classList.remove('on'); return; }
+  if (immediate) { sbBubble.classList.remove('on'); sbText.innerHTML = ''; return; }
   sbBubble.classList.add('fading');
-  setTimeout(() => sbBubble.classList.remove('on','fading'), 320);
+  setTimeout(() => { sbBubble.classList.remove('on','fading'); sbText.innerHTML = ''; }, 320);
 }
 
 if (SpeechAPI) {
@@ -1047,16 +1055,76 @@ document.getElementById('vTypeToggle').addEventListener('click', () => {
   setTimeout(() => document.getElementById('vTypeInp').focus(), 80);
 });
 
-document.getElementById('vTypeInp').addEventListener('input', function() {
-  // Auto-grow
-  this.style.height = 'auto';
-  this.style.height = this.scrollHeight + 'px';
-  // Button enable/disable
-  document.getElementById('vTypeBtn').disabled = this.value.trim() === '';
+// ── Contenteditable helpers ───────────────────────────────────────
+function _getCaretPos(el) {
+  const sel = window.getSelection();
+  if (!sel || !sel.rangeCount) return 0;
+  const r = sel.getRangeAt(0).cloneRange();
+  r.selectNodeContents(el);
+  r.setEnd(sel.anchorNode, sel.anchorOffset);
+  return r.toString().length;
+}
+function _setCaretPos(el, pos) {
+  const walk = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+  let node, acc = 0;
+  while ((node = walk.nextNode())) {
+    if (acc + node.length >= pos) {
+      const r = document.createRange();
+      r.setStart(node, pos - acc);
+      r.collapse(true);
+      const sel = window.getSelection();
+      sel.removeAllRanges(); sel.addRange(r); return;
+    }
+    acc += node.length;
+  }
+  // Fallback: move to end
+  const r = document.createRange();
+  r.selectNodeContents(el); r.collapse(false);
+  window.getSelection().removeAllRanges();
+  window.getSelection().addRange(r);
+}
+
+let _typeTracked = '';
+const vTypeInpEl = document.getElementById('vTypeInp');
+
+vTypeInpEl.addEventListener('paste', function(e) {
+  e.preventDefault();
+  const txt = (e.clipboardData || window.clipboardData).getData('text/plain');
+  document.execCommand('insertText', false, txt);
+});
+
+vTypeInpEl.addEventListener('input', function() {
+  const current = this.textContent;
+  document.getElementById('vTypeBtn').disabled = !current.trim();
+  if (current === _typeTracked) return;
+
+  const caretPos = _getCaretPos(this);
+
+  // Find common prefix between last tracked and current text
+  let ci = 0;
+  while (ci < _typeTracked.length && ci < current.length && _typeTracked[ci] === current[ci]) ci++;
+
+  // Rebuild: keep old chars as plain span, animate new chars
+  this.innerHTML = '';
+  if (ci > 0) {
+    const s = document.createElement('span');
+    s.textContent = current.slice(0, ci);
+    this.appendChild(s);
+  }
+  const newPart = current.slice(ci);
+  for (let i = 0; i < newPart.length; i++) {
+    const s = document.createElement('span');
+    s.className = 'char-new';
+    s.textContent = newPart[i];
+    s.style.animationDelay = (i * 0.028) + 's';
+    this.appendChild(s);
+  }
+  _typeTracked = current;
+  _setCaretPos(this, caretPos);
 });
 
 function vTypeSubmit() {
-  const val = document.getElementById('vTypeInp').value.trim();
+  const val = document.getElementById('vTypeInp').textContent.trim();
   if (!val) return;
   vTranscript = val;
   vOrganize();
@@ -1089,8 +1157,8 @@ document.getElementById('vVoiceBack').addEventListener('click', () => {
   setTimeout(() => {
     area.classList.remove('open','closing');
     row.style.cssText = '';
-    inp.value = '';
-    inp.style.height = '';
+    inp.innerHTML = '';
+    _typeTracked = '';
     document.getElementById('vTypeBtn').disabled = true;
     toggle.style.display = '';
     toggle.classList.add('v-toggle-in');
@@ -1725,8 +1793,8 @@ function resetVoiceScreen() {
   const inp    = document.getElementById('vTypeInp');
   toggle.style.display = '';
   area.classList.remove('open');
-  inp.value = '';
-  inp.style.height = '';
+  inp.innerHTML = '';
+  _typeTracked = '';
   document.getElementById('vTypeBtn').disabled = true;
   ltxt.textContent = 'Tap to speak';
   ltxt.className   = 'ltxt';
