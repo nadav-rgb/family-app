@@ -1,29 +1,137 @@
 /**
- * HebrewParser — local NLP for family task input.
- * Pure functions only. No DOM. No side effects.
- * Designed to be swappable with an AI API in the future.
+ * HebrewParser — modular speech-to-task NLP engine.
+ *
+ * Architecture:
+ *   - LANG_CONFIG: language-specific dictionaries (verbs, patterns, expressions)
+ *   - Shared pipeline: extractTime / extractDate / extractAssignee /
+ *                      cleanTitle / calcConfidence / parseSegment
+ *   - freeSpeechToIntentSegments: the smart splitter, config-driven
+ *   - parse(): public entry point — resolves config, runs pipeline, returns tasks
+ *
+ * Logging:
+ *   Set window.APP_DEBUG = true in the browser console to enable structured logs.
+ *   No log output in production (flag defaults to false).
  */
 (function (global) {
   'use strict';
 
-  // ─── Time-of-day defaults (minutes from midnight) ─────────────────────────
-  const TOD = [
-    { re: /בלילה/,                      mins: 21 * 60 },
-    { re: /בערב|ערב/,                   mins: 19 * 60 },
-    { re: /אחרי.{0,3}הצהריים|אחה"?צ/,  mins: 14 * 60 },
-    { re: /בצהריים|צהריים/,             mins: 12 * 60 },
-    { re: /לפני.{0,3}הצהריים|לפה"?צ/,  mins: 10 * 60 },
-    { re: /בבוקר|בוקר/,                 mins:  8 * 60 },
-    { re: /מוקדם/,                       mins:  7 * 60 },
-  ];
-
-  // ─── Day-of-week (Sunday=0) ────────────────────────────────────────────────
-  const DOW = {
-    ראשון: 0, שני: 1, שלישי: 2, רביעי: 3, חמישי: 4, שישי: 5, שבת: 6,
+  // ═══════════════════════════════════════════════════════════════════════════
+  // DEBUG LOGGER
+  // Enable: window.APP_DEBUG = true  (in browser console or before script load)
+  // ═══════════════════════════════════════════════════════════════════════════
+  const ts  = () => new Date().toISOString().slice(11, 23);
+  const dbg = () => typeof window !== 'undefined' && !!window.APP_DEBUG;
+  const Log = {
+    group:    (label)       => dbg() && console.group(`[${ts()}] ${label}`),
+    groupEnd: ()            => dbg() && console.groupEnd(),
+    info:     (label, data) => dbg() && console.log(`    ${label}:`, data),
+    warn:     (label, data) => dbg() && console.warn(`    ⚠ ${label}:`, data),
   };
 
-  // ─── Family member aliases — fallback for standalone / test use ──────────
-  // Production always passes opts.people built from FAMILY + I18N.
+  // ═══════════════════════════════════════════════════════════════════════════
+  // LANGUAGE CONFIG
+  // Each language provides its own dictionaries.
+  // The shared pipeline (parseSegment, calcConfidence, etc.) is config-driven —
+  // no if(lang==='xx') blocks allowed inside shared functions.
+  // ═══════════════════════════════════════════════════════════════════════════
+  const LANG_CONFIG = {
+
+    // ── Hebrew ───────────────────────────────────────────────────────────────
+    he: {
+      // Infinitive task-verbs — the primary split signal in free speech.
+      // Conservative list: when in doubt, leave the verb OUT.
+      taskVerbs: [
+        'להתקשר','להתכונן','להתחיל','להתאמן','להתפנות',
+        'להוריד','להעלות','להחזיר','להזמין','להכין','להביא','להוציא','להגיע',
+        'לאסוף','לאכול',
+        'לבדוק','לבשל',
+        'לנסוע','לנקות','לנהוג',
+        'לסדר','לסיים',
+        'לקנות','לקחת','לקבוע','לקבל','לקרוא',
+        'לשלם','לשלוח','לשמור','לשטוף',
+        'לטפל','לתקן',
+        'לפגוש','לפנות','לפתוח',
+        'לרשום',
+        'לענות','לעדכן',
+        'לחפש','לחזור','לחכות',
+        'לדווח','למצוא','למסור',
+        'לכתוב',
+      ].sort((a, b) => b.length - a.length),
+
+      // Time-of-day expressions → minutes from midnight
+      tod: [
+        { re: /בלילה/,                      mins: 21 * 60 },
+        { re: /בערב|ערב/,                   mins: 19 * 60 },
+        { re: /אחרי.{0,3}הצהריים|אחה"?צ/,  mins: 14 * 60 },
+        { re: /בצהריים|צהריים/,             mins: 12 * 60 },
+        { re: /לפני.{0,3}הצהריים|לפה"?צ/,  mins: 10 * 60 },
+        { re: /בבוקר|בוקר/,                 mins:  8 * 60 },
+        { re: /מוקדם/,                       mins:  7 * 60 },
+      ],
+
+      // Word-based hour expressions (multi-word MUST precede single-word)
+      wordHours: [
+        ['אחת עשרה', 11], ['אחד עשר', 11],
+        ['שתים עשרה', 12], ['שנים עשר', 12],
+        ['אחת', 1], ['אחד', 1],
+        ['שתיים', 2], ['שתים', 2],
+        ['שלוש', 3], ['שלש', 3],
+        ['ארבע', 4], ['חמש', 5], ['שש', 6], ['שבע', 7],
+        ['שמונה', 8], ['תשע', 9],
+        ['עשרה', 10], ['עשר', 10],
+      ],
+
+      // Regex suffix for half/quarter modifiers after a word-hour
+      modRe: '(?:\\s+(וחצי|ורבע|פחות\\s+רבע))?',
+
+      // Opener phrases stripped before verb detection
+      preambleRe: /^(אני\s+צריך|אני\s+חייב|אני\s+רוצה|אנחנו\s+צריכים|צריך|חייב|יש\s+לי|אפשר)\s+/,
+
+      // Filler phrases stripped from title
+      filler: [
+        /תזכיר\s+לי\s*/g, /תזכרי\s+לי\s*/g, /תזכרו\s+לי\s*/g,
+        /בבקשה\s*/g,
+      ],
+
+      // Task-type detection
+      reminderKw: /תזכיר|תזכור|תזכרי|תזכרו|להזכיר|זכור|זכרי/,
+      eventKw:    /פגישה|ישיבה|אסיפה|רופא|דנטיסט|שיניים|חוג|ביקור|טיסה|נסיעה|הצגה|סרט|מסיבה|אירוע/,
+
+      // Conjugated verb patterns that mark a person as subject (agent)
+      agentVerbsRe: /ייקח|תיקח|יעשה|תעשה|יביא|תביא|ילך|תלך|יקח|יסיע|תסיע|ירים|תרים|יאסוף|תאסוף|יסדר|תסדר|יכין|תכין|ילווה|תלווה|יורד|תורד|יעלה|תעלה|יקנה|תקנה|יוציא|תוציא|יתקשר|תתקשר/,
+
+      // ampm: Hebrew uses 24h — no AM/PM adjustment needed
+      ampm: false,
+    },
+
+    // ── English (Phase 2) ────────────────────────────────────────────────────
+    // Stub: all fields present and typed correctly so the engine never crashes.
+    // Fill in Phase 2: taskVerbs, tod, wordHours, preambleRe, filler, etc.
+    en: {
+      taskVerbs:    [],          // e.g. ['to call','to take','to buy','to pay',...]
+      tod:          [],          // e.g. [{re:/in the evening/i, mins:19*60},...]
+      wordHours:    [],          // e.g. [['three',3],['four',4],...]
+      modRe:        '',          // e.g. '(?:\\s+(and a half|quarter past))?'
+      preambleRe:   /^$/,        // e.g. /^(I need to|I have to|please|remind me to)\s+/i
+      filler:       [],          // e.g. [/remind me to\s*/gi,...]
+      reminderKw:   /(?!)/,      // e.g. /remind|remember|don't forget/i
+      eventKw:      /(?!)/,      // e.g. /meeting|appointment|doctor|class/i
+      agentVerbsRe: /(?!)/,      // e.g. /will take|should call|needs to/i
+      ampm:         true,        // English uses AM/PM
+    },
+  };
+
+  function getLangConfig(lang) {
+    return LANG_CONFIG[lang] || LANG_CONFIG.he;
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // SHARED CONSTANTS
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  const DOW = { ראשון: 0, שני: 1, שלישי: 2, רביעי: 3, חמישי: 4, שישי: 5, שבת: 6 };
+
+  // Fallback people list — production always passes opts.people from FAMILY + I18N
   const DEFAULT_PEOPLE = [
     { names: ['יונתן', 'yonatan', 'Yonatan'], id: 'yonatan' },
     { names: ['דודי',  'dudi',    'Dudi'   ], id: 'dudi'    },
@@ -31,57 +139,13 @@
     { names: ['אבא',   'dad',     'Dad'    ], id: 'dad'     },
   ];
 
-  // ─── Task verb whitelist (infinitives only, longest first) ───────────────
-  // These are the split signals for free-speech segmentation.
-  // If in doubt about a verb, leave it OUT — under-splitting is safer than over-splitting.
-  const TASK_VERBS = [
-    // multi-syllable first (prevents substring shadowing)
-    'להתקשר','להתכונן','להתחיל','להתאמן','להתפנות',
-    'להוריד','להעלות','להחזיר','להזמין','להכין','להביא','להוציא','להגיע',
-    'לאסוף','לאכול','לאסדר',
-    'לבדוק','לבשל',
-    'לנסוע','לנקות','לנהוג',
-    'לסדר','לסיים',
-    'לקנות','לקחת','לקבוע','לקבל','לקרוא',
-    'לשלם','לשלוח','לשמור','לשטוף',
-    'לטפל','לתקן',
-    'לפגוש','לפנות','לפתוח',
-    'לרשום',
-    'לענות','לעדכן',
-    'לחפש','לחזור','לחכות',
-    'לדווח','למצוא','למסור',
-    'לכתוב',
-    // short / risky verbs last — omit ambiguous ones like לבקש
-  ].sort((a, b) => b.length - a.length);
+  // ═══════════════════════════════════════════════════════════════════════════
+  // HELPERS
+  // ═══════════════════════════════════════════════════════════════════════════
 
-  // Verbs that signal an explicit agent role when right after a name
-  const AGENT_VERBS_RE = /ייקח|תיקח|יעשה|תעשה|יביא|תביא|ילך|תלך|יקח|יסיע|תסיע|ירים|תרים|יאסוף|תאסוף|יסדר|תסדר|יכין|תכין|ילווה|תלווה|יורד|תורד|יעלה|תעלה|יקנה|תקנה|יוציא|תוציא|יתקשר|תתקשר/;
+  function nowMins(d) { return d.getHours() * 60 + d.getMinutes(); }
+  function addDays(d, n) { const r = new Date(d); r.setDate(r.getDate() + n); return r; }
 
-  // ─── Type keywords ─────────────────────────────────────────────────────────
-  const REMINDER_KW = /תזכיר|תזכור|תזכרי|תזכרו|להזכיר|זכור|זכרי/;
-  const EVENT_KW    = /פגישה|ישיבה|אסיפה|רופא|דנטיסט|שיניים|חוג|ביקור|טיסה|נסיעה|הצגה|סרט|מסיבה|אירוע/;
-
-  // Filler phrases to strip before title extraction
-  const FILLER = [
-    /תזכיר\s+לי\s*/g, /תזכרי\s+לי\s*/g, /תזכרו\s+לי\s*/g,
-    /בבקשה\s*/g,
-  ];
-
-  // Common opener phrases that add no task meaning
-  const PREAMBLE_RE = /^(אני\s+צריך|אני\s+חייב|אני\s+רוצה|אנחנו\s+צריכים|צריך|חייב|יש\s+לי|אפשר)\s+/;
-
-  // ─── Hebrew word-hours (multi-word MUST precede single-word) ─────────────
-  const HEB_HOURS = [
-    ['אחת עשרה', 11], ['אחד עשר',    11],
-    ['שתים עשרה', 12], ['שנים עשר', 12],
-    ['אחת', 1], ['אחד', 1],
-    ['שתיים', 2], ['שתים', 2],
-    ['שלוש', 3], ['שלש', 3],
-    ['ארבע', 4], ['חמש', 5], ['שש', 6], ['שבע', 7],
-    ['שמונה', 8], ['תשע', 9],
-    ['עשרה', 10], ['עשר', 10],
-  ];
-  const MOD_RE = '(?:\\s+(וחצי|ורבע|פחות\\s+רבע))?';
   function applyMod(base, mod) {
     if (!mod)                return base;
     if (mod.includes('וחצי')) return base + 30;
@@ -90,17 +154,7 @@
     return base;
   }
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // FREE SPEECH SEGMENTATION
-  // ═══════════════════════════════════════════════════════════════════════════
-
-  // ─── Strip opener phrases that add no meaning ─────────────────────────────
-  function stripPreamble(text) {
-    return text.replace(PREAMBLE_RE, '').trim();
-  }
-
-  // ─── Word-boundary check before position idx ─────────────────────────────
-  // Valid: start-of-string, space, or ו (which itself must be at word start)
+  // True when position idx is at a word start (space, tab, ו at word boundary, or string start)
   function isWordStart(text, idx) {
     if (idx === 0) return true;
     const c = text[idx - 1];
@@ -109,228 +163,82 @@
     return false;
   }
 
-  // ─── Scan text for task verbs, return sorted position list ───────────────
-  function findVerbPositions(text) {
-    const seen    = new Set();
-    const results = [];
-
-    for (const verb of TASK_VERBS) {
-      let i = 0;
-      while (true) {
-        const idx = text.indexOf(verb, i);
-        if (idx === -1) break;
-        i = idx + 1;
-
-        // Must end at word boundary
-        const after = text[idx + verb.length];
-        if (after !== undefined && after !== ' ' && after !== '\t') continue;
-
-        if (!isWordStart(text, idx)) continue;
-        if (seen.has(idx)) continue;
-        seen.add(idx);
-
-        const hasVav = (idx > 0 && text[idx - 1] === 'ו');
-        results.push({ pos: idx, verb, hasVav, reason: 'verb:' + verb });
-      }
-    }
-
-    return results.sort((a, b) => a.pos - b.pos);
-  }
-
-  // ─── Scan for known-name patterns that signal a new task agent ───────────
-  // Recognizes: name at position 0, or ו+name at word boundary
-  function findNamePositions(text, people) {
-    const seen    = new Set();
-    const results = [];
-
-    for (const { names } of people) {
-      for (const name of names) {
-        // Pattern A: name at sentence start
-        if ((text.startsWith(name + ' ') || text.startsWith(name + '\t')) && !seen.has(0)) {
-          seen.add(0);
-          results.push({ pos: 0, name, hasVav: false, reason: 'name_start:' + name });
-        }
-
-        // Pattern B: ו + name at word boundary (coordination: "ואמא", "ואבא")
-        const needle = 'ו' + name;
-        let i = 0;
-        while (true) {
-          const idx = text.indexOf(needle, i);
-          if (idx === -1) break;
-          i = idx + 1;
-
-          // ו must be at word start
-          const before = idx > 0 ? text[idx - 1] : null;
-          if (before !== null && before !== ' ' && before !== '\t') continue;
-
-          // After name must be space or end
-          const after = text[idx + needle.length];
-          if (after !== undefined && after !== ' ' && after !== '\t') continue;
-
-          const namePos = idx + 1; // position of the name itself (after ו)
-          if (seen.has(namePos)) continue;
-          seen.add(namePos);
-
-          results.push({ pos: namePos, name, hasVav: true, reason: 'name_vav:' + name });
-        }
-      }
-    }
-
-    return results;
-  }
-
-  // ─── Detect subordinate clause: verb + " ש" + conjugated verb prefix ─────
-  // "ולבקש שתביא" → subordinate (don't split)
-  // "ולשלם שכר"   → "שכר" is a noun (כ not a verb prefix) → NOT subordinate → split
-  function isSubordinateVerb(text, pos, verb) {
-    const after = text.slice(pos + verb.length).replace(/^\s+/, '');
-    if (!after.startsWith('ש')) return false;
-    // Conjugated verb prefixes in Hebrew: י (3rd masc), ת (3rd fem/2nd/future), נ (1st plural), א (1st sing)
-    return 'יתנא'.includes(after[1]);
-  }
-
-  // ─── Main free-speech segmenter ───────────────────────────────────────────
-  /**
-   * freeSpeechToIntentSegments(text, opts) → IntentSegment[]
-   *
-   * IntentSegment: { text, splitReason, preambleDate }
-   *
-   * Splits free Hebrew speech into one segment per task, using task verbs
-   * and name-coordination patterns as boundaries — NOT punctuation.
-   *
-   * Conservative: when in doubt, returns fewer (larger) segments.
-   */
-  function freeSpeechToIntentSegments(text, opts) {
-    const people = (opts && opts.people) || DEFAULT_PEOPLE;
-    const now    = (opts && opts.now)    || new Date();
-    const lang   = (opts && opts.lang)   || 'he';
-
-    // Non-Hebrew: skip smart splitting — one segment, basic parsing only.
-    // Phase 2 will add a real EnglishParser with LANG_CONFIG.en.
-    if (lang !== 'he') {
-      return [{ text: text.trim(), splitReason: 'lang_fallback', preambleDate: null }];
-    }
-
-    // Hard splits first (semicolons, "ובנוסף") — user was explicit there
-    const hardParts = text.split(/[;؛]\s*|\s+ובנוסף\s+/).map(s => s.trim()).filter(Boolean);
-    if (hardParts.length > 1) {
-      return hardParts.flatMap(part => freeSpeechToIntentSegments(part, opts));
-    }
-
-    const clean = stripPreamble(text.trim());
-
-    // Collect all candidate split positions from both verbs and name patterns
-    const allPositions = [
-      ...findVerbPositions(clean),
-      ...findNamePositions(clean, people),
-    ]
-      .sort((a, b) => a.pos - b.pos)
-      // Remove exact-position duplicates (verb and name landing on same spot)
-      .filter((p, i, arr) => i === 0 || p.pos !== arr[i - 1].pos);
-
-    // No recognizable structure → one segment, low confidence
-    if (allPositions.length === 0) {
-      return [{ text: clean, splitReason: 'no_split', preambleDate: null }];
-    }
-
-    // Everything before the first recognized verb/name = preamble context
-    const firstPos    = allPositions[0].pos;
-    const preambleStr = clean.slice(0, firstPos).trim();
-
-    // Extract date from preamble ("מחר בבוקר", "היום") as a fallback for segments
-    const preambleDate = preambleStr ? extractDate(preambleStr, now) : null;
-
-    // Slice text into raw segments at the split positions
-    const segments = [];
-    for (let i = 0; i < allPositions.length; i++) {
-      const cur  = allPositions[i];
-      const next = allPositions[i + 1];
-
-      // Guard: is this verb beginning a subordinate clause? → merge into previous
-      if (i > 0 && cur.verb && isSubordinateVerb(clean, cur.pos, cur.verb)) {
-        if (segments.length) {
-          segments[segments.length - 1].text += ' ' + clean.slice(cur.pos).trim();
-        }
-        break; // subordinate clause consumes the rest
-      }
-
-      // End of this segment = start of next, trimming any "ו" that belongs to the next verb
-      const rawEnd = next
-        ? (next.hasVav ? next.pos - 1 : next.pos)
-        : clean.length;
-
-      const segText = clean.slice(cur.pos, rawEnd).trim();
-
-      // Skip ghost segments (just a bare name with no content after it)
-      if (segText.length <= 4 && i < allPositions.length - 1) continue;
-
-      segments.push({
-        text:         segText,
-        splitReason:  cur.reason,
-        preambleDate: preambleDate && preambleDate.fromText ? preambleDate : null,
-      });
-    }
-
-    return segments.length
-      ? segments
-      : [{ text: clean, splitReason: 'fallback', preambleDate: null }];
-  }
-
   // ═══════════════════════════════════════════════════════════════════════════
-  // SEGMENT PARSING (unchanged logic, adds optional fallbackDate)
+  // EXTRACTION PIPELINE (config-driven, language-agnostic algorithms)
   // ═══════════════════════════════════════════════════════════════════════════
 
-  // ─── Extract time ─────────────────────────────────────────────────────────
-  function extractTime(text, now) {
+  function stripPreamble(text, config) {
+    return text.replace(config.preambleRe, '').trim();
+  }
+
+  // ─── Time ─────────────────────────────────────────────────────────────────
+  function extractTime(text, now, config) {
     let m;
 
-    // HH:MM am/pm (English) — must precede bare HH:MM to take priority
+    // HH:MM am/pm — must precede bare HH:MM (works for both languages when ampm=true)
     m = text.match(/\b([01]?\d|2[0-3]):([0-5]\d)\s*(am|pm)\b/i);
     if (m) {
       let h = +m[1], min = +m[2];
       const pm = m[3].toLowerCase() === 'pm';
       if (pm && h < 12) h += 12;
       if (!pm && h === 12) h = 0;
+      Log.info('time', `${m[0]} → ${h}:${String(min).padStart(2,'0')}`);
       return { mins: h * 60 + min, match: m[0], fromText: true };
     }
 
+    // Bare HH:MM
     m = text.match(/\b([01]?\d|2[0-3]):([0-5]\d)\b/);
-    if (m) return { mins: +m[1] * 60 + +m[2], match: m[0], fromText: true };
+    if (m) {
+      Log.info('time', `${m[0]} → ${m[1]}:${m[2]}`);
+      return { mins: +m[1] * 60 + +m[2], match: m[0], fromText: true };
+    }
 
+    // Relative: עוד שעתיים / שעה / X שעות / X דקות
     m = text.match(/עוד\s+שעתיים/);
     if (m) return { mins: nowMins(now) + 120, match: m[0], fromText: true };
-
     m = text.match(/עוד\s+שעה/);
     if (m) return { mins: nowMins(now) + 60,  match: m[0], fromText: true };
-
     m = text.match(/עוד\s+(\d+)\s+שעות?/);
     if (m) return { mins: nowMins(now) + +m[1] * 60, match: m[0], fromText: true };
-
     m = text.match(/עוד\s+(\d+)\s+דקות?/);
     if (m) return { mins: nowMins(now) + +m[1], match: m[0], fromText: true };
 
+    // Digit hour with Hebrew prefix: "בשעה 8", "ב-8", "ב 4"
     m = text.match(/(?:בשעה\s+|ב[-–\s]?)(\d{1,2})(?::(\d{2}))?(?!\d)/);
     if (m) {
       let h = +m[1], min = m[2] ? +m[2] : 0;
       if (h >= 1 && h <= 6 && !/(בוקר|לפני.{0,3}הצהריים)/.test(text)) h += 12;
-      if (h >= 0 && h <= 23) return { mins: h * 60 + min, match: m[0], fromText: true };
+      if (h >= 0 && h <= 23) {
+        Log.info('time', `digit prefix → ${h}:${String(min).padStart(2,'0')}`);
+        return { mins: h * 60 + min, match: m[0], fromText: true };
+      }
     }
 
-    for (const [word, hour] of HEB_HOURS) {
-      const re = new RegExp('(?:בשעה\\s+|ב[-–]?)' + word + MOD_RE);
+    // Word-hours from config
+    const modRe = config.modRe || '';
+    for (const [word, hour] of (config.wordHours || [])) {
+      const re = new RegExp('(?:בשעה\\s+|ב[-–]?)' + word + modRe);
       m = text.match(re);
-      if (m) return { mins: applyMod(hour * 60, m[1]), match: m[0], fromText: true };
+      if (m) {
+        Log.info('time', `word-hour "${word}" → ${hour}h`);
+        return { mins: applyMod(hour * 60, m[1]), match: m[0], fromText: true };
+      }
     }
 
-    for (const { re, mins } of TOD) {
+    // Time-of-day expressions from config
+    for (const { re, mins } of (config.tod || [])) {
       m = text.match(re);
-      if (m) return { mins, match: m[0], fromText: true };
+      if (m) {
+        Log.info('time', `time-of-day "${m[0]}" → ${Math.floor(mins/60)}:00`);
+        return { mins, match: m[0], fromText: true };
+      }
     }
 
     return { mins: null, fromText: false, match: null };
   }
 
-  // ─── Extract date ─────────────────────────────────────────────────────────
+  // ─── Date ─────────────────────────────────────────────────────────────────
+  // Currently Hebrew-only. Phase 2: move patterns to LANG_CONFIG.he.datePatterns.
   function extractDate(text, now) {
     if (/מחרתיים/.test(text)) return { date: addDays(now, 2), fromText: true, match: 'מחרתיים' };
     if (/מחר/.test(text))     return { date: addDays(now, 1), fromText: true, match: 'מחר'     };
@@ -347,49 +255,59 @@
     return { date: new Date(now), fromText: false, match: null };
   }
 
-  // ─── Extract assignee ─────────────────────────────────────────────────────
-  function extractAssignee(text, people) {
-    // Tier 1: subject at sentence start
+  // ─── Assignee ─────────────────────────────────────────────────────────────
+  function extractAssignee(text, people, config) {
+    const agentRe = config.agentVerbsRe;
+
+    // Tier 1: name at sentence start → subject/doer
     for (const { names, id } of people) {
       for (const name of names) {
         if (text.startsWith(name + ' ') || text.startsWith(name + '\t')) {
+          Log.info('assignee', `tier-1 subject-start: ${name} → ${id}`);
           return { id, fromText: true, match: name };
         }
       }
     }
-    // Tier 2: name + explicit agent verb
+
+    // Tier 2: name + explicit agent verb anywhere
     for (const { names, id } of people) {
       for (const name of names) {
-        if (new RegExp(name + '\\s+(?:' + AGENT_VERBS_RE.source + ')').test(text)) {
+        if (agentRe && new RegExp(name + '\\s+(?:' + agentRe.source + ')').test(text)) {
+          Log.info('assignee', `tier-2 agent-verb: ${name} → ${id}`);
           return { id, fromText: true, match: name };
         }
       }
     }
-    // Tier 3: bare mention, but NOT if preceded by "את" (object marker)
+
+    // Tier 3: bare mention — but NOT if preceded by "את" (direct object)
     for (const { names, id } of people) {
       for (const name of names) {
         if (!new RegExp('את\\s+' + name).test(text) && text.includes(name)) {
+          Log.info('assignee', `tier-3 mention: ${name} → ${id}`);
           return { id, fromText: true, match: name };
         }
       }
     }
+
+    Log.info('assignee', 'none detected');
     return { id: null, fromText: false, match: null };
   }
 
-  // ─── Detect task type ─────────────────────────────────────────────────────
-  function detectType(text) {
-    if (REMINDER_KW.test(text)) return 'reminder';
-    if (EVENT_KW.test(text))    return 'event';
+  // ─── Type ─────────────────────────────────────────────────────────────────
+  function detectType(text, config) {
+    if (config.reminderKw && config.reminderKw.test(text)) return 'reminder';
+    if (config.eventKw    && config.eventKw.test(text))    return 'event';
     return 'task';
   }
 
-  // ─── Build clean title ────────────────────────────────────────────────────
-  function cleanTitle(text, matchesToStrip) {
+  // ─── Title ────────────────────────────────────────────────────────────────
+  function cleanTitle(text, matchesToStrip, config) {
     let s = text;
-    for (const re of FILLER) s = s.replace(re, '');
+    for (const re of (config.filler || [])) s = s.replace(re, '');
     for (const token of matchesToStrip) {
       if (token) s = s.replace(token, ' ');
     }
+    // Strip reminder verb keywords (Hebrew — Phase 2 should move to config)
     s = s.replace(/\b(תזכיר|תזכור|תזכרי|תזכרו|להזכיר|זכור|זכרי)\b/g, '');
     s = s.replace(/\s{2,}/g, ' ')
          .replace(/^[\s,.\-–״׳]+/, '')
@@ -398,17 +316,19 @@
     return s || text.trim();
   }
 
-  // ─── Confidence score ─────────────────────────────────────────────────────
+  // ─── Confidence ───────────────────────────────────────────────────────────
   function calcConfidence(p) {
     let score = 0.4;
     if (p.timeFromText)     score += 0.25;
     if (p.dateFromText)     score += 0.10;
     if (p.assigneeFromText) score += 0.10;
     if (p.title.length > 3) score += 0.15;
-    return Math.min(score, 1.0);
+    const result = Math.min(score, 1.0);
+    Log.info('confidence', result.toFixed(2));
+    return result;
   }
 
-  // ─── Smart default time ───────────────────────────────────────────────────
+  // ─── Default time ─────────────────────────────────────────────────────────
   function defaultMins(now) {
     const h = now.getHours();
     if (h < 7)  return  8 * 60;
@@ -418,23 +338,201 @@
     return Math.min((h + 2) * 60, 23 * 60);
   }
 
-  // ─── Parse one intent segment into a structured task ─────────────────────
-  // opts.fallbackDate: date from preamble context, used when segment has no explicit date
-  function parseSegment(text, now, people, opts) {
-    const time     = extractTime(text, now);
-    const date     = extractDate(text, now);
-    const assignee = extractAssignee(text, people);
-    const type     = detectType(text);
+  // ═══════════════════════════════════════════════════════════════════════════
+  // FREE SPEECH SEGMENTATION
+  // ═══════════════════════════════════════════════════════════════════════════
 
-    // Use preamble date as fallback only when this segment has no date of its own
+  function findVerbPositions(text, config) {
+    const verbs   = config.taskVerbs || [];
+    const seen    = new Set();
+    const results = [];
+
+    for (const verb of verbs) {
+      let i = 0;
+      while (true) {
+        const idx = text.indexOf(verb, i);
+        if (idx === -1) break;
+        i = idx + 1;
+
+        const after = text[idx + verb.length];
+        if (after !== undefined && after !== ' ' && after !== '\t') continue;
+        if (!isWordStart(text, idx)) continue;
+        if (seen.has(idx)) continue;
+        seen.add(idx);
+
+        const hasVav = (idx > 0 && text[idx - 1] === 'ו');
+        results.push({ pos: idx, verb, hasVav, reason: 'verb:' + verb });
+      }
+    }
+
+    const sorted = results.sort((a, b) => a.pos - b.pos);
+    if (sorted.length) Log.info('verbs found', sorted.map(r => `"${r.verb}" @${r.pos}`));
+    return sorted;
+  }
+
+  function findNamePositions(text, people) {
+    const seen    = new Set();
+    const results = [];
+
+    for (const { names } of people) {
+      for (const name of names) {
+        // Pattern A: name at sentence start
+        if ((text.startsWith(name + ' ') || text.startsWith(name + '\t')) && !seen.has(0)) {
+          seen.add(0);
+          results.push({ pos: 0, name, hasVav: false, reason: 'name_start:' + name });
+        }
+
+        // Pattern B: ו+name at word boundary
+        const needle = 'ו' + name;
+        let i = 0;
+        while (true) {
+          const idx = text.indexOf(needle, i);
+          if (idx === -1) break;
+          i = idx + 1;
+
+          const before = idx > 0 ? text[idx - 1] : null;
+          if (before !== null && before !== ' ' && before !== '\t') continue;
+          const after = text[idx + needle.length];
+          if (after !== undefined && after !== ' ' && after !== '\t') continue;
+
+          const namePos = idx + 1;
+          if (seen.has(namePos)) continue;
+          seen.add(namePos);
+          results.push({ pos: namePos, name, hasVav: true, reason: 'name_vav:' + name });
+        }
+      }
+    }
+
+    return results;
+  }
+
+  // Guard: verb followed by "ש + conjugated-verb prefix" = subordinate clause → no split
+  // "ולבקש שתביא" → subordinate. "ולשלם שכר" → "שכר" is noun (כ not a verb prefix) → split OK.
+  function isSubordinateVerb(text, pos, verb) {
+    const after = text.slice(pos + verb.length).replace(/^\s+/, '');
+    if (!after.startsWith('ש')) return false;
+    return 'יתנא'.includes(after[1]); // conjugated verb prefixes
+  }
+
+  /**
+   * freeSpeechToIntentSegments(text, opts) → IntentSegment[]
+   *
+   * Converts free Hebrew speech into per-task segments.
+   * Non-Hebrew: returns the whole text as a single segment (Phase 2 will add configs).
+   * Conservative: when in doubt, fewer segments.
+   */
+  function freeSpeechToIntentSegments(text, opts) {
+    const people = (opts && opts.people) || DEFAULT_PEOPLE;
+    const now    = (opts && opts.now)    || new Date();
+    const lang   = (opts && opts.lang)   || 'he';
+    const config = (opts && opts.config) || getLangConfig(lang);
+
+    Log.group('freeSpeechToIntentSegments');
+    Log.info('input', text);
+    Log.info('lang', lang);
+
+    // Non-Hebrew: smart splitting deferred to Phase 2
+    if (lang !== 'he') {
+      Log.info('fallback', 'non-Hebrew → single segment');
+      Log.groupEnd();
+      return [{ text: text.trim(), splitReason: 'lang_fallback', preambleDate: null }];
+    }
+
+    // Hard splits (semicolons, "ובנוסף") — user was explicit
+    const hardParts = text.split(/[;؛]\s*|\s+ובנוסף\s+/).map(s => s.trim()).filter(Boolean);
+    if (hardParts.length > 1) {
+      Log.info('hard split', hardParts.length + ' parts');
+      Log.groupEnd();
+      return hardParts.flatMap(part => freeSpeechToIntentSegments(part, opts));
+    }
+
+    const clean = stripPreamble(text.trim(), config);
+    if (clean !== text.trim()) Log.info('preamble stripped', `"${text.trim()}" → "${clean}"`);
+
+    const allPositions = [
+      ...findVerbPositions(clean, config),
+      ...findNamePositions(clean, people),
+    ]
+      .sort((a, b) => a.pos - b.pos)
+      .filter((p, i, arr) => i === 0 || p.pos !== arr[i - 1].pos);
+
+    if (allPositions.length === 0) {
+      Log.info('split', 'no split points → single segment');
+      Log.groupEnd();
+      return [{ text: clean, splitReason: 'no_split', preambleDate: null }];
+    }
+
+    const firstPos    = allPositions[0].pos;
+    const preambleStr = clean.slice(0, firstPos).trim();
+    const preambleDate = preambleStr ? extractDate(preambleStr, now) : null;
+
+    if (preambleStr) Log.info('preamble context', `"${preambleStr}"`);
+
+    const segments = [];
+    for (let i = 0; i < allPositions.length; i++) {
+      const cur  = allPositions[i];
+      const next = allPositions[i + 1];
+
+      if (i > 0 && cur.verb && isSubordinateVerb(clean, cur.pos, cur.verb)) {
+        Log.info('subordinate', `"${cur.verb}" → merged into previous segment`);
+        if (segments.length) {
+          segments[segments.length - 1].text += ' ' + clean.slice(cur.pos).trim();
+        }
+        break;
+      }
+
+      const rawEnd  = next ? (next.hasVav ? next.pos - 1 : next.pos) : clean.length;
+      const segText = clean.slice(cur.pos, rawEnd).trim();
+
+      if (segText.length <= 4 && i < allPositions.length - 1) {
+        Log.warn('skip', `ghost segment "${segText}"`);
+        continue;
+      }
+
+      Log.info('segment', `[${i}] "${segText}" (${cur.reason})`);
+      segments.push({
+        text:         segText,
+        splitReason:  cur.reason,
+        preambleDate: (preambleDate && preambleDate.fromText) ? preambleDate : null,
+      });
+    }
+
+    Log.info('total segments', segments.length);
+    Log.groupEnd();
+
+    return segments.length
+      ? segments
+      : [{ text: clean, splitReason: 'fallback', preambleDate: null }];
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // PARSE ONE SEGMENT
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  function parseSegment(text, now, people, opts) {
+    const config   = (opts && opts.config)      || getLangConfig('he');
+    const fallback = (opts && opts.fallbackDate) || null;
+
+    Log.group('parseSegment: "' + text + '"');
+
+    const time     = extractTime(text, now, config);
+    const date     = extractDate(text, now);
+    const assignee = extractAssignee(text, people, config);
+    const type     = detectType(text, config);
+
     const resolvedDate = date.fromText
       ? date
-      : ((opts && opts.fallbackDate && opts.fallbackDate.fromText) ? opts.fallbackDate : date);
+      : (fallback && fallback.fromText ? fallback : date);
 
-    const title = cleanTitle(text, [time.match, resolvedDate.match, assignee.match]);
+    const title = cleanTitle(text, [time.match, resolvedDate.match, assignee.match], config);
     const mins  = time.mins !== null
       ? Math.max(0, Math.min(time.mins, 23 * 60 + 59))
       : defaultMins(now);
+
+    Log.info('title', title);
+    Log.info('mins', mins + ' (' + Math.floor(mins/60) + ':' + String(mins%60).padStart(2,'0') + ')');
+    Log.info('type', type);
+    Log.info('date', resolvedDate.fromText ? 'from text' : 'default');
 
     const parsed = {
       title,
@@ -448,6 +546,8 @@
       rawInput:         text,
     };
     parsed.confidence = calcConfidence(parsed);
+
+    Log.groupEnd();
     return parsed;
   }
 
@@ -456,132 +556,103 @@
   // ═══════════════════════════════════════════════════════════════════════════
 
   /**
-   * parse(text, opts?) → ParsedTask[]
+   * HebrewParser.parse(text, opts?) → ParsedTask[]
    *
-   * opts.now     — override current time (Date), default: new Date()
+   * opts.now     — Date override (useful for testing)
    * opts.people  — family member list from app's FAMILY + I18N
+   * opts.lang    — 'he' | 'en' | ... (defaults to 'he')
    */
   function parse(text, opts) {
     const now    = (opts && opts.now)    || new Date();
     const people = (opts && opts.people) || DEFAULT_PEOPLE;
+    const lang   = (opts && opts.lang)   || 'he';
+    const config = getLangConfig(lang);
+
     if (!text || !text.trim()) return [];
 
-    const segments = freeSpeechToIntentSegments(text.trim(), { now, people });
-    return segments.map(seg =>
-      parseSegment(seg.text, now, people, { fallbackDate: seg.preambleDate })
-    );
-  }
+    Log.group('parse');
+    Log.info('input', text);
+    Log.info('lang', lang);
 
-  // ─── Helpers ──────────────────────────────────────────────────────────────
-  function nowMins(d) { return d.getHours() * 60 + d.getMinutes(); }
-  function addDays(d, n) { const r = new Date(d); r.setDate(r.getDate() + n); return r; }
+    const segments = freeSpeechToIntentSegments(text.trim(), { now, people, lang, config });
+    const result   = segments.map(seg =>
+      parseSegment(seg.text, now, people, { fallbackDate: seg.preambleDate, config })
+    );
+
+    Log.info('result', result.map(r => ({
+      title:      r.title,
+      mins:       r.mins,
+      assignedTo: r.assignedTo,
+      confidence: r.confidence.toFixed(2),
+    })));
+    Log.groupEnd();
+
+    return result;
+  }
 
   global.HebrewParser = { parse };
 
 })(window);
 
 
-// ─── Dev console tests (localhost only) ───────────────────────────────────────
+// ─── Dev console tests (localhost only) ────────────────────────────────────
 if (typeof window !== 'undefined' &&
     (location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
   (function runTests() {
-    const NOW = new Date('2026-05-08T10:00:00');
+    const NOW    = new Date('2026-05-08T10:00:00');
     const PEOPLE = [
       { id: 'yonatan', names: ['יונתן', 'Yonatan', 'yonatan'] },
       { id: 'dudi',    names: ['דודי',  'Dudi',    'dudi'   ] },
       { id: 'mom',     names: ['אמא',   'Mom',     'mom'    ] },
       { id: 'dad',     names: ['אבא',   'Dad',     'dad'    ] },
     ];
-    const opts = { now: NOW, people: PEOPLE };
+    const opts = { now: NOW, people: PEOPLE, lang: 'he' };
 
-    // ── Assignee tests (from previous session) ────────────────────────────
-    const ASSIGNEE_CASES = [
-      { input: 'שי ייקח את יונתן לחוג ביום שלישי', expectAssignee: null,      titleIncludes: 'יונתן' },
-      { input: 'אמא תקנה חלב בערב',               expectAssignee: 'mom',     titleIncludes: 'חלב',     expectMins: 19*60 },
-      { input: 'אבא יוציא את הילדים ב 13:20',      expectAssignee: 'dad',     titleIncludes: 'הילדים', expectMins: 13*60+20 },
-      { input: 'דוד יתקשר לסבתא מחר',              expectAssignee: null,      titleIncludes: 'סבתא' },
-      { input: 'יונתן יסדר את החדר אחרי הצהריים',  expectAssignee: 'yonatan', titleIncludes: 'החדר',   expectMins: 14*60 },
+    const ASSIGNEE = [
+      { input: 'שי ייקח את יונתן לחוג ביום שלישי', xA: null,      xT: 'יונתן' },
+      { input: 'אמא תקנה חלב בערב',               xA: 'mom',     xT: 'חלב',    xM: 19*60 },
+      { input: 'אבא יוציא את הילדים ב 13:20',      xA: 'dad',     xT: 'הילדים', xM: 13*60+20 },
+      { input: 'דוד יתקשר לסבתא מחר',              xA: null,      xT: 'סבתא' },
+      { input: 'יונתן יסדר את החדר אחרי הצהריים',  xA: 'yonatan', xT: 'החדר',   xM: 14*60 },
     ];
 
-    // ── Free-speech segmentation tests (new) ─────────────────────────────
-    const SEGMENT_CASES = [
-      {
-        label:        'complex free speech',
-        input:        'אני צריך היום לקנות חלב וביצים בערב להתקשר לאמא מחר בבוקר לשלם חשמל',
-        expectCount:  3,
-        expectTitles: ['חלב', 'להתקשר', 'לשלם'],
-      },
-      {
-        label:        'two tasks with ו',
-        input:        'לקנות חלב וביצים ולשלם חשבון חשמל',
-        expectCount:  2,
-        expectTitles: ['חלב', 'לשלם'],
-      },
-      {
-        label:        'subordinate clause — must NOT split',
-        input:        'להתקשר לאמא ולבקש שתביא את יונתן',
-        expectCount:  1,
-        expectTitles: ['להתקשר'],
-      },
-      {
-        label:        'two agents with name+vav',
-        input:        'אמא תקנה חלב ואבא יוציא את הילדים',
-        expectCount:  2,
-        expectTitles: ['חלב', 'הילדים'],
-      },
-      {
-        label:        'preamble date propagation',
-        input:        'מחר בבוקר להתקשר לרופא בצהריים לקנות תרופה בערב להכין שיעורים',
-        expectCount:  3,
-        // All segments should have tomorrow's date
-        expectDateOffset: 1,
-      },
+    const SEGMENTS = [
+      { label: 'free speech',          input: 'אני צריך היום לקנות חלב וביצים בערב להתקשר לאמא מחר בבוקר לשלם חשמל', xN: 3, xT: ['חלב','להתקשר','לשלם'] },
+      { label: 'ו split',              input: 'לקנות חלב וביצים ולשלם חשבון חשמל', xN: 2, xT: ['חלב','לשלם'] },
+      { label: 'subordinate — no split', input: 'להתקשר לאמא ולבקש שתביא את יונתן', xN: 1, xT: ['להתקשר'] },
+      { label: 'name+vav split',       input: 'אמא תקנה חלב ואבא יוציא את הילדים', xN: 2, xT: ['חלב','הילדים'] },
+      { label: 'preamble date',        input: 'מחר בבוקר להתקשר לרופא בצהריים לקנות תרופה בערב להכין שיעורים', xN: 3, xDateOffset: 1 },
     ];
 
-    let passed = 0, total = 0;
+    let pass = 0, total = 0;
 
-    console.group('🔍 HebrewParser — assignee tests');
-    ASSIGNEE_CASES.forEach(({ input, expectAssignee, titleIncludes, expectMins }) => {
+    console.group('🔍 assignee tests');
+    ASSIGNEE.forEach(({ input, xA, xT, xM }) => {
       total++;
       const [r] = window.HebrewParser.parse(input, opts);
-      const okA = r.assignedTo === expectAssignee;
-      const okT = r.title.includes(titleIncludes);
-      const okM = expectMins === undefined || r.mins === expectMins;
-      const ok  = okA && okT && okM;
-      if (ok) passed++;
-      console.log(ok ? '✅' : '❌', `"${input}"`,
-        '\n   assignee:', r.assignedTo,  okA ? '' : `← expected ${expectAssignee}`,
-        '\n   title:',    r.title,        okT ? '' : `← should include "${titleIncludes}"`,
-        '\n   mins:',     r.mins,         okM ? '' : `← expected ${expectMins}`);
+      const ok = r.assignedTo === xA && r.title.includes(xT) && (xM === undefined || r.mins === xM);
+      if (ok) pass++;
+      console.log(ok ? '✅' : '❌', `"${input}"`, '→', r.title, '|', r.assignedTo, '|', r.mins + 'min');
     });
     console.groupEnd();
 
-    console.group('🔍 HebrewParser — free-speech segmentation tests');
-    SEGMENT_CASES.forEach(({ label, input, expectCount, expectTitles, expectDateOffset }) => {
+    console.group('🔍 segmentation tests');
+    SEGMENTS.forEach(({ label, input, xN, xT, xDateOffset }) => {
       total++;
-      const results = window.HebrewParser.parse(input, opts);
-      const okCount = results.length === expectCount;
-      const okTitles = !expectTitles || expectTitles.every((kw, i) =>
-        results[i] && results[i].title.includes(kw)
-      );
-      const okDate = expectDateOffset === undefined || results.every(r => {
-        const d = r.date.date;
-        const expected = addDays(NOW, expectDateOffset);
-        return d.toDateString() === expected.toDateString();
+      const res = window.HebrewParser.parse(input, opts);
+      const okN = res.length === xN;
+      const okT = !xT || xT.every((kw, i) => res[i] && res[i].title.includes(kw));
+      const okD = xDateOffset === undefined || res.every(r => {
+        const exp = new Date(NOW); exp.setDate(exp.getDate() + xDateOffset);
+        return r.date.date.toDateString() === exp.toDateString();
       });
-      const ok = okCount && okTitles && okDate;
-      if (ok) passed++;
-      console.log(ok ? '✅' : '❌', `[${label}] "${input}"`,
-        '\n   segments:', results.length, okCount ? '' : `← expected ${expectCount}`,
-        '\n   titles:', results.map(r => r.title));
-      if (!okTitles) console.log('   ← expected titles containing:', expectTitles);
-      if (!okDate)   console.log('   ← expected date offset:', expectDateOffset, 'days');
+      const ok = okN && okT && okD;
+      if (ok) pass++;
+      console.log(ok ? '✅' : '❌', `[${label}]`, '\n   segments:', res.map(r => `"${r.title}"`));
+      if (!okN) console.log('   ← expected', xN, 'segments, got', res.length);
     });
     console.groupEnd();
 
-    console.log(`\n✅ ${passed}/${total} passed`);
-
-    // helper used in test block only
-    function addDays(d, n) { const r = new Date(d); r.setDate(r.getDate() + n); return r; }
+    console.log(`\n✅ ${pass}/${total} passed`);
   })();
 }

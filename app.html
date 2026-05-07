@@ -897,6 +897,16 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 const STORAGE_KEY = 'family-app-v1';
 const AppState = { tasks: [], previewTasks: [], recurringCompletions: {}, lang: 'en' };
 
+// ─── Debug logger (enable: window.APP_DEBUG = true) ───────────────
+const _ts = () => new Date().toISOString().slice(11,23);
+const _dbg = () => !!(typeof window !== 'undefined' && window.APP_DEBUG);
+const AppLog = {
+  group:    (label)       => _dbg() && console.group(`[${_ts()}] APP ${label}`),
+  groupEnd: ()            => _dbg() && console.groupEnd(),
+  info:     (label, data) => _dbg() && console.log(`    ${label}:`, data),
+  warn:     (label, data) => _dbg() && console.warn(`    ⚠ ${label}:`, data),
+};
+
 // ─── Translations ─────────────────────────────────────────────────
 const I18N = {
   en: {
@@ -1497,9 +1507,13 @@ if (SpeechAPI) {
         vSessionFinal = vSessionFinal ? vSessionFinal + ' ' + newFinal : newFinal; // Desktop/standard
       }
       _lastAcceptedFinal = newFinal;
+    } else if (newFinal && newFinal === _lastAcceptedFinal) {
+      AppLog.warn('duplicate prevention', `skipped repeated final: "${newFinal}"`);
     }
 
     vTranscript = [vCarryOver, vSessionFinal, latestInterim].filter(Boolean).join(' ');
+    if (newFinal)      AppLog.info('final transcript',   newFinal);
+    if (latestInterim) AppLog.info('interim transcript', latestInterim);
     showBubble(vTranscript);
   };
 
@@ -1522,6 +1536,7 @@ if (SpeechAPI) {
     vCarryOver    = vTranscript;
     vSessionFinal = '';
     _freshSession = !!vCarryOver; // skip cross-session repeats in next onresult
+    AppLog.info('debounce restart', `in 200ms, carryOver="${vCarryOver}"`);
     clearTimeout(_restartTimer);
     _restartTimer = setTimeout(() => {
       if (vListening) { _silentPing(); try { recognition.start(); } catch(_) {} }
@@ -1966,8 +1981,13 @@ function vStart() {
   if (vMode === 'star') vBurst();
   if (recognition) {
     recognition.lang = AppState.lang === 'he' ? 'he-IL' : 'en-US';
+    AppLog.group('speech started');
+    AppLog.info('lang', recognition.lang);
+    AppLog.info('mode', vMode);
+    AppLog.groupEnd();
     try { recognition.start(); } catch(_) {}
   } else {
+    AppLog.info('speech', 'no SpeechAPI — mock timer');
     vTimer = setTimeout(() => vOrganize(), 1800);
   }
 }
@@ -1980,6 +2000,10 @@ function vStop(userInitiated = true) {
   vListening = false;
   zone.classList.remove('rec');
   wdots.classList.remove('on');
+  AppLog.group('speech stopped');
+  AppLog.info('userInitiated', userInitiated);
+  AppLog.info('transcript', vTranscript);
+  AppLog.groupEnd();
   // abort() cancels immediately and silently — no final-result event, no browser sound.
   if (recognition) { try { recognition.abort(); } catch(_) {} }
   // Remove the live glow but keep bubble visible so user sees their frozen transcript.
@@ -2053,6 +2077,7 @@ function vOrganize() {
 
   // Non-Hebrew: smart splitting not available yet — show clear message, don't create broken task
   if (AppState.lang !== 'he') {
+    AppLog.warn('fallback mode', `lang=${AppState.lang} — no parser, showing message`);
     zone.classList.remove('rec');
     ltxt.textContent = t('voice_lang_fallback');
     ltxt.className   = 'ltxt';
@@ -2068,11 +2093,19 @@ function vOrganize() {
   ltxt.textContent = t('voice_organizing');
   ltxt.className = 'ltxt organizing';
 
+  AppLog.group('parsing started');
+  AppLog.info('text', spokenText);
+  AppLog.info('lang', AppState.lang);
   // Real parsing — replace mock tasks with what the user actually said
   const parsed = spokenText ? HebrewParser.parse(spokenText, { people: buildParserPeople(), lang: AppState.lang }) : [];
+  AppLog.info('segments', parsed.length);
+  AppLog.info('result', parsed);
+  AppLog.groupEnd();
   if (parsed.length > 0) {
     AppState.previewTasks = parsed.map(parsedToTask);
+    AppLog.info('preview generated', AppState.previewTasks.map(t => t.title));
   } else {
+    AppLog.warn('fallback mode', 'empty parse result → raw text task');
     // Fallback: one task with raw text and a smart default time
     AppState.previewTasks = [parsedToTask({
       title: spokenText || t('voice_tap'),
@@ -2442,6 +2475,11 @@ document.getElementById('btnOk').addEventListener('click', function() {
     const newTasks  = AppState.previewTasks.map(t => ({ ...t, completed: false, date: activeDate }));
     const kept      = AppState.tasks.filter(t => (t.date || todayDate()) !== activeDate);
     AppState.tasks  = [...kept, ...newTasks];
+    AppLog.group('tasks committed');
+    AppLog.info('count', newTasks.length);
+    AppLog.info('titles', newTasks.map(t => t.title));
+    AppLog.info('date', activeDate);
+    AppLog.groupEnd();
     AppState.previewTasks = [];
     dpAdjustMode = false;
     saveState();
