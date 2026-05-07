@@ -203,6 +203,8 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 .card-vline{width:1px;height:36px;background:#f0ebe5;flex-shrink:0;}
 .card-body{flex:1;min-width:0;}
 .card-title{font-size:14.5px;font-weight:800;color:#1c110a;margin-bottom:4px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.card-title[contenteditable]{outline:none;cursor:text;white-space:normal;overflow:visible;text-overflow:clip;user-select:text;-webkit-user-select:text;border-radius:6px;transition:background .18s,box-shadow .18s;}
+.card-title[contenteditable]:focus{background:rgba(255,110,50,.06);box-shadow:0 0 0 2px rgba(255,120,60,.15);padding:1px 4px;margin:-1px -4px;}
 .card-chip{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:#9e8878;}
 .chip-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
 .card-av{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
@@ -1681,6 +1683,16 @@ function dpRender(animate) {
       const bell = c.querySelector('.card-bell');
       bell.textContent = t.notify ? '🔔' : '🔕';
       bell.classList.toggle('off', !t.notify);
+    });
+    // Inline title editing — tap to edit, Enter/blur to confirm
+    const titleEl = c.querySelector('.card-title');
+    titleEl.setAttribute('contenteditable', 'plaintext-only');
+    titleEl.addEventListener('input', () => {
+      const updated = titleEl.textContent.trim();
+      if (updated) t.title = updated;
+    });
+    titleEl.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); titleEl.blur(); }
     });
     list.appendChild(c);
   });
