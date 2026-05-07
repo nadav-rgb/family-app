@@ -951,6 +951,7 @@ const I18N = {
     empty_title:'No tasks yet', empty_sub:'Tap + to plan your day ✨',
     empty_all_done:'All done! 🏆', empty_of:'{d} of {t} done {e}',
     assigned_to:'Assigned to',
+    voice_lang_fallback:'Smart task splitting is available in Hebrew. Switch language to try it ✨',
   },
   he: {
     voice_eyebrow:'✨ קלט קולי', voice_prompt:'ספר לי מה<br>צריך לקרות היום',
@@ -1004,6 +1005,7 @@ const I18N = {
     empty_title:'אין משימות עדיין', empty_sub:'לחץ + לתכנון היום ✨',
     empty_all_done:'הכל הושלם! 🏆', empty_of:'{d} מתוך {t} הושלמו {e}',
     assigned_to:'משויך ל',
+    voice_lang_fallback:'פירוק חכם למשימות זמין כרגע בעברית. תמיכה באנגלית תתווסף בהמשך ✨',
   }
 };
 function t(key) { return (I18N[AppState.lang] || I18N.en)[key] || key; }
@@ -2047,9 +2049,24 @@ function vOrganize() {
   vListening = false;
   wdots.classList.remove('on');
   const spokenText = vTranscript.trim();
+  dpAdjustMode = false;
+
+  // Non-Hebrew: smart splitting not available yet — show clear message, don't create broken task
+  if (AppState.lang !== 'he') {
+    zone.classList.remove('rec');
+    ltxt.textContent = t('voice_lang_fallback');
+    ltxt.className   = 'ltxt';
+    ltxt.style.color = '#e07c3a';
+    setTimeout(() => {
+      ltxt.textContent  = t('voice_tap');
+      ltxt.style.color  = '';
+      vTranscript = '';
+    }, 4000);
+    return;
+  }
+
   ltxt.textContent = t('voice_organizing');
   ltxt.className = 'ltxt organizing';
-  dpAdjustMode = false;
 
   // Real parsing — replace mock tasks with what the user actually said
   const parsed = spokenText ? HebrewParser.parse(spokenText, { people: buildParserPeople(), lang: AppState.lang }) : [];
