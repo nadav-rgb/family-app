@@ -95,9 +95,9 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
   box-shadow:0 6px 32px rgba(255,100,70,.1),0 2px 10px rgba(255,155,90,.08),inset 0 1px 0 rgba(255,255,255,.72);
   opacity:0;transform:translateY(10px) scale(.97);
   transition:opacity .38s ease,transform .38s cubic-bezier(.34,1.2,.64,1);
-  pointer-events:none;display:none;
+  pointer-events:none;visibility:hidden;
 }
-.speech-bubble.on{opacity:1;transform:translateY(0) scale(1);pointer-events:auto;display:block;}
+.speech-bubble.on{opacity:1;transform:translateY(0) scale(1);pointer-events:auto;visibility:visible;}
 .speech-bubble.fading{opacity:0;transform:translateY(5px) scale(.98);transition:opacity .28s ease,transform .28s ease;}
 
 /* Breathing while recording */
@@ -136,10 +136,11 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 .v-type-area.closing{display:flex;animation:typeAreaOut .42s cubic-bezier(.22,1,.36,1) both;}
 .v-type-inp{width:100%;border:none;outline:none;font-family:'Rubik','Nunito',sans-serif;font-size:16.5px;font-weight:600;color:#7c3a1c;background:transparent;line-height:2;direction:rtl;text-align:right;min-height:80px;max-height:165px;box-sizing:border-box;overflow-y:auto;white-space:pre-wrap;word-break:break-word;cursor:text;letter-spacing:.01em;}
 .v-type-inp:empty:before{content:"כתוב בחופשיות — נסדר הכל בשבילך ✨";color:#cbb5a8;font-style:italic;font-weight:400;pointer-events:none;display:block;}
-.v-type-inp::-webkit-scrollbar{width:3px;}
-.v-type-inp::-webkit-scrollbar-track{background:transparent;}
-.v-type-inp::-webkit-scrollbar-thumb{background:rgba(180,100,50,.28);border-radius:8px;}
-.v-type-inp::-webkit-scrollbar-thumb:hover{background:rgba(180,100,50,.5);}
+.v-type-inp::-webkit-scrollbar{width:8px;}
+.v-type-inp::-webkit-scrollbar-track{background:rgba(180,100,50,.07);border-radius:8px;}
+.v-type-inp::-webkit-scrollbar-thumb{background:rgba(180,100,50,.38);border-radius:8px;min-height:40px;}
+.v-type-inp::-webkit-scrollbar-thumb:hover{background:rgba(180,100,50,.58);}
+.v-type-inp::-webkit-scrollbar-thumb:active{background:rgba(180,100,50,.76);}
 .v-type-helper{font-size:11px;font-weight:700;color:#c4ae9f;text-align:center;padding-bottom:2px;}
 .v-voice-back{font-size:13px;font-weight:800;color:#9e8878;text-align:center;cursor:pointer;padding-top:4px;letter-spacing:.01em;border-bottom:1.5px solid rgba(158,136,120,.35);display:inline-block;transition:color .15s;}
 .v-voice-back:active{color:#6b4f3a;}
@@ -961,6 +962,7 @@ let vTranscript   = '';
 let vCarryOver    = '';  // confirmed text from previous recognition sessions
 let vInterimBuf   = '';  // locally committed interim words within current session
 let vLastInterim  = '';  // the last interim text we received from the API
+let _freshSession = false; // true right after onend restart — used to skip cross-session repeats
 
 const sbBubble = document.getElementById('speechBubble');
 const sbText   = document.getElementById('sbText');
@@ -980,6 +982,11 @@ function _appendAnimChars(parent, str) {
 
 function showBubble(text) {
   const incoming = text || '';
+  // Starting a fresh recording: _sbRendered was reset to '' by hideBubble,
+  // but old spans may still be in sbText (kept to preserve bubble height).
+  // Clear them now, before the bubble becomes visible, so no stale text shows.
+  if (!_sbRendered && sbText.hasChildNodes()) sbText.innerHTML = '';
+
   if (!incoming) {
     sbText.innerHTML = '';
     _sbRendered = '';
@@ -1011,8 +1018,12 @@ function hideBubble(immediate) {
   wdots.classList.remove('on');
   sbBubble.classList.remove('bubble-live');
   if (immediate) { sbBubble.classList.remove('on'); sbText.innerHTML = ''; return; }
+  // Non-immediate (after recording): fade out visually but DO NOT clear innerHTML.
+  // Keeping the text in the DOM preserves the bubble's height so the flex spacers
+  // don't redistribute and the heart doesn't jump. Content is cleared at the
+  // start of the next showBubble call (see guard above).
   sbBubble.classList.add('fading');
-  setTimeout(() => { sbBubble.classList.remove('on','fading'); sbText.innerHTML = ''; }, 320);
+  setTimeout(() => { sbBubble.classList.remove('on','fading'); }, 320);
 }
 
 if (SpeechAPI) {
@@ -1024,19 +1035,39 @@ if (SpeechAPI) {
   recognition.onresult = (e) => {
     const interim = e.results[e.results.length - 1][0].transcript;
 
+    // ── Cross-session dedup ──────────────────────────────────────────
+    // After onend restarts the session, Android Chrome sometimes re-sends
+    // words from the beginning of the current utterance. If the new interim
+    // is a prefix of what vCarryOver already contains, skip it entirely.
+    if (_freshSession && vCarryOver && vCarryOver.startsWith(interim.trim())) {
+      vLastInterim = interim;
+      showBubble(vTranscript);   // show unchanged
+      return;
+    }
+    _freshSession = false;
+
     if (interim !== vLastInterim) {
       const grew     = interim.startsWith(vLastInterim);      // normal char-by-char growth
       const shrank   = vLastInterim.startsWith(interim);      // API reconsidered
       const bufMatch = vInterimBuf && interim.startsWith(vInterimBuf); // full sentence arrived
 
       if (vLastInterim && !grew && !shrank && !bufMatch) {
-        // Genuinely new word — commit the previous interim
-        vInterimBuf = (vInterimBuf + ' ' + vLastInterim).trim();
+        // ── Within-session dedup ───────────────────────────────────
+        // Sometimes the API sends a long phrase "X Y Z" then drops to just "Z".
+        // Committing "X Y Z" and then showing "Z" again would duplicate "Z".
+        // Only commit up to (not including) the duplicated suffix.
+        const trimInterim = interim.trim();
+        if (vLastInterim.endsWith(' ' + trimInterim)) {
+          const cut = vLastInterim.lastIndexOf(' ' + trimInterim);
+          if (cut > 0) vInterimBuf = (vInterimBuf + ' ' + vLastInterim.slice(0, cut)).trim();
+        } else {
+          vInterimBuf = (vInterimBuf + ' ' + vLastInterim).trim();
+        }
       }
       vLastInterim = interim;
     }
 
-    // If the latest text already contains our buffer (e.g. final result with full sentence)
+    // If the latest text already contains our buffer (e.g. full sentence arrived)
     // show only the latest text to avoid duplication
     if (vInterimBuf && interim.startsWith(vInterimBuf)) {
       vTranscript = [vCarryOver, interim].filter(Boolean).join(' ');
@@ -1061,9 +1092,10 @@ if (SpeechAPI) {
   recognition.onend = () => {
     if (!vListening) return;
     // Session ended — carry full transcript, reset per-session state
-    vCarryOver   = vTranscript;
-    vInterimBuf  = '';
-    vLastInterim = '';
+    vCarryOver    = vTranscript;
+    vInterimBuf   = '';
+    vLastInterim  = '';
+    _freshSession = !!vCarryOver; // flag: skip cross-session repeats in next onresult
     clearTimeout(_restartTimer);
     _restartTimer = setTimeout(() => {
       if (vListening) { try { recognition.start(); } catch(_) {} }
@@ -1161,6 +1193,7 @@ vTypeInpEl.addEventListener('input', function() {
   if (_isComposing || current === _typeTracked) return;
 
   // Find common prefix (including \n characters)
+  const prevLen = _typeTracked.length;
   let ci = 0;
   while (ci < _typeTracked.length && ci < current.length && _typeTracked[ci] === current[ci]) ci++;
 
@@ -1175,8 +1208,11 @@ vTypeInpEl.addEventListener('input', function() {
   r.selectNodeContents(this); r.collapse(false);
   const sel = window.getSelection();
   sel.removeAllRanges(); sel.addRange(r);
-  // Scroll so cursor is always visible
-  this.scrollTop = this.scrollHeight;
+  // Scroll to bottom only when typing at the end (not editing mid-text)
+  // This lets user scroll up to edit earlier lines without being pulled back down
+  if (ci >= prevLen) {
+    this.scrollTop = this.scrollHeight;
+  }
 });
 
 function vTypeSubmit() {
