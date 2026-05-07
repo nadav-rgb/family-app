@@ -1109,11 +1109,34 @@ let _typeTracked = '';
 let _isComposing = false;
 const vTypeInpEl = document.getElementById('vTypeInp');
 
+// Read text preserving newlines (\n for each <br>), strip trailing newline
+function _getInpText(el) {
+  return (el.innerText || '').replace(/\n$/, '');
+}
+
+// Append text to a parent element; newlines become <br>, chars optionally animated
+function _appendNodes(parent, text, animate) {
+  text.split('\n').forEach((line, i) => {
+    if (i > 0) parent.appendChild(document.createElement('br'));
+    for (let j = 0; j < line.length; j++) {
+      const s = document.createElement('span');
+      if (animate) { s.className = 'char-new'; s.style.animationDelay = (j * 0.028) + 's'; }
+      s.textContent = line[j];
+      parent.appendChild(s);
+    }
+  });
+}
+
+// Normalise Enter to <br> so innerText reliably gives \n
+vTypeInpEl.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') { e.preventDefault(); document.execCommand('insertLineBreak'); }
+});
+
 // Skip rebuild during IME composition (Hebrew mobile keyboard)
 vTypeInpEl.addEventListener('compositionstart', () => { _isComposing = true; });
 vTypeInpEl.addEventListener('compositionend',   () => {
   _isComposing = false;
-  vTypeInpEl.dispatchEvent(new Event('input')); // animate after composition commits
+  vTypeInpEl.dispatchEvent(new Event('input'));
 });
 
 vTypeInpEl.addEventListener('paste', function(e) {
@@ -1123,42 +1146,29 @@ vTypeInpEl.addEventListener('paste', function(e) {
 });
 
 vTypeInpEl.addEventListener('input', function() {
-  const current = this.textContent;
+  const current = _getInpText(this);
   document.getElementById('vTypeBtn').disabled = !current.trim();
   if (_isComposing || current === _typeTracked) return;
 
-  // Find common prefix between last tracked text and current text
+  // Find common prefix (including \n characters)
   let ci = 0;
   while (ci < _typeTracked.length && ci < current.length && _typeTracked[ci] === current[ci]) ci++;
 
-  // Rebuild: old chars as plain span, new chars animated
+  // Rebuild: old part plain, new part animated — both preserve line breaks
   this.innerHTML = '';
-  if (ci > 0) {
-    const s = document.createElement('span');
-    s.textContent = current.slice(0, ci);
-    this.appendChild(s);
-  }
-  const newPart = current.slice(ci);
-  for (let i = 0; i < newPart.length; i++) {
-    const s = document.createElement('span');
-    s.className = 'char-new';
-    s.textContent = newPart[i];
-    s.style.animationDelay = (i * 0.028) + 's';
-    this.appendChild(s);
-  }
+  if (ci > 0) _appendNodes(this, current.slice(0, ci), false);
+  _appendNodes(this, current.slice(ci), true);
   _typeTracked = current;
 
-  // Always place caret at the logical end — reliable for both RTL and LTR
+  // Place caret at logical end (works for both RTL and LTR)
   const r = document.createRange();
-  r.selectNodeContents(this);
-  r.collapse(false);
+  r.selectNodeContents(this); r.collapse(false);
   const sel = window.getSelection();
-  sel.removeAllRanges();
-  sel.addRange(r);
+  sel.removeAllRanges(); sel.addRange(r);
 });
 
 function vTypeSubmit() {
-  const val = document.getElementById('vTypeInp').textContent.trim();
+  const val = _getInpText(document.getElementById('vTypeInp')).trim();
   if (!val) return;
   vTranscript = val;
   vOrganize();
