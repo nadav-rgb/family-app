@@ -952,8 +952,10 @@ const wdots = document.getElementById('wdots');
 // ─── Speech Recognition ───────────────────────────────────────────
 const SpeechAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
 let recognition = null;
-let vTranscript  = '';
-let vCarryOver   = '';  // text confirmed at end of previous session
+let vTranscript    = '';
+let vCarryOver     = '';  // confirmed text from previous recognition sessions
+let vSessionFinals = '';  // confirmed finals within current session
+let vFinalCount    = 0;   // how many results we've already absorbed as final
 
 const sbBubble = document.getElementById('speechBubble');
 const sbText   = document.getElementById('sbText');
@@ -1015,10 +1017,18 @@ if (SpeechAPI) {
   recognition.lang           = 'he-IL';
 
   recognition.onresult = (e) => {
-    // Take only the last result — safe on Android Chrome where resultIndex is always 0
-    const last = e.results[e.results.length - 1][0].transcript;
-    // Prepend whatever was spoken in previous sessions (captured in onend)
-    vTranscript = (vCarryOver + (vCarryOver ? ' ' : '') + last).trim();
+    // Absorb any newly finalized results (each processed exactly once via vFinalCount)
+    for (let i = vFinalCount; i < e.results.length; i++) {
+      if (e.results[i].isFinal) {
+        vSessionFinals = (vSessionFinals + ' ' + e.results[i][0].transcript).trim();
+        vFinalCount = i + 1;
+      }
+    }
+    // Current interim: the last result if it isn't final yet
+    const lastResult = e.results[e.results.length - 1];
+    const interim = lastResult.isFinal ? '' : lastResult[0].transcript;
+
+    vTranscript = [vCarryOver, vSessionFinals, interim].filter(Boolean).join(' ');
     showBubble(vTranscript);
   };
 
@@ -1036,9 +1046,10 @@ if (SpeechAPI) {
 
   recognition.onend = () => {
     if (!vListening) return;
-    // Carry the current transcript into the next session so text accumulates
-    // without duplication — new session starts fresh at results[0]
-    vCarryOver = vTranscript;
+    // Session ended — carry full transcript into next session, reset session counters
+    vCarryOver     = vTranscript;
+    vSessionFinals = '';
+    vFinalCount    = 0;
     clearTimeout(_restartTimer);
     _restartTimer = setTimeout(() => {
       if (vListening) { try { recognition.start(); } catch(_) {} }
@@ -1447,9 +1458,11 @@ zone.addEventListener('click', () => {
 });
 
 function vStart() {
-  vTranscript  = '';
-  vCarryOver   = '';
-  vListening   = true;
+  vTranscript    = '';
+  vCarryOver     = '';
+  vSessionFinals = '';
+  vFinalCount    = 0;
+  vListening     = true;
   zone.classList.add('rec');
   wdots.classList.add('on');
   showBubble('');
