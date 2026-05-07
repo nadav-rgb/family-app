@@ -1055,6 +1055,24 @@ function _silentPing() {
     src.buffer = buf; src.connect(ctx.destination); src.start();
   } catch(_) {}
 }
+// Looping silent buffer — holds the audio session open for the entire
+// recording so Chrome cannot claim it for system notification sounds.
+let _keepAlive = null;
+function _startKeepAlive() {
+  try {
+    const ctx = _getAudio();
+    const buf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate); // 1s loop
+    _keepAlive = ctx.createBufferSource();
+    _keepAlive.buffer = buf;
+    _keepAlive.loop = true;
+    const g = ctx.createGain(); g.gain.value = 0.0001; // inaudible
+    _keepAlive.connect(g); g.connect(ctx.destination);
+    _keepAlive.start();
+  } catch(_) {}
+}
+function _stopKeepAlive() {
+  try { if (_keepAlive) { _keepAlive.stop(); _keepAlive = null; } } catch(_) {}
+}
 function _tone(freq, offset, dur, vol) {
   try {
     const ctx = _getAudio();
@@ -1709,6 +1727,7 @@ function vStart() {
   _freshSession       = false;
   _lastAcceptedFinal  = '';
   _beepStart();
+  _startKeepAlive();
   vListening    = true;
   zone.classList.add('rec');
   wdots.classList.add('on');
@@ -1723,6 +1742,7 @@ function vStart() {
 }
 
 function vStop(userInitiated = true) {
+  _stopKeepAlive();
   if (userInitiated) _beepStop();
   clearTimeout(vTimer);
   clearTimeout(_restartTimer);
