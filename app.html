@@ -928,6 +928,7 @@ let vTranscript  = '';
 const sbBubble = document.getElementById('speechBubble');
 const sbText   = document.getElementById('sbText');
 let finalTranscript = '';
+let sessionFinal    = '';
 
 function showBubble(text) {
   sbText.textContent = text || '';
@@ -966,8 +967,8 @@ if (SpeechAPI) {
         interimText += text;
       }
     }
-    finalTranscript += finalText;
-    const display = (finalTranscript + interimText).trim();
+    sessionFinal += finalText;
+    const display = (finalTranscript + sessionFinal + interimText).trim();
     if (display) showBubble(display);
   };
 
@@ -983,6 +984,8 @@ if (SpeechAPI) {
 
   recognition.onend = () => {
     if (vListening) {
+      finalTranscript += sessionFinal;
+      sessionFinal = '';
       try { recognition.start(); } catch(_) {}
     }
   };
@@ -1317,6 +1320,7 @@ zone.addEventListener('click', () => {
 
 function vStart() {
   finalTranscript = '';
+  sessionFinal    = '';
   vTranscript  = '';
   vListening   = true;
   zone.classList.add('rec');
@@ -1335,7 +1339,8 @@ function vStop() {
   vListening = false;
   zone.classList.remove('rec');
   if (recognition) { try { recognition.stop(); } catch(_) {} }
-  vTranscript = finalTranscript.trim();
+  vTranscript = (finalTranscript + sessionFinal).trim();
+  sessionFinal = '';
   hideBubble(false);
   setTimeout(() => vOrganize(), 300);
 }
@@ -1663,6 +1668,7 @@ function resetVoiceScreen() {
   zone.style.animation = '';
   zone.classList.remove('recede', 'rec');
   finalTranscript = '';
+  sessionFinal    = '';
   hideBubble(true);
   const toggle = document.getElementById('vTypeToggle');
   const area   = document.getElementById('vTypeArea');
