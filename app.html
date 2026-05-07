@@ -1034,14 +1034,17 @@ if (SpeechAPI) {
   recognition.lang           = 'he-IL';
 
   recognition.onresult = (e) => {
-    // ── Collect new finals + current interim from this event ─────────
-    // Only iterate from e.resultIndex to avoid re-processing confirmed segments.
-    let newFinal      = '';   // isFinal text confirmed in THIS event
-    let latestInterim = '';   // latest non-final (in-progress) text
+    // ── Read full current state of ALL results (never accumulate manually) ──
+    // Iterating ALL results (not just from e.resultIndex) avoids double-counting:
+    // Chrome sometimes keeps e.resultIndex=0 even after a segment is isFinal,
+    // so manual accumulation from resultIndex would re-add the same segment.
+    // Instead we rebuild the full session text from scratch on every event.
+    let sessionText   = '';   // join of all isFinal segments in this session
+    let latestInterim = '';   // the one current non-final segment (if any)
 
-    for (let i = e.resultIndex; i < e.results.length; i++) {
+    for (let i = 0; i < e.results.length; i++) {
       const t = e.results[i][0].transcript.trim();
-      if (e.results[i].isFinal) newFinal = newFinal ? newFinal + ' ' + t : t;
+      if (e.results[i].isFinal) sessionText = sessionText ? sessionText + ' ' + t : t;
       else latestInterim = t;
     }
 
@@ -1049,7 +1052,7 @@ if (SpeechAPI) {
     // Android replays short prefix words; Desktop replays the full previous
     // transcript as a new interim. Skip both until genuinely new content arrives.
     if (_freshSession && vCarryOver) {
-      const candidate = [vSessionFinal, newFinal || latestInterim].filter(Boolean).join(' ').trim();
+      const candidate = [sessionText, latestInterim].filter(Boolean).join(' ').trim();
       if (!candidate) { showBubble(vTranscript); return; }
 
       if (vCarryOver.startsWith(candidate)) {
@@ -1060,22 +1063,15 @@ if (SpeechAPI) {
       _freshSession = false;
       if (candidate.startsWith(vCarryOver)) {
         // Desktop-style: new session text already embeds the full carryOver.
-        // Clear carryOver so it won't be prepended again, start session fresh.
-        vCarryOver    = '';
-        vSessionFinal = newFinal || '';
-        vTranscript   = [vSessionFinal, latestInterim].filter(Boolean).join(' ');
-        showBubble(vTranscript);
-        return;
+        // Clear carryOver so it won't be prepended again.
+        vCarryOver = '';
       }
-      // Diverged from carryOver: fall through to normal accumulation.
+      // Fall through — display the candidate as-is.
+    } else {
+      _freshSession = false;
     }
-    _freshSession = false;
 
-    // ── Normal accumulation ───────────────────────────────────────────
-    // isFinal results are reliable — accumulate them; show current interim alongside.
-    if (newFinal) vSessionFinal = vSessionFinal ? vSessionFinal + ' ' + newFinal : newFinal;
-
-    vTranscript = [vCarryOver, vSessionFinal, latestInterim].filter(Boolean).join(' ');
+    vTranscript = [vCarryOver, sessionText, latestInterim].filter(Boolean).join(' ');
     showBubble(vTranscript);
   };
 
