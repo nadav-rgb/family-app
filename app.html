@@ -606,6 +606,38 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 @keyframes emptyFloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-8px);}}
 .today-empty-msg{font-size:16px;font-weight:800;color:#7a6055;margin-top:6px;}
 .today-empty-sub{font-size:13px;font-weight:700;color:#c4ae9f;}
+
+/* ════════════════════════════════════
+   RTL OVERRIDES (Hebrew)
+════════════════════════════════════ */
+/* Card accent strip — flip border-radius to right edge */
+.phone[dir="rtl"] .card-accent{border-radius:5px 0 0 5px;}
+/* Card inner — swap the 0-padding side (accent now on right) */
+.phone[dir="rtl"] .card-inner{padding:14px 0 14px 14px;}
+/* Adjust-mode banner — flip side border */
+.phone[dir="rtl"] .adj-banner{border-left:none;border-right:3px solid #ff7033;border-radius:10px 0 0 10px;}
+/* Time strip — slide in/out from right in RTL */
+.phone[dir="rtl"] .ts-overlay{left:auto;right:0;border-radius:16px 0 0 16px;box-shadow:-6px 0 28px rgba(100,60,20,.18),-2px 0 8px rgba(100,60,20,.08);border:1.5px solid rgba(224,180,140,.35);border-right:none;}
+@keyframes tsSlideInRTL{from{transform:translateX(100%);opacity:0;}to{transform:translateX(0);opacity:1;}}
+@keyframes tsSlideOutRTL{from{transform:translateX(0);opacity:1;}to{transform:translateX(100%);opacity:0;}}
+.phone[dir="rtl"] .ts-overlay.ts-in{animation:tsSlideInRTL .22s cubic-bezier(.34,1.2,.64,1) both;}
+.phone[dir="rtl"] .ts-overlay.ts-out{animation:tsSlideOutRTL .16s ease both;}
+/* Back button arrow — flip SVG chevron for RTL */
+.phone[dir="rtl"] .back-btn svg{transform:scaleX(-1);}
+/* Share/detail arrows — flip › to ‹ in RTL */
+.phone[dir="rtl"] .t-share-arrow,
+.phone[dir="rtl"] .card-share-arrow{display:inline-block;transform:scaleX(-1);}
+/* Toasts */
+.phone[dir="rtl"] .undo-toast{text-align:right;}
+.phone[dir="rtl"] .notif-body{text-align:right;}
+/* Input direction — language-aware */
+.phone:not([dir="rtl"]) .sb-text{direction:ltr;text-align:left;}
+.phone[dir="rtl"]        .sb-text{direction:rtl;text-align:right;}
+.phone:not([dir="rtl"]) .v-type-inp{direction:ltr;text-align:left;}
+.phone[dir="rtl"]        .v-type-inp{direction:rtl;text-align:right;}
+/* Typing placeholder — language-aware */
+.phone:not([dir="rtl"]) .v-type-inp:empty:before{content:"Write freely — we'll organize it for you ✨";}
+.phone[dir="rtl"]        .v-type-inp:empty:before{content:"כתוב בחופשיות — נסדר הכל בשבילך ✨";}
 </style>
 </head>
 <body>
@@ -1068,12 +1100,13 @@ function sharedWithEmojis(visibleTo) {
   return FAMILY.filter(f => visibleTo.includes(f.id)).map(f => f.emoji).join('') || '—';
 }
 
-function assignedLabel(t) {
-  const assignedId = t.assignedTo;
-  const name = (assignedId && ID_TO_PERSON[assignedId]) || t.person || 'Mom';
+function assignedLabel(task) {
+  const assignedId = task.assignedTo;
+  const name = (assignedId && ID_TO_PERSON[assignedId]) || task.person || 'Mom';
   const personData = PEOPLE[name];
   const emoji = personData ? personData.emoji : '👤';
-  return `${emoji} ${name}`;
+  const id = PERSON_TO_ID[name] || assignedId || 'mom';
+  return `${emoji} ${t('family_' + id) || name}`;
 }
 
 // ─── Language ─────────────────────────────────────────────────────
@@ -1081,7 +1114,12 @@ const LANG_KEY = 'family-app-lang';
 
 function _applyLang() {
   const isHe = AppState.lang === 'he';
-  document.getElementById('s-voice').dir = isHe ? 'rtl' : '';
+  const dir  = isHe ? 'rtl' : '';
+  // Set RTL on phone shell and every screen / drawer
+  document.querySelector('.phone').dir = dir;
+  document.querySelectorAll(
+    '.app-screen,.style-drawer,.usw-drawer,.share-drawer,.cal-drawer,.share-bg,.style-bg,.usw-bg,.cal-bg'
+  ).forEach(el => { el.dir = dir; });
   // Apply all translatable strings to the DOM
   const set = (id, val, html) => {
     const el = document.getElementById(id);
@@ -2070,7 +2108,7 @@ function dpRender(animate) {
     const shareFooter = document.createElement('div');
     shareFooter.className = 'card-share';
     shareFooter.style.cssText = 'display:flex!important;padding:10px 14px 12px 18px;align-items:center;gap:8px;cursor:pointer;border-top:2px solid #f0d8c8;background:#fdf3ec;';
-    shareFooter.innerHTML = `<span style="font-size:11px;font-weight:700;color:#a8917f;">${t('assigned_to')}</span><span class="card-share-name" style="font-size:13px;font-weight:800;color:#5a3e2b;flex:1;margin-left:6px;">${assignedLabel(task)}</span><span style="font-size:15px;color:#b8a090;">›</span>`;
+    shareFooter.innerHTML = `<span style="font-size:11px;font-weight:700;color:#a8917f;">${t('assigned_to')}</span><span class="card-share-name" style="font-size:13px;font-weight:800;color:#5a3e2b;flex:1;margin-inline-start:6px;">${assignedLabel(task)}</span><span class="card-share-arrow" style="font-size:15px;color:#b8a090;">›</span>`;
     shareFooter.addEventListener('click', e => {
       e.stopPropagation();
       openShareDrawer(task, () => {
@@ -2488,7 +2526,7 @@ function renderToday() {
         <div class="t-bell${t.notify===false?' off':''}">${t.notify===false?'🔕':'🔔'}</div>
       </div>
       <div class="t-share">
-        <span class="t-share-lbl">${t('assigned_to')}</span>
+        <span class="t-share-lbl">${(I18N[AppState.lang]||I18N.en).assigned_to}</span>
         <span class="t-share-name">${assignedLabel(t)}</span>
         <span class="t-share-arrow">›</span>
       </div>`;
@@ -2703,7 +2741,7 @@ document.getElementById('tTasks').addEventListener('click', e => {
       document.querySelector('.t-htask').textContent  = nextTask.title;
       document.querySelector('.t-hav').textContent    = p.emoji;
       document.querySelector('.t-hname').textContent  = personLabel(nextTask.person);
-      document.querySelector('.t-hpill').textContent  = diff<=0?'now':diff<60?`in ${diff} min`:`in ${Math.round(diff/60)}h`;
+      document.querySelector('.t-hpill').textContent  = diff<=0?t('time_now'):diff<60?tFmt('time_in_min',{n:diff}):tFmt('time_in_hr',{n:Math.round(diff/60)});
     } else {
       ckEl.className = 't-ck ck-open';
     }
