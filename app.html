@@ -111,9 +111,9 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 .sb-text{font-size:15px;font-weight:600;color:#3d2416;line-height:1.72;direction:rtl;text-align:right;min-height:24px;word-break:break-word;letter-spacing:.012em;}
 .sb-text:empty::after{content:'…';color:#d4b8a8;}
 
-/* Word-appear animation */
-@keyframes sbWordIn{from{opacity:.2;transform:translateY(5px);}to{opacity:1;transform:translateY(0);}}
-.sb-text.updated{animation:sbWordIn .26s cubic-bezier(.34,1.2,.64,1) both;}
+/* Word-appear animation — opacity only, no Y movement */
+@keyframes sbWordIn{from{opacity:.1;}to{opacity:1;}}
+.sb-text.updated{animation:sbWordIn .3s ease both;}
 
 /* Pulsing dots */
 .sb-dots{display:flex;gap:5px;align-items:center;margin-top:10px;height:12px;}
@@ -949,6 +949,7 @@ const wdots = document.getElementById('wdots');
 const SpeechAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
 let recognition = null;
 let vTranscript  = '';
+let vFinalText   = '';
 
 const sbBubble = document.getElementById('speechBubble');
 const sbText   = document.getElementById('sbText');
@@ -961,10 +962,15 @@ function showBubble(text) {
   ltxt.textContent = '✋ Tap to stop';
   ltxt.className   = 'ltxt v-stop-hint';
   ltxt.style.opacity = '';
+  // Animate only when a new complete word appears — not on every streamed character
   if (text && text !== prev) {
-    sbText.classList.remove('updated');
-    void sbText.offsetWidth;
-    sbText.classList.add('updated');
+    const prevWC = prev.trim() ? prev.trim().split(/\s+/).length : 0;
+    const newWC  = text.trim().split(/\s+/).length;
+    if (newWC > prevWC) {
+      sbText.classList.remove('updated');
+      void sbText.offsetWidth;
+      sbText.classList.add('updated');
+    }
   }
 }
 
@@ -986,9 +992,15 @@ if (SpeechAPI) {
   recognition.lang           = 'he-IL';
 
   recognition.onresult = (e) => {
-    const last = e.results[e.results.length - 1][0].transcript;
-    vTranscript = last;
-    showBubble(last);
+    const lastResult = e.results[e.results.length - 1];
+    const lastText   = lastResult[0].transcript;
+    if (lastResult.isFinal) {
+      vFinalText  = (vFinalText + ' ' + lastText).trim();
+      vTranscript = vFinalText;
+    } else {
+      vTranscript = (vFinalText + (vFinalText ? ' ' : '') + lastText).trim();
+    }
+    showBubble(vTranscript);
   };
 
   recognition.onerror = (e) => {
@@ -1343,6 +1355,7 @@ zone.addEventListener('click', () => {
 
 function vStart() {
   vTranscript  = '';
+  vFinalText   = '';
   vListening   = true;
   zone.classList.add('rec');
   wdots.classList.add('on');
