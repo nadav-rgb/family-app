@@ -1109,12 +1109,18 @@ let _typeTracked = '';
 let _isComposing = false;
 const vTypeInpEl = document.getElementById('vTypeInp');
 
-// Read text preserving newlines (\n for each <br>), strip trailing newline
+// Walk the DOM to read text — skips phantom <br> markers, counts real <br> as \n
 function _getInpText(el) {
-  return (el.innerText || '').replace(/\n$/, '');
+  let text = '';
+  el.childNodes.forEach(node => {
+    if (node.nodeType === Node.TEXT_NODE) { text += node.textContent; }
+    else if (node.nodeName === 'BR')     { if (!node.dataset.phantom) text += '\n'; }
+    else if (node.nodeName === 'SPAN')   { text += node.textContent; }
+  });
+  return text;
 }
 
-// Append text to a parent element; newlines become <br>, chars optionally animated
+// Append text to parent; \n → real <br>, chars optionally animated
 function _appendNodes(parent, text, animate) {
   text.split('\n').forEach((line, i) => {
     if (i > 0) parent.appendChild(document.createElement('br'));
@@ -1127,7 +1133,7 @@ function _appendNodes(parent, text, animate) {
   });
 }
 
-// Normalise Enter to <br> so innerText reliably gives \n
+// Normalise Enter → single <br> (browser sometimes inserts <div>)
 vTypeInpEl.addEventListener('keydown', function(e) {
   if (e.key === 'Enter') { e.preventDefault(); document.execCommand('insertLineBreak'); }
 });
@@ -1158,6 +1164,12 @@ vTypeInpEl.addEventListener('input', function() {
   this.innerHTML = '';
   if (ci > 0) _appendNodes(this, current.slice(0, ci), false);
   _appendNodes(this, current.slice(ci), true);
+  // When text ends with \n the cursor needs a phantom <br> to sit on a visible new line
+  if (current.endsWith('\n')) {
+    const ph = document.createElement('br');
+    ph.dataset.phantom = 'true';
+    this.appendChild(ph);
+  }
   _typeTracked = current;
 
   // Place caret at logical end (works for both RTL and LTR)
