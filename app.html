@@ -927,8 +927,9 @@ let vTranscript  = '';
 
 const sbBubble = document.getElementById('speechBubble');
 const sbText   = document.getElementById('sbText');
-let finalTranscript = '';
-let sessionFinal    = '';
+let finalTranscript    = '';
+let sessionFinal       = '';
+let lastCommittedIndex = 0;
 
 function showBubble(text) {
   sbText.textContent = text || '';
@@ -956,18 +957,19 @@ if (SpeechAPI) {
   recognition.lang           = 'he-IL';
 
   recognition.onresult = (e) => {
-    let finalText = '';
     let interimText = '';
-    for (let i = e.resultIndex; i < e.results.length; i++) {
+    for (let i = 0; i < e.results.length; i++) {
       const result = e.results[i];
-      const text = result[0].transcript;
+      const text   = result[0].transcript;
       if (result.isFinal) {
-        finalText += text + ' ';
+        if (i >= lastCommittedIndex) {
+          sessionFinal += text + ' ';
+          lastCommittedIndex = i + 1;
+        }
       } else {
-        interimText += text;
+        interimText = text;
       }
     }
-    sessionFinal += finalText;
     const display = (finalTranscript + sessionFinal + interimText).trim();
     if (display) showBubble(display);
   };
@@ -984,8 +986,9 @@ if (SpeechAPI) {
 
   recognition.onend = () => {
     if (vListening) {
-      finalTranscript += sessionFinal;
-      sessionFinal = '';
+      finalTranscript   += sessionFinal;
+      sessionFinal       = '';
+      lastCommittedIndex = 0;
       try { recognition.start(); } catch(_) {}
     }
   };
@@ -1319,8 +1322,9 @@ zone.addEventListener('click', () => {
 });
 
 function vStart() {
-  finalTranscript = '';
-  sessionFinal    = '';
+  finalTranscript    = '';
+  sessionFinal       = '';
+  lastCommittedIndex = 0;
   vTranscript  = '';
   vListening   = true;
   zone.classList.add('rec');
@@ -1667,8 +1671,9 @@ function resetVoiceScreen() {
   clearTimeout(vTimer);
   zone.style.animation = '';
   zone.classList.remove('recede', 'rec');
-  finalTranscript = '';
-  sessionFinal    = '';
+  finalTranscript    = '';
+  sessionFinal       = '';
+  lastCommittedIndex = 0;
   hideBubble(true);
   const toggle = document.getElementById('vTypeToggle');
   const area   = document.getElementById('vTypeArea');
