@@ -1036,13 +1036,37 @@ if (SpeechAPI) {
     const interim = e.results[e.results.length - 1][0].transcript;
 
     // ── Cross-session dedup ──────────────────────────────────────────
-    // After onend restarts the session, Android Chrome sometimes re-sends
-    // words from the beginning of the current utterance. If the new interim
-    // is a prefix of what vCarryOver already contains, skip it entirely.
-    if (_freshSession && vCarryOver && vCarryOver.startsWith(interim.trim())) {
-      vLastInterim = interim;
-      showBubble(vTranscript);   // show unchanged
-      return;
+    // Two opposite behaviours depending on browser:
+    //
+    // Android Chrome sends only the CURRENT WORD per event, so after a session
+    // restart it re-sends short words that are prefixes of vCarryOver → skip them.
+    //
+    // Desktop Chrome sends the FULL ACCUMULATED PHRASE per event, so after a
+    // restart the new interim already contains vCarryOver as its prefix → strip it.
+    if (_freshSession && vCarryOver) {
+      const ti = interim.trim();
+
+      if (vCarryOver.startsWith(ti)) {
+        // Android Chrome: replaying a prefix of what we already have — skip.
+        // Keep _freshSession=true so subsequent short words are also checked.
+        vLastInterim = interim;
+        showBubble(vTranscript);
+        return;
+      }
+
+      _freshSession = false;
+
+      if (ti.startsWith(vCarryOver)) {
+        // Desktop Chrome: new session sends full text including carryOver content.
+        // Consume carryOver (already embedded in interim) to avoid duplication.
+        vCarryOver   = '';
+        vInterimBuf  = '';
+        vLastInterim = interim;
+        vTranscript  = ti;
+        showBubble(vTranscript);
+        return;
+      }
+      // Genuinely new content that doesn't overlap — fall through to normal path.
     }
     _freshSession = false;
 
