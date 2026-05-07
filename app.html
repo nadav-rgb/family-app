@@ -1268,6 +1268,7 @@ if (SpeechAPI) {
 
   recognition.onend = () => {
     if (!vListening) return;
+    _silentPing(); // claim audio session immediately — suppresses Chrome's session-end sound
     // Session ended — carry full transcript, reset per-session state
     vCarryOver    = vTranscript;
     vSessionFinal = '';
