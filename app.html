@@ -128,13 +128,13 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 .v-type-row{text-align:center;flex-shrink:0;animation:fadeUp .4s ease .28s both;}
 .v-type-toggle{display:inline-block;font-size:14px;font-weight:800;color:#e07c3a;cursor:pointer;padding:6px 0;letter-spacing:.01em;border-bottom:1.5px solid rgba(224,124,58,.3);transition:opacity .15s;}
 .v-type-toggle:active{opacity:.6;}
-.v-type-area{display:none;flex-direction:column;gap:10px;background:white;border-radius:24px;padding:18px 18px 14px;box-shadow:0 6px 28px rgba(100,60,20,.11);margin:0 20px;}
+.v-type-area{display:none;flex-direction:column;gap:10px;background:linear-gradient(148deg,rgba(255,210,220,.48) 0%,rgba(255,185,130,.26) 42%,rgba(255,250,243,.96) 100%);border-radius:28px;padding:16px 20px 14px;box-shadow:0 6px 32px rgba(255,100,70,.1),0 2px 10px rgba(255,155,90,.08),inset 0 1px 0 rgba(255,255,255,.72);margin:0 16px;}
 @keyframes typeAreaIn{from{opacity:0;transform:translateY(14px);} to{opacity:1;transform:translateY(0);}}
 @keyframes typeAreaOut{from{opacity:1;transform:translateY(0);} to{opacity:0;transform:translateY(10px);}}
 .v-type-area.open{display:flex;animation:typeAreaIn .32s cubic-bezier(.34,1.2,.64,1) both;}
 .v-type-area.closing{display:flex;animation:typeAreaOut .42s cubic-bezier(.22,1,.36,1) both;}
-.v-type-inp{width:100%;border:none;outline:none;font-family:'Nunito',sans-serif;font-size:15px;font-weight:600;color:#1c110a;background:transparent;line-height:1.65;min-height:88px;box-sizing:border-box;overflow:hidden;white-space:pre-wrap;word-break:break-word;cursor:text;}
-.v-type-inp:empty:before{content:"e.g. Laundry, pick up Yonatan at 3,\A Dudi class at 4, buy groceries...";white-space:pre;color:#c4ae9f;font-weight:600;pointer-events:none;display:block;}
+.v-type-inp{width:100%;border:none;outline:none;font-family:'Nunito',sans-serif;font-size:16.5px;font-weight:500;color:#7c3a1c;background:transparent;line-height:2;direction:rtl;text-align:right;min-height:80px;box-sizing:border-box;overflow:hidden;white-space:pre-wrap;word-break:break-word;cursor:text;letter-spacing:.01em;}
+.v-type-inp:empty:before{content:"כתוב בחופשיות — נסדר הכל בשבילך ✨";color:#cbb5a8;font-style:italic;font-weight:400;pointer-events:none;display:block;}
 .v-type-helper{font-size:11px;font-weight:700;color:#c4ae9f;text-align:center;padding-bottom:2px;}
 .v-voice-back{font-size:13px;font-weight:800;color:#9e8878;text-align:center;cursor:pointer;padding-top:4px;letter-spacing:.01em;border-bottom:1.5px solid rgba(158,136,120,.35);display:inline-block;transition:color .15s;}
 .v-voice-back:active{color:#6b4f3a;}
@@ -1085,7 +1085,15 @@ function _setCaretPos(el, pos) {
 }
 
 let _typeTracked = '';
+let _isComposing = false;
 const vTypeInpEl = document.getElementById('vTypeInp');
+
+// Skip rebuild during IME composition (Hebrew mobile keyboard)
+vTypeInpEl.addEventListener('compositionstart', () => { _isComposing = true; });
+vTypeInpEl.addEventListener('compositionend',   () => {
+  _isComposing = false;
+  vTypeInpEl.dispatchEvent(new Event('input')); // animate after composition commits
+});
 
 vTypeInpEl.addEventListener('paste', function(e) {
   e.preventDefault();
@@ -1096,15 +1104,13 @@ vTypeInpEl.addEventListener('paste', function(e) {
 vTypeInpEl.addEventListener('input', function() {
   const current = this.textContent;
   document.getElementById('vTypeBtn').disabled = !current.trim();
-  if (current === _typeTracked) return;
+  if (_isComposing || current === _typeTracked) return;
 
-  const caretPos = _getCaretPos(this);
-
-  // Find common prefix between last tracked and current text
+  // Find common prefix between last tracked text and current text
   let ci = 0;
   while (ci < _typeTracked.length && ci < current.length && _typeTracked[ci] === current[ci]) ci++;
 
-  // Rebuild: keep old chars as plain span, animate new chars
+  // Rebuild: old chars as plain span, new chars animated
   this.innerHTML = '';
   if (ci > 0) {
     const s = document.createElement('span');
@@ -1120,7 +1126,14 @@ vTypeInpEl.addEventListener('input', function() {
     this.appendChild(s);
   }
   _typeTracked = current;
-  _setCaretPos(this, caretPos);
+
+  // Always place caret at the logical end — reliable for both RTL and LTR
+  const r = document.createRange();
+  r.selectNodeContents(this);
+  r.collapse(false);
+  const sel = window.getSelection();
+  sel.removeAllRanges();
+  sel.addRange(r);
 });
 
 function vTypeSubmit() {
