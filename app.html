@@ -963,6 +963,7 @@ let recognition = null;
 let vTranscript    = '';
 let vCarryOver     = '';  // confirmed text from previous recognition sessions
 let vSessionFinal  = '';  // isFinal-confirmed words within the current recognition session
+let _lastFinalText = '';  // last isFinal text seen — prevents re-adding same result
 let _freshSession  = false; // true right after onend restart — used to skip cross-session repeats
 
 const sbBubble = document.getElementById('speechBubble');
@@ -1034,46 +1035,84 @@ if (SpeechAPI) {
   recognition.lang           = 'he-IL';
 
   recognition.onresult = (e) => {
-    // ── Read full current state of ALL results (never accumulate manually) ──
-    // Iterating ALL results (not just from e.resultIndex) avoids double-counting:
-    // Chrome sometimes keeps e.resultIndex=0 even after a segment is isFinal,
-    // so manual accumulation from resultIndex would re-add the same segment.
-    // Instead we rebuild the full session text from scratch on every event.
-    let sessionText   = '';   // join of all isFinal segments in this session
-    let latestInterim = '';   // the one current non-final segment (if any)
 
-    for (let i = 0; i < e.results.length; i++) {
-      const t = e.results[i][0].transcript.trim();
-      if (e.results[i].isFinal) sessionText = sessionText ? sessionText + ' ' + t : t;
-      else latestInterim = t;
+    // ── Multi-segment path (Desktop: 2+ result objects) ──────────────
+    // Chrome accumulated multiple segments; read them all from index 0.
+    // No manual accumulation needed — we rebuild session text each event.
+    // This path handles Desktop cleanly; length=1 path handles Android.
+    if (e.results.length > 1) {
+      let sessionText = '', latestInterim = '';
+      for (let i = 0; i < e.results.length; i++) {
+        const seg = e.results[i][0].transcript.trim();
+        if (e.results[i].isFinal) sessionText = sessionText ? sessionText + ' ' + seg : seg;
+        else latestInterim = seg;
+      }
+      if (_freshSession && vCarryOver) {
+        const cand = [sessionText, latestInterim].filter(Boolean).join(' ');
+        if (!cand) { showBubble(vTranscript); return; }
+        if (vCarryOver.startsWith(cand)) { showBubble(vTranscript); return; }
+        _freshSession = false;
+        if (cand.startsWith(vCarryOver)) vCarryOver = '';
+        // Diverged: keep vCarryOver, new content appends below
+      } else { _freshSession = false; }
+      vTranscript = [vCarryOver, sessionText, latestInterim].filter(Boolean).join(' ');
+      showBubble(vTranscript);
+      return;
     }
 
-    // ── Cross-session dedup after onend restart ───────────────────────
-    // Android replays short prefix words; Desktop replays the full previous
-    // transcript as a new interim. Skip both until genuinely new content arrives.
-    if (_freshSession && vCarryOver) {
-      const candidate = [sessionText, latestInterim].filter(Boolean).join(' ').trim();
-      if (!candidate) { showBubble(vTranscript); return; }
+    // ── Single-result path (Android + early/single-segment Desktop) ──
+    // Android fires one result at a time (word by word); we accumulate
+    // isFinal results manually into vSessionFinal.
+    // _lastFinalText prevents re-adding the same isFinal if Chrome resends it.
+    const result  = e.results[0];
+    const t       = result[0].transcript.trim();
+    const isFinal = result.isFinal;
 
-      if (vCarryOver.startsWith(candidate)) {
-        // Android-style: still replaying a prefix of carryOver — skip.
+    // Cross-session dedup — skip replays after onend restart
+    if (_freshSession && vCarryOver) {
+      const cand = [vSessionFinal, t].filter(Boolean).join(' ').trim();
+      if (!cand) { showBubble(vTranscript); return; }
+      // Skip if cand is a prefix of carryOver, OR already present as a
+      // complete word/phrase inside carryOver (Android word-by-word replay).
+      if (vCarryOver.startsWith(cand) || _vWordIn(cand, vCarryOver)) {
         showBubble(vTranscript);
         return; // keep _freshSession=true
       }
       _freshSession = false;
-      if (candidate.startsWith(vCarryOver)) {
-        // Desktop-style: new session text already embeds the full carryOver.
-        // Clear carryOver so it won't be prepended again.
-        vCarryOver = '';
+      if (cand.startsWith(vCarryOver)) {
+        // Desktop single-segment restart: new text already embeds carryOver.
+        vCarryOver = ''; vSessionFinal = ''; _lastFinalText = '';
       }
-      // Fall through — display the candidate as-is.
+      // Diverged: keep vCarryOver so it's prepended below
     } else {
       _freshSession = false;
     }
 
-    vTranscript = [vCarryOver, sessionText, latestInterim].filter(Boolean).join(' ');
+    if (isFinal && t !== _lastFinalText) {
+      // New confirmed text. If it extends what we already have in-session
+      // (Chrome growing the same segment), replace rather than append.
+      if (t.startsWith(vSessionFinal)) {
+        vSessionFinal = t;
+      } else {
+        vSessionFinal = vSessionFinal ? vSessionFinal + ' ' + t : t;
+      }
+      _lastFinalText = t;
+      vTranscript = [vCarryOver, vSessionFinal].filter(Boolean).join(' ');
+    } else if (!isFinal) {
+      // In-progress word — show alongside accumulated finals
+      vTranscript = [vCarryOver, vSessionFinal, t].filter(Boolean).join(' ');
+    }
+    // isFinal && t === _lastFinalText → same result replayed → no update
+
     showBubble(vTranscript);
   };
+
+  // Returns true if 'phrase' appears as a complete word sequence within 'text'.
+  // Used to detect Android replaying an individual word from the previous transcript.
+  function _vWordIn(phrase, text) {
+    if (!phrase || !text) return false;
+    return (' ' + text + ' ').includes(' ' + phrase + ' ');
+  }
 
   recognition.onerror = (e) => {
     if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
@@ -1090,9 +1129,10 @@ if (SpeechAPI) {
   recognition.onend = () => {
     if (!vListening) return;
     // Session ended — carry full transcript, reset per-session state
-    vCarryOver    = vTranscript;
-    vSessionFinal = '';
-    _freshSession = !!vCarryOver; // skip cross-session repeats in next onresult
+    vCarryOver     = vTranscript;
+    vSessionFinal  = '';
+    _lastFinalText = '';
+    _freshSession  = !!vCarryOver; // skip cross-session repeats in next onresult
     clearTimeout(_restartTimer);
     _restartTimer = setTimeout(() => {
       if (vListening) { try { recognition.start(); } catch(_) {} }
@@ -1523,11 +1563,12 @@ zone.addEventListener('click', () => {
 });
 
 function vStart() {
-  vTranscript   = '';
-  vCarryOver    = '';
-  vSessionFinal = '';
-  _freshSession = false;
-  vListening    = true;
+  vTranscript    = '';
+  vCarryOver     = '';
+  vSessionFinal  = '';
+  _lastFinalText = '';
+  _freshSession  = false;
+  vListening     = true;
   zone.classList.add('rec');
   wdots.classList.add('on');
   showBubble('');
