@@ -107,18 +107,24 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 }
 .speech-bubble.bubble-live{animation:bubbleBreath 2.1s ease-in-out infinite;}
 
-.sb-label{font-size:9.5px;font-weight:900;color:#e07c3a;letter-spacing:.8px;text-transform:uppercase;margin-bottom:8px;opacity:.72;}
-.sb-text{font-size:15px;font-weight:600;color:#3d2416;line-height:1.72;direction:rtl;text-align:right;min-height:24px;word-break:break-word;letter-spacing:.012em;}
-.sb-text:empty::after{content:'…';color:#d4b8a8;}
+.sb-label{font-size:9px;font-weight:800;color:#e07c3a;letter-spacing:.65px;text-transform:uppercase;margin-bottom:10px;opacity:.5;}
+.sb-text{
+  font-size:16.5px;font-weight:500;color:#7c3a1c;
+  line-height:2;direction:rtl;text-align:right;
+  min-height:28px;word-break:break-word;letter-spacing:.01em;
+}
+.sb-text:empty::after{content:'…';color:#cbb5a8;font-style:italic;font-weight:400;}
 
-/* sb-text updates naturally — no per-word animation */
+/* New-word gentle fade — opacity only, zero movement */
+@keyframes sbWordIn{from{opacity:.35;}to{opacity:1;}}
+.sb-text.word-in{animation:sbWordIn .28s ease both;}
 
-/* Pulsing dots */
-.sb-dots{display:flex;gap:5px;align-items:center;margin-top:10px;height:12px;}
-.sb-dots span{display:inline-block;width:5px;height:5px;border-radius:50%;background:rgba(224,124,58,.5);animation:sbDot 1.25s ease-in-out infinite;}
-.sb-dots span:nth-child(2){animation-delay:.22s;}
-.sb-dots span:nth-child(3){animation-delay:.44s;}
-@keyframes sbDot{0%,100%{opacity:.25;transform:scale(.65);}50%{opacity:1;transform:scale(1.25);}}
+/* Pulsing dots — softer, smaller, slower */
+.sb-dots{display:flex;gap:4px;align-items:center;margin-top:10px;height:10px;}
+.sb-dots span{display:inline-block;width:4px;height:4px;border-radius:50%;background:rgba(210,110,50,.38);animation:sbDot 1.7s ease-in-out infinite;}
+.sb-dots span:nth-child(2){animation-delay:.32s;}
+.sb-dots span:nth-child(3){animation-delay:.64s;}
+@keyframes sbDot{0%,100%{opacity:.18;transform:scale(.65);}50%{opacity:.8;transform:scale(1.1);}}
 .v-type-row{text-align:center;flex-shrink:0;animation:fadeUp .4s ease .28s both;}
 .v-type-toggle{display:inline-block;font-size:14px;font-weight:800;color:#e07c3a;cursor:pointer;padding:6px 0;letter-spacing:.01em;border-bottom:1.5px solid rgba(224,124,58,.3);transition:opacity .15s;}
 .v-type-toggle:active{opacity:.6;}
@@ -953,7 +959,16 @@ const sbBubble = document.getElementById('speechBubble');
 const sbText   = document.getElementById('sbText');
 
 function showBubble(text) {
+  const prev   = sbText.textContent;
+  const prevWC = prev.trim()         ? prev.trim().split(/\s+/).length         : 0;
+  const newWC  = (text||'').trim()   ? (text||'').trim().split(/\s+/).length   : 0;
+  const newWord = text && newWC > prevWC;
+  if (newWord) {
+    sbText.classList.remove('word-in');
+    void sbText.offsetWidth;
+  }
   sbText.textContent = text || '';
+  if (newWord) sbText.classList.add('word-in');
   sbBubble.classList.add('on', 'bubble-live');
   sbBubble.classList.remove('fading');
   ltxt.textContent = '✋ Tap to stop';
