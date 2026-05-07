@@ -4,7 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
 <title>Family App</title>
-<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&family=Varela+Round&display=swap" rel="stylesheet"/>
 <style>
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
 *:focus{outline:none;}
@@ -109,7 +109,8 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 
 .sb-label{font-size:9px;font-weight:800;color:#e07c3a;letter-spacing:.65px;text-transform:uppercase;margin-bottom:10px;opacity:.5;}
 .sb-text{
-  font-size:16.5px;font-weight:500;color:#7c3a1c;
+  font-family:'Varela Round','Nunito',sans-serif;
+  font-size:16.5px;font-weight:400;color:#7c3a1c;
   line-height:2;direction:rtl;text-align:right;
   min-height:28px;word-break:break-word;letter-spacing:.01em;
 }
@@ -133,7 +134,7 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 @keyframes typeAreaOut{from{opacity:1;transform:translateY(0);} to{opacity:0;transform:translateY(10px);}}
 .v-type-area.open{display:flex;animation:typeAreaIn .32s cubic-bezier(.34,1.2,.64,1) both;}
 .v-type-area.closing{display:flex;animation:typeAreaOut .42s cubic-bezier(.22,1,.36,1) both;}
-.v-type-inp{width:100%;border:none;outline:none;font-family:'Nunito',sans-serif;font-size:16.5px;font-weight:500;color:#7c3a1c;background:transparent;line-height:2;direction:rtl;text-align:right;min-height:80px;box-sizing:border-box;overflow:hidden;white-space:pre-wrap;word-break:break-word;cursor:text;letter-spacing:.01em;}
+.v-type-inp{width:100%;border:none;outline:none;font-family:'Varela Round','Nunito',sans-serif;font-size:16.5px;font-weight:400;color:#7c3a1c;background:transparent;line-height:2;direction:rtl;text-align:right;min-height:80px;box-sizing:border-box;overflow:hidden;white-space:pre-wrap;word-break:break-word;cursor:text;letter-spacing:.01em;}
 .v-type-inp:empty:before{content:"כתוב בחופשיות — נסדר הכל בשבילך ✨";color:#cbb5a8;font-style:italic;font-weight:400;pointer-events:none;display:block;}
 .v-type-helper{font-size:11px;font-weight:700;color:#c4ae9f;text-align:center;padding-bottom:2px;}
 .v-voice-back{font-size:13px;font-weight:800;color:#9e8878;text-align:center;cursor:pointer;padding-top:4px;letter-spacing:.01em;border-bottom:1.5px solid rgba(158,136,120,.35);display:inline-block;transition:color .15s;}
