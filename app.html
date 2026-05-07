@@ -939,7 +939,7 @@ function goto(toId, leaveKf, enterKf, onDone) {
 }
 
 // ─── Voice screen ─────────────────────────────────────────────────
-let vMode = 'heart', vListening = false, vTimer = null;
+let vMode = 'heart', vListening = false, vTimer = null, _restartTimer = null;
 const wrapIds = { heart:'wrap-heart', star:'wrap-star', classic:'wrap-classic', blob:'wrap-blob' };
 const zone  = document.getElementById('micZone');
 const ltxt  = document.getElementById('ltxt');
@@ -1003,7 +1003,6 @@ if (SpeechAPI) {
     // onend will fire next and restart the session without touching the UI.
   };
 
-  let _restartTimer = null;
   recognition.onend = () => {
     if (!vListening) return;
     // Debounce: prevents rapid restart loops that cause browser beeps.
@@ -1691,6 +1690,7 @@ function resetVoiceScreen() {
   vTranscript = '';
   if (recognition) { try { recognition.abort(); } catch(_) {} }
   clearTimeout(vTimer);
+  clearTimeout(_restartTimer);
   zone.style.animation = '';
   zone.classList.remove('recede', 'rec');
   vTranscript = '';
