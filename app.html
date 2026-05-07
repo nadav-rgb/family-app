@@ -111,9 +111,7 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 .sb-text{font-size:15px;font-weight:600;color:#3d2416;line-height:1.72;direction:rtl;text-align:right;min-height:24px;word-break:break-word;letter-spacing:.012em;}
 .sb-text:empty::after{content:'…';color:#d4b8a8;}
 
-/* Word-appear animation — opacity only, no Y movement */
-@keyframes sbWordIn{from{opacity:.1;}to{opacity:1;}}
-.sb-text.updated{animation:sbWordIn .3s ease both;}
+/* sb-text updates naturally — no per-word animation */
 
 /* Pulsing dots */
 .sb-dots{display:flex;gap:5px;align-items:center;margin-top:10px;height:12px;}
@@ -949,29 +947,18 @@ const wdots = document.getElementById('wdots');
 const SpeechAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
 let recognition = null;
 let vTranscript  = '';
-let vFinalText   = '';
+let vCarryOver   = '';  // text confirmed at end of previous session
 
 const sbBubble = document.getElementById('speechBubble');
 const sbText   = document.getElementById('sbText');
 
 function showBubble(text) {
-  const prev = sbText.textContent;
   sbText.textContent = text || '';
   sbBubble.classList.add('on', 'bubble-live');
   sbBubble.classList.remove('fading');
   ltxt.textContent = '✋ Tap to stop';
   ltxt.className   = 'ltxt v-stop-hint';
   ltxt.style.opacity = '';
-  // Animate only when a new complete word appears — not on every streamed character
-  if (text && text !== prev) {
-    const prevWC = prev.trim() ? prev.trim().split(/\s+/).length : 0;
-    const newWC  = text.trim().split(/\s+/).length;
-    if (newWC > prevWC) {
-      sbText.classList.remove('updated');
-      void sbText.offsetWidth;
-      sbText.classList.add('updated');
-    }
-  }
 }
 
 function hideBubble(immediate) {
@@ -992,14 +979,10 @@ if (SpeechAPI) {
   recognition.lang           = 'he-IL';
 
   recognition.onresult = (e) => {
-    const lastResult = e.results[e.results.length - 1];
-    const lastText   = lastResult[0].transcript;
-    if (lastResult.isFinal) {
-      vFinalText  = (vFinalText + ' ' + lastText).trim();
-      vTranscript = vFinalText;
-    } else {
-      vTranscript = (vFinalText + (vFinalText ? ' ' : '') + lastText).trim();
-    }
+    // Take only the last result — safe on Android Chrome where resultIndex is always 0
+    const last = e.results[e.results.length - 1][0].transcript;
+    // Prepend whatever was spoken in previous sessions (captured in onend)
+    vTranscript = (vCarryOver + (vCarryOver ? ' ' : '') + last).trim();
     showBubble(vTranscript);
   };
 
@@ -1017,8 +1000,9 @@ if (SpeechAPI) {
 
   recognition.onend = () => {
     if (!vListening) return;
-    // Debounce: prevents rapid restart loops that cause browser beeps.
-    // UI is never touched here — transcript stays, bubble stays, state stays.
+    // Carry the current transcript into the next session so text accumulates
+    // without duplication — new session starts fresh at results[0]
+    vCarryOver = vTranscript;
     clearTimeout(_restartTimer);
     _restartTimer = setTimeout(() => {
       if (vListening) { try { recognition.start(); } catch(_) {} }
@@ -1355,7 +1339,7 @@ zone.addEventListener('click', () => {
 
 function vStart() {
   vTranscript  = '';
-  vFinalText   = '';
+  vCarryOver   = '';
   vListening   = true;
   zone.classList.add('rec');
   wdots.classList.add('on');
