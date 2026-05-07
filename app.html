@@ -1033,53 +1033,55 @@ if (SpeechAPI) {
   recognition.lang           = 'he-IL';
 
   recognition.onresult = (e) => {
-    const interim = e.results[e.results.length - 1][0].transcript;
 
-    // ── Cross-session dedup ──────────────────────────────────────────
-    // Two opposite behaviours depending on browser:
-    //
-    // Android Chrome sends only the CURRENT WORD per event, so after a session
-    // restart it re-sends short words that are prefixes of vCarryOver → skip them.
-    //
-    // Desktop Chrome sends the FULL ACCUMULATED PHRASE per event, so after a
-    // restart the new interim already contains vCarryOver as its prefix → strip it.
+    // ── Desktop Chrome multi-segment path ───────────────────────────
+    // Desktop Chrome with continuous=true accumulates results: when the user
+    // pauses, the current segment is marked isFinal and a new one starts.
+    // e.results grows to [final0, final1, …, currentInterim].
+    // Joining ALL of them gives the complete session transcript — no manual
+    // accumulation needed. This also naturally avoids within-session duplication.
+    if (e.results.length > 1) {
+      _freshSession = false;
+      const sessionText = Array.from(e.results)
+        .map(r => r[0].transcript.trim()).filter(Boolean).join(' ');
+      vLastInterim = e.results[e.results.length - 1][0].transcript;
+      vTranscript  = [vCarryOver, sessionText].filter(Boolean).join(' ');
+      showBubble(vTranscript);
+      return;
+    }
+
+    // ── Single-result path (Android Chrome + early desktop) ─────────
+    const interim = e.results[0][0].transcript;
+
+    // Cross-session dedup after onend restart:
+    // Android sends short prefix repeats; Desktop sends full phrase including carryOver.
     if (_freshSession && vCarryOver) {
       const ti = interim.trim();
-
       if (vCarryOver.startsWith(ti)) {
-        // Android Chrome: replaying a prefix of what we already have — skip.
-        // Keep _freshSession=true so subsequent short words are also checked.
+        // Android Chrome: replaying a prefix of carryOver — skip.
         vLastInterim = interim;
         showBubble(vTranscript);
-        return;
+        return;                       // keep _freshSession=true for next event
       }
-
       _freshSession = false;
-
       if (ti.startsWith(vCarryOver)) {
-        // Desktop Chrome: new session sends full text including carryOver content.
-        // Consume carryOver (already embedded in interim) to avoid duplication.
-        vCarryOver   = '';
-        vInterimBuf  = '';
-        vLastInterim = interim;
-        vTranscript  = ti;
+        // Desktop Chrome single-segment restart: full text already includes carryOver.
+        vCarryOver = ''; vInterimBuf = ''; vLastInterim = interim;
+        vTranscript = ti;
         showBubble(vTranscript);
         return;
       }
-      // Genuinely new content that doesn't overlap — fall through to normal path.
     }
     _freshSession = false;
 
     if (interim !== vLastInterim) {
-      const grew     = interim.startsWith(vLastInterim);      // normal char-by-char growth
-      const shrank   = vLastInterim.startsWith(interim);      // API reconsidered
-      const bufMatch = vInterimBuf && interim.startsWith(vInterimBuf); // full sentence arrived
+      const grew     = interim.startsWith(vLastInterim);
+      const shrank   = vLastInterim.startsWith(interim);
+      const bufMatch = vInterimBuf && interim.startsWith(vInterimBuf);
 
       if (vLastInterim && !grew && !shrank && !bufMatch) {
-        // ── Within-session dedup ───────────────────────────────────
-        // Sometimes the API sends a long phrase "X Y Z" then drops to just "Z".
-        // Committing "X Y Z" and then showing "Z" again would duplicate "Z".
-        // Only commit up to (not including) the duplicated suffix.
+        // Commit previous interim — but avoid double-counting if the new
+        // interim is already the tail of the previous (API dropped its beginning).
         const trimInterim = interim.trim();
         if (vLastInterim.endsWith(' ' + trimInterim)) {
           const cut = vLastInterim.lastIndexOf(' ' + trimInterim);
