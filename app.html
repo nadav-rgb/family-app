@@ -822,6 +822,11 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 <div id="dbgVer" style="position:absolute;bottom:6px;right:8px;font-size:9px;font-family:monospace;color:rgba(0,0,0,.28);pointer-events:none;z-index:9999;letter-spacing:0;">f72b7eb</div>
 <!-- END DEBUG -->
 
+<!-- DIAGNOSTIC PANEL — remove after diagnosis -->
+<div id="dbgPanel" style="display:none;position:absolute;bottom:44px;left:6px;right:6px;max-height:280px;overflow-y:auto;background:rgba(255,255,255,.97);border-radius:12px;padding:8px 10px;font-size:10px;font-family:monospace;line-height:1.55;z-index:9998;box-shadow:0 4px 18px rgba(0,0,0,.22);word-break:break-all;"></div>
+<button id="dbgToggle" onclick="(function(){var p=document.getElementById('dbgPanel');p.style.display=(p.style.display==='none'?'block':'none');if(p.style.display!=='none')_dbgUpdate();})()" style="position:absolute;bottom:24px;left:8px;font-size:9px;font-family:monospace;background:rgba(0,0,0,.22);color:#fff;border:none;border-radius:8px;padding:3px 8px;z-index:9999;cursor:pointer;">DBG</button>
+<!-- END DIAGNOSTIC PANEL -->
+
 </div><!-- /phone -->
 <script>
 // ─── State ────────────────────────────────────────────────────────
@@ -968,6 +973,8 @@ let vTranscript    = '';
 let vCarryOver     = '';  // confirmed text from previous recognition sessions
 let vSessionFinal  = '';  // isFinal-confirmed words within the current recognition session
 let _freshSession  = false; // true right after onend restart — used to skip cross-session repeats
+let _dbgLog = [];          // diagnostic: last 25 onresult events
+let _dbgEventNum = 0;      // diagnostic: running event counter
 
 const sbBubble = document.getElementById('speechBubble');
 const sbText   = document.getElementById('sbText');
@@ -1035,6 +1042,19 @@ function hideBubble(immediate) {
 console.log('SPEECH_VERSION: f72b7eb_restored_240712a');
 // ─────────────────────────────────────────────────────────────────
 
+// ── DIAGNOSTIC PANEL RENDERER — remove after diagnosis ───────────
+function _dbgUpdate() {
+  const p = document.getElementById('dbgPanel');
+  if (!p || p.style.display === 'none') return;
+  p.innerHTML = _dbgLog.slice().reverse().map(ev => {
+    const rows = ev.res.map(r =>
+      '<span style="color:' + (r.f ? '#080' : '#888') + '">[' + r.i + ']' + (r.f ? '✓' : '~') + ' ' + r.t + '</span>'
+    ).join('<br>');
+    return '<div style="border-bottom:1px solid rgba(0,0,0,.1);padding:3px 0"><b style="color:#c30">E' + ev.n + '</b> ri=' + ev.ri + ' rl=' + ev.rl + '<br>' + rows + '</div>';
+  }).join('');
+}
+// ─────────────────────────────────────────────────────────────────
+
 if (SpeechAPI) {
   recognition = new SpeechAPI();
   recognition.continuous     = true;
@@ -1042,6 +1062,18 @@ if (SpeechAPI) {
   recognition.lang           = 'he-IL';
 
   recognition.onresult = (e) => {
+    // ── DIAGNOSTIC (read-only) ────────────────────────────────────────
+    _dbgEventNum++;
+    _dbgLog.push({
+      n: _dbgEventNum, ri: e.resultIndex, rl: e.results.length,
+      res: Array.from({length: e.results.length}, function(_, i) {
+        return { i: i, f: e.results[i].isFinal, t: e.results[i][0].transcript.trim().slice(0, 28) };
+      })
+    });
+    if (_dbgLog.length > 25) _dbgLog.shift();
+    _dbgUpdate();
+    // ─────────────────────────────────────────────────────────────────
+
     // ── Collect new finals + current interim from this event ─────────
     // Only iterate from e.resultIndex to avoid re-processing confirmed segments.
     let newFinal      = '';   // isFinal text confirmed in THIS event
