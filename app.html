@@ -638,6 +638,16 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 /* Typing placeholder — language-aware */
 .phone:not([dir="rtl"]) .v-type-inp:empty:before{content:"Write freely — we'll organize it for you ✨";}
 .phone[dir="rtl"]        .v-type-inp:empty:before{content:"כתוב בחופשיות — נסדר הכל בשבילך ✨";}
+
+/* ─── Mobile debug overlay (?debug=1 or window.APP_DEBUG=true) ─── */
+#dbgOverlay{position:fixed;bottom:0;left:0;right:0;max-height:42vh;background:rgba(10,10,10,.93);z-index:9999;display:flex;flex-direction:column;font-family:'Courier New',monospace;font-size:11px;line-height:1.45;border-top:2px solid rgba(255,110,40,.55);}
+#dbgHead{display:flex;justify-content:space-between;align-items:center;padding:5px 10px;background:rgba(255,85,25,.22);color:#ff8844;font-weight:700;letter-spacing:.4px;flex-shrink:0;}
+#dbgHead button{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.22);color:#bbb;padding:2px 10px;border-radius:4px;font-size:10px;cursor:pointer;font-family:inherit;}
+#dbgLog{overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch;}
+.dbg-g{padding:3px 10px;color:#7ad4ff;font-weight:700;border-top:1px solid rgba(255,255,255,.07);}
+.dbg-i{padding:1px 18px;color:#b8b8b8;}
+.dbg-w{padding:1px 18px;color:#ffaa44;}
+.dbg-ts{color:#555;font-size:9px;margin-right:4px;}
 </style>
 </head>
 <body>
@@ -897,14 +907,49 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 const STORAGE_KEY = 'family-app-v1';
 const AppState = { tasks: [], previewTasks: [], recurringCompletions: {}, lang: 'en' };
 
-// ─── Debug logger (enable: window.APP_DEBUG = true) ───────────────
-const _ts = () => new Date().toISOString().slice(11,23);
-const _dbg = () => !!(typeof window !== 'undefined' && window.APP_DEBUG);
+// ─── Debug logger (?debug=1 in URL  OR  window.APP_DEBUG = true) ─
+const _urlDbg = new URLSearchParams(window.location.search).get('debug') === '1';
+const _ts     = () => new Date().toISOString().slice(11, 23);
+const _dbg    = () => _urlDbg || !!(typeof window !== 'undefined' && window.APP_DEBUG);
+
+// Overlay — created lazily on first log call so it works for both
+// URL-param mode (?debug=1, known at load time) and console-set mode.
+let _overlayLog = null;
+function _getOverlay() {
+  if (_overlayLog) return _overlayLog;
+  if (!_dbg()) return null;
+  const wrap = document.createElement('div');
+  wrap.id = 'dbgOverlay';
+  wrap.innerHTML =
+    '<div id="dbgHead"><span>🔍 APP_DEBUG</span>' +
+    '<button onclick="document.getElementById(\'dbgLog\').innerHTML=\'\'">clear</button></div>' +
+    '<div id="dbgLog"></div>';
+  document.body.appendChild(wrap);
+  _overlayLog = document.getElementById('dbgLog');
+  return _overlayLog;
+}
+function _overlayPush(cls, label, data) {
+  const el = _getOverlay();
+  if (!el) return;
+  const row = document.createElement('div');
+  row.className = cls;
+  const ts = document.createElement('span');
+  ts.className = 'dbg-ts';
+  ts.textContent = '[' + _ts() + '] ';
+  row.appendChild(ts);
+  const txt = data !== undefined
+    ? label + ': ' + (typeof data === 'object' ? JSON.stringify(data) : data)
+    : label;
+  row.appendChild(document.createTextNode(txt));
+  el.insertBefore(row, el.firstChild); // newest at top
+  while (el.children.length > 60) el.removeChild(el.lastChild);
+}
+
 const AppLog = {
-  group:    (label)       => _dbg() && console.group(`[${_ts()}] APP ${label}`),
-  groupEnd: ()            => _dbg() && console.groupEnd(),
-  info:     (label, data) => _dbg() && console.log(`    ${label}:`, data),
-  warn:     (label, data) => _dbg() && console.warn(`    ⚠ ${label}:`, data),
+  group:    (label)       => { _dbg() && console.group(`[${_ts()}] APP ${label}`);        _overlayPush('dbg-g', '▶ ' + label); },
+  groupEnd: ()            => { _dbg() && console.groupEnd(); },
+  info:     (label, data) => { _dbg() && console.log(`    ${label}:`, data);              _overlayPush('dbg-i', label, data); },
+  warn:     (label, data) => { _dbg() && console.warn(`    ⚠ ${label}:`, data);           _overlayPush('dbg-w', '⚠ ' + label, data); },
 };
 
 // ─── Translations ─────────────────────────────────────────────────
