@@ -639,6 +639,22 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 .phone:not([dir="rtl"]) .v-type-inp:empty:before{content:"Write freely — we'll organize it for you ✨";}
 .phone[dir="rtl"]        .v-type-inp:empty:before{content:"כתוב בחופשיות — נסדר הכל בשבילך ✨";}
 
+/* ─── Long-press split gesture ─── */
+.task-card.lp-holding{transform:scale(1.022);box-shadow:0 6px 28px rgba(100,60,20,.14);transition:transform 120ms ease-out,box-shadow 120ms ease-out;}
+.task-card.split-open{box-shadow:0 4px 22px rgba(255,112,51,.16),0 0 0 1.5px rgba(255,112,51,.18);}
+.split-panel{overflow:hidden;max-height:0;transition:max-height 320ms cubic-bezier(.4,0,.2,1);}
+.split-panel.open{max-height:360px;}
+.split-divider{height:1px;background:linear-gradient(90deg,transparent,rgba(224,124,58,.2),transparent);margin:0 16px;}
+.split-rows{padding:14px 16px 8px;}
+.split-row{display:flex;align-items:center;padding:10px 12px;background:rgba(255,240,230,.55);border-radius:12px;border-inline-start:3px solid rgba(255,112,51,.38);font-family:'Rubik',sans-serif;font-size:14px;font-weight:600;color:#3a2010;opacity:0;transform:translateY(6px);transition:opacity 200ms ease,transform 200ms cubic-bezier(.34,1.1,.64,1);margin-bottom:8px;}
+.split-row:last-child{margin-bottom:0;}
+.split-row.visible{opacity:1;transform:translateY(0);}
+.split-actions{display:flex;align-items:center;justify-content:space-between;padding:12px 16px 16px;opacity:0;transition:opacity 180ms ease;}
+.split-actions.visible{opacity:1;}
+.split-confirm{background:linear-gradient(135deg,#ff7033,#e05a20);color:#fff;border:none;border-radius:14px;padding:11px 24px;font-family:'Nunito',sans-serif;font-size:14px;font-weight:800;cursor:pointer;box-shadow:0 3px 12px rgba(255,112,51,.26);transition:transform .14s,box-shadow .14s;}
+.split-confirm:active{transform:scale(.95);box-shadow:0 1px 6px rgba(255,112,51,.18);}
+.split-cancel{background:none;border:none;color:#b8a090;font-family:'Nunito',sans-serif;font-size:14px;font-weight:700;cursor:pointer;padding:11px 8px;}
+
 /* ─── Mobile debug overlay (?debug=1 or window.APP_DEBUG=true) ─── */
 #dbgOverlay{position:fixed;bottom:0;left:0;right:0;max-height:42vh;background:rgba(10,10,10,.93);z-index:9999;display:flex;flex-direction:column;font-family:'Courier New',monospace;font-size:11px;line-height:1.45;border-top:2px solid rgba(255,110,40,.55);}
 #dbgHead{display:flex;justify-content:space-between;align-items:center;padding:5px 10px;background:rgba(255,85,25,.22);color:#ff8844;font-weight:700;letter-spacing:.4px;flex-shrink:0;}
@@ -2224,6 +2240,130 @@ function ampm(m) {
   return m < 12*60 ? 'AM' : 'PM';
 }
 
+// ─── Long-press split — prototype shell ──────────────────────────
+// No real task mutation. No parser connection. Interaction feel only.
+const SPLIT_MIN_LEN = 20;
+
+function mockSplit(title) {
+  // Split at word boundaries before Hebrew infinitives (ל + 2+ chars)
+  const parts = title.split(/ (?=ל.{2,})/).map(s => s.trim()).filter(Boolean);
+  if (parts.length >= 2) return parts.slice(0, 3);
+  // Fallback: halve by word count
+  const words = title.split(' ');
+  if (words.length < 3) return [];
+  const mid = Math.ceil(words.length / 2);
+  return [words.slice(0, mid).join(' '), words.slice(mid).join(' ')];
+}
+
+function closeSplitPanel(cardEl, panel, confirmed) {
+  const inner = cardEl.querySelector('.card-inner');
+  if (confirmed) {
+    // Prototype: flash success, no real mutation
+    cardEl.classList.add('success-anim');
+    setTimeout(() => {
+      cardEl.classList.remove('success-anim');
+      inner.style.transition = 'opacity 150ms ease';
+      inner.style.opacity = '';
+      cardEl.classList.remove('split-open');
+      panel.remove();
+    }, 500);
+  } else {
+    panel.querySelectorAll('.split-row').forEach(r => r.classList.remove('visible'));
+    panel.querySelector('.split-actions').classList.remove('visible');
+    panel.classList.remove('open');
+    setTimeout(() => {
+      inner.style.transition = 'opacity 180ms ease';
+      inner.style.opacity = '';
+      cardEl.classList.remove('split-open');
+      panel.remove();
+    }, 330);
+  }
+}
+
+function openSplitPanel(cardEl, task) {
+  const suggestions = mockSplit(task.title);
+  if (suggestions.length < 2) return;
+
+  const inner = cardEl.querySelector('.card-inner');
+  inner.style.transition = 'opacity 160ms ease';
+  inner.style.opacity = '0.18';
+
+  const confirmLbl = AppState.lang === 'he' ? 'פצל ✓' : 'Split ✓';
+  const cancelLbl  = AppState.lang === 'he' ? 'בטל'   : 'Cancel';
+
+  const panel = document.createElement('div');
+  panel.className = 'split-panel';
+  panel.innerHTML =
+    '<div class="split-divider"></div>' +
+    '<div class="split-rows">' +
+      suggestions.map(s => `<div class="split-row">${s}</div>`).join('') +
+    '</div>' +
+    `<div class="split-actions"><button class="split-confirm">${confirmLbl}</button><button class="split-cancel">${cancelLbl}</button></div>`;
+
+  cardEl.classList.add('split-open');
+  cardEl.appendChild(panel);
+
+  // Two rAF frames ensure CSS transition fires after paint
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    panel.classList.add('open');
+    panel.querySelectorAll('.split-row').forEach((row, i) =>
+      setTimeout(() => row.classList.add('visible'), 140 + i * 80)
+    );
+    setTimeout(
+      () => panel.querySelector('.split-actions').classList.add('visible'),
+      140 + suggestions.length * 80 + 40
+    );
+  }));
+
+  panel.querySelector('.split-confirm').addEventListener('click', () => {
+    AppLog.info('split confirm (mock)', suggestions);
+    closeSplitPanel(cardEl, panel, true);
+  });
+  panel.querySelector('.split-cancel').addEventListener('click', () =>
+    closeSplitPanel(cardEl, panel, false)
+  );
+}
+
+function attachSplitGesture(cardEl, task) {
+  let lpTimer = null;
+  let startX = 0, startY = 0;
+
+  function cancel() {
+    clearTimeout(lpTimer);
+    lpTimer = null;
+    cardEl.classList.remove('lp-holding');
+  }
+
+  cardEl.addEventListener('touchstart', e => {
+    if (cardEl.classList.contains('split-open')) return;
+    if (e.target.closest('.card-title,.card-share,.card-bell,.card-time-col')) return;
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    cardEl.classList.add('lp-holding');
+    lpTimer = setTimeout(() => {
+      cardEl.classList.remove('lp-holding');
+      if (navigator.vibrate) navigator.vibrate(8);
+      if (task.title.length > SPLIT_MIN_LEN) {
+        openSplitPanel(cardEl, task);
+      } else {
+        // Short task: spring glow only, no panel
+        cardEl.classList.add('snap-glow');
+        setTimeout(() => cardEl.classList.remove('snap-glow'), 450);
+      }
+    }, 420);
+  }, { passive: true });
+
+  cardEl.addEventListener('touchmove', e => {
+    if (!lpTimer) return;
+    const dx = e.touches[0].clientX - startX;
+    const dy = e.touches[0].clientY - startY;
+    if (dx * dx + dy * dy > 64) cancel(); // 8px radius
+  }, { passive: true });
+
+  cardEl.addEventListener('touchend',   cancel);
+  cardEl.addEventListener('touchcancel', cancel);
+}
+
 function dpRender(animate) {
   const tasks = AppState.previewTasks;
   const list  = document.getElementById('dpList');
@@ -2290,6 +2430,7 @@ function dpRender(animate) {
       if (e.key === 'Enter') { e.preventDefault(); titleEl.blur(); }
     });
     list.appendChild(c);
+    attachSplitGesture(c, task);
   });
 }
 
