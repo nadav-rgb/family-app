@@ -2257,7 +2257,7 @@ function mockSplit(title) {
     .split(/ (?=ו?ל.{2,})/)
     .map(s => s.trim().replace(/^ו(?=ל)/, ''))
     .filter(Boolean);
-  if (parts.length >= 2) return parts.slice(0, 3);
+  if (parts.length >= 2) return parts;
   const words = title.split(' ');
   if (words.length < 3) return [];
   const mid = Math.ceil(words.length / 2);
@@ -2333,7 +2333,7 @@ function sanitizeSegments(raw) {
     if (!merged) break;
   }
   if (segs.length < 2 || segs.some(isBadSegment)) return [];
-  return segs.slice(0, 3);
+  return segs;
 }
 
 // Suppresses auto-split suggestions for movement+purpose compounds.
