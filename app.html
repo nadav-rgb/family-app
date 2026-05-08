@@ -2339,7 +2339,6 @@ function sanitizeSegments(raw) {
 function closeSplitPanel(cardEl, panel, confirmed) {
   const inner = cardEl.querySelector('.card-inner');
   if (confirmed) {
-    // Prototype: flash success, no real mutation
     cardEl.classList.add('success-anim');
     setTimeout(() => {
       cardEl.classList.remove('success-anim');
@@ -2406,8 +2405,19 @@ function openSplitPanel(cardEl, task) {
   }));
 
   panel.querySelector('.split-confirm').addEventListener('click', () => {
-    AppLog.info('split confirm (mock)', suggestions);
+    const idx = AppState.previewTasks.findIndex(t => t === task);
+    if (idx !== -1) {
+      const newTasks = suggestions.map((title, i) => ({
+        ...task,
+        id: i === 0 ? task.id : task.id + '_' + (i + 1),
+        title,
+        timeSource: i === 0 ? task.timeSource : 'suggested',
+      }));
+      AppState.previewTasks.splice(idx, 1, ...newTasks);
+    }
+    AppLog.info('split confirm', suggestions);
     closeSplitPanel(cardEl, panel, true);
+    setTimeout(() => dpRender(false), 510);
   });
   panel.querySelector('.split-cancel').addEventListener('click', () =>
     closeSplitPanel(cardEl, panel, false)
@@ -2415,8 +2425,9 @@ function openSplitPanel(cardEl, task) {
 }
 
 function attachSplitGesture(cardEl, task) {
-  // Affordance: pulse accent + one-time whisper on suspicious tasks
-  if (sanitizeSegments(mockSplit(task.title)).length >= 2) {
+  const hasSplit = sanitizeSegments(mockSplit(task.title)).length >= 2;
+
+  if (hasSplit) {
     cardEl.querySelector('.card-accent').classList.add('split-alive');
     if (!localStorage.getItem('family-app-split-seen') && !_splitHintShown) {
       _splitHintShown = true;
@@ -2426,6 +2437,8 @@ function attachSplitGesture(cardEl, task) {
       cardEl.insertBefore(hint, cardEl.querySelector('.card-share'));
     }
   }
+
+  if (!hasSplit) return;
 
   let lpTimer = null;
   let startX = 0, startY = 0;
@@ -2445,13 +2458,7 @@ function attachSplitGesture(cardEl, task) {
     lpTimer = setTimeout(() => {
       cardEl.classList.remove('lp-holding');
       if (navigator.vibrate) navigator.vibrate(8);
-      if (task.title.length > SPLIT_MIN_LEN) {
-        openSplitPanel(cardEl, task);
-      } else {
-        // Short task: spring glow only, no panel
-        cardEl.classList.add('snap-glow');
-        setTimeout(() => cardEl.classList.remove('snap-glow'), 450);
-      }
+      openSplitPanel(cardEl, task);
     }, 420);
   }, { passive: true });
 
@@ -2459,7 +2466,7 @@ function attachSplitGesture(cardEl, task) {
     if (!lpTimer) return;
     const dx = e.touches[0].clientX - startX;
     const dy = e.touches[0].clientY - startY;
-    if (dx * dx + dy * dy > 64) cancel(); // 8px radius
+    if (dx * dx + dy * dy > 64) cancel();
   }, { passive: true });
 
   cardEl.addEventListener('touchend',   cancel);
