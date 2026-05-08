@@ -2251,15 +2251,89 @@ function ampm(m) {
 const SPLIT_MIN_LEN = 20;
 let _splitHintShown = false; // reset per dpRender — prevents hint on >1 card per render
 
+// mockSplit: raw tokenizer — splits on (ו)ל boundaries, strips leading vav
 function mockSplit(title) {
-  // Split at word boundaries before Hebrew infinitives (ל + 2+ chars)
-  const parts = title.split(/ (?=ל.{2,})/).map(s => s.trim()).filter(Boolean);
+  const parts = title
+    .split(/ (?=ו?ל.{2,})/)
+    .map(s => s.trim().replace(/^ו(?=ל)/, ''))
+    .filter(Boolean);
   if (parts.length >= 2) return parts.slice(0, 3);
-  // Fallback: halve by word count
   const words = title.split(' ');
   if (words.length < 3) return [];
   const mid = Math.ceil(words.length / 2);
   return [words.slice(0, mid).join(' '), words.slice(mid).join(' ')];
+}
+
+// Recognized Hebrew task infinitives — segments whose first word is NOT here
+// are treated as preposition-ל (לאיציק, לדוד, לבנק…) and merged forward.
+const SPLIT_TASK_VERBS = new Set([
+  'להתקשר','להתכונן','להתחיל','להתאמן','להתפנות',
+  'להוריד','להעלות','להחזיר','להזמין','להכין','להביא','להוציא','להגיע',
+  'לאסוף','לאכול',
+  'לבדוק','לבשל',
+  'לנסוע','לנקות','לנהוג',
+  'לסדר','לסיים',
+  'לקנות','לקחת','לקבוע','לקבל','לקרוא',
+  'לשלם','לשלוח','לשמור','לשטוף',
+  'לטפל','לתקן',
+  'לפגוש','לפנות','לפתוח',
+  'לרשום','לענות','לעדכן',
+  'לחפש','לחזור','לחכות',
+  'לדווח','למצוא','למסור','לכתוב',
+  'ללכת','לבוא','לרוץ','לנוח','לישון','לשחק',
+  'לדבר','לשאול','לברר','לספר','לראות','לשמוע',
+  'להחליף','לסגור','לנעול',
+  'לארגן','לתכנן','לבצע',
+  'לשפץ','לצבוע','לבנות',
+  'לנהל','לעבוד','ללמוד','להסביר',
+]);
+
+const _PRONOUN_L = /^ל(?:י|ו|ה|נו|הם|הן|כם|כן|ך)$/;
+
+function isBadSegment(seg) {
+  const words = seg.trim().split(/\s+/).filter(Boolean);
+  if (words.length < 2) return true;                                        // lone verb
+  if (_PRONOUN_L.test(words[0])) return true;                              // pronoun-ל
+  if (words[0].startsWith('ל') && !SPLIT_TASK_VERBS.has(words[0])) return true; // non-verb ל
+  return false;
+}
+
+// Forward-merge bad segments into the next until stable.
+// If <2 valid segments remain → return [] (show nothing).
+//
+// Verified test cases:
+//   "לקנות פפריקה להחליף לאיציק את הנעליים שלו"
+//     → ["לקנות פפריקה", "להחליף לאיציק את הנעליים שלו"]  ✓
+//   "לכתוב לדוד על הפגישה בשלישי"
+//     → []                                                   ✓
+//   "לקנות לדודי מתנה ולהזמין מסעדה"
+//     → ["לקנות לדודי מתנה", "להזמין מסעדה"]               ✓
+//   "לסדר את הבית ולבשל ארוחת ערב"
+//     → ["לסדר את הבית", "לבשל ארוחת ערב"]                 ✓
+//   "ללכת לאסוף את יעל מהגן"
+//     → []                                                   ✓
+function sanitizeSegments(raw) {
+  if (raw.length < 2) return [];
+  let segs = [...raw];
+  for (let guard = 0; guard < 8; guard++) {
+    let merged = false;
+    const out = [];
+    let i = 0;
+    while (i < segs.length) {
+      if (isBadSegment(segs[i]) && i + 1 < segs.length) {
+        out.push(segs[i] + ' ' + segs[i + 1]);
+        i += 2;
+        merged = true;
+      } else {
+        out.push(segs[i]);
+        i++;
+      }
+    }
+    segs = out;
+    if (!merged) break;
+  }
+  if (segs.length < 2 || segs.some(isBadSegment)) return [];
+  return segs.slice(0, 3);
 }
 
 function closeSplitPanel(cardEl, panel, confirmed) {
@@ -2288,7 +2362,7 @@ function closeSplitPanel(cardEl, panel, confirmed) {
 }
 
 function openSplitPanel(cardEl, task) {
-  const suggestions = mockSplit(task.title);
+  const suggestions = sanitizeSegments(mockSplit(task.title));
   if (suggestions.length < 2) return;
 
   // Dismiss the whisper hint permanently — user has discovered the gesture
@@ -2342,7 +2416,7 @@ function openSplitPanel(cardEl, task) {
 
 function attachSplitGesture(cardEl, task) {
   // Affordance: pulse accent + one-time whisper on suspicious tasks
-  if (mockSplit(task.title).length >= 2) {
+  if (sanitizeSegments(mockSplit(task.title)).length >= 2) {
     cardEl.querySelector('.card-accent').classList.add('split-alive');
     if (!localStorage.getItem('family-app-split-seen') && !_splitHintShown) {
       _splitHintShown = true;
