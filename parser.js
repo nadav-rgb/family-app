@@ -414,6 +414,16 @@
     return 'יתנא'.includes(after[1]); // conjugated verb prefixes
   }
 
+  // Guard: movement verb + purpose verb without ו = compound intent → merge, not split.
+  // "לנסוע לקריות לבדוק..." → one task. "לנסוע לתל אביב ולפגוש..." → two tasks (ו present).
+  const MOVEMENT_VERBS = new Set([
+    'ללכת','לנסוע','לצאת','לקפוץ','להיכנס','לעלות','לרדת','לחזור','לעבור','לטוס','לרוץ','לנהוג'
+  ]);
+
+  function segStartsWithMovementVerb(segText) {
+    return MOVEMENT_VERBS.has(segText.trim().split(/\s+/)[0]);
+  }
+
   /**
    * freeSpeechToIntentSegments(text, opts) → IntentSegment[]
    *
@@ -482,6 +492,16 @@
       }
 
       const rawEnd  = next ? (next.hasVav ? next.pos - 1 : next.pos) : clean.length;
+
+      // Guard: movement+purpose compound — ו absent before this verb AND previous
+      // segment starts with a movement verb → this verb is the PURPOSE, not a new task.
+      // Does NOT break: a later ו-prefixed verb can still start a new segment.
+      if (i > 0 && !cur.hasVav && segments.length && segStartsWithMovementVerb(segments[segments.length - 1].text)) {
+        const purposeText = clean.slice(cur.pos, rawEnd).trim();
+        segments[segments.length - 1].text += ' ' + purposeText;
+        Log.info('movement-compound', `merged "${purposeText}" into previous`);
+        continue;
+      }
       const segText = clean.slice(cur.pos, rawEnd).trim();
 
       if (segText.length <= 4 && i < allPositions.length - 1) {
