@@ -2336,6 +2336,23 @@ function sanitizeSegments(raw) {
   return segs.slice(0, 3);
 }
 
+// Suppresses auto-split suggestions for movement+purpose compounds.
+// Does NOT affect manual long-press — callers skip this for user-initiated splits.
+const MOVEMENT_VERBS = new Set([
+  'ללכת','לנסוע','לצאת','לקפוץ','להיכנס','לעלות','לרדת','לחזור','לעבור','לטוס','לרוץ','לנהוג'
+]);
+
+function filterMovementCompound(segs, originalTitle) {
+  if (segs.length < 2) return segs;
+  const v1 = segs[0].trim().split(/\s+/)[0];
+  const v2 = segs[1].trim().split(/\s+/)[0];
+  // ו-prefix on second verb = explicit coordination → not a compound, allow split
+  if (originalTitle.includes('ו' + v2)) return segs;
+  // Movement verb leading → treat as movement+purpose compound → suppress auto-split
+  if (MOVEMENT_VERBS.has(v1)) return [];
+  return segs;
+}
+
 function closeSplitPanel(cardEl, panel, confirmed) {
   const inner = cardEl.querySelector('.card-inner');
   if (confirmed) {
@@ -2425,9 +2442,11 @@ function openSplitPanel(cardEl, task) {
 }
 
 function attachSplitGesture(cardEl, task) {
-  const hasSplit = sanitizeSegments(mockSplit(task.title)).length >= 2;
+  const rawSugs  = sanitizeSegments(mockSplit(task.title));
+  const autoSugs = filterMovementCompound(rawSugs, task.title);
 
-  if (hasSplit) {
+  // Affordance (pulse + hint) only for non-compound auto-splits
+  if (autoSugs.length >= 2) {
     cardEl.querySelector('.card-accent').classList.add('split-alive');
     if (!localStorage.getItem('family-app-split-seen') && !_splitHintShown) {
       _splitHintShown = true;
@@ -2438,7 +2457,8 @@ function attachSplitGesture(cardEl, task) {
     }
   }
 
-  if (!hasSplit) return;
+  // Gesture available for any structurally valid split (escape hatch for user intent)
+  if (rawSugs.length < 2) return;
 
   let lpTimer = null;
   let startX = 0, startY = 0;
