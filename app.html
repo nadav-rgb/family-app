@@ -237,6 +237,28 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 .task-card.success-anim{animation:cardBounce .48s ease both,cardGlow .55s ease both;}
 .btn-ghost{width:100%;padding:13px;border-radius:18px;border:1.5px solid rgba(224,124,58,.28);cursor:pointer;background:none;font-family:'Nunito',sans-serif;font-size:15px;font-weight:800;color:#e07c3a;transition:background .18s;}
 .btn-ghost:active{background:rgba(224,124,58,.07);}
+/* ── Add-to-day sheet ── */
+.atd-bg{position:absolute;inset:0;background:rgba(28,17,10,.42);opacity:0;pointer-events:none;transition:opacity .26s ease;z-index:90;border-radius:46px;}
+.atd-bg.open{opacity:1;pointer-events:auto;}
+.atd-sheet{position:absolute;left:0;right:0;bottom:0;background:#fff8f2;border-radius:28px 28px 0 0;transform:translateY(100%);transition:transform .34s cubic-bezier(.32,1,.3,1);box-shadow:0 -4px 32px rgba(28,17,10,.16);}
+.atd-bg.open .atd-sheet{transform:translateY(0);}
+.atd-head{display:flex;align-items:center;padding:14px 20px 6px;gap:8px;}
+.atd-title{flex:1;font-size:17px;font-weight:900;color:#1c110a;direction:rtl;text-align:right;}
+.atd-cancel{border:none;background:none;color:#a08070;font-size:14px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;padding:6px 2px;flex-shrink:0;}
+.atd-body{display:flex;flex-direction:column;align-items:center;padding:14px 20px 8px;gap:14px;}
+.atd-mic-area{display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+.atd-mic-ring{width:68px;height:68px;border-radius:50%;background:linear-gradient(135deg,#ff9a4e,#ff5e14);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(255,94,20,.26);transition:transform .16s,box-shadow .16s;}
+.atd-mic-ring:active{transform:scale(.93);}
+.atd-mic-ring.rec{animation:atdPulse 1.5s ease-in-out infinite;box-shadow:0 4px 22px rgba(255,94,20,.46);}
+@keyframes atdPulse{0%,100%{transform:scale(1);}50%{transform:scale(1.09);}}
+.atd-mic-icon{font-size:26px;line-height:1;}
+.atd-status{font-size:12px;font-weight:700;color:#b09080;letter-spacing:.2px;}
+.atd-status.rec{color:#e07c3a;}
+.atd-bubble{width:100%;min-height:40px;background:#fff3ec;border-radius:14px;padding:10px 14px;font-size:15px;font-weight:700;color:#2d1a0e;direction:rtl;text-align:right;line-height:1.5;display:none;word-break:break-word;}
+.atd-bubble.has-text{display:block;}
+.atd-foot{padding:8px 20px 24px;}
+.btn-add-more{width:100%;padding:13px;border-radius:18px;border:1.5px dashed rgba(224,124,58,.35);cursor:pointer;background:rgba(255,112,51,.04);font-family:'Nunito',sans-serif;font-size:14px;font-weight:800;color:#e07c3a;transition:background .18s;}
+.btn-add-more:active{background:rgba(224,124,58,.1);}
 /* Adjust mode */
 .adj-banner{display:none;flex-shrink:0;background:linear-gradient(90deg,rgba(255,112,51,.13),rgba(255,154,78,.06));border-left:3px solid #ff7033;border-radius:0 10px 10px 0;padding:9px 16px 9px 13px;margin:0 16px 4px;font-size:12px;font-weight:800;color:#c05a1a;letter-spacing:.15px;}
 .adj-banner.on{display:block;}
@@ -785,7 +807,30 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
   <div class="dp-list" id="dpList"><div class="list-shimmer"></div></div>
   <div class="dp-bottom">
     <button class="btn-primary" id="btnOk">Looks good ✓</button>
-    <button class="btn-ghost"   id="btnAdjust">Adjust</button>
+    <div style="display:flex;gap:8px;">
+      <button class="btn-ghost"   id="btnAdjust" style="flex:1;">Adjust</button>
+      <button class="btn-add-more" id="btnAddMore" style="flex:1;">+ Add more</button>
+    </div>
+  </div>
+  <!-- Add-to-day sheet -->
+  <div class="atd-bg" id="atdBg">
+    <div class="atd-sheet" id="atdSheet">
+      <div class="drawer-pill"></div>
+      <div class="atd-head">
+        <span class="atd-title" id="atdTitle">הוסף משימות</span>
+        <button class="atd-cancel" id="atdCancel">ביטול</button>
+      </div>
+      <div class="atd-body">
+        <div class="atd-mic-area" id="atdMicArea">
+          <div class="atd-mic-ring" id="atdMicRing"><div class="atd-mic-icon">🎙️</div></div>
+          <div class="atd-status" id="atdStatus">לחץ לדיבור</div>
+        </div>
+        <div class="atd-bubble" id="atdBubble"></div>
+      </div>
+      <div class="atd-foot">
+        <button class="btn-primary" id="atdAddBtn" disabled>הוסף ליום ✓</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -1029,6 +1074,8 @@ const I18N = {
     empty_all_done:'All done! 🏆', empty_of:'{d} of {t} done {e}',
     assigned_to:'Assigned to',
     voice_lang_fallback:'Smart task splitting is available in Hebrew. Switch language to try it ✨',
+    atd_title:'Add tasks', atd_cancel:'Cancel', atd_add:'Add to day ✓',
+    atd_tap:'Tap mic to speak', atd_recording:'Tap to stop',
   },
   he: {
     voice_eyebrow:'✨ קלט קולי', voice_prompt:'ספר לי מה<br>צריך לקרות היום',
@@ -1083,6 +1130,8 @@ const I18N = {
     empty_all_done:'הכל הושלם! 🏆', empty_of:'{d} מתוך {t} הושלמו {e}',
     assigned_to:'משויך ל',
     voice_lang_fallback:'פירוק חכם למשימות זמין כרגע בעברית. תמיכה באנגלית תתווסף בהמשך ✨',
+    atd_title:'הוסף משימות', atd_cancel:'ביטול', atd_add:'הוסף ליום ✓',
+    atd_tap:'לחץ לדיבור', atd_recording:'לחץ לעצירה',
   }
 };
 function t(key) { return (I18N[AppState.lang] || I18N.en)[key] || key; }
@@ -1482,6 +1531,13 @@ function showBubble(text) {
   ltxt.textContent = t('voice_stop');
   ltxt.className   = 'ltxt v-stop-hint';
   ltxt.style.opacity = '';
+  // Mirror transcript into add-sheet bubble when in add mode
+  if (addMode) {
+    const atdBub = document.getElementById('atdBubble');
+    const atdBtn = document.getElementById('atdAddBtn');
+    if (atdBub) { atdBub.textContent = incoming || ''; atdBub.classList.toggle('has-text', !!incoming); }
+    if (atdBtn) atdBtn.disabled = !incoming;
+  }
 }
 
 function hideBubble(immediate) {
@@ -2140,7 +2196,7 @@ function vOrganize() {
   vListening = false;
   wdots.classList.remove('on');
   const spokenText = vTranscript.trim();
-  dpAdjustMode = false;
+  if (!addMode) dpAdjustMode = false;
 
   // Non-Hebrew: smart splitting not available yet — show clear message, don't create broken task
   if (AppState.lang !== 'he') {
@@ -2163,17 +2219,27 @@ function vOrganize() {
   AppLog.group('parsing started');
   AppLog.info('text', spokenText);
   AppLog.info('lang', AppState.lang);
-  // Real parsing — replace mock tasks with what the user actually said
   const parsed = spokenText ? HebrewParser.parse(spokenText, { people: buildParserPeople(), lang: AppState.lang }) : [];
   AppLog.info('segments', parsed.length);
   AppLog.info('result', parsed);
   AppLog.groupEnd();
+
+  if (addMode) {
+    // Add-to-day: merge new tasks into existing previewTasks
+    const newTasks = parsed.length > 0
+      ? parsed.map(parsedToTask)
+      : [parsedToTask({ title: spokenText || '?', mins: null, date: { date: new Date(), fromText: false },
+          assignedTo: null, type: 'task', timeFromText: false, dateFromText: false, assigneeFromText: false }, 0)];
+    AppLog.info('add-mode insert', newTasks.map(t => t.title));
+    insertNewTasks(newTasks);
+    return;
+  }
+
   if (parsed.length > 0) {
     AppState.previewTasks = parsed.map(parsedToTask);
     AppLog.info('preview generated', AppState.previewTasks.map(t => t.title));
   } else {
     AppLog.warn('fallback mode', 'empty parse result → raw text task');
-    // Fallback: one task with raw text and a smart default time
     AppState.previewTasks = [parsedToTask({
       title: spokenText || t('voice_tap'),
       mins: null, date: { date: new Date(), fromText: false },
@@ -2240,6 +2306,7 @@ const PEOPLE = {
   Yonatan: { color:'#fde68a', bg:'linear-gradient(135deg,#fef3c7,#fde68a)', emoji:'👶' },
 };
 let dpAdjustMode = false;
+let addMode = false;
 function m2t(m) { return `${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`; }
 function ampm(m) {
   if (AppState.lang === 'he') return m < 12*60 ? 'לפנה"צ' : 'אחה"צ';
@@ -2494,75 +2561,113 @@ function attachSplitGesture(cardEl, task) {
   cardEl.addEventListener('touchcancel', cancel);
 }
 
+function _updateDpMeta() {
+  const tasks = AppState.previewTasks;
+  const people = [...new Set(tasks.map(task => PEOPLE[task.person].emoji + ' ' + personLabel(task.person)))];
+  document.querySelector('.dp-meta').innerHTML =
+    `<span class="dp-pill">📋 ${tasks.length} ${t('dp_tasks_lbl')}</span><span class="dp-pill">${people.join(' · ')}</span>`;
+}
+
+function _buildCardEl(task) {
+  const p = taskPerson(task);
+  const c = document.createElement('div');
+  c.className  = 'task-card';
+  c.dataset.id = task.id;
+  if (!task.visibleTo)   task.visibleTo  = [...ALL_MEMBER_IDS];
+  if (!task.notifyTo)    task.notifyTo   = [PERSON_TO_ID[task.person] || 'mom'];
+  if (task.reminderOffsetMinutes === undefined) task.reminderOffsetMinutes = 10;
+  if (!task.timeSource)  task.timeSource = 'suggested';
+  const tsLabel = { explicit:t('dp_time_explicit'), suggested:t('dp_time_suggested'), manual:t('dp_time_manual') };
+  c.innerHTML = `
+    <div class="card-inner">
+      <div class="card-accent" style="background:${p.color}"></div>
+      <div class="card-time-col"><span class="card-time">${m2t(task.mins)}</span><span class="card-ampm">${ampm(task.mins)}</span><span class="card-ts ${task.timeSource}">${tsLabel[task.timeSource]}</span></div>
+      <div class="card-vline"></div>
+      <div class="card-body"><div class="card-title">${task.title}</div><div class="card-chip"><span class="chip-dot" style="background:${p.color}"></span>${personLabel(task.person)}</div></div>
+      <div class="card-av" style="background:${p.bg}">${p.emoji}</div>
+      <div class="card-bell${task.notify===false?' off':''}">${task.notify===false?'🔕':'🔔'}</div>
+    </div>`;
+  const shareFooter = document.createElement('div');
+  shareFooter.className = 'card-share';
+  shareFooter.style.cssText = 'display:flex!important;padding:10px 14px 12px 18px;align-items:center;gap:8px;cursor:pointer;border-top:2px solid #f0d8c8;background:#fdf3ec;';
+  shareFooter.innerHTML = `<span style="font-size:11px;font-weight:700;color:#a8917f;">${t('assigned_to')}</span><span class="card-share-name" style="font-size:13px;font-weight:800;color:#5a3e2b;flex:1;margin-inline-start:6px;">${assignedLabel(task)}</span><span class="card-share-arrow" style="font-size:15px;color:#b8a090;">›</span>`;
+  shareFooter.addEventListener('click', e => {
+    e.stopPropagation();
+    openShareDrawer(task, () => {
+      shareFooter.querySelector('.card-share-name').textContent = assignedLabel(task);
+    });
+  });
+  c.appendChild(shareFooter);
+  c.querySelector('.card-time-col').addEventListener('click', () => {
+    if (!dpAdjustMode) return;
+    openTimeStrip(task.id, c);
+  });
+  c.querySelector('.card-bell').addEventListener('click', e => {
+    e.stopPropagation();
+    task.notify = task.notify === false ? true : false;
+    const bell = c.querySelector('.card-bell');
+    bell.textContent = task.notify ? '🔔' : '🔕';
+    bell.classList.toggle('off', !task.notify);
+  });
+  const titleEl = c.querySelector('.card-title');
+  titleEl.setAttribute('contenteditable', 'plaintext-only');
+  titleEl.addEventListener('input', () => { const u = titleEl.textContent.trim(); if (u) task.title = u; });
+  titleEl.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); titleEl.blur(); } });
+  attachSplitGesture(c, task);
+  return c;
+}
+
 function dpRender(animate) {
   const tasks = AppState.previewTasks;
   const list  = document.getElementById('dpList');
   list.innerHTML = '<div class="list-shimmer"></div>';
   list.classList.toggle('adj-mode', dpAdjustMode);
   document.getElementById('adjBanner').classList.toggle('on', dpAdjustMode);
-
-  // Update meta pill
-  const people = [...new Set(tasks.map(task => PEOPLE[task.person].emoji + ' ' + personLabel(task.person)))];
-  document.querySelector('.dp-meta').innerHTML =
-    `<span class="dp-pill">📋 ${tasks.length} ${t('dp_tasks_lbl')}</span><span class="dp-pill">${people.join(' · ')}</span>`;
-
-  _splitHintShown = false; // allow hint on first suspicious card of this render
+  _updateDpMeta();
+  _splitHintShown = false;
   tasks.forEach((task, i) => {
-    const p = taskPerson(task);
-    const c = document.createElement('div');
-    c.className  = 'task-card ' + (animate ? 'entering' : 'settling');
-    c.dataset.id = task.id;
-    if (animate)  c.style.animationDelay = `${0.32 + i * 0.13}s`;
-    else          c.style.animationDelay = `${i * 0.04}s`;
-    if (!task.visibleTo)   task.visibleTo  = [...ALL_MEMBER_IDS];
-    if (!task.notifyTo)    task.notifyTo   = [PERSON_TO_ID[task.person] || 'mom'];
-    if (task.reminderOffsetMinutes === undefined) task.reminderOffsetMinutes = 10;
-    if (!task.timeSource)  task.timeSource = 'suggested';
-    const tsLabel = { explicit:t('dp_time_explicit'), suggested:t('dp_time_suggested'), manual:t('dp_time_manual') };
-    c.innerHTML = `
-      <div class="card-inner">
-        <div class="card-accent" style="background:${p.color}"></div>
-        <div class="card-time-col"><span class="card-time">${m2t(task.mins)}</span><span class="card-ampm">${ampm(task.mins)}</span><span class="card-ts ${task.timeSource}">${tsLabel[task.timeSource]}</span></div>
-        <div class="card-vline"></div>
-        <div class="card-body"><div class="card-title">${task.title}</div><div class="card-chip"><span class="chip-dot" style="background:${p.color}"></span>${personLabel(task.person)}</div></div>
-        <div class="card-av" style="background:${p.bg}">${p.emoji}</div>
-        <div class="card-bell${task.notify===false?' off':''}">${task.notify===false?'🔕':'🔔'}</div>
-      </div>`;
-    const shareFooter = document.createElement('div');
-    shareFooter.className = 'card-share';
-    shareFooter.style.cssText = 'display:flex!important;padding:10px 14px 12px 18px;align-items:center;gap:8px;cursor:pointer;border-top:2px solid #f0d8c8;background:#fdf3ec;';
-    shareFooter.innerHTML = `<span style="font-size:11px;font-weight:700;color:#a8917f;">${t('assigned_to')}</span><span class="card-share-name" style="font-size:13px;font-weight:800;color:#5a3e2b;flex:1;margin-inline-start:6px;">${assignedLabel(task)}</span><span class="card-share-arrow" style="font-size:15px;color:#b8a090;">›</span>`;
-    shareFooter.addEventListener('click', e => {
-      e.stopPropagation();
-      openShareDrawer(task, () => {
-        shareFooter.querySelector('.card-share-name').textContent = assignedLabel(task);
-      });
-    });
-    c.appendChild(shareFooter);
-    c.querySelector('.card-time-col').addEventListener('click', () => {
-      if (!dpAdjustMode) return;
-      openTimeStrip(task.id, c);
-    });
-    c.querySelector('.card-bell').addEventListener('click', e => {
-      e.stopPropagation();
-      task.notify = task.notify === false ? true : false;
-      const bell = c.querySelector('.card-bell');
-      bell.textContent = task.notify ? '🔔' : '🔕';
-      bell.classList.toggle('off', !task.notify);
-    });
-    // Inline title editing — tap to edit, Enter/blur to confirm
-    const titleEl = c.querySelector('.card-title');
-    titleEl.setAttribute('contenteditable', 'plaintext-only');
-    titleEl.addEventListener('input', () => {
-      const updated = titleEl.textContent.trim();
-      if (updated) task.title = updated;
-    });
-    titleEl.addEventListener('keydown', e => {
-      if (e.key === 'Enter') { e.preventDefault(); titleEl.blur(); }
-    });
+    const c = _buildCardEl(task);
+    c.className = 'task-card ' + (animate ? 'entering' : 'settling');
+    if (animate) c.style.animationDelay = `${0.32 + i * 0.13}s`;
+    else         c.style.animationDelay = `${i * 0.04}s`;
     list.appendChild(c);
-    attachSplitGesture(c, task);
   });
+}
+
+function insertNewTasks(newTasks) {
+  const newIds = new Set(newTasks.map(t => t.id));
+
+  // Freeze existing cards so they don't re-animate
+  const savedEls = {};
+  document.querySelectorAll('#dpList .task-card').forEach(card => {
+    card.classList.remove('entering', 'settling', 'adj-wake', 'success-anim');
+    card.style.cssText += ';animation:none!important;';
+    savedEls[card.dataset.id] = card;
+  });
+
+  // Append new tasks then sort all by time
+  AppState.previewTasks.push(...newTasks);
+  AppState.previewTasks.sort((a, b) => (a.mins ?? 9999) - (b.mins ?? 9999));
+
+  const list = document.getElementById('dpList');
+  list.innerHTML = '';
+
+  _splitHintShown = false;
+  let newDelay = 0;
+  AppState.previewTasks.forEach((task) => {
+    if (savedEls[task.id]) {
+      list.appendChild(savedEls[task.id]);
+    } else {
+      const c = _buildCardEl(task);
+      c.className = 'task-card entering';
+      c.style.animationDelay = `${newDelay * 0.12}s`;
+      newDelay++;
+      list.appendChild(c);
+    }
+  });
+
+  _updateDpMeta();
+  closeAddSheet();
 }
 
 let dpActiveStrip = null;
@@ -3382,6 +3487,98 @@ if (_savedLang) {
   document.getElementById('s-voice').classList.remove('active');
   document.getElementById('s-lang').classList.add('active');
 }
+
+// ─── Add-to-day sheet ─────────────────────────────────────────────
+function openAddSheet() {
+  addMode = true;
+  // Reset voice state fresh for add session
+  vTranscript = ''; vCarryOver = ''; vSessionFinal = '';
+  _freshSession = false; _lastAcceptedFinal = '';
+  // Reset sheet UI
+  const bubble = document.getElementById('atdBubble');
+  if (bubble) { bubble.textContent = ''; bubble.classList.remove('has-text'); }
+  const addBtn = document.getElementById('atdAddBtn');
+  if (addBtn) { addBtn.disabled = true; addBtn.textContent = t('atd_add'); }
+  document.getElementById('atdTitle').textContent  = t('atd_title');
+  document.getElementById('atdCancel').textContent = t('atd_cancel');
+  _setAtdRecording(false);
+  document.getElementById('atdBg').classList.add('open');
+  // Start recording automatically after sheet animates in
+  setTimeout(() => _atdStartRec(), 360);
+}
+
+function closeAddSheet() {
+  addMode = false;
+  if (vListening) {
+    _stopKeepAlive();
+    clearTimeout(_restartTimer);
+    vListening = false;
+    if (recognition) { try { recognition.abort(); } catch(_) {} }
+    _setAtdRecording(false);
+  }
+  document.getElementById('atdBg').classList.remove('open');
+}
+
+function _setAtdRecording(isRec) {
+  document.getElementById('atdMicRing').classList.toggle('rec', isRec);
+  const st = document.getElementById('atdStatus');
+  st.textContent = isRec ? t('atd_recording') : t('atd_tap');
+  st.classList.toggle('rec', isRec);
+}
+
+function _atdStartRec() {
+  if (!addMode) return;
+  _beepStart();
+  _startKeepAlive();
+  vListening = true;
+  _setAtdRecording(true);
+  if (recognition) {
+    recognition.lang = AppState.lang === 'he' ? 'he-IL' : 'en-US';
+    try { recognition.start(); } catch(_) {}
+  }
+}
+
+function _atdStopAndOrganize() {
+  if (!addMode) return;
+  _stopKeepAlive();
+  _beepStop();
+  clearTimeout(_restartTimer);
+  vListening = false;
+  _setAtdRecording(false);
+  if (recognition) { try { recognition.abort(); } catch(_) {} }
+  // Small delay so final transcript settles, then organise
+  setTimeout(() => { if (addMode) vOrganize(); }, 320);
+}
+
+document.getElementById('atdMicArea').addEventListener('click', () => {
+  if (!addMode) return;
+  if (vListening) {
+    _stopKeepAlive();
+    clearTimeout(_restartTimer);
+    vListening = false;
+    if (recognition) { try { recognition.abort(); } catch(_) {} }
+    _setAtdRecording(false);
+  } else {
+    _atdStartRec();
+  }
+});
+
+document.getElementById('atdAddBtn').addEventListener('click', () => {
+  if (!addMode) return;
+  _atdStopAndOrganize();
+});
+
+document.getElementById('atdCancel').addEventListener('click', () => {
+  closeAddSheet();
+});
+
+document.getElementById('atdBg').addEventListener('click', e => {
+  if (e.target === document.getElementById('atdBg')) closeAddSheet();
+});
+
+document.getElementById('btnAddMore').addEventListener('click', () => {
+  openAddSheet();
+});
 </script>
 </body>
 </html>
