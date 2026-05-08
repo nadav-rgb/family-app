@@ -544,7 +544,9 @@
       ? date
       : (fallback && fallback.fromText ? fallback : date);
 
-    const title = cleanTitle(text, [time.match, resolvedDate.match, assignee.match], config);
+    // time.match intentionally excluded: stripping only the number leaves dangling
+    // preposition words ("בשעה", "ב") in the title. Keep the full natural phrasing.
+    const title = cleanTitle(text, [resolvedDate.match, assignee.match], config);
     const mins  = time.mins !== null
       ? Math.max(0, Math.min(time.mins, 23 * 60 + 59))
       : defaultMins(now);
