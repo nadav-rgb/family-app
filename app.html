@@ -654,6 +654,12 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 .split-confirm{background:linear-gradient(135deg,#ff7033,#e05a20);color:#fff;border:none;border-radius:14px;padding:11px 24px;font-family:'Nunito',sans-serif;font-size:14px;font-weight:800;cursor:pointer;box-shadow:0 3px 12px rgba(255,112,51,.26);transition:transform .14s,box-shadow .14s;}
 .split-confirm:active{transform:scale(.95);box-shadow:0 1px 6px rgba(255,112,51,.18);}
 .split-cancel{background:none;border:none;color:#b8a090;font-family:'Nunito',sans-serif;font-size:14px;font-weight:700;cursor:pointer;padding:11px 8px;}
+/* accent breathes twice then rests */
+@keyframes accentBreath{0%,100%{opacity:1;}50%{opacity:.22;}}
+.card-accent.split-alive{animation:accentBreath 1.2s ease-in-out 1.0s 2 normal none;}
+/* one-time whisper hint */
+.split-hint-text{font-family:'Nunito',sans-serif;font-size:10px;font-weight:700;color:rgba(155,125,105,.58);text-align:center;padding:0 16px 10px;letter-spacing:.2px;opacity:0;animation:hintFadeIn .6s ease 3.5s forwards;pointer-events:none;}
+@keyframes hintFadeIn{to{opacity:1;}}
 
 /* ─── Mobile debug overlay (?debug=1 or window.APP_DEBUG=true) ─── */
 #dbgOverlay{position:fixed;bottom:0;left:0;right:0;max-height:42vh;background:rgba(10,10,10,.93);z-index:9999;display:flex;flex-direction:column;font-family:'Courier New',monospace;font-size:11px;line-height:1.45;border-top:2px solid rgba(255,110,40,.55);}
@@ -2243,6 +2249,7 @@ function ampm(m) {
 // ─── Long-press split — prototype shell ──────────────────────────
 // No real task mutation. No parser connection. Interaction feel only.
 const SPLIT_MIN_LEN = 20;
+let _splitHintShown = false; // reset per dpRender — prevents hint on >1 card per render
 
 function mockSplit(title) {
   // Split at word boundaries before Hebrew infinitives (ל + 2+ chars)
@@ -2283,6 +2290,15 @@ function closeSplitPanel(cardEl, panel, confirmed) {
 function openSplitPanel(cardEl, task) {
   const suggestions = mockSplit(task.title);
   if (suggestions.length < 2) return;
+
+  // Dismiss the whisper hint permanently — user has discovered the gesture
+  localStorage.setItem('family-app-split-seen', '1');
+  const hintEl = cardEl.querySelector('.split-hint-text');
+  if (hintEl) {
+    hintEl.style.transition = 'opacity 280ms ease';
+    hintEl.style.opacity = '0';
+    setTimeout(() => hintEl.remove(), 290);
+  }
 
   const inner = cardEl.querySelector('.card-inner');
   inner.style.transition = 'opacity 160ms ease';
@@ -2325,6 +2341,18 @@ function openSplitPanel(cardEl, task) {
 }
 
 function attachSplitGesture(cardEl, task) {
+  // Affordance: pulse accent + one-time whisper on suspicious tasks
+  if (mockSplit(task.title).length >= 2) {
+    cardEl.querySelector('.card-accent').classList.add('split-alive');
+    if (!localStorage.getItem('family-app-split-seen') && !_splitHintShown) {
+      _splitHintShown = true;
+      const hint = document.createElement('div');
+      hint.className = 'split-hint-text';
+      hint.textContent = AppState.lang === 'he' ? '· לחץ והחזק לפיצול ·' : '· hold to split ·';
+      cardEl.insertBefore(hint, cardEl.querySelector('.card-share'));
+    }
+  }
+
   let lpTimer = null;
   let startX = 0, startY = 0;
 
@@ -2376,6 +2404,7 @@ function dpRender(animate) {
   document.querySelector('.dp-meta').innerHTML =
     `<span class="dp-pill">📋 ${tasks.length} ${t('dp_tasks_lbl')}</span><span class="dp-pill">${people.join(' · ')}</span>`;
 
+  _splitHintShown = false; // allow hint on first suspicious card of this render
   tasks.forEach((task, i) => {
     const p = taskPerson(task);
     const c = document.createElement('div');
