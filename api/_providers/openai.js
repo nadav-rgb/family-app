@@ -73,6 +73,9 @@ Date/time inheritance:
 ━━━ FIELD RULES ━━━
 
 title:
+  MUST be Hebrew words exactly as spoken — NEVER translate verbs to English.
+  NEVER use English action identifiers such as "take_", "call_", "buy_", "go_", etc.
+  Keep the Hebrew infinitive verb verbatim: לקחת / להתקשר / לקנות / ללכת / לשלם …
   Strip: time phrases, date words ("מחר", "היום"), filler
   Filler to strip: "אני צריך", "אני חייב", "צריך", "בבקשה", "תזכיר לי", "תזכרי לי"
   Strip person name ONLY when it is the grammatical SUBJECT/DOER of the task:
@@ -174,10 +177,24 @@ async function parseWithOpenAI(transcript, context = {}) {
   };
 }
 
+// Guard against AI returning English action keys like "take_ את הילדים מהחוג"
+const ACTION_KEY_HE = {
+  take:'לקחת', call:'להתקשר', buy:'לקנות', pay:'לשלם', send:'לשלוח',
+  cook:'לבשל', clean:'לנקות', pick:'לאסוף', get:'לקבל', go:'ללכת',
+  drive:'לנסוע', read:'לקרוא', write:'לכתוב', check:'לבדוק', fix:'לתקן',
+};
+function fixTitle(raw) {
+  const s = String(raw || '').trim();
+  const m = s.match(/^([a-z]{2,10})_?\s+/i);
+  if (!m) return s;
+  const he = ACTION_KEY_HE[m[1].toLowerCase()];
+  return (he ? he + ' ' : '') + s.slice(m[0].length);
+}
+
 function normalizeTask(t) {
   const mins = typeof t.mins === 'number' ? Math.max(0, Math.min(Math.round(t.mins), 1439)) : null;
   return {
-    title:       String(t.title || '').trim(),
+    title:       fixTitle(t.title),
     assignee:    ['mom', 'dad', 'dudi', 'yonatan'].includes(t.assignedTo) ? t.assignedTo : null,
     time:        minsToTime(mins),
     date:        t.date || null,
