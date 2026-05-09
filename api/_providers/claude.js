@@ -62,8 +62,14 @@ EXCEPTION — subordinate clause = no split:
   Signal: verb preceded by "ש" + conjugated prefix (שי, שת, שנ, שא)
 
 Date/time inheritance:
-  When a date ("מחר", "היום") or time appears near a task, carry it into subsequent tasks
-  in the same sentence unless another date/time overrides it.
+  DATE carries forward ("מחר", "היום") — inherit to ALL tasks in the same sentence.
+  TIME does NOT carry forward — a time word applies ONLY to the task it is immediately
+  adjacent to. Every other task gets mins=null unless it has its own explicit time.
+
+  Example:
+    "בתשע ללכת לסופר ולקנות חלב וביצים ולחזור הביתה"
+    → task 1: ללכת לסופר ולקנות חלב וביצים — mins=540  ("בתשע" is adjacent to this task)
+    → task 2: לחזור הביתה                   — mins=null (no time stated — do NOT inherit)
 
 ━━━ FIELD RULES ━━━
 
@@ -93,7 +99,14 @@ assignedTo:
 
 mins:
   Minutes from midnight as an integer.
-  Israeli Hebrew time defaults — when no explicit morning context ("בבוקר", "לפני הצהריים"):
+
+  Vague time-of-day words (no number spoken):
+    "בבוקר"              → 540  (09:00)
+    "בצהריים"/"בצהרים"   → 840  (14:00)
+    "בערב"               → 1080 (18:00)
+    "בלילה"              → 1260 (21:00)
+
+  Israeli Hebrew specific hours — default to afternoon unless "בבוקר"/"לפני הצהריים":
     "אחת"              → 780  (13:00)
     "שתיים" / "שתים"  → 840  (14:00)
     "שלוש" / "שלש"    → 900  (15:00)
@@ -106,7 +119,6 @@ mins:
     "עשר"              → 600  (10:00)
     "אחת עשרה"        → 660  (11:00)
     "שתיים עשרה"      → 720  (12:00)
-    "צהריים"/"בצהריים" → 720  (12:00 noon — NOT 14:00)
   Half-hours — "X וחצי" adds 30 minutes to the base hour:
     "שתיים וחצי"  → 870  (14:30)
     "שלוש וחצי"   → 930  (15:30)

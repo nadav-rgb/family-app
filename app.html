@@ -1540,6 +1540,8 @@ let vCarryOver     = '';  // confirmed text from previous recognition sessions
 let vSessionFinal  = '';  // isFinal-confirmed words within the current recognition session
 let _freshSession  = false; // true right after onend restart — used to skip cross-session repeats
 let _lastAcceptedFinal = ''; // replay/cumulative guard: last isFinal transcript we processed
+let _vOrganizerBusy        = false; // processing lock — prevents concurrent vOrganize calls
+let _lastProcessedTranscript = '';  // dedup guard — ignores identical consecutive submissions
 
 const sbBubble = document.getElementById('speechBubble');
 const sbText   = document.getElementById('sbText');
@@ -2144,11 +2146,12 @@ zone.addEventListener('click', () => {
 });
 
 function vStart() {
-  vTranscript         = '';
-  vCarryOver          = '';
-  vSessionFinal       = '';
-  _freshSession       = false;
-  _lastAcceptedFinal  = '';
+  vTranscript              = '';
+  vCarryOver               = '';
+  vSessionFinal            = '';
+  _freshSession            = false;
+  _lastAcceptedFinal       = '';
+  _lastProcessedTranscript = '';
   _beepStart();
   _startKeepAlive();
   vListening    = true;
@@ -2252,6 +2255,19 @@ async function vOrganize() {
   const spokenText = vTranscript.trim();
   if (!addMode) dpAdjustMode = false;
 
+  // Processing lock: drop concurrent calls (e.g. double-tap on mic button)
+  if (_vOrganizerBusy) {
+    AppLog.warn('vOrganize', 'locked — dropping duplicate call');
+    return;
+  }
+  // Dedup: drop identical consecutive submissions (e.g. same transcript fired twice)
+  if (spokenText && spokenText === _lastProcessedTranscript) {
+    AppLog.warn('vOrganize', `duplicate transcript — skipping: "${spokenText.slice(0,40)}"`);
+    return;
+  }
+  _vOrganizerBusy = true;
+  _lastProcessedTranscript = spokenText;
+
   // Non-Hebrew: smart splitting not available yet — show clear message, don't create broken task
   if (AppState.lang !== 'he') {
     AppLog.warn('fallback mode', `lang=${AppState.lang} — no parser, showing message`);
@@ -2264,6 +2280,7 @@ async function vOrganize() {
       ltxt.style.color  = '';
       vTranscript = '';
     }, 4000);
+    _vOrganizerBusy = false;
     return;
   }
 
@@ -2297,6 +2314,7 @@ async function vOrganize() {
       : [aiParsedToTask({ title: spokenText || '?', time: null, date: null, assignee: null }, 0)];
     AppLog.info('add-mode insert', newTasks.map(t => t.title));
     insertNewTasks(newTasks);
+    _vOrganizerBusy = false;
     return;
   }
 
@@ -2314,6 +2332,7 @@ async function vOrganize() {
   if (reviewBanner)   reviewBanner.classList.toggle('on',   !!result.needsReview && !result.fallback);
   if (fallbackBanner) fallbackBanner.classList.toggle('on', !!result.fallback);
 
+  _vOrganizerBusy = false;
   setTimeout(() => {
     zone.classList.remove('rec');
     ltxt.className = 'ltxt';
