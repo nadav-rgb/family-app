@@ -2393,6 +2393,7 @@ const PEOPLE = {
 };
 let dpAdjustMode = false;
 let addMode = false;
+let _appendToToday = false; // true when "+" from Today with existing tasks → append instead of replace
 function m2t(m) { if (m == null) return ''; return `${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`; }
 function ampm(m) {
   if (m == null) return '';
@@ -2980,11 +2981,20 @@ document.getElementById('btnOk').addEventListener('click', function() {
   sub.style.color = '#e07c3a';
   sub.textContent = t('dp_perfect');
   setTimeout(() => {
-    // Commit preview → main tasks, preserving other dates
-    const newTasks  = AppState.previewTasks.map(t => ({ ...t, completed: false, date: activeDate }));
-    const kept      = AppState.tasks.filter(t => (t.date || todayDate()) !== activeDate);
-    AppState.tasks  = [...kept, ...newTasks];
+    // Commit preview → main tasks
+    const newTasks   = AppState.previewTasks.map(t => ({ ...t, completed: false, date: activeDate }));
+    const commitMode = _appendToToday ? 'append' : 'replace';
+    if (_appendToToday) {
+      // Append: keep ALL existing tasks (including today's) and add new ones at the end
+      AppState.tasks = [...AppState.tasks, ...newTasks];
+    } else {
+      // Replace: wipe today's tasks and set fresh (initial plan flow)
+      const kept = AppState.tasks.filter(t => (t.date || todayDate()) !== activeDate);
+      AppState.tasks = [...kept, ...newTasks];
+    }
+    _appendToToday = false;
     AppLog.group('tasks committed');
+    AppLog.info('mode', commitMode);
     AppLog.info('count', newTasks.length);
     AppLog.info('titles', newTasks.map(t => t.title));
     AppLog.info('date', activeDate);
@@ -3178,6 +3188,8 @@ function renderToday() {
 }
 
 document.getElementById('tNavAdd').addEventListener('click', () => {
+  // Detect whether there are already tasks for the active date → append vs replace
+  _appendToToday = AppState.tasks.some(task => (task.date || todayDate()) === activeDate);
   // Reset voice + btnOk before showing voice screen
   ltxt.textContent = t('voice_tap'); ltxt.className = 'ltxt';
   wdots.classList.remove('on'); zone.classList.remove('rec');
