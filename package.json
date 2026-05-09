@@ -1,0 +1,9 @@
+{
+  "name": "family-app",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.54.0",
+    "openai": "^4.100.0"
+  }
+}

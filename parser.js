@@ -612,7 +612,122 @@
     return result;
   }
 
-  global.HebrewParser = { parse };
+  // ═══════════════════════════════════════════════════════════════════════════
+  // AI PARSER  (async — calls /api/parse-tasks serverless function)
+  // Falls back to the local rule-based parser on any network / API error.
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /**
+   * parseTasksWithAI(text, opts?) → Promise<ApiResult>
+   *
+   * opts.now  — Date override
+   * opts.lang — 'he' | 'en' (default 'he')
+   */
+  async function parseTasksWithAI(text, opts) {
+    const now  = (opts && opts.now)  || new Date();
+    const lang = (opts && opts.lang) || 'he';
+    const date = now.toISOString().split('T')[0];  // YYYY-MM-DD
+    const time = now.toTimeString().slice(0, 5);   // HH:MM
+
+    const res = await fetch('/api/parse-tasks', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ transcript: text, lang, date, time }),
+    });
+
+    if (!res.ok) throw new Error('API ' + res.status);
+    return res.json();
+    // Returns: { tasks, needsReview, uncertainParts, source: 'ai', fallback: false }
+  }
+
+  /**
+   * parseTasksLocal(text, opts?) → ApiResult
+   *
+   * Wraps the synchronous rule-based parser into the canonical output shape.
+   * Always needsReview=true — the local parser is not reliable enough to skip review.
+   *
+   * Canonical task shape: { title, time, date, assignee }
+   *   time   — "HH:MM" string or null
+   *   date   — "today" | "tomorrow" | "YYYY-MM-DD" | null
+   *   assignee — "mom" | "dad" | "dudi" | "yonatan" | null
+   */
+  function parseTasksLocal(text, opts) {
+    const now      = (opts && opts.now) || new Date();
+    const todayStr = now.toISOString().split('T')[0];
+    const raw      = parse(text, opts);
+
+    const CONFIDENCE_THRESHOLD = 0.7;
+    const uncertainParts = [];
+
+    const tasks = raw.map(function (r) {
+      // Date → relative label
+      let dateLabel = null;
+      if (r.date && r.date.date) {
+        const d = r.date.date.toISOString().split('T')[0];
+        if (d === todayStr) {
+          dateLabel = 'today';
+        } else {
+          const tomorrow = new Date(now);
+          tomorrow.setDate(tomorrow.getDate() + 1);
+          dateLabel = d === tomorrow.toISOString().split('T')[0] ? 'tomorrow' : d;
+        }
+      }
+
+      // mins → "HH:MM" string
+      var timeStr = null;
+      if (r.timeFromText && typeof r.mins === 'number') {
+        var h = Math.floor(r.mins / 60);
+        var m = r.mins % 60;
+        timeStr = String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
+      }
+
+      if (r.confidence < CONFIDENCE_THRESHOLD) uncertainParts.push(r.title);
+
+      return {
+        title:    r.title,
+        time:     timeStr,
+        date:     dateLabel,
+        assignee: r.assignedTo,   // local parser uses assignedTo; we map it here
+      };
+    });
+
+    return {
+      tasks:          tasks,
+      needsReview:    true,
+      uncertainParts: uncertainParts,
+      source:         'local',
+      fallback:       true,
+    };
+  }
+
+  /**
+   * parseTasks(text, opts?) → Promise<ApiResult>
+   *
+   * Primary entry point for the UI.
+   * Tries AI first; falls back to local parser transparently on any error.
+   * Result MUST go to Day Preview — never inserted directly into Today.
+   *
+   * ApiResult shape:
+   *   tasks:          { title, time, date, assignee }[]
+   *   needsReview:    boolean
+   *   uncertainParts: string[]   (task titles that need human review)
+   *   source:         "ai" | "local"
+   *   fallback:       boolean
+   */
+  async function parseTasks(text, opts) {
+    try {
+      return await parseTasksWithAI(text, opts);
+    } catch (err) {
+      Log.warn('AI parser failed, local fallback', err.message);
+      return parseTasksLocal(text, opts);
+    }
+  }
+
+  global.HebrewParser = {
+    parse,           // legacy sync API — raw parser output (used by existing code)
+    parseTasks,      // primary async API — canonical output shape
+    parseTasksLocal, // exposed for offline/unit testing
+  };
 
 })(window);
 
