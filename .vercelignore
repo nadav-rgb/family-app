@@ -1,0 +1,4 @@
+api/test-parse.js
+api/test-regression.js
+node_modules
+.env.local
