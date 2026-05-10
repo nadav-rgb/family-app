@@ -3348,6 +3348,14 @@ function attachSwipeDelete(el, task, screen) {
   el.appendChild(bg);
   el.appendChild(track);
 
+  // Sync bg height explicitly — inset:0 on auto-height flex items is unreliable on mobile
+  function syncBg() {
+    const h = track.offsetHeight;
+    if (h > 0) bg.style.height = h + 'px';
+  }
+  // Wait for two rAF frames so the card is fully laid out before syncing
+  requestAnimationFrame(() => requestAnimationFrame(syncBg));
+
   let startX = 0, startY = 0;
   let dragging = false, locked = false, animating = false;
   const SNAP_PX   = 72;
@@ -3358,6 +3366,7 @@ function attachSwipeDelete(el, task, screen) {
   }
   function snapBack() {
     track.style.transition = 'transform .25s cubic-bezier(.34,1.2,.64,1)';
+    track.style.opacity    = '';
     setX(0);
     setTimeout(() => { track.style.transition = ''; }, 270);
   }
@@ -3369,17 +3378,20 @@ function attachSwipeDelete(el, task, screen) {
     setX(-(el.offsetWidth + 30));
     track.style.opacity = '0';
     setTimeout(() => {
-      el.style.cssText += ';overflow:hidden;height:' + h + 'px;transition:height .24s ease,margin-bottom .24s ease,opacity .14s;';
+      el.style.overflow   = 'hidden';
+      el.style.height     = h + 'px';
+      el.style.transition = 'height .24s ease, margin-bottom .24s ease, opacity .14s';
       void el.offsetHeight;
-      el.style.height = '0';
-      el.style.marginBottom = '0';
-      el.style.opacity = '0';
+      el.style.height        = '0';
+      el.style.marginBottom  = '0';
+      el.style.opacity       = '0';
     }, 160);
     setTimeout(() => { el.remove(); doDelete(task, screen); }, 410);
   }
 
   el.addEventListener('touchstart', e => {
     if (animating || el.classList.contains('split-open') || el.classList.contains('lp-holding')) return;
+    syncBg(); // re-sync height in case card grew since last render
     startX = e.touches[0].clientX;
     startY = e.touches[0].clientY;
     dragging = false; locked = false;
