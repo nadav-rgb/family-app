@@ -1995,34 +1995,46 @@ let _titleTipDismissCl = null, _titleTipDismissScroll = null;
 // shopping list, so we won't set task.shoppingList in that case — safe to be
 // permissive here.
 function isShoppingListTitle(title) {
-  if (!title || typeof title !== 'string' || title.length < 25) return false;
+  if (!title || typeof title !== 'string' || title.length < 25) {
+    console.log('[shop-debug] isShoppingListTitle → FALSE (too short)', { title, len: title?.length });
+    return false;
+  }
   const words = title.split(/\s+/).filter(Boolean);
   const hasKeyword = /(לסופר|פיצוצייה|בשוק|סופרמרקט|לקנות)/.test(title);
-  if (hasKeyword && words.length >= 6) return true;
-  if (words.length >= 12) return true;
-  return false;
+  let result = false;
+  if (hasKeyword && words.length >= 6) result = true;
+  else if (words.length >= 12) result = true;
+  console.log('[shop-debug] isShoppingListTitle', { title: title.substring(0,60), len: title.length, words: words.length, hasKeyword, result });
+  return result;
 }
 
 // Async-categorize a task title via /api/categorize-shopping. Idempotent + dedupe.
 // On success, sets task.shoppingList = { action, categories } and persists state.
 async function categorizeShoppingTitle(task) {
-  if (!task || task.shoppingList || task._categorizing) return;
-  if (!isShoppingListTitle(task.title)) return;
+  console.log('[shop-debug] categorizeShoppingTitle ENTRY', { id: task?.id, title: task?.title?.substring(0,60), hasShoppingList: !!task?.shoppingList, isCategorizing: !!task?._categorizing });
+  if (!task || task.shoppingList || task._categorizing) { console.log('[shop-debug] → early return (no task / has shoppingList / categorizing)'); return; }
+  if (!isShoppingListTitle(task.title)) { console.log('[shop-debug] → early return (detection FALSE)'); return; }
   task._categorizing = true;
   try {
+    console.log('[shop-debug] FETCH START', { title: task.title.substring(0,60) });
     const res = await fetch('/api/categorize-shopping', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({ title: task.title }),
     });
+    console.log('[shop-debug] FETCH RESPONSE', { status: res.status, ok: res.ok });
     if (!res.ok) throw new Error('categorize HTTP ' + res.status);
     const data = await res.json();
+    console.log('[shop-debug] FETCH JSON', { action: data?.action, categoryCount: data?.categories ? Object.keys(data.categories).length : 0, raw: data });
     if (data && data.action && data.categories && Object.keys(data.categories).length > 0) {
       task.shoppingList = { action: data.action, categories: data.categories };
+      console.log('[shop-debug] ASSIGNED task.shoppingList', { id: task.id, taskRefSameAsAppState: AppState.tasks.includes(task) || AppState.previewTasks.includes(task) });
       try { saveState(); } catch(_) {}
+    } else {
+      console.log('[shop-debug] response had no usable categories — task.shoppingList NOT set');
     }
   } catch (err) {
-    console.warn('[shopping] categorize failed:', err.message);
+    console.warn('[shop-debug] categorize FAILED:', err.message);
   } finally {
     delete task._categorizing;
   }
@@ -2067,9 +2079,11 @@ function showTitleTip(textOrTask, anchorEl) {
     text = textOrTask.title || '';
     shoppingList = textOrTask.shoppingList;
   } else { return; }
+  const willRenderStructured = !!(shoppingList && shoppingList.categories && Object.keys(shoppingList.categories).length > 0);
+  console.log('[shop-debug] showTitleTip CALLED', { argType: typeof textOrTask, hasTask: typeof textOrTask === 'object', taskId: textOrTask?.id, hasShoppingList: !!shoppingList, willRenderStructured, textPreview: text.substring(0,40) });
   const tip = document.createElement('div');
   tip.className = 'title-tip';
-  if (shoppingList && shoppingList.categories && Object.keys(shoppingList.categories).length > 0) {
+  if (willRenderStructured) {
     _renderShoppingTipContent(tip, shoppingList);
   } else {
     tip.textContent = text;
@@ -2839,6 +2853,7 @@ function _updateDpMeta() {
 }
 
 function _buildCardEl(task) {
+  console.log('[shop-debug] _buildCardEl', { id: task.id, title: task.title?.substring(0,60), len: task.title?.length, longBranch: task.title?.length > 45, hasShoppingList: !!task.shoppingList });
   const p = taskPerson(task);
   const c = document.createElement('div');
   c.className  = 'task-card';
@@ -3345,6 +3360,7 @@ function renderToday() {
 
   // Render task list
   const nextIdx = tasks.findIndex(t => !t.completed);
+  console.log('[shop-debug] renderToday — task summary', tasks.map(t => ({ id: t.id, title: t.title?.substring(0,50), len: t.title?.length, longBranch: t.title?.length > 45, hasShoppingList: !!t.shoppingList })));
   tasks.forEach((t, i) => {
     const p    = taskPerson(t);
     const isNx = i === nextIdx;
