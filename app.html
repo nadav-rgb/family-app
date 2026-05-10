@@ -2635,11 +2635,22 @@ function attachSplitGesture(cardEl, task) {
   cardEl.addEventListener('touchstart', e => {
     if (cardEl.classList.contains('split-open')) return;
     if (e.target.closest('.card-title,.card-share,.card-bell,.card-time-col')) return;
+    // If swipe is open, snap it back and absorb this touch — don't start long press
+    const swTr = cardEl.querySelector('.card-swipe-track');
+    if (swTr && swTr.style.transform) {
+      swTr.style.transition = 'transform .2s cubic-bezier(.34,1.2,.64,1)';
+      swTr.style.transform  = '';
+      setTimeout(() => { swTr.style.transition = ''; }, 220);
+      return;
+    }
     startX = e.touches[0].clientX;
     startY = e.touches[0].clientY;
     cardEl.classList.add('lp-holding');
     lpTimer = setTimeout(() => {
       cardEl.classList.remove('lp-holding');
+      // Snap any residual swipe before panel opens
+      const tr = cardEl.querySelector('.card-swipe-track');
+      if (tr && tr.style.transform) { tr.style.transition = 'transform .15s ease'; tr.style.transform = ''; }
       if (navigator.vibrate) navigator.vibrate(8);
       openSplitPanel(cardEl, task);
     }, 420);
@@ -2649,7 +2660,8 @@ function attachSplitGesture(cardEl, task) {
     if (!lpTimer) return;
     const dx = e.touches[0].clientX - startX;
     const dy = e.touches[0].clientY - startY;
-    if (dx * dx + dy * dy > 64) cancel();
+    // Cancel long press on any horizontal movement ≥5px (before swipe starts at 6px)
+    if (Math.abs(dx) >= 5 || dx * dx + dy * dy > 64) cancel();
   }, { passive: true });
 
   cardEl.addEventListener('touchend',   cancel);
@@ -3025,6 +3037,13 @@ document.getElementById('btnOk').addEventListener('click', function() {
 
 document.getElementById('btnAdjust').addEventListener('click', () => {
   dpAdjustMode = true;
+  // Close any open swipe tracks before entering adjust mode
+  document.querySelectorAll('#dpList .card-swipe-track').forEach(tr => {
+    tr.style.transition = 'transform .18s ease';
+    tr.style.transform  = '';
+    tr.style.opacity    = '';
+    setTimeout(() => { tr.style.transition = ''; }, 200);
+  });
   document.getElementById('dpList').classList.add('adj-mode');
   document.getElementById('adjBanner').classList.add('on');
   document.querySelectorAll('#dpList .task-card').forEach((c, i) => {
@@ -3352,7 +3371,8 @@ function attachSwipeDelete(el, task, screen) {
   }
 
   el.addEventListener('touchstart', e => {
-    if (animating || el.classList.contains('split-open')) return;
+    if (animating || el.classList.contains('split-open') || el.classList.contains('lp-holding')) return;
+    if (screen === 'preview' && dpAdjustMode) return;
     startX = e.touches[0].clientX;
     startY = e.touches[0].clientY;
     dragging = false; locked = false;
@@ -3360,7 +3380,7 @@ function attachSwipeDelete(el, task, screen) {
   }, { passive: true });
 
   el.addEventListener('touchmove', e => {
-    if (animating || locked) return;
+    if (animating || locked || el.classList.contains('lp-holding')) return;
     const dx = e.touches[0].clientX - startX;
     const dy = e.touches[0].clientY - startY;
     if (!dragging) {
