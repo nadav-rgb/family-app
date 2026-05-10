@@ -3093,7 +3093,13 @@ document.getElementById('btnAdjust').addEventListener('click', () => {
     setTimeout(() => { tr.style.transition = ''; }, 200);
   });
   document.getElementById('dpList').classList.add('adj-mode');
-  document.getElementById('adjBanner').classList.add('on');
+  const adjBanner = document.getElementById('adjBanner');
+  adjBanner.classList.add('on');
+  // adj-banner pushes dp-list down — scroll by its height so visible content stays in view
+  setTimeout(() => {
+    const list = document.getElementById('dpList');
+    list.scrollTop += adjBanner.offsetHeight;
+  }, 0);
   document.querySelectorAll('#dpList .task-card').forEach((c, i) => {
     setTimeout(() => { c.classList.remove('adj-wake'); void c.offsetWidth; c.classList.add('adj-wake'); }, i * 45);
   });
