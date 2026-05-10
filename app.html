@@ -495,6 +495,31 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 .t-bell.off{opacity:.3;}
 .t-bell:active{transform:scale(.82);}
 
+/* ══ LONG-CARD: stacked layout when title wraps beyond ~2 lines ══ */
+/* Day Preview */
+.task-card.long-card .card-inner{flex-wrap:wrap;align-items:center;position:relative;padding-left:13px;row-gap:6px;padding-bottom:10px;}
+.phone[dir="rtl"] .task-card.long-card .card-inner{padding-left:14px;padding-right:13px;}
+.task-card.long-card .card-accent{position:absolute;left:0;top:0;bottom:0;height:auto;align-self:auto;}
+.phone[dir="rtl"] .task-card.long-card .card-accent{left:auto;right:0;}
+.task-card.long-card .card-body{order:-1;flex:0 0 100%;}
+.task-card.long-card .card-title{overflow:visible;}
+.task-card.long-card .card-title[contenteditable]{overflow:visible;}
+.task-card.long-card .card-vline{display:none;}
+.task-card.long-card .card-time-col{order:0;}
+.task-card.long-card .card-av{order:0;margin-left:auto;}
+.phone[dir="rtl"] .task-card.long-card .card-av{margin-left:0;margin-right:auto;}
+.task-card.long-card .card-bell{order:0;}
+/* Today */
+.t-task.long-card .t-task-main{flex-wrap:wrap;align-items:center;row-gap:6px;padding-bottom:10px;}
+.t-task.long-card .t-tbody{order:-1;flex:0 0 100%;}
+.t-task.long-card .t-ttitle{overflow:visible;}
+.t-task.long-card .t-tvline{display:none;}
+.t-task.long-card .t-ck{order:0;}
+.t-task.long-card .t-tcol{order:0;}
+.t-task.long-card .t-miniav{order:0;margin-left:auto;}
+.phone[dir="rtl"] .t-task.long-card .t-miniav{margin-left:0;margin-right:auto;}
+.t-task.long-card .t-bell{order:0;}
+
 /* ── Card share footer ── */
 .card-share{padding:10px 14px 12px 18px;display:flex;align-items:center;gap:8px;cursor:pointer;border-top:2px solid #f0d8c8;background:#fdf3ec;transition:background .13s;}
 .card-share:active{background:rgba(0,0,0,.07);}
@@ -2747,6 +2772,7 @@ function dpRender(animate) {
   tasks.forEach((task, i) => {
     const c = _buildCardEl(task);
     c.className = 'task-card ' + (animate ? 'entering' : 'settling');
+    if (task.title.length > 45) c.classList.add('long-card');
     if (animate) c.style.animationDelay = `${0.32 + i * 0.13}s`;
     else         c.style.animationDelay = `${i * 0.04}s`;
     list.appendChild(c);
@@ -3221,6 +3247,7 @@ function renderToday() {
         saveState();
       });
     });
+    if (t.title.length > 45) el.classList.add('long-card');
     el.style.animationDelay = `${i * 68}ms`;
     el.classList.add('entering');
     attachSwipeDelete(el, t, 'today');
