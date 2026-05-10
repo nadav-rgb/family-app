@@ -685,9 +685,9 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 @keyframes hintFadeIn{to{opacity:1;}}
 
 /* ─── Split bottom sheet ─── */
-.split-sheet-bg{position:absolute;inset:0;z-index:960;background:rgba(28,17,10,.38);display:flex;align-items:flex-end;pointer-events:none;opacity:0;transition:opacity .25s ease;}
+.split-sheet-bg{position:fixed;inset:0;z-index:9000;background:rgba(28,17,10,.42);display:flex;align-items:flex-end;pointer-events:none;opacity:0;transition:opacity .25s ease;}
 .split-sheet-bg.open{opacity:1;pointer-events:auto;}
-.split-sheet{width:100%;background:#fffaf5;border-radius:26px 26px 0 0;box-shadow:0 -8px 40px rgba(100,60,20,.18);transform:translateY(100%);transition:transform .34s cubic-bezier(.34,1.1,.64,1);max-height:80vh;display:flex;flex-direction:column;overflow:hidden;}
+.split-sheet{width:100%;max-width:420px;margin:0 auto;background:#fffaf5;border-radius:26px 26px 0 0;box-shadow:0 -8px 40px rgba(100,60,20,.22);transform:translateY(100%);transition:transform .34s cubic-bezier(.34,1.1,.64,1);max-height:85dvh;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;padding-bottom:env(safe-area-inset-bottom,0);}
 .split-sheet-bg.open .split-sheet{transform:translateY(0);}
 .split-sh-handle{width:36px;height:4px;background:rgba(100,60,20,.15);border-radius:2px;margin:12px auto 0;flex-shrink:0;}
 .split-sh-hdr{padding:14px 22px 12px;border-bottom:1px solid rgba(224,180,140,.2);flex-shrink:0;}
@@ -990,7 +990,10 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 <!-- Warm flash overlay -->
 <div id="txFlash"></div>
 
-<!-- ════ SPLIT BOTTOM SHEET ════ -->
+
+</div><!-- /phone -->
+
+<!-- ════ SPLIT BOTTOM SHEET — outside .phone so position:fixed is not clipped ════ -->
 <div class="split-sheet-bg" id="splitSheetBg">
   <div class="split-sheet">
     <div class="split-sh-handle"></div>
@@ -1006,8 +1009,6 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
     </div>
   </div>
 </div>
-
-</div><!-- /phone -->
 <script src="parser.js"></script>
 <script>
 // ─── State ────────────────────────────────────────────────────────
