@@ -9,6 +9,10 @@
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
 *:focus{outline:none;}
 body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:100vh;display:flex;justify-content:center;align-items:center;font-family:'Rubik',sans-serif;padding:32px 16px;}
+@media(max-width:500px){
+  body{padding:0;align-items:stretch;overflow:hidden;height:100vh;height:100dvh;}
+  .phone{width:100%;height:100vh;height:100dvh;border-radius:0;box-shadow:none;border:none;}
+}
 
 /* ── Phone ── */
 .phone{width:375px;height:812px;background:linear-gradient(175deg,#fffaf5 0%,#fff4e8 55%,#fdebd8 100%);border-radius:48px;box-shadow:0 40px 100px rgba(0,0,0,.18),0 12px 36px rgba(0,0,0,.09),inset 0 1px 0 rgba(255,255,255,.9);position:relative;overflow:hidden;border:1px solid rgba(255,255,255,.6);}
@@ -2715,7 +2719,7 @@ function _buildCardEl(task) {
     c.innerHTML = `
       <div class="card-swipe-bg"><span class="swipe-del-lbl">${delLbl}</span></div>
       <div class="card-swipe-track">
-        <div class="card-inner" style="display:flex;flex-direction:column;align-items:stretch;position:relative;padding:10px 14px 0 14px;gap:8px;">
+        <div class="card-inner" style="display:flex;flex-direction:column;align-items:stretch;position:relative;padding:10px 14px 12px 14px;gap:8px;">
           <div class="card-accent" style="background:${p.color};position:absolute;${_acSide}:0;top:0;bottom:0;width:5px;border-radius:${_acRad};"></div>
           <div class="card-body"><div class="card-title" style="overflow:visible;line-height:1.35;">${task.title}</div></div>
           <div class="card-meta-row" style="display:flex;align-items:center;gap:8px;">
@@ -2751,13 +2755,7 @@ function _buildCardEl(task) {
       shareFooter.querySelector('.card-share-name').textContent = assignedLabel(task);
     });
   });
-  // Long-card: append share footer inside card-inner so its height is always included
-  // in the flex-column layout — prevents overflow:hidden on task-card from clipping it.
-  if (isLong) {
-    c.querySelector('.card-inner').appendChild(shareFooter);
-  } else {
-    c.querySelector('.card-swipe-track').appendChild(shareFooter);
-  }
+  c.querySelector('.card-swipe-track').appendChild(shareFooter);
   c.querySelector('.card-time-col').addEventListener('click', () => {
     if (!dpAdjustMode) return;
     openTimeStrip(task.id, c);
@@ -3101,11 +3099,9 @@ document.getElementById('btnAdjust').addEventListener('click', () => {
   document.getElementById('dpList').classList.add('adj-mode');
   const adjBanner = document.getElementById('adjBanner');
   adjBanner.classList.add('on');
-  // adj-banner pushes dp-list down — scroll by its height so visible content stays in view
-  setTimeout(() => {
-    const list = document.getElementById('dpList');
-    list.scrollTop += adjBanner.offsetHeight;
-  }, 0);
+  requestAnimationFrame(() => {
+    document.getElementById('dpList').scrollTop += adjBanner.offsetHeight;
+  });
   document.querySelectorAll('#dpList .task-card').forEach((c, i) => {
     setTimeout(() => { c.classList.remove('adj-wake'); void c.offsetWidth; c.classList.add('adj-wake'); }, i * 45);
   });
