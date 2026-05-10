@@ -218,7 +218,7 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 .card-vline{width:1px;height:36px;background:#f0ebe5;flex-shrink:0;}
 .card-body{flex:1;min-width:0;}
 .card-title{font-size:14.5px;font-weight:800;color:#1c110a;margin-bottom:4px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.card-title[contenteditable]{outline:none;cursor:text;white-space:normal;overflow:visible;text-overflow:clip;user-select:text;-webkit-user-select:text;border-radius:6px;transition:background .18s,box-shadow .18s;}
+.card-title[contenteditable]{outline:none;cursor:text;white-space:normal;overflow:hidden;overflow-wrap:break-word;word-break:break-word;text-overflow:clip;user-select:text;-webkit-user-select:text;border-radius:6px;transition:background .18s,box-shadow .18s;}
 .card-title[contenteditable]:focus{background:rgba(255,110,50,.06);box-shadow:0 0 0 2px rgba(255,120,60,.15);padding:1px 4px;margin:-1px -4px;}
 .card-chip{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:#9e8878;}
 .chip-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
@@ -479,7 +479,7 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 /* ── Swipe-to-delete ── */
 .t-task{overflow:hidden;position:relative;}
 .task-card{overflow:hidden;}
-.t-swipe-track,.card-swipe-track{position:relative;z-index:1;background:white;border-radius:20px;will-change:transform;}
+.t-swipe-track,.card-swipe-track{position:relative;z-index:1;background:white;will-change:transform;}
 .t-swipe-bg,.card-swipe-bg{position:absolute;inset:0;background:#ff3b30;border-radius:20px;}
 .swipe-del-lbl{position:absolute;right:22px;top:50%;transform:translateY(-50%);font-size:13px;font-weight:800;color:white;letter-spacing:.2px;pointer-events:none;}
 
@@ -2404,7 +2404,14 @@ let _appendToToday = false; // true when "+" from Today with existing tasks → 
 function m2t(m) { if (m == null) return ''; return `${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`; }
 function ampm(m) {
   if (m == null) return '';
-  if (AppState.lang === 'he') return m < 12*60 ? 'לפנה"צ' : 'אחה"צ';
+  if (AppState.lang === 'he') {
+    if (m < 6*60)  return 'לילה';
+    if (m < 12*60) return 'בוקר';
+    if (m < 15*60) return 'צהריים';
+    if (m < 18*60) return 'אחה"צ';
+    if (m < 21*60) return 'ערב';
+    return 'לילה';
+  }
   return m < 12*60 ? 'AM' : 'PM';
 }
 
@@ -3372,7 +3379,6 @@ function attachSwipeDelete(el, task, screen) {
 
   el.addEventListener('touchstart', e => {
     if (animating || el.classList.contains('split-open') || el.classList.contains('lp-holding')) return;
-    if (screen === 'preview' && dpAdjustMode) return;
     startX = e.touches[0].clientX;
     startY = e.touches[0].clientY;
     dragging = false; locked = false;
