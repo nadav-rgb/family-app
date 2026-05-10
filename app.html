@@ -2623,7 +2623,8 @@ function attachSplitGesture(cardEl, task) {
       const hint = document.createElement('div');
       hint.className = 'split-hint-text';
       hint.textContent = AppState.lang === 'he' ? '· לחץ והחזק לפיצול ·' : '· hold to split ·';
-      cardEl.insertBefore(hint, cardEl.querySelector('.card-share'));
+      const shareEl = cardEl.querySelector('.card-share');
+      shareEl.parentElement.insertBefore(hint, shareEl);
     }
   }
 
@@ -2691,14 +2692,18 @@ function _buildCardEl(task) {
   if (task.reminderOffsetMinutes === undefined) task.reminderOffsetMinutes = 10;
   if (!task.timeSource)  task.timeSource = 'suggested';
   const tsLabel = { explicit:t('dp_time_explicit'), suggested:t('dp_time_suggested'), manual:t('dp_time_manual') };
+  const delLbl = AppState.lang === 'he' ? 'מחק' : 'Delete';
   c.innerHTML = `
-    <div class="card-inner">
-      <div class="card-accent" style="background:${p.color}"></div>
-      <div class="card-time-col"><span class="card-time">${m2t(task.mins)}</span><span class="card-ampm">${ampm(task.mins)}</span><span class="card-ts ${task.timeSource}">${tsLabel[task.timeSource]}</span></div>
-      <div class="card-vline"></div>
-      <div class="card-body"><div class="card-title">${task.title}</div><div class="card-chip"><span class="chip-dot" style="background:${p.color}"></span>${personLabel(task.person)}</div></div>
-      <div class="card-av" style="background:${p.bg}">${p.emoji}</div>
-      <div class="card-bell${task.notify===false?' off':''}">${task.notify===false?'🔕':'🔔'}</div>
+    <div class="card-swipe-bg"><span class="swipe-del-lbl">${delLbl}</span></div>
+    <div class="card-swipe-track">
+      <div class="card-inner">
+        <div class="card-accent" style="background:${p.color}"></div>
+        <div class="card-time-col"><span class="card-time">${m2t(task.mins)}</span><span class="card-ampm">${ampm(task.mins)}</span><span class="card-ts ${task.timeSource}">${tsLabel[task.timeSource]}</span></div>
+        <div class="card-vline"></div>
+        <div class="card-body"><div class="card-title">${task.title}</div><div class="card-chip"><span class="chip-dot" style="background:${p.color}"></span>${personLabel(task.person)}</div></div>
+        <div class="card-av" style="background:${p.bg}">${p.emoji}</div>
+        <div class="card-bell${task.notify===false?' off':''}">${task.notify===false?'🔕':'🔔'}</div>
+      </div>
     </div>`;
   const shareFooter = document.createElement('div');
   shareFooter.className = 'card-share';
@@ -2710,7 +2715,7 @@ function _buildCardEl(task) {
       shareFooter.querySelector('.card-share-name').textContent = assignedLabel(task);
     });
   });
-  c.appendChild(shareFooter);
+  c.querySelector('.card-swipe-track').appendChild(shareFooter);
   c.querySelector('.card-time-col').addEventListener('click', () => {
     if (!dpAdjustMode) return;
     openTimeStrip(task.id, c);
@@ -3180,19 +3185,23 @@ function renderToday() {
     if (!t.visibleTo) t.visibleTo = [...ALL_MEMBER_IDS];
     if (!t.notifyTo)  t.notifyTo  = [PERSON_TO_ID[t.person] || 'mom'];
     if (t.reminderOffsetMinutes === undefined) t.reminderOffsetMinutes = 10;
+    const tDelLbl = AppState.lang === 'he' ? 'מחק' : 'Delete';
     el.innerHTML = `
-      <div class="t-task-main">
-        <div class="t-ck ${t.completed?'ck-done':isNx?'ck-nxt':'ck-open'}">${t.completed?'<span style="color:white;font-size:14px;font-weight:900;">✓</span>':''}</div>
-        <div class="t-tcol"><div class="t-ttime${isNx&&!t.completed?' ora':''}">${m2t(t.mins)}</div><div class="t-tampm">${ampm(t.mins)}</div></div>
-        <div class="t-tvline"></div>
-        <div class="t-tbody"><div class="t-ttitle">${t.title}</div><div class="t-tchip"><span class="t-dot" style="background:${p.color}"></span>${personLabel(t.person)}</div></div>
-        <div class="t-miniav" style="background:${p.bg}">${p.emoji}</div>
-        <div class="t-bell${t.notify===false?' off':''}">${t.notify===false?'🔕':'🔔'}</div>
-      </div>
-      <div class="t-share">
-        <span class="t-share-lbl">${(I18N[AppState.lang]||I18N.en).assigned_to}</span>
-        <span class="t-share-name">${assignedLabel(t)}</span>
-        <span class="t-share-arrow">›</span>
+      <div class="t-swipe-bg"><span class="swipe-del-lbl">${tDelLbl}</span></div>
+      <div class="t-swipe-track">
+        <div class="t-task-main">
+          <div class="t-ck ${t.completed?'ck-done':isNx?'ck-nxt':'ck-open'}">${t.completed?'<span style="color:white;font-size:14px;font-weight:900;">✓</span>':''}</div>
+          <div class="t-tcol"><div class="t-ttime${isNx&&!t.completed?' ora':''}">${m2t(t.mins)}</div><div class="t-tampm">${ampm(t.mins)}</div></div>
+          <div class="t-tvline"></div>
+          <div class="t-tbody"><div class="t-ttitle">${t.title}</div><div class="t-tchip"><span class="t-dot" style="background:${p.color}"></span>${personLabel(t.person)}</div></div>
+          <div class="t-miniav" style="background:${p.bg}">${p.emoji}</div>
+          <div class="t-bell${t.notify===false?' off':''}">${t.notify===false?'🔕':'🔔'}</div>
+        </div>
+        <div class="t-share">
+          <span class="t-share-lbl">${(I18N[AppState.lang]||I18N.en).assigned_to}</span>
+          <span class="t-share-name">${assignedLabel(t)}</span>
+          <span class="t-share-arrow">›</span>
+        </div>
       </div>`;
     el.querySelector('.t-bell').addEventListener('click', e => {
       e.stopPropagation();
@@ -3333,26 +3342,9 @@ function doDelete(task, screen) {
 
 function attachSwipeDelete(el, task, screen) {
   const isCard = el.classList.contains('task-card');
-  const trackCls = isCard ? 'card-swipe-track' : 't-swipe-track';
-
-  const track = document.createElement('div');
-  track.className = trackCls;
-  while (el.firstChild) track.appendChild(el.firstChild);
-
-  const bg = document.createElement('div');
-  bg.className = isCard ? 'card-swipe-bg' : 't-swipe-bg';
-  bg.innerHTML = `<span class="swipe-del-lbl">${AppState.lang === 'he' ? 'מחק' : 'Delete'}</span>`;
-
-  el.appendChild(bg);
-  el.appendChild(track);
-
-  // Sync bg height explicitly — inset:0 on auto-height flex items is unreliable on mobile
-  function syncBg() {
-    const h = track.offsetHeight;
-    if (h > 0) bg.style.height = h + 'px';
-  }
-  // Wait for two rAF frames so the card is fully laid out before syncing
-  requestAnimationFrame(() => requestAnimationFrame(syncBg));
+  const track  = el.querySelector(isCard ? '.card-swipe-track' : '.t-swipe-track');
+  const bg     = el.querySelector(isCard ? '.card-swipe-bg'    : '.t-swipe-bg');
+  if (!track || !bg) return;
 
   let startX = 0, startY = 0;
   let dragging = false, locked = false, animating = false;
@@ -3376,9 +3368,9 @@ function attachSwipeDelete(el, task, screen) {
     setX(-(el.offsetWidth + 30));
     track.style.opacity = '0';
     setTimeout(() => {
-      el.style.overflow   = 'hidden';
-      el.style.height     = h + 'px';
-      el.style.transition = 'height .24s ease, margin-bottom .24s ease, opacity .14s';
+      el.style.overflow      = 'hidden';
+      el.style.height        = h + 'px';
+      el.style.transition    = 'height .24s ease, margin-bottom .24s ease, opacity .14s';
       void el.offsetHeight;
       el.style.height        = '0';
       el.style.marginBottom  = '0';
@@ -3389,7 +3381,6 @@ function attachSwipeDelete(el, task, screen) {
 
   el.addEventListener('touchstart', e => {
     if (animating || el.classList.contains('lp-holding')) return;
-    syncBg(); // re-sync height in case card grew since last render
     startX = e.touches[0].clientX;
     startY = e.touches[0].clientY;
     dragging = false; locked = false;
