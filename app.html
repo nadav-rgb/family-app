@@ -476,6 +476,13 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 .undo-btn{font-size:13px;font-weight:900;color:#ff9a4e;cursor:pointer;padding:5px 8px;border-radius:10px;background:rgba(255,154,78,.12);border:none;font-family:'Nunito',sans-serif;flex-shrink:0;transition:opacity .15s;}
 .undo-btn:active{opacity:.6;}
 
+/* ── Swipe-to-delete ── */
+.t-task{overflow:hidden;position:relative;}
+.task-card{overflow:hidden;}
+.t-swipe-track,.card-swipe-track{position:relative;z-index:1;background:white;border-radius:20px;will-change:transform;}
+.t-swipe-bg,.card-swipe-bg{position:absolute;inset:0;background:#ff3b30;border-radius:20px;}
+.swipe-del-lbl{position:absolute;right:22px;top:50%;transform:translateY(-50%);font-size:13px;font-weight:800;color:white;letter-spacing:.2px;pointer-events:none;}
+
 /* ── Today task entrance ── */
 @keyframes taskSlideIn{from{opacity:0;transform:translateY(20px) scale(.96);}to{opacity:1;transform:translateY(0) scale(1);}}
 .t-task.entering{animation:taskSlideIn .46s cubic-bezier(.34,1.28,.64,1) both;}
@@ -1052,7 +1059,7 @@ const I18N = {
     greet_night:'Good night', greet_morning:'Good morning',
     greet_afternoon:'Good afternoon', greet_evening:'Good evening',
     time_now:'now', time_in_min:'in {n} min', time_in_hr:'in {n}h',
-    marked_done:'"{t}" marked done',
+    marked_done:'"{t}" marked done', task_deleted:'Task deleted',
     notif_label:'Reminder', notif_starting:'starting now',
     notif_overdue:'{n} min overdue', notif_undo:'Undo',
     mic_title:'Choose your mic style',
@@ -1108,7 +1115,7 @@ const I18N = {
     greet_night:'לילה טוב', greet_morning:'בוקר טוב',
     greet_afternoon:'צהריים טובים', greet_evening:'ערב טוב',
     time_now:'עכשיו', time_in_min:'בעוד {n} דק\'', time_in_hr:'בעוד {n} שע\'',
-    marked_done:'"{t}" סומנה כהושלמה',
+    marked_done:'"{t}" סומנה כהושלמה', task_deleted:'המשימה נמחקה',
     notif_label:'תזכורת', notif_starting:'מתחיל עכשיו',
     notif_overdue:'איחור של {n} דק\'', notif_undo:'בטל',
     mic_title:'בחר סגנון מיקרופון',
@@ -2702,6 +2709,7 @@ function _buildCardEl(task) {
   titleEl.addEventListener('input', () => { const u = titleEl.textContent.trim(); if (u) task.title = u; });
   titleEl.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); titleEl.blur(); } });
   attachSplitGesture(c, task);
+  attachSwipeDelete(c, task, 'preview');
   return c;
 }
 
@@ -3181,6 +3189,7 @@ function renderToday() {
     });
     el.style.animationDelay = `${i * 68}ms`;
     el.classList.add('entering');
+    attachSwipeDelete(el, t, 'today');
     container.appendChild(el);
   });
 
@@ -3227,7 +3236,174 @@ function clearUndoToast(animate) {
   }
 }
 
+// ─── Swipe-to-delete ──────────────────────────────────────────────
+let _delTimer   = null;
+let _delUndoState = null;
+
+function showDeleteToast(state) {
+  clearUndoToast(false);
+  clearTimeout(_delTimer);
+  _delUndoState = state;
+  const toast = document.getElementById('undoToast');
+  document.getElementById('undoMsg').textContent = t('task_deleted');
+  toast.classList.remove('hide');
+  toast.classList.add('show');
+  _delTimer = setTimeout(() => { _delUndoState = null; clearUndoToast(true); }, 4500);
+}
+
+function undoDelete() {
+  const state = _delUndoState;
+  if (!state) return;
+  clearTimeout(_delTimer);
+  _delUndoState = null;
+  clearUndoToast(false);
+  const { task, screen, type, idx } = state;
+  if (type === 'preview') {
+    if (idx >= 0 && idx <= AppState.previewTasks.length) AppState.previewTasks.splice(idx, 0, task);
+    else AppState.previewTasks.push(task);
+    dpRender(false);
+  } else if (type === 'full') {
+    if (idx >= 0 && idx <= AppState.tasks.length) AppState.tasks.splice(idx, 0, task);
+    else AppState.tasks.push(task);
+    saveState();
+    renderToday();
+  } else if (type === 'hide') {
+    task.visibleTo = state.prevVisibleTo;
+    task.notifyTo  = state.prevNotifyTo;
+    saveState();
+    renderToday();
+  }
+}
+
+function doDelete(task, screen) {
+  let state = { task, screen };
+  if (screen === 'preview') {
+    const idx = AppState.previewTasks.findIndex(t => t.id === task.id);
+    if (idx >= 0) AppState.previewTasks.splice(idx, 1);
+    state.idx  = idx;
+    state.type = 'preview';
+    dpRender(false);
+  } else {
+    const isCreator = !task.createdBy || task.createdBy === currentUser;
+    const isAlone   = !task.visibleTo || task.visibleTo.length <= 1;
+    if (isCreator || isAlone) {
+      const idx = AppState.tasks.findIndex(t => t.id === task.id);
+      if (idx >= 0) AppState.tasks.splice(idx, 1);
+      state.idx  = idx;
+      state.type = 'full';
+      if (!isAlone && task.visibleTo && task.visibleTo.length > 1)
+        AppLog.info('delete-notify', task.id, 'creator deleted shared task');
+    } else {
+      state.type         = 'hide';
+      state.prevVisibleTo = [...(task.visibleTo || [])];
+      state.prevNotifyTo  = [...(task.notifyTo  || [])];
+      task.visibleTo = task.visibleTo.filter(id => id !== currentUser);
+      task.notifyTo  = (task.notifyTo || []).filter(id => id !== currentUser);
+    }
+    saveState();
+    renderToday();
+  }
+  showDeleteToast(state);
+}
+
+function attachSwipeDelete(el, task, screen) {
+  const isCard = el.classList.contains('task-card');
+  const trackCls = isCard ? 'card-swipe-track' : 't-swipe-track';
+
+  const track = document.createElement('div');
+  track.className = trackCls;
+  while (el.firstChild) track.appendChild(el.firstChild);
+
+  const bg = document.createElement('div');
+  bg.className = isCard ? 'card-swipe-bg' : 't-swipe-bg';
+  bg.innerHTML = `<span class="swipe-del-lbl">${AppState.lang === 'he' ? 'מחק' : 'Delete'}</span>`;
+
+  el.appendChild(bg);
+  el.appendChild(track);
+
+  let startX = 0, startY = 0;
+  let dragging = false, locked = false, animating = false;
+  const SNAP_PX   = 72;
+  const DIR_FRAC  = 0.42;
+
+  function setX(x) {
+    track.style.transform = x ? `translateX(${x}px)` : '';
+  }
+  function snapBack() {
+    track.style.transition = 'transform .25s cubic-bezier(.34,1.2,.64,1)';
+    setX(0);
+    setTimeout(() => { track.style.transition = ''; }, 270);
+  }
+  function confirmDelete() {
+    if (animating) return;
+    animating = true;
+    const h = el.offsetHeight;
+    track.style.transition = 'transform .18s ease-in, opacity .15s ease-in';
+    setX(-(el.offsetWidth + 30));
+    track.style.opacity = '0';
+    setTimeout(() => {
+      el.style.cssText += ';overflow:hidden;height:' + h + 'px;transition:height .24s ease,margin-bottom .24s ease,opacity .14s;';
+      void el.offsetHeight;
+      el.style.height = '0';
+      el.style.marginBottom = '0';
+      el.style.opacity = '0';
+    }, 160);
+    setTimeout(() => { el.remove(); doDelete(task, screen); }, 410);
+  }
+
+  el.addEventListener('touchstart', e => {
+    if (animating || el.classList.contains('split-open')) return;
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    dragging = false; locked = false;
+    track.style.transition = '';
+  }, { passive: true });
+
+  el.addEventListener('touchmove', e => {
+    if (animating || locked) return;
+    const dx = e.touches[0].clientX - startX;
+    const dy = e.touches[0].clientY - startY;
+    if (!dragging) {
+      if (Math.abs(dy) > Math.abs(dx) + 3) { locked = true; return; }
+      if (Math.abs(dx) > 6) dragging = true;
+    }
+    if (dragging && dx < 0) {
+      e.preventDefault();
+      setX(Math.max(dx, -(el.offsetWidth * 0.75)));
+    }
+  }, { passive: false });
+
+  el.addEventListener('touchend', e => {
+    if (!dragging) return;
+    dragging = false;
+    const dx  = e.changedTouches[0].clientX - startX;
+    const thr = el.offsetWidth * DIR_FRAC;
+    if (-dx >= thr) {
+      confirmDelete();
+    } else if (-dx >= SNAP_PX / 2) {
+      track.style.transition = 'transform .2s cubic-bezier(.34,1.2,.64,1)';
+      setX(-SNAP_PX);
+      setTimeout(() => { track.style.transition = ''; }, 220);
+      const onBg = () => {
+        track.removeEventListener('touchstart', onTr);
+        confirmDelete();
+      };
+      const onTr = () => {
+        bg.removeEventListener('click', onBg);
+        snapBack();
+      };
+      bg.addEventListener('click', onBg, { once: true });
+      track.addEventListener('touchstart', onTr, { once: true, passive: true });
+    } else {
+      snapBack();
+    }
+  }, { passive: true });
+
+  el.addEventListener('touchcancel', () => { if (dragging) { dragging = false; snapBack(); } }, { passive: true });
+}
+
 document.getElementById('undoBtn').addEventListener('click', () => {
+  if (_delUndoState) { undoDelete(); return; }
   if (undoTaskId === null) return;
   const id = String(undoTaskId);
   if (id.startsWith('rec_')) {
