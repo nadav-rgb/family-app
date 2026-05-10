@@ -469,7 +469,7 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 /* ── Undo toast ── */
 @keyframes toastIn{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
 @keyframes toastOut{from{opacity:1;transform:translateY(0);}to{opacity:0;transform:translateY(10px);}}
-.undo-toast{position:absolute;bottom:90px;left:14px;right:14px;background:#2d2018;border-radius:18px;padding:13px 16px 13px 18px;display:flex;align-items:center;gap:10px;z-index:60;box-shadow:0 8px 28px rgba(0,0,0,.24);pointer-events:none;opacity:0;}
+.undo-toast{position:absolute;bottom:90px;left:14px;right:14px;background:#2d2018;border-radius:18px;padding:13px 16px 13px 18px;display:flex;align-items:center;gap:10px;z-index:200;box-shadow:0 8px 28px rgba(0,0,0,.24);pointer-events:none;opacity:0;}
 .undo-toast.show{pointer-events:auto;animation:toastIn .32s cubic-bezier(.34,1.2,.64,1) both;}
 .undo-toast.hide{animation:toastOut .22s ease both;}
 .undo-msg{font-size:13px;font-weight:700;color:rgba(255,255,255,.78);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -897,15 +897,16 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
     <div class="notif-body"><div class="notif-lbl" id="notifLbl">Reminder</div><div class="notif-msg" id="notifMsg"></div></div>
     <span class="notif-close" id="notifClose">✕</span>
   </div>
-  <div class="undo-toast" id="undoToast">
-    <span class="undo-msg" id="undoMsg"></span>
-    <button class="undo-btn" id="undoBtn">Undo</button>
-  </div>
   <div class="t-nav">
     <div class="t-ntab on"><span class="t-ni">☀️</span><span class="t-nl" id="navTodayLbl">Today</span></div>
     <div class="t-nadd" id="tNavAdd">+</div>
     <div class="t-ntab"><span class="t-ni">👨‍👩‍👧‍👦</span><span class="t-nl" id="navFamilyLbl">Family</span></div>
   </div>
+</div>
+
+<div class="undo-toast" id="undoToast">
+  <span class="undo-msg" id="undoMsg"></span>
+  <button class="undo-btn" id="undoBtn">Undo</button>
 </div>
 
 <!-- ════ CALENDAR DRAWER ════ -->
