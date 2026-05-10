@@ -1988,13 +1988,19 @@ let shareTask = null, shareSaveCb = null;
 let _titleTip = null, _titleTipAnchor = null, _titleTipTimer = null;
 let _titleTipDismissCl = null, _titleTipDismissScroll = null;
 
-// Detect shopping-list intent in a title (Hebrew). Threshold tuned to skip
-// short single-item buys ("לקנות חלב") and only catch multi-item lists.
+// Detect shopping-list intent in a title (Hebrew). Two paths:
+//   (a) explicit shopping verb/noun + 6+ words (covers voice "ללכת לסופר לקנות...")
+//   (b) no keyword but 12+ words (covers typed raw item lists "שמן חלב בשר...")
+// The AI endpoint will return empty categories if the title isn't actually a
+// shopping list, so we won't set task.shoppingList in that case — safe to be
+// permissive here.
 function isShoppingListTitle(title) {
   if (!title || typeof title !== 'string' || title.length < 25) return false;
-  if (!/(לסופר|פיצוצייה|בשוק|סופרמרקט|לקנות)/.test(title)) return false;
   const words = title.split(/\s+/).filter(Boolean);
-  return words.length >= 6;
+  const hasKeyword = /(לסופר|פיצוצייה|בשוק|סופרמרקט|לקנות)/.test(title);
+  if (hasKeyword && words.length >= 6) return true;
+  if (words.length >= 12) return true;
+  return false;
 }
 
 // Async-categorize a task title via /api/categorize-shopping. Idempotent + dedupe.
