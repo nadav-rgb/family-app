@@ -2709,21 +2709,21 @@ function _buildCardEl(task) {
   const delLbl = AppState.lang === 'he' ? 'מחק' : 'Delete';
   const isLong  = task.title.length > 45;
   if (isLong) {
-    const _lcp = AppState.lang === 'he' ? '12px 0 12px 14px' : '12px 14px 12px 0';
+    const _rtl = AppState.lang === 'he';
+    const _acSide = _rtl ? 'right' : 'left';
+    const _acRad  = _rtl ? '5px 0 0 5px' : '0 5px 5px 0';
     c.innerHTML = `
       <div class="card-swipe-bg"><span class="swipe-del-lbl">${delLbl}</span></div>
       <div class="card-swipe-track">
-        <div class="card-inner" style="display:flex;flex-direction:row;align-items:stretch;gap:0;padding:${_lcp};">
-          <div class="card-accent" style="background:${p.color};align-self:stretch;margin-inline-end:10px;"></div>
-          <div class="card-main" style="flex:1;min-width:0;display:flex;flex-direction:column;gap:8px;padding:2px 0;">
-            <div class="card-body"><div class="card-title" style="overflow:visible;line-height:1.35;">${task.title}</div></div>
-            <div class="card-meta-row" style="display:flex;align-items:center;gap:8px;">
-              <div class="card-time-col"><span class="card-time">${m2t(task.mins)}</span><span class="card-ampm">${ampm(task.mins)}</span><span class="card-ts ${task.timeSource}">${tsLabel[task.timeSource]}</span></div>
-              <div class="card-vline"></div>
-              <div class="card-chip"><span class="chip-dot" style="background:${p.color}"></span>${personLabel(task.person)}</div>
-              <div class="card-av" style="background:${p.bg}">${p.emoji}</div>
-              <div class="card-bell${task.notify===false?' off':''}">${task.notify===false?'🔕':'🔔'}</div>
-            </div>
+        <div class="card-inner" style="display:flex;flex-direction:column;position:relative;padding:10px 14px 12px 14px;gap:8px;">
+          <div class="card-accent" style="background:${p.color};position:absolute;${_acSide}:0;top:0;bottom:0;width:5px;border-radius:${_acRad};"></div>
+          <div class="card-body"><div class="card-title" style="overflow:visible;line-height:1.35;">${task.title}</div></div>
+          <div class="card-meta-row" style="display:flex;align-items:center;gap:8px;">
+            <div class="card-time-col"><span class="card-time">${m2t(task.mins)}</span><span class="card-ampm">${ampm(task.mins)}</span><span class="card-ts ${task.timeSource}">${tsLabel[task.timeSource]}</span></div>
+            <div class="card-vline"></div>
+            <div class="card-chip"><span class="chip-dot" style="background:${p.color}"></span>${personLabel(task.person)}</div>
+            <div class="card-av" style="background:${p.bg}">${p.emoji}</div>
+            <div class="card-bell${task.notify===false?' off':''}">${task.notify===false?'🔕':'🔔'}</div>
           </div>
         </div>
       </div>`;
