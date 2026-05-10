@@ -1,13 +1,13 @@
-const Anthropic = require('@anthropic-ai/sdk');
+const OpenAI = require('openai');
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 const SYSTEM_PROMPT = `You are a Hebrew shopping-list parser for a family app.
 Given one task title in Hebrew that represents a shopping or grocery list, return a structured JSON breakdown.
 
-Return ONLY valid JSON — no prose, no markdown fences. The structure is:
+Return ONLY valid JSON with this exact structure:
 {
-  "action": "<the main action verb phrase, e.g. 'ללכת לסופר' or 'לקנות בסופר'. If the title has no action verb (just an item list), use 'לקנות'>",
+  "action": "<the main action verb phrase, e.g. 'ללכת לסופר' or 'לקנות בסופר'>",
   "categories": {
     "<category name in Hebrew>": ["item 1", "item 2", ...],
     ...
@@ -30,8 +30,9 @@ Rules:
 - Combine related variants under one category (e.g. "יין לבן", "יין אדום", "יין מתוק" → all under "שתייה חריפה").
 - Wines, beer, vodka, brandy, cognac, whisky, arak, liqueur → "שתייה חריפה".
 - Sodas, juices, water, mineral water → "שתייה".
-- If the input title is NOT a shopping list (e.g. it's a phone-call task or a meeting), return {"action": "", "categories": {}} — do not invent items.
-- Return only categories that contain at least one item. Empty categories must be omitted.
+- If unsure about a category, put the item in "אחר".
+- Return only categories that contain at least one item.
+- Do NOT add categories that are empty.
 
 Example input title: "ללכת לסופר לקנות מלפפונים עגבניות חלב גבינה יין אדום פלסטרים"
 Example output:
@@ -59,20 +60,21 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const message = await client.messages.create({
-      model:      process.env.AI_MODEL || 'claude-haiku-4-5-20251001',
-      max_tokens: 900,
-      system:     SYSTEM_PROMPT,
-      messages:   [{ role: 'user', content: `Title: "${title}"` }],
+    const completion = await client.chat.completions.create({
+      model:           process.env.OPENAI_MODEL || 'gpt-4o-mini',
+      messages:        [
+        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'user',   content: `Title: "${title}"` },
+      ],
+      response_format: { type: 'json_object' },
+      max_tokens:      900,
     });
 
-    const raw = message.content[0]?.text?.trim() || '';
-    const jsonMatch = raw.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) throw new Error('No JSON in response');
+    const raw = completion.choices[0]?.message?.content?.trim() || '{}';
+    const parsed = JSON.parse(raw);
 
-    const parsed = JSON.parse(jsonMatch[0]);
-
-    if (typeof parsed.action !== 'string' || typeof parsed.categories !== 'object' || parsed.categories === null) {
+    if (typeof parsed.action !== 'string' || !parsed.action.trim()
+        || typeof parsed.categories !== 'object' || parsed.categories === null) {
       throw new Error('Invalid response shape');
     }
 
