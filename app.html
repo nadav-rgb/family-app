@@ -495,30 +495,19 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 .t-bell.off{opacity:.3;}
 .t-bell:active{transform:scale(.82);}
 
-/* ══ LONG-CARD: stacked layout when title wraps beyond ~2 lines ══ */
+/* ═══ LONG-CARD: clean two-section layout — accent | [title / meta-row] ═══ */
 /* Day Preview */
-.task-card.long-card .card-inner{flex-wrap:wrap;align-items:center;position:relative;padding-left:13px;row-gap:6px;padding-bottom:10px;}
-.phone[dir="rtl"] .task-card.long-card .card-inner{padding-left:14px;padding-right:13px;}
-.task-card.long-card .card-accent{position:absolute;left:0;top:0;bottom:0;height:auto;align-self:auto;}
-.phone[dir="rtl"] .task-card.long-card .card-accent{left:auto;right:0;}
-.task-card.long-card .card-body{order:-1;flex:0 0 100%;}
-.task-card.long-card .card-title{overflow:visible;}
+.task-card.long-card .card-inner{align-items:stretch;gap:0;padding:12px 14px 12px 0;}
+.phone[dir="rtl"] .task-card.long-card .card-inner{padding:12px 0 12px 14px;}
+.task-card.long-card .card-accent{align-self:stretch;margin-inline-end:10px;}
+.card-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px;padding:2px 0;}
+.task-card.long-card .card-title{line-height:1.35;overflow:visible;}
 .task-card.long-card .card-title[contenteditable]{overflow:visible;}
-.task-card.long-card .card-vline{display:none;}
-.task-card.long-card .card-time-col{order:0;}
-.task-card.long-card .card-av{order:0;margin-left:auto;}
-.phone[dir="rtl"] .task-card.long-card .card-av{margin-left:0;margin-right:auto;}
-.task-card.long-card .card-bell{order:0;}
+.card-meta-row{display:flex;align-items:center;gap:8px;}
 /* Today */
-.t-task.long-card .t-task-main{flex-wrap:wrap;align-items:center;row-gap:6px;padding-bottom:10px;}
-.t-task.long-card .t-tbody{order:-1;flex:0 0 100%;}
-.t-task.long-card .t-ttitle{overflow:visible;}
-.t-task.long-card .t-tvline{display:none;}
-.t-task.long-card .t-ck{order:0;}
-.t-task.long-card .t-tcol{order:0;}
-.t-task.long-card .t-miniav{order:0;margin-left:auto;}
-.phone[dir="rtl"] .t-task.long-card .t-miniav{margin-left:0;margin-right:auto;}
-.t-task.long-card .t-bell{order:0;}
+.t-task.long-card .t-task-main{flex-direction:column;align-items:stretch;gap:8px;padding:12px 15px;}
+.t-task.long-card .t-ttitle{overflow:visible;line-height:1.35;}
+.t-meta-row{display:flex;align-items:center;gap:8px;}
 
 /* ── Card share footer ── */
 .card-share{padding:10px 14px 12px 18px;display:flex;align-items:center;gap:8px;cursor:pointer;border-top:2px solid #f0d8c8;background:#fdf3ec;transition:background .13s;}
@@ -2718,18 +2707,39 @@ function _buildCardEl(task) {
   if (!task.timeSource)  task.timeSource = 'suggested';
   const tsLabel = { explicit:t('dp_time_explicit'), suggested:t('dp_time_suggested'), manual:t('dp_time_manual') };
   const delLbl = AppState.lang === 'he' ? 'מחק' : 'Delete';
-  c.innerHTML = `
-    <div class="card-swipe-bg"><span class="swipe-del-lbl">${delLbl}</span></div>
-    <div class="card-swipe-track">
-      <div class="card-inner">
-        <div class="card-accent" style="background:${p.color}"></div>
-        <div class="card-time-col"><span class="card-time">${m2t(task.mins)}</span><span class="card-ampm">${ampm(task.mins)}</span><span class="card-ts ${task.timeSource}">${tsLabel[task.timeSource]}</span></div>
-        <div class="card-vline"></div>
-        <div class="card-body"><div class="card-title">${task.title}</div><div class="card-chip"><span class="chip-dot" style="background:${p.color}"></span>${personLabel(task.person)}</div></div>
-        <div class="card-av" style="background:${p.bg}">${p.emoji}</div>
-        <div class="card-bell${task.notify===false?' off':''}">${task.notify===false?'🔕':'🔔'}</div>
-      </div>
-    </div>`;
+  const isLong  = task.title.length > 45;
+  if (isLong) {
+    c.innerHTML = `
+      <div class="card-swipe-bg"><span class="swipe-del-lbl">${delLbl}</span></div>
+      <div class="card-swipe-track">
+        <div class="card-inner">
+          <div class="card-accent" style="background:${p.color}"></div>
+          <div class="card-main">
+            <div class="card-body"><div class="card-title">${task.title}</div></div>
+            <div class="card-meta-row">
+              <div class="card-time-col"><span class="card-time">${m2t(task.mins)}</span><span class="card-ampm">${ampm(task.mins)}</span><span class="card-ts ${task.timeSource}">${tsLabel[task.timeSource]}</span></div>
+              <div class="card-vline"></div>
+              <div class="card-chip"><span class="chip-dot" style="background:${p.color}"></span>${personLabel(task.person)}</div>
+              <div class="card-av" style="background:${p.bg}">${p.emoji}</div>
+              <div class="card-bell${task.notify===false?' off':''}">${task.notify===false?'🔕':'🔔'}</div>
+            </div>
+          </div>
+        </div>
+      </div>`;
+  } else {
+    c.innerHTML = `
+      <div class="card-swipe-bg"><span class="swipe-del-lbl">${delLbl}</span></div>
+      <div class="card-swipe-track">
+        <div class="card-inner">
+          <div class="card-accent" style="background:${p.color}"></div>
+          <div class="card-time-col"><span class="card-time">${m2t(task.mins)}</span><span class="card-ampm">${ampm(task.mins)}</span><span class="card-ts ${task.timeSource}">${tsLabel[task.timeSource]}</span></div>
+          <div class="card-vline"></div>
+          <div class="card-body"><div class="card-title">${task.title}</div><div class="card-chip"><span class="chip-dot" style="background:${p.color}"></span>${personLabel(task.person)}</div></div>
+          <div class="card-av" style="background:${p.bg}">${p.emoji}</div>
+          <div class="card-bell${task.notify===false?' off':''}">${task.notify===false?'🔕':'🔔'}</div>
+        </div>
+      </div>`;
+  }
   const shareFooter = document.createElement('div');
   shareFooter.className = 'card-share';
   shareFooter.style.cssText = 'display:flex!important;padding:10px 14px 12px 18px;align-items:center;gap:8px;cursor:pointer;border-top:2px solid #f0d8c8;background:#fdf3ec;';
@@ -3212,23 +3222,47 @@ function renderToday() {
     if (!t.notifyTo)  t.notifyTo  = [PERSON_TO_ID[t.person] || 'mom'];
     if (t.reminderOffsetMinutes === undefined) t.reminderOffsetMinutes = 10;
     const tDelLbl = AppState.lang === 'he' ? 'מחק' : 'Delete';
-    el.innerHTML = `
-      <div class="t-swipe-bg"><span class="swipe-del-lbl">${tDelLbl}</span></div>
-      <div class="t-swipe-track">
-        <div class="t-task-main">
-          <div class="t-ck ${t.completed?'ck-done':isNx?'ck-nxt':'ck-open'}">${t.completed?'<span style="color:white;font-size:14px;font-weight:900;">✓</span>':''}</div>
-          <div class="t-tcol"><div class="t-ttime${isNx&&!t.completed?' ora':''}">${m2t(t.mins)}</div><div class="t-tampm">${ampm(t.mins)}</div></div>
-          <div class="t-tvline"></div>
-          <div class="t-tbody"><div class="t-ttitle">${t.title}</div><div class="t-tchip"><span class="t-dot" style="background:${p.color}"></span>${personLabel(t.person)}</div></div>
-          <div class="t-miniav" style="background:${p.bg}">${p.emoji}</div>
-          <div class="t-bell${t.notify===false?' off':''}">${t.notify===false?'🔕':'🔔'}</div>
-        </div>
-        <div class="t-share">
-          <span class="t-share-lbl">${(I18N[AppState.lang]||I18N.en).assigned_to}</span>
-          <span class="t-share-name">${assignedLabel(t)}</span>
-          <span class="t-share-arrow">›</span>
-        </div>
-      </div>`;
+    const isLongT = t.title.length > 45;
+    if (isLongT) {
+      el.innerHTML = `
+        <div class="t-swipe-bg"><span class="swipe-del-lbl">${tDelLbl}</span></div>
+        <div class="t-swipe-track">
+          <div class="t-task-main">
+            <div class="t-ttitle">${t.title}</div>
+            <div class="t-meta-row">
+              <div class="t-ck ${t.completed?'ck-done':isNx?'ck-nxt':'ck-open'}">${t.completed?'<span style="color:white;font-size:14px;font-weight:900;">✓</span>':''}</div>
+              <div class="t-tcol"><div class="t-ttime${isNx&&!t.completed?' ora':''}">${m2t(t.mins)}</div><div class="t-tampm">${ampm(t.mins)}</div></div>
+              <div class="t-tvline"></div>
+              <div class="t-tchip"><span class="t-dot" style="background:${p.color}"></span>${personLabel(t.person)}</div>
+              <div class="t-miniav" style="background:${p.bg}">${p.emoji}</div>
+              <div class="t-bell${t.notify===false?' off':''}">${t.notify===false?'🔕':'🔔'}</div>
+            </div>
+          </div>
+          <div class="t-share">
+            <span class="t-share-lbl">${(I18N[AppState.lang]||I18N.en).assigned_to}</span>
+            <span class="t-share-name">${assignedLabel(t)}</span>
+            <span class="t-share-arrow">›</span>
+          </div>
+        </div>`;
+    } else {
+      el.innerHTML = `
+        <div class="t-swipe-bg"><span class="swipe-del-lbl">${tDelLbl}</span></div>
+        <div class="t-swipe-track">
+          <div class="t-task-main">
+            <div class="t-ck ${t.completed?'ck-done':isNx?'ck-nxt':'ck-open'}">${t.completed?'<span style="color:white;font-size:14px;font-weight:900;">✓</span>':''}</div>
+            <div class="t-tcol"><div class="t-ttime${isNx&&!t.completed?' ora':''}">${m2t(t.mins)}</div><div class="t-tampm">${ampm(t.mins)}</div></div>
+            <div class="t-tvline"></div>
+            <div class="t-tbody"><div class="t-ttitle">${t.title}</div><div class="t-tchip"><span class="t-dot" style="background:${p.color}"></span>${personLabel(t.person)}</div></div>
+            <div class="t-miniav" style="background:${p.bg}">${p.emoji}</div>
+            <div class="t-bell${t.notify===false?' off':''}">${t.notify===false?'🔕':'🔔'}</div>
+          </div>
+          <div class="t-share">
+            <span class="t-share-lbl">${(I18N[AppState.lang]||I18N.en).assigned_to}</span>
+            <span class="t-share-name">${assignedLabel(t)}</span>
+            <span class="t-share-arrow">›</span>
+          </div>
+        </div>`;
+    }
     el.querySelector('.t-bell').addEventListener('click', e => {
       e.stopPropagation();
       const realT = t.isRecurring ? (AppState.tasks.find(rt => rt.id === t.recurrenceId) || t) : t;
