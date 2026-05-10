@@ -2709,14 +2709,15 @@ function _buildCardEl(task) {
   const delLbl = AppState.lang === 'he' ? 'מחק' : 'Delete';
   const isLong  = task.title.length > 45;
   if (isLong) {
+    const _lcp = AppState.lang === 'he' ? '12px 0 12px 14px' : '12px 14px 12px 0';
     c.innerHTML = `
       <div class="card-swipe-bg"><span class="swipe-del-lbl">${delLbl}</span></div>
       <div class="card-swipe-track">
-        <div class="card-inner">
-          <div class="card-accent" style="background:${p.color}"></div>
-          <div class="card-main">
-            <div class="card-body"><div class="card-title">${task.title}</div></div>
-            <div class="card-meta-row">
+        <div class="card-inner" style="display:flex;flex-direction:row;align-items:stretch;gap:0;padding:${_lcp};">
+          <div class="card-accent" style="background:${p.color};align-self:stretch;margin-inline-end:10px;"></div>
+          <div class="card-main" style="flex:1;min-width:0;display:flex;flex-direction:column;gap:8px;padding:2px 0;">
+            <div class="card-body"><div class="card-title" style="overflow:visible;line-height:1.35;">${task.title}</div></div>
+            <div class="card-meta-row" style="display:flex;align-items:center;gap:8px;">
               <div class="card-time-col"><span class="card-time">${m2t(task.mins)}</span><span class="card-ampm">${ampm(task.mins)}</span><span class="card-ts ${task.timeSource}">${tsLabel[task.timeSource]}</span></div>
               <div class="card-vline"></div>
               <div class="card-chip"><span class="chip-dot" style="background:${p.color}"></span>${personLabel(task.person)}</div>
@@ -3227,9 +3228,9 @@ function renderToday() {
       el.innerHTML = `
         <div class="t-swipe-bg"><span class="swipe-del-lbl">${tDelLbl}</span></div>
         <div class="t-swipe-track">
-          <div class="t-task-main">
-            <div class="t-ttitle">${t.title}</div>
-            <div class="t-meta-row">
+          <div class="t-task-main" style="display:flex;flex-direction:column;align-items:stretch;gap:8px;padding:12px 15px;">
+            <div class="t-ttitle" style="overflow:visible;line-height:1.35;">${t.title}</div>
+            <div class="t-meta-row" style="display:flex;align-items:center;gap:8px;">
               <div class="t-ck ${t.completed?'ck-done':isNx?'ck-nxt':'ck-open'}">${t.completed?'<span style="color:white;font-size:14px;font-weight:900;">✓</span>':''}</div>
               <div class="t-tcol"><div class="t-ttime${isNx&&!t.completed?' ora':''}">${m2t(t.mins)}</div><div class="t-tampm">${ampm(t.mins)}</div></div>
               <div class="t-tvline"></div>
