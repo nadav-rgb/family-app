@@ -2715,7 +2715,7 @@ function _buildCardEl(task) {
     c.innerHTML = `
       <div class="card-swipe-bg"><span class="swipe-del-lbl">${delLbl}</span></div>
       <div class="card-swipe-track">
-        <div class="card-inner" style="display:flex;flex-direction:column;align-items:stretch;position:relative;padding:10px 14px 12px 14px;gap:8px;">
+        <div class="card-inner" style="display:flex;flex-direction:column;align-items:stretch;position:relative;padding:10px 14px 0 14px;gap:8px;">
           <div class="card-accent" style="background:${p.color};position:absolute;${_acSide}:0;top:0;bottom:0;width:5px;border-radius:${_acRad};"></div>
           <div class="card-body"><div class="card-title" style="overflow:visible;line-height:1.35;">${task.title}</div></div>
           <div class="card-meta-row" style="display:flex;align-items:center;gap:8px;">
@@ -2751,7 +2751,13 @@ function _buildCardEl(task) {
       shareFooter.querySelector('.card-share-name').textContent = assignedLabel(task);
     });
   });
-  c.querySelector('.card-swipe-track').appendChild(shareFooter);
+  // Long-card: append share footer inside card-inner so its height is always included
+  // in the flex-column layout — prevents overflow:hidden on task-card from clipping it.
+  if (isLong) {
+    c.querySelector('.card-inner').appendChild(shareFooter);
+  } else {
+    c.querySelector('.card-swipe-track').appendChild(shareFooter);
+  }
   c.querySelector('.card-time-col').addEventListener('click', () => {
     if (!dpAdjustMode) return;
     openTimeStrip(task.id, c);
