@@ -3644,35 +3644,42 @@ function attachSwipeDelete(el, task, screen) {
 
   let startX = 0, startY = 0;
   let dragging = false, locked = false, animating = false;
-  const SNAP_PX   = 72;
-  const DIR_FRAC  = 0.42;
+  // Tuned for "calm premium" feel — harder to trigger accidentally,
+  // softer transitions when it does run.
+  const SNAP_PX        = 88;            // distance shown when delete is "armed" (was 72)
+  const DIR_FRAC       = 0.55;          // % of card width for direct-delete (was 0.42)
+  const SNAP_THRESHOLD = SNAP_PX * 0.6; // % swipe to arm snap (~53px, was 36)
+  const DRAG_PX        = 10;            // movement before drag is recognized (was 6)
 
   function setX(x) {
     track.style.transform = x ? `translateX(${x}px)` : '';
   }
   function snapBack() {
-    track.style.transition = 'transform .25s cubic-bezier(.34,1.2,.64,1)';
+    // Calm settle — no overshoot/bounce; ease-out-quart for premium feel.
+    track.style.transition = 'transform .34s cubic-bezier(.22,1,.36,1)';
     track.style.opacity    = '';
     setX(0);
-    setTimeout(() => { track.style.transition = ''; }, 270);
+    setTimeout(() => { track.style.transition = ''; }, 360);
   }
   function confirmDelete() {
     if (animating) return;
     animating = true;
     const h = el.offsetHeight;
-    track.style.transition = 'transform .18s ease-in, opacity .15s ease-in';
+    // Phase 1 — slide off + fade. Smooth in-out easing, no sharp ease-in.
+    track.style.transition = 'transform .28s cubic-bezier(.4,0,.6,1), opacity .24s ease-out';
     setX(-(el.offsetWidth + 30));
     track.style.opacity = '0';
     setTimeout(() => {
+      // Phase 2 — gentle collapse. Symmetric easing feels like a soft "drain".
       el.style.overflow      = 'hidden';
       el.style.height        = h + 'px';
-      el.style.transition    = 'height .24s ease, margin-bottom .24s ease, opacity .14s';
+      el.style.transition    = 'height .34s cubic-bezier(.4,0,.6,1), margin-bottom .34s cubic-bezier(.4,0,.6,1), opacity .22s ease-out';
       void el.offsetHeight;
       el.style.height        = '0';
       el.style.marginBottom  = '0';
       el.style.opacity       = '0';
-    }, 160);
-    setTimeout(() => { el.remove(); doDelete(task, screen); }, 410);
+    }, 240);
+    setTimeout(() => { el.remove(); doDelete(task, screen); }, 590);
   }
 
   el.addEventListener('touchstart', e => {
@@ -3689,7 +3696,7 @@ function attachSwipeDelete(el, task, screen) {
     const dy = e.touches[0].clientY - startY;
     if (!dragging) {
       if (Math.abs(dy) > Math.abs(dx) + 3) { locked = true; return; }
-      if (Math.abs(dx) > 6) dragging = true;
+      if (Math.abs(dx) > DRAG_PX) dragging = true;
     }
     if (dragging && dx < 0) {
       e.preventDefault();
@@ -3704,10 +3711,11 @@ function attachSwipeDelete(el, task, screen) {
     const thr = el.offsetWidth * DIR_FRAC;
     if (-dx >= thr) {
       confirmDelete();
-    } else if (-dx >= SNAP_PX / 2) {
-      track.style.transition = 'transform .2s cubic-bezier(.34,1.2,.64,1)';
+    } else if (-dx >= SNAP_THRESHOLD) {
+      // Soft reveal — no spring/overshoot, gentle ease-out-quart.
+      track.style.transition = 'transform .3s cubic-bezier(.22,1,.36,1)';
       setX(-SNAP_PX);
-      setTimeout(() => { track.style.transition = ''; }, 220);
+      setTimeout(() => { track.style.transition = ''; }, 320);
       const onBg = () => {
         track.removeEventListener('touchstart', onTr);
         confirmDelete();
