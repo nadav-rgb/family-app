@@ -499,19 +499,15 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 .t-bell.off{opacity:.3;}
 .t-bell:active{transform:scale(.82);}
 
-/* ═══ LONG-CARD: clean two-section layout — accent | [title / meta-row] ═══ */
-/* Day Preview */
-.task-card.long-card .card-inner{align-items:stretch;gap:0;padding:12px 14px 12px 0;}
-.phone[dir="rtl"] .task-card.long-card .card-inner{padding:12px 0 12px 14px;}
-.task-card.long-card .card-accent{align-self:stretch;margin-inline-end:10px;}
-.card-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px;padding:2px 0;}
-.task-card.long-card .card-title{line-height:1.35;overflow:visible;}
-.task-card.long-card .card-title[contenteditable]{overflow:visible;}
-.card-meta-row{display:flex;align-items:center;gap:8px;}
-/* Today */
-.t-task.long-card .t-task-main{flex-direction:column;align-items:stretch;gap:8px;padding:12px 15px;}
-.t-task.long-card .t-ttitle{overflow:visible;line-height:1.35;}
-.t-meta-row{display:flex;align-items:center;gap:8px;}
+/* ═══ LONG-TITLE POPUP ═══ */
+.long-title{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.title-exp{border:none;background:none;font-size:11px;font-weight:900;color:#e07c3a;cursor:pointer;padding:0 0 2px;letter-spacing:.15em;display:block;font-family:'Nunito',sans-serif;line-height:1.2;margin-top:2px;}
+.title-popup-bg{position:absolute;inset:0;z-index:9500;background:rgba(28,17,10,.52);display:flex;align-items:center;justify-content:center;padding:24px;box-sizing:border-box;opacity:0;transition:opacity .2s;pointer-events:none;}
+.title-popup-bg.open{opacity:1;pointer-events:auto;}
+.title-popup{background:white;border-radius:24px;padding:26px 22px 20px;width:100%;max-width:340px;box-shadow:0 20px 60px rgba(0,0,0,.28);transform:translateY(16px) scale(.96);transition:transform .25s cubic-bezier(.34,1.2,.64,1);}
+.title-popup-bg.open .title-popup{transform:none;}
+.title-popup-text{font-family:'Rubik',sans-serif;font-size:16px;font-weight:700;color:#1c110a;line-height:1.6;direction:rtl;text-align:right;word-break:break-word;margin-bottom:20px;}
+.title-popup-close{width:100%;padding:14px;border:none;border-radius:16px;background:linear-gradient(135deg,#ff9a4e,#ff5e14);color:white;font-family:'Nunito',sans-serif;font-size:15px;font-weight:900;cursor:pointer;box-shadow:0 4px 14px rgba(255,94,20,.28);}
 
 /* ── Card share footer ── */
 .card-share{padding:10px 14px 12px 18px;display:flex;align-items:center;gap:8px;cursor:pointer;border-top:2px solid #f0d8c8;background:#fdf3ec;transition:background .13s;}
@@ -735,6 +731,14 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 </head>
 <body>
 <div class="phone">
+
+<!-- ════ TITLE EXPAND POPUP ════ -->
+<div class="title-popup-bg" id="titlePopupBg" onclick="closeTitlePopup()">
+  <div class="title-popup" onclick="event.stopPropagation()">
+    <div class="title-popup-text" id="titlePopupText"></div>
+    <button class="title-popup-close" onclick="closeTitlePopup()">סגור</button>
+  </div>
+</div>
 
 <!-- ════ SCREEN 0: LANGUAGE PICKER ════ -->
 <div class="app-screen" id="s-lang">
@@ -1976,6 +1980,14 @@ document.getElementById('drawerOpts').addEventListener('click', e => {
 // ─── Share drawer ─────────────────────────────────────────────────
 let shareTask = null, shareSaveCb = null;
 
+function openTitlePopup(text) {
+  document.getElementById('titlePopupText').textContent = text;
+  document.getElementById('titlePopupBg').classList.add('open');
+}
+function closeTitlePopup() {
+  document.getElementById('titlePopupBg').classList.remove('open');
+}
+
 function openShareDrawer(task, onSave) {
   shareTask  = task;
   shareSaveCb = onSave;
@@ -2711,39 +2723,26 @@ function _buildCardEl(task) {
   if (!task.timeSource)  task.timeSource = 'suggested';
   const tsLabel = { explicit:t('dp_time_explicit'), suggested:t('dp_time_suggested'), manual:t('dp_time_manual') };
   const delLbl = AppState.lang === 'he' ? 'מחק' : 'Delete';
-  const isLong  = task.title.length > 45;
-  if (isLong) {
-    const _rtl = AppState.lang === 'he';
-    const _acSide = _rtl ? 'right' : 'left';
-    const _acRad  = _rtl ? '5px 0 0 5px' : '0 5px 5px 0';
-    c.innerHTML = `
-      <div class="card-swipe-bg"><span class="swipe-del-lbl">${delLbl}</span></div>
-      <div class="card-swipe-track">
-        <div class="card-inner" style="display:flex;flex-direction:column;align-items:stretch;position:relative;padding:10px 14px 12px 14px;gap:8px;">
-          <div class="card-accent" style="background:${p.color};position:absolute;${_acSide}:0;top:0;bottom:0;width:5px;border-radius:${_acRad};"></div>
-          <div class="card-body"><div class="card-title" style="overflow:visible;line-height:1.35;">${task.title}</div></div>
-          <div class="card-meta-row" style="display:flex;align-items:center;gap:8px;">
-            <div class="card-time-col"><span class="card-time">${m2t(task.mins)}</span><span class="card-ampm">${ampm(task.mins)}</span><span class="card-ts ${task.timeSource}">${tsLabel[task.timeSource]}</span></div>
-            <div class="card-vline"></div>
-            <div class="card-chip"><span class="chip-dot" style="background:${p.color}"></span>${personLabel(task.person)}</div>
-            <div class="card-av" style="background:${p.bg}">${p.emoji}</div>
-            <div class="card-bell${task.notify===false?' off':''}">${task.notify===false?'🔕':'🔔'}</div>
-          </div>
-        </div>
-      </div>`;
-  } else {
-    c.innerHTML = `
-      <div class="card-swipe-bg"><span class="swipe-del-lbl">${delLbl}</span></div>
-      <div class="card-swipe-track">
-        <div class="card-inner">
-          <div class="card-accent" style="background:${p.color}"></div>
-          <div class="card-time-col"><span class="card-time">${m2t(task.mins)}</span><span class="card-ampm">${ampm(task.mins)}</span><span class="card-ts ${task.timeSource}">${tsLabel[task.timeSource]}</span></div>
-          <div class="card-vline"></div>
-          <div class="card-body"><div class="card-title">${task.title}</div><div class="card-chip"><span class="chip-dot" style="background:${p.color}"></span>${personLabel(task.person)}</div></div>
-          <div class="card-av" style="background:${p.bg}">${p.emoji}</div>
-          <div class="card-bell${task.notify===false?' off':''}">${task.notify===false?'🔕':'🔔'}</div>
-        </div>
-      </div>`;
+  c.innerHTML = `
+    <div class="card-swipe-bg"><span class="swipe-del-lbl">${delLbl}</span></div>
+    <div class="card-swipe-track">
+      <div class="card-inner">
+        <div class="card-accent" style="background:${p.color}"></div>
+        <div class="card-time-col"><span class="card-time">${m2t(task.mins)}</span><span class="card-ampm">${ampm(task.mins)}</span><span class="card-ts ${task.timeSource}">${tsLabel[task.timeSource]}</span></div>
+        <div class="card-vline"></div>
+        <div class="card-body"><div class="card-title">${task.title}</div><div class="card-chip"><span class="chip-dot" style="background:${p.color}"></span>${personLabel(task.person)}</div></div>
+        <div class="card-av" style="background:${p.bg}">${p.emoji}</div>
+        <div class="card-bell${task.notify===false?' off':''}">${task.notify===false?'🔕':'🔔'}</div>
+      </div>
+    </div>`;
+  if (task.title.length > 45) {
+    const titleEl = c.querySelector('.card-title');
+    titleEl.classList.add('long-title');
+    const expBtn = document.createElement('button');
+    expBtn.className = 'title-exp';
+    expBtn.textContent = '···';
+    expBtn.addEventListener('click', e => { e.stopPropagation(); openTitlePopup(task.title); });
+    titleEl.after(expBtn);
   }
   const shareFooter = document.createElement('div');
   shareFooter.className = 'card-share';
@@ -2787,7 +2786,6 @@ function dpRender(animate) {
   tasks.forEach((task, i) => {
     const c = _buildCardEl(task);
     c.className = 'task-card ' + (animate ? 'entering' : 'settling');
-    if (task.title.length > 45) c.classList.add('long-card');
     if (animate) c.style.animationDelay = `${0.32 + i * 0.13}s`;
     else         c.style.animationDelay = `${i * 0.04}s`;
     list.appendChild(c);
@@ -3231,46 +3229,31 @@ function renderToday() {
     if (!t.notifyTo)  t.notifyTo  = [PERSON_TO_ID[t.person] || 'mom'];
     if (t.reminderOffsetMinutes === undefined) t.reminderOffsetMinutes = 10;
     const tDelLbl = AppState.lang === 'he' ? 'מחק' : 'Delete';
-    const isLongT = t.title.length > 45;
-    if (isLongT) {
-      el.innerHTML = `
-        <div class="t-swipe-bg"><span class="swipe-del-lbl">${tDelLbl}</span></div>
-        <div class="t-swipe-track">
-          <div class="t-task-main" style="display:flex;flex-direction:column;align-items:stretch;gap:8px;padding:12px 15px;">
-            <div class="t-ttitle" style="overflow:visible;line-height:1.35;">${t.title}</div>
-            <div class="t-meta-row" style="display:flex;align-items:center;gap:8px;">
-              <div class="t-ck ${t.completed?'ck-done':isNx?'ck-nxt':'ck-open'}">${t.completed?'<span style="color:white;font-size:14px;font-weight:900;">✓</span>':''}</div>
-              <div class="t-tcol"><div class="t-ttime${isNx&&!t.completed?' ora':''}">${m2t(t.mins)}</div><div class="t-tampm">${ampm(t.mins)}</div></div>
-              <div class="t-tvline"></div>
-              <div class="t-tchip"><span class="t-dot" style="background:${p.color}"></span>${personLabel(t.person)}</div>
-              <div class="t-miniav" style="background:${p.bg}">${p.emoji}</div>
-              <div class="t-bell${t.notify===false?' off':''}">${t.notify===false?'🔕':'🔔'}</div>
-            </div>
-          </div>
-          <div class="t-share">
-            <span class="t-share-lbl">${(I18N[AppState.lang]||I18N.en).assigned_to}</span>
-            <span class="t-share-name">${assignedLabel(t)}</span>
-            <span class="t-share-arrow">›</span>
-          </div>
-        </div>`;
-    } else {
-      el.innerHTML = `
-        <div class="t-swipe-bg"><span class="swipe-del-lbl">${tDelLbl}</span></div>
-        <div class="t-swipe-track">
-          <div class="t-task-main">
-            <div class="t-ck ${t.completed?'ck-done':isNx?'ck-nxt':'ck-open'}">${t.completed?'<span style="color:white;font-size:14px;font-weight:900;">✓</span>':''}</div>
-            <div class="t-tcol"><div class="t-ttime${isNx&&!t.completed?' ora':''}">${m2t(t.mins)}</div><div class="t-tampm">${ampm(t.mins)}</div></div>
-            <div class="t-tvline"></div>
-            <div class="t-tbody"><div class="t-ttitle">${t.title}</div><div class="t-tchip"><span class="t-dot" style="background:${p.color}"></span>${personLabel(t.person)}</div></div>
-            <div class="t-miniav" style="background:${p.bg}">${p.emoji}</div>
-            <div class="t-bell${t.notify===false?' off':''}">${t.notify===false?'🔕':'🔔'}</div>
-          </div>
-          <div class="t-share">
-            <span class="t-share-lbl">${(I18N[AppState.lang]||I18N.en).assigned_to}</span>
-            <span class="t-share-name">${assignedLabel(t)}</span>
-            <span class="t-share-arrow">›</span>
-          </div>
-        </div>`;
+    el.innerHTML = `
+      <div class="t-swipe-bg"><span class="swipe-del-lbl">${tDelLbl}</span></div>
+      <div class="t-swipe-track">
+        <div class="t-task-main">
+          <div class="t-ck ${t.completed?'ck-done':isNx?'ck-nxt':'ck-open'}">${t.completed?'<span style="color:white;font-size:14px;font-weight:900;">✓</span>':''}</div>
+          <div class="t-tcol"><div class="t-ttime${isNx&&!t.completed?' ora':''}">${m2t(t.mins)}</div><div class="t-tampm">${ampm(t.mins)}</div></div>
+          <div class="t-tvline"></div>
+          <div class="t-tbody"><div class="t-ttitle">${t.title}</div><div class="t-tchip"><span class="t-dot" style="background:${p.color}"></span>${personLabel(t.person)}</div></div>
+          <div class="t-miniav" style="background:${p.bg}">${p.emoji}</div>
+          <div class="t-bell${t.notify===false?' off':''}">${t.notify===false?'🔕':'🔔'}</div>
+        </div>
+        <div class="t-share">
+          <span class="t-share-lbl">${(I18N[AppState.lang]||I18N.en).assigned_to}</span>
+          <span class="t-share-name">${assignedLabel(t)}</span>
+          <span class="t-share-arrow">›</span>
+        </div>
+      </div>`;
+    if (t.title.length > 45) {
+      const ttitle = el.querySelector('.t-ttitle');
+      ttitle.classList.add('long-title');
+      const expBtn = document.createElement('button');
+      expBtn.className = 'title-exp';
+      expBtn.textContent = '···';
+      expBtn.addEventListener('click', e => { e.stopPropagation(); openTitlePopup(t.title); });
+      ttitle.after(expBtn);
     }
     el.querySelector('.t-bell').addEventListener('click', e => {
       e.stopPropagation();
@@ -3290,7 +3273,6 @@ function renderToday() {
         saveState();
       });
     });
-    if (t.title.length > 45) el.classList.add('long-card');
     el.style.animationDelay = `${i * 68}ms`;
     el.classList.add('entering');
     attachSwipeDelete(el, t, 'today');
