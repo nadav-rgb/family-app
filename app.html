@@ -528,6 +528,9 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 .title-tip.structured .tip-cat-name{font-size:13px;font-weight:900;color:#1c110a;letter-spacing:.1px;}
 .title-tip.structured .tip-cat-items{font-size:12.5px;font-weight:600;color:#5a3e2b;line-height:1.65;word-break:break-word;}
 .title-tip.structured .tip-cat-sep{color:#d49060;font-weight:800;margin:0 5px;display:inline-block;}
+.title-tip.structured .tip-close{position:absolute;top:9px;left:9px;width:28px;height:28px;border-radius:14px;border:none;background:rgba(28,17,10,.06);color:#5a3e2b;font-size:20px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:700;transition:background .15s,transform .12s;padding:0 0 2px;font-family:'Rubik',sans-serif;z-index:2;}
+.title-tip.structured .tip-close:hover{background:rgba(28,17,10,.11);}
+.title-tip.structured .tip-close:active{transform:scale(.9);background:rgba(28,17,10,.16);}
 
 /* ── Card share footer ── */
 .card-share{padding:10px 14px 12px 18px;display:flex;align-items:center;gap:8px;cursor:pointer;border-top:2px solid #f0d8c8;background:#fdf3ec;transition:background .13s;}
@@ -2068,6 +2071,14 @@ const _CAT_EMOJI = {
 function _renderShoppingTipContent(tip, shoppingList) {
   tip.classList.add('structured');
 
+  // Close button — required for shopping-list popup (no auto-dismiss)
+  const closeBtn = document.createElement('button');
+  closeBtn.className = 'tip-close';
+  closeBtn.textContent = '×';
+  closeBtn.setAttribute('aria-label', 'סגור');
+  closeBtn.addEventListener('click', e => { e.stopPropagation(); hideTitleTip(); });
+  tip.appendChild(closeBtn);
+
   // Header — icon + title + subtitle
   const header = document.createElement('div');
   header.className = 'tip-header';
@@ -2178,11 +2189,16 @@ function showTitleTip(textOrTask, anchorEl) {
   _titleTip = tip;
   _titleTipAnchor = anchorEl;
   requestAnimationFrame(() => tip.classList.add('show'));
-  _titleTipTimer = setTimeout(hideTitleTip, 6000);
+  // Auto-dismiss + scroll-dismiss ONLY for plain-text tooltips — shopping list
+  // is a "shopping page" the user navigates with, must stay open until manually closed.
+  if (!willRenderStructured) {
+    _titleTipTimer = setTimeout(hideTitleTip, 6000);
+    _titleTipDismissScroll = () => hideTitleTip();
+    document.querySelectorAll('.dp-list, .t-scroll').forEach(el => el.addEventListener('scroll', _titleTipDismissScroll, { passive: true }));
+  }
+  // Outside-click dismiss applies to BOTH (user can always tap away to close)
   _titleTipDismissCl = (e) => { if (!tip.contains(e.target) && !anchorEl.contains(e.target)) hideTitleTip(); };
   setTimeout(() => document.addEventListener('click', _titleTipDismissCl), 50);
-  _titleTipDismissScroll = () => hideTitleTip();
-  document.querySelectorAll('.dp-list, .t-scroll').forEach(el => el.addEventListener('scroll', _titleTipDismissScroll, { passive: true }));
 }
 
 function hideTitleTip() {
