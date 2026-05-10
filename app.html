@@ -507,6 +507,13 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 .title-tip-arrow{position:absolute;width:0;height:0;}
 .title-tip.above .title-tip-arrow{bottom:-7px;border-left:7px solid transparent;border-right:7px solid transparent;border-top:7px solid white;}
 .title-tip.below .title-tip-arrow{top:-7px;border-left:7px solid transparent;border-right:7px solid transparent;border-bottom:7px solid white;}
+.title-tip.structured{max-width:300px;padding:14px 16px;}
+.title-tip .tip-action{font-size:15px;font-weight:900;color:#1c110a;margin-bottom:4px;line-height:1.3;}
+.title-tip .tip-buy{font-size:12px;font-weight:700;color:#7a6055;margin-bottom:8px;letter-spacing:.2px;}
+.title-tip .tip-cat{display:block;margin:5px 0;padding-right:14px;position:relative;font-size:12.5px;line-height:1.55;}
+.title-tip .tip-cat::before{content:'•';position:absolute;right:0;top:0;color:#ff7033;font-weight:900;font-size:15px;line-height:1.4;}
+.title-tip .tip-cat-name{font-weight:900;color:#1c110a;}
+.title-tip .tip-cat-items{font-weight:600;color:#3a2818;}
 
 /* ── Card share footer ── */
 .card-share{padding:10px 14px 12px 18px;display:flex;align-items:center;gap:8px;cursor:pointer;border-top:2px solid #f0d8c8;background:#fdf3ec;transition:background .13s;}
@@ -1973,17 +1980,90 @@ let shareTask = null, shareSaveCb = null;
 
 // Long-title inline tooltip — replaces modal popup. Toggles on repeat trigger;
 // dismisses on outside tap, scroll inside list, or 6s timeout.
+// Renders structured shopping-list breakdown when task.shoppingList is set.
 let _titleTip = null, _titleTipAnchor = null, _titleTipTimer = null;
 let _titleTipDismissCl = null, _titleTipDismissScroll = null;
 
-function showTitleTip(text, anchorEl) {
+// Detect shopping-list intent in a title (Hebrew). Threshold tuned to skip
+// short single-item buys ("לקנות חלב") and only catch multi-item lists.
+function isShoppingListTitle(title) {
+  if (!title || typeof title !== 'string' || title.length < 25) return false;
+  if (!/(לסופר|פיצוצייה|בשוק|סופרמרקט|לקנות)/.test(title)) return false;
+  const words = title.split(/\s+/).filter(Boolean);
+  return words.length >= 6;
+}
+
+// Async-categorize a task title via /api/categorize-shopping. Idempotent + dedupe.
+// On success, sets task.shoppingList = { action, categories } and persists state.
+async function categorizeShoppingTitle(task) {
+  if (!task || task.shoppingList || task._categorizing) return;
+  if (!isShoppingListTitle(task.title)) return;
+  task._categorizing = true;
+  try {
+    const res = await fetch('/api/categorize-shopping', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ title: task.title }),
+    });
+    if (!res.ok) throw new Error('categorize HTTP ' + res.status);
+    const data = await res.json();
+    if (data && data.action && data.categories && Object.keys(data.categories).length > 0) {
+      task.shoppingList = { action: data.action, categories: data.categories };
+      try { saveState(); } catch(_) {}
+    }
+  } catch (err) {
+    console.warn('[shopping] categorize failed:', err.message);
+  } finally {
+    delete task._categorizing;
+  }
+}
+
+// Build the structured tooltip content for a shopping-list task.
+function _renderShoppingTipContent(tip, shoppingList) {
+  tip.classList.add('structured');
+  const action = document.createElement('div');
+  action.className = 'tip-action';
+  action.textContent = shoppingList.action;
+  tip.appendChild(action);
+  const buy = document.createElement('div');
+  buy.className = 'tip-buy';
+  buy.textContent = 'לקנות:';
+  tip.appendChild(buy);
+  for (const [catName, items] of Object.entries(shoppingList.categories)) {
+    const row = document.createElement('div');
+    row.className = 'tip-cat';
+    const name = document.createElement('span');
+    name.className = 'tip-cat-name';
+    name.textContent = catName + ': ';
+    row.appendChild(name);
+    const itemsSpan = document.createElement('span');
+    itemsSpan.className = 'tip-cat-items';
+    itemsSpan.textContent = items.join(', ');
+    row.appendChild(itemsSpan);
+    tip.appendChild(row);
+  }
+}
+
+function showTitleTip(textOrTask, anchorEl) {
   if (_titleTip && _titleTipAnchor === anchorEl) { hideTitleTip(); return; }
   hideTitleTip();
   const phone = document.querySelector('.phone');
   if (!phone) return;
+  let text = '';
+  let shoppingList = null;
+  if (typeof textOrTask === 'string') {
+    text = textOrTask;
+  } else if (textOrTask && typeof textOrTask === 'object') {
+    text = textOrTask.title || '';
+    shoppingList = textOrTask.shoppingList;
+  } else { return; }
   const tip = document.createElement('div');
   tip.className = 'title-tip';
-  tip.textContent = text;
+  if (shoppingList && shoppingList.categories && Object.keys(shoppingList.categories).length > 0) {
+    _renderShoppingTipContent(tip, shoppingList);
+  } else {
+    tip.textContent = text;
+  }
   const arrow = document.createElement('div');
   arrow.className = 'title-tip-arrow';
   tip.appendChild(arrow);
@@ -2777,7 +2857,7 @@ function _buildCardEl(task) {
     const expBtn = document.createElement('button');
     expBtn.className = 'title-exp';
     expBtn.textContent = '···';
-    expBtn.addEventListener('click', e => { e.stopPropagation(); showTitleTip(task.title, expBtn); });
+    expBtn.addEventListener('click', e => { e.stopPropagation(); showTitleTip(task, expBtn); });
     titleEl.after(expBtn);
   }
   const shareFooter = document.createElement('div');
@@ -2808,6 +2888,7 @@ function _buildCardEl(task) {
   titleEl.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); titleEl.blur(); } });
   attachSplitGesture(c, task);
   attachSwipeDelete(c, task, 'preview');
+  categorizeShoppingTitle(task);
   return c;
 }
 
@@ -3288,7 +3369,7 @@ function renderToday() {
       const expBtn = document.createElement('button');
       expBtn.className = 'title-exp';
       expBtn.textContent = '···';
-      expBtn.addEventListener('click', e => { e.stopPropagation(); showTitleTip(t.title, expBtn); });
+      expBtn.addEventListener('click', e => { e.stopPropagation(); showTitleTip(t, expBtn); });
       ttitle.after(expBtn);
     }
     el.querySelector('.t-bell').addEventListener('click', e => {
@@ -3312,6 +3393,7 @@ function renderToday() {
     el.style.animationDelay = `${i * 68}ms`;
     el.classList.add('entering');
     attachSwipeDelete(el, t, 'today');
+    categorizeShoppingTitle(t);
     container.appendChild(el);
   });
 
