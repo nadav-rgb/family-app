@@ -2182,8 +2182,20 @@ function showTitleTip(textOrTask, anchorEl) {
   const aCenterX = aR.left + aR.width / 2;
   const tipLeft = Math.max(pR.left + m, Math.min(aCenterX - tR.width / 2, pR.right - tR.width - m));
   tip.style.left = (tipLeft - pR.left) + 'px';
-  if (above) { tip.classList.add('above'); tip.style.top = (aR.top - pR.top - tR.height - 9) + 'px'; }
-  else       { tip.classList.add('below'); tip.style.top = (aR.bottom - pR.top + 9) + 'px'; }
+  // Breathing-room clamp: structured shopping tooltip is tall (~380-390px) and
+  // when anchor sits in the lower half (e.g. second card in Day Preview) the
+  // natural above-position becomes 1-15px from phone top — feels glued to the
+  // header. Clamp at 56px so the tip always has comfortable top breathing room.
+  // Plain-text tooltips keep the original tight 9px gap to anchor.
+  const minTopOffset = willRenderStructured ? 56 : 0;
+  if (above) {
+    const naturalTop = aR.top - pR.top - tR.height - 9;
+    tip.classList.add('above');
+    tip.style.top = Math.max(minTopOffset, naturalTop) + 'px';
+  } else {
+    tip.classList.add('below');
+    tip.style.top = (aR.bottom - pR.top + 9) + 'px';
+  }
   const arrowLeft = aCenterX - tipLeft;
   arrow.style.left = Math.max(14, Math.min(arrowLeft, tR.width - 14)) - 7 + 'px';
   _titleTip = tip;
