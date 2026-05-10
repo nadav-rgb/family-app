@@ -149,6 +149,8 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 .v-type-toggle{display:inline-block;font-size:14px;font-weight:800;color:#e07c3a;cursor:pointer;padding:6px 0;letter-spacing:.01em;border-bottom:1.5px solid rgba(224,124,58,.3);transition:opacity .15s;}
 .v-type-toggle:active{opacity:.6;}
 .v-type-area{display:none;flex-direction:column;gap:10px;background:linear-gradient(148deg,rgba(255,210,220,.48) 0%,rgba(255,185,130,.26) 42%,rgba(255,250,243,.96) 100%);border-radius:28px;padding:16px 20px 14px;box-shadow:0 6px 32px rgba(255,100,70,.1),0 2px 10px rgba(255,155,90,.08),inset 0 1px 0 rgba(255,255,255,.72);margin:0 16px;}
+/* Typing mode: hide voice-only UI so the type area + button stay in viewport */
+#s-voice.typing-mode .mic-zone,#s-voice.typing-mode .listen-sec,#s-voice.typing-mode .speech-bubble,#s-voice.typing-mode .sp,#s-voice.typing-mode .sp-lg{display:none;}
 @keyframes typeAreaIn{from{opacity:0;transform:translateY(14px);} to{opacity:1;transform:translateY(0);}}
 @keyframes typeAreaOut{from{opacity:1;transform:translateY(0);} to{opacity:0;transform:translateY(10px);}}
 .v-type-area.open{display:flex;animation:typeAreaIn .32s cubic-bezier(.34,1.2,.64,1) both;}
@@ -1779,6 +1781,7 @@ document.getElementById('vTypeToggle').addEventListener('click', () => {
   if (vListening) vStop(false);
   document.getElementById('vTypeToggle').style.display = 'none';
   zone.classList.add('recede');
+  document.getElementById('s-voice').classList.add('typing-mode');
   const area = document.getElementById('vTypeArea');
   area.classList.add('open');
   setTimeout(() => document.getElementById('vTypeInp').focus(), 80);
@@ -1920,6 +1923,7 @@ document.getElementById('vVoiceBack').addEventListener('click', () => {
 
   setTimeout(() => {
     area.classList.remove('open','closing');
+    document.getElementById('s-voice').classList.remove('typing-mode');
     row.style.cssText = '';
     inp.innerHTML = '';
     _typeTracked = '';
@@ -3145,6 +3149,7 @@ function resetVoiceScreen() {
   const inp    = document.getElementById('vTypeInp');
   toggle.style.display = '';
   area.classList.remove('open');
+  document.getElementById('s-voice').classList.remove('typing-mode');
   inp.innerHTML = '';
   _typeTracked = '';
   document.getElementById('vTypeBtn').disabled = true;
