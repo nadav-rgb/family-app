@@ -486,6 +486,11 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 .t-task{overflow:hidden;position:relative;}
 .task-card{overflow:hidden;}
 .t-swipe-track,.card-swipe-track{position:relative;z-index:1;background:white;will-change:transform;}
+/* Stabilize scroll during card delete — prevents browser scroll-anchoring jumps */
+.task-card,.t-task,.list-shimmer{overflow-anchor:none;}
+/* Suppress cardSettle re-animation during a delete-induced rerender so the
+   remaining cards don't visibly "twitch" right after a card is removed. */
+.deleting-rerender .task-card,.deleting-rerender .t-task{animation:none!important;}
 .t-swipe-bg,.card-swipe-bg{position:absolute;inset:0;background:#ff3b30;border-radius:20px;}
 .swipe-del-lbl{position:absolute;right:22px;top:50%;transform:translateY(-50%);font-size:13px;font-weight:800;color:white;letter-spacing:.2px;pointer-events:none;}
 
@@ -3670,16 +3675,37 @@ function attachSwipeDelete(el, task, screen) {
     setX(-(el.offsetWidth + 30));
     track.style.opacity = '0';
     setTimeout(() => {
-      // Phase 2 — gentle collapse. Symmetric easing feels like a soft "drain".
+      // Phase 2 — gentle collapse. Also negate the parent's flex `gap` via
+      // margin-top: -gapPx, so that when el.remove() fires the following
+      // sibling stays where it is (no end-of-animation "jump").
+      const parent = el.parentElement;
+      const cs = parent ? getComputedStyle(parent) : null;
+      const gapPx = parseFloat(cs && (cs.rowGap || cs.gap)) || 0;
       el.style.overflow      = 'hidden';
       el.style.height        = h + 'px';
-      el.style.transition    = 'height .34s cubic-bezier(.4,0,.6,1), margin-bottom .34s cubic-bezier(.4,0,.6,1), opacity .22s ease-out';
+      el.style.marginTop     = '0px';
+      el.style.transition    = 'height .34s cubic-bezier(.4,0,.6,1), margin-top .34s cubic-bezier(.4,0,.6,1), margin-bottom .34s cubic-bezier(.4,0,.6,1), opacity .22s ease-out';
       void el.offsetHeight;
       el.style.height        = '0';
+      el.style.marginTop     = (-gapPx) + 'px';
       el.style.marginBottom  = '0';
       el.style.opacity       = '0';
     }, 240);
-    setTimeout(() => { el.remove(); doDelete(task, screen); }, 590);
+    setTimeout(() => {
+      // Stabilize scroll across the doDelete-triggered rerender, and suppress
+      // the new cards' settle animation so the list doesn't visibly "twitch".
+      const scrollContainer = el.closest('.dp-list, .t-scroll');
+      const savedScrollTop  = scrollContainer ? scrollContainer.scrollTop : 0;
+      if (scrollContainer) scrollContainer.classList.add('deleting-rerender');
+      el.remove();
+      doDelete(task, screen);
+      if (scrollContainer) {
+        scrollContainer.scrollTop = savedScrollTop;
+        requestAnimationFrame(() => requestAnimationFrame(() =>
+          scrollContainer.classList.remove('deleting-rerender')
+        ));
+      }
+    }, 590);
   }
 
   el.addEventListener('touchstart', e => {
