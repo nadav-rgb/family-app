@@ -675,27 +675,34 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 .phone:not([dir="rtl"]) .v-type-inp:empty:before{content:"Write freely — we'll organize it for you ✨";}
 .phone[dir="rtl"]        .v-type-inp:empty:before{content:"כתוב בחופשיות — נסדר הכל בשבילך ✨";}
 
-/* ─── Long-press split gesture ─── */
+/* ─── Long-press split gesture — card feedback ─── */
 .task-card.lp-holding{transform:scale(1.022);box-shadow:0 6px 28px rgba(100,60,20,.14);transition:transform 120ms ease-out,box-shadow 120ms ease-out;}
-.task-card.split-open{box-shadow:0 4px 22px rgba(255,112,51,.16),0 0 0 1.5px rgba(255,112,51,.18);}
-.split-panel{overflow:hidden;max-height:0;transition:max-height 340ms cubic-bezier(.4,0,.2,1);}
-.split-panel.open{max-height:560px;}
-.split-divider{height:1px;background:linear-gradient(90deg,transparent,rgba(224,124,58,.2),transparent);margin:0 16px;}
-.split-rows{padding:14px 16px 8px;}
-.split-row{display:flex;align-items:center;padding:10px 12px;background:rgba(255,240,230,.55);border-radius:12px;border-inline-start:3px solid rgba(255,112,51,.38);font-family:'Rubik',sans-serif;font-size:14px;font-weight:600;color:#3a2010;opacity:0;transform:translateY(6px);transition:opacity 200ms ease,transform 200ms cubic-bezier(.34,1.1,.64,1);margin-bottom:8px;}
-.split-row:last-child{margin-bottom:0;}
-.split-row.visible{opacity:1;transform:translateY(0);}
-.split-actions{display:flex;align-items:center;justify-content:space-between;padding:12px 16px 16px;opacity:0;transition:opacity 180ms ease;}
-.split-actions.visible{opacity:1;}
-.split-confirm{background:linear-gradient(135deg,#ff7033,#e05a20);color:#fff;border:none;border-radius:14px;padding:11px 24px;font-family:'Nunito',sans-serif;font-size:14px;font-weight:800;cursor:pointer;box-shadow:0 3px 12px rgba(255,112,51,.26);transition:transform .14s,box-shadow .14s;}
-.split-confirm:active{transform:scale(.95);box-shadow:0 1px 6px rgba(255,112,51,.18);}
-.split-cancel{background:none;border:none;color:#b8a090;font-family:'Nunito',sans-serif;font-size:14px;font-weight:700;cursor:pointer;padding:11px 8px;}
 /* accent breathes twice then rests */
 @keyframes accentBreath{0%,100%{opacity:1;}50%{opacity:.22;}}
 .card-accent.split-alive{animation:accentBreath 1.2s ease-in-out 1.0s 2 normal none;}
 /* one-time whisper hint */
 .split-hint-text{font-family:'Nunito',sans-serif;font-size:10px;font-weight:700;color:rgba(155,125,105,.58);text-align:center;padding:0 16px 10px;letter-spacing:.2px;opacity:0;animation:hintFadeIn .6s ease 3.5s forwards;pointer-events:none;}
 @keyframes hintFadeIn{to{opacity:1;}}
+
+/* ─── Split bottom sheet ─── */
+.split-sheet-bg{position:absolute;inset:0;z-index:960;background:rgba(28,17,10,.38);display:flex;align-items:flex-end;pointer-events:none;opacity:0;transition:opacity .25s ease;}
+.split-sheet-bg.open{opacity:1;pointer-events:auto;}
+.split-sheet{width:100%;background:#fffaf5;border-radius:26px 26px 0 0;box-shadow:0 -8px 40px rgba(100,60,20,.18);transform:translateY(100%);transition:transform .34s cubic-bezier(.34,1.1,.64,1);max-height:80vh;display:flex;flex-direction:column;overflow:hidden;}
+.split-sheet-bg.open .split-sheet{transform:translateY(0);}
+.split-sh-handle{width:36px;height:4px;background:rgba(100,60,20,.15);border-radius:2px;margin:12px auto 0;flex-shrink:0;}
+.split-sh-hdr{padding:14px 22px 12px;border-bottom:1px solid rgba(224,180,140,.2);flex-shrink:0;}
+.split-sh-title{font-family:'Nunito',sans-serif;font-size:13px;font-weight:900;text-transform:uppercase;letter-spacing:1px;color:#c4ae9f;margin-bottom:8px;}
+.split-sh-orig-lbl{font-family:'Nunito',sans-serif;font-size:11px;font-weight:700;color:#b8a090;margin-bottom:4px;}
+.split-sh-orig{font-family:'Rubik',sans-serif;font-size:14px;font-weight:600;color:#9e8878;line-height:1.45;direction:rtl;word-break:break-word;}
+.split-sh-body{flex:1;overflow-y:auto;padding:14px 20px 8px;display:flex;flex-direction:column;gap:10px;scrollbar-width:none;-webkit-overflow-scrolling:touch;}
+.split-sh-body::-webkit-scrollbar{display:none;}
+.split-sh-row-lbl{font-family:'Nunito',sans-serif;font-size:11px;font-weight:700;color:#c4ae9f;margin-bottom:3px;direction:rtl;}
+.split-sh-row{background:rgba(255,240,230,.55);border-radius:14px;border-inline-start:3px solid rgba(255,112,51,.45);padding:13px 14px;font-family:'Rubik',sans-serif;font-size:15px;font-weight:700;color:#1c110a;line-height:1.4;direction:rtl;word-break:break-word;opacity:0;transform:translateY(8px);transition:opacity 220ms ease,transform 220ms cubic-bezier(.34,1.1,.64,1);}
+.split-sh-row.visible{opacity:1;transform:translateY(0);}
+.split-sh-foot{padding:14px 20px 22px;border-top:1px solid rgba(224,180,140,.15);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.split-sh-confirm{background:linear-gradient(135deg,#ff7033,#e05a20);color:#fff;border:none;border-radius:14px;padding:12px 28px;font-family:'Nunito',sans-serif;font-size:15px;font-weight:800;cursor:pointer;box-shadow:0 3px 12px rgba(255,112,51,.26);transition:transform .14s,box-shadow .14s;}
+.split-sh-confirm:active{transform:scale(.95);}
+.split-sh-cancel{background:none;border:none;color:#b8a090;font-family:'Nunito',sans-serif;font-size:14px;font-weight:700;cursor:pointer;padding:12px 8px;}
 
 /* ─── Mobile debug overlay (?debug=1 or window.APP_DEBUG=true) ─── */
 #dbgOverlay{position:fixed;bottom:0;left:0;right:0;max-height:42vh;background:rgba(10,10,10,.93);z-index:9999;display:flex;flex-direction:column;font-family:'Courier New',monospace;font-size:11px;line-height:1.45;border-top:2px solid rgba(255,110,40,.55);}
@@ -983,6 +990,22 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 <!-- Warm flash overlay -->
 <div id="txFlash"></div>
 
+<!-- ════ SPLIT BOTTOM SHEET ════ -->
+<div class="split-sheet-bg" id="splitSheetBg">
+  <div class="split-sheet">
+    <div class="split-sh-handle"></div>
+    <div class="split-sh-hdr">
+      <div class="split-sh-title" id="splitShTitle"></div>
+      <div class="split-sh-orig-lbl" id="splitShOrigLbl"></div>
+      <div class="split-sh-orig" id="splitShOrig"></div>
+    </div>
+    <div class="split-sh-body" id="splitShBody"></div>
+    <div class="split-sh-foot">
+      <button class="split-sh-confirm" id="splitShConfirm"></button>
+      <button class="split-sh-cancel"  id="splitShCancel"></button>
+    </div>
+  </div>
+</div>
 
 </div><!-- /phone -->
 <script src="parser.js"></script>
@@ -2524,101 +2547,67 @@ function filterMovementCompound(segs, originalTitle) {
   return segs;
 }
 
-function closeSplitPanel(cardEl, panel, confirmed) {
-  const inner = cardEl.querySelector('.card-inner');
-  if (confirmed) {
-    cardEl.classList.add('success-anim');
-    setTimeout(() => {
-      cardEl.classList.remove('success-anim');
-      inner.style.transition = 'opacity 150ms ease';
-      inner.style.opacity = '';
-      cardEl.classList.remove('split-open');
-      panel.remove();
-    }, 500);
-  } else {
-    panel.querySelectorAll('.split-row').forEach(r => r.classList.remove('visible'));
-    panel.querySelector('.split-actions').classList.remove('visible');
-    panel.classList.remove('open');
-    setTimeout(() => {
-      inner.style.transition = 'opacity 180ms ease';
-      inner.style.opacity = '';
-      cardEl.classList.remove('split-open');
-      panel.remove();
-    }, 330);
-  }
-}
-
-function openSplitPanel(cardEl, task) {
+function openSplitSheet(task, cardEl) {
   const suggestions = sanitizeSegments(mockSplit(task.title));
   if (suggestions.length < 2) return;
 
-  // Dismiss the whisper hint permanently — user has discovered the gesture
   localStorage.setItem('family-app-split-seen', '1');
-  const hintEl = cardEl.querySelector('.split-hint-text');
+  const hintEl = cardEl && cardEl.querySelector('.split-hint-text');
   if (hintEl) {
     hintEl.style.transition = 'opacity 280ms ease';
     hintEl.style.opacity = '0';
     setTimeout(() => hintEl.remove(), 290);
   }
 
-  const inner = cardEl.querySelector('.card-inner');
-  inner.style.transition = 'opacity 160ms ease';
-  inner.style.opacity = '0.18';
+  const isHe = AppState.lang === 'he';
+  const bg   = document.getElementById('splitSheetBg');
 
-  const confirmLbl = AppState.lang === 'he' ? 'פצל ✓' : 'Split ✓';
-  const cancelLbl  = AppState.lang === 'he' ? 'בטל'   : 'Cancel';
+  document.getElementById('splitShTitle').textContent   = isHe ? 'פיצול משימה' : 'Split task';
+  document.getElementById('splitShOrigLbl').textContent = isHe ? 'משימה מקורית:' : 'Original task:';
+  document.getElementById('splitShOrig').textContent    = task.title;
 
-  const panel = document.createElement('div');
-  panel.className = 'split-panel';
-  panel.innerHTML =
-    '<div class="split-divider"></div>' +
-    '<div class="split-rows">' +
-      suggestions.map(s => `<div class="split-row">${s}</div>`).join('') +
-    '</div>' +
-    `<div class="split-actions"><button class="split-confirm">${confirmLbl}</button><button class="split-cancel">${cancelLbl}</button></div>`;
+  const body = document.getElementById('splitShBody');
+  body.innerHTML = suggestions.map((s, i) =>
+    `<div><div class="split-sh-row-lbl">${isHe ? 'משימה ' + (i + 1) : 'Task ' + (i + 1)}</div>` +
+    `<div class="split-sh-row">${s}</div></div>`
+  ).join('');
+  body.scrollTop = 0;
 
-  cardEl.classList.add('split-open');
-  cardEl.appendChild(panel);
+  document.getElementById('splitShConfirm').textContent = isHe ? 'פצל ✓' : 'Split ✓';
+  document.getElementById('splitShCancel').textContent  = isHe ? 'בטל'   : 'Cancel';
 
-  // Two rAF frames ensure CSS transition fires after paint
+  bg.classList.add('open');
+
   requestAnimationFrame(() => requestAnimationFrame(() => {
-    panel.classList.add('open');
-    panel.querySelectorAll('.split-row').forEach((row, i) =>
-      setTimeout(() => row.classList.add('visible'), 140 + i * 80)
+    body.querySelectorAll('.split-sh-row').forEach((row, i) =>
+      setTimeout(() => row.classList.add('visible'), 80 + i * 80)
     );
-    setTimeout(
-      () => panel.querySelector('.split-actions').classList.add('visible'),
-      140 + suggestions.length * 80 + 40
-    );
-    // Scroll the full panel into view after the CSS transition completes
-    setTimeout(() => {
-      const scrollEl = cardEl.closest('.t-scroll, .dp-list');
-      if (!scrollEl) return;
-      const panelRect     = panel.getBoundingClientRect();
-      const containerRect = scrollEl.getBoundingClientRect();
-      const overflow = panelRect.bottom - containerRect.bottom + 28;
-      if (overflow > 0) scrollEl.scrollBy({ top: overflow, behavior: 'smooth' });
-    }, 360);
   }));
 
-  panel.querySelector('.split-confirm').addEventListener('click', () => {
-    const idx = AppState.previewTasks.findIndex(t => t === task);
-    if (idx !== -1) {
-      const newTasks = suggestions.map((title, i) => ({
-        ...task,
-        id: i === 0 ? task.id : task.id + '_' + (i + 1),
-        title,
-        timeSource: i === 0 ? task.timeSource : 'suggested',
-      }));
-      AppState.previewTasks.splice(idx, 1, ...newTasks);
+  function doClose(confirmed) {
+    bg.classList.remove('open');
+    document.getElementById('splitShConfirm').onclick = null;
+    document.getElementById('splitShCancel').onclick  = null;
+    bg.onclick = null;
+    if (confirmed) {
+      const idx = AppState.previewTasks.findIndex(t => t === task);
+      if (idx !== -1) {
+        const newTasks = suggestions.map((title, i) => ({
+          ...task,
+          id: i === 0 ? task.id : task.id + '_' + (i + 1),
+          title,
+          timeSource: i === 0 ? task.timeSource : 'suggested',
+        }));
+        AppState.previewTasks.splice(idx, 1, ...newTasks);
+      }
+      AppLog.info('split confirm', suggestions);
+      setTimeout(() => dpRender(false), 360);
     }
-    AppLog.info('split confirm', suggestions);
-    closeSplitPanel(cardEl, panel, true);
-    setTimeout(() => dpRender(false), 510);
-  });
-  panel.querySelector('.split-cancel').addEventListener('click', () =>
-    closeSplitPanel(cardEl, panel, false)
-  );
+  }
+
+  document.getElementById('splitShConfirm').onclick = () => doClose(true);
+  document.getElementById('splitShCancel').onclick  = () => doClose(false);
+  bg.onclick = e => { if (e.target === bg) doClose(false); };
 }
 
 function attachSplitGesture(cardEl, task) {
@@ -2650,7 +2639,6 @@ function attachSplitGesture(cardEl, task) {
   }
 
   cardEl.addEventListener('touchstart', e => {
-    if (cardEl.classList.contains('split-open')) return;
     if (e.target.closest('.card-title,.card-share,.card-bell,.card-time-col')) return;
     // If swipe is open, snap it back and absorb this touch — don't start long press
     const swTr = cardEl.querySelector('.card-swipe-track');
@@ -2669,7 +2657,7 @@ function attachSplitGesture(cardEl, task) {
       const tr = cardEl.querySelector('.card-swipe-track');
       if (tr && tr.style.transform) { tr.style.transition = 'transform .15s ease'; tr.style.transform = ''; }
       if (navigator.vibrate) navigator.vibrate(8);
-      openSplitPanel(cardEl, task);
+      openSplitSheet(task, cardEl);
     }, 420);
   }, { passive: true });
 
@@ -3399,7 +3387,7 @@ function attachSwipeDelete(el, task, screen) {
   }
 
   el.addEventListener('touchstart', e => {
-    if (animating || el.classList.contains('split-open') || el.classList.contains('lp-holding')) return;
+    if (animating || el.classList.contains('lp-holding')) return;
     syncBg(); // re-sync height in case card grew since last render
     startX = e.touches[0].clientX;
     startY = e.touches[0].clientY;
