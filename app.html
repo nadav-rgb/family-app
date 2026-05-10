@@ -499,15 +499,14 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 .t-bell.off{opacity:.3;}
 .t-bell:active{transform:scale(.82);}
 
-/* ═══ LONG-TITLE POPUP ═══ */
+/* ═══ LONG-TITLE — truncate + inline tooltip ═══ */
 .long-title{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .title-exp{border:none;background:none;font-size:11px;font-weight:900;color:#e07c3a;cursor:pointer;padding:0 0 2px;letter-spacing:.15em;display:block;font-family:'Nunito',sans-serif;line-height:1.2;margin-top:2px;}
-.title-popup-bg{position:absolute;inset:0;z-index:9500;background:rgba(28,17,10,.52);display:flex;align-items:center;justify-content:center;padding:24px;box-sizing:border-box;opacity:0;transition:opacity .2s;pointer-events:none;}
-.title-popup-bg.open{opacity:1;pointer-events:auto;}
-.title-popup{background:white;border-radius:24px;padding:26px 22px 20px;width:100%;max-width:340px;box-shadow:0 20px 60px rgba(0,0,0,.28);transform:translateY(16px) scale(.96);transition:transform .25s cubic-bezier(.34,1.2,.64,1);}
-.title-popup-bg.open .title-popup{transform:none;}
-.title-popup-text{font-family:'Rubik',sans-serif;font-size:16px;font-weight:700;color:#1c110a;line-height:1.6;direction:rtl;text-align:right;word-break:break-word;margin-bottom:20px;}
-.title-popup-close{width:100%;padding:14px;border:none;border-radius:16px;background:linear-gradient(135deg,#ff9a4e,#ff5e14);color:white;font-family:'Nunito',sans-serif;font-size:15px;font-weight:900;cursor:pointer;box-shadow:0 4px 14px rgba(255,94,20,.28);}
+.title-tip{position:absolute;z-index:9500;background:white;border-radius:14px;padding:11px 14px;max-width:260px;min-width:120px;box-shadow:0 12px 36px rgba(28,17,10,.22),0 2px 8px rgba(28,17,10,.08);font-family:'Rubik',sans-serif;font-size:13.5px;font-weight:700;color:#1c110a;line-height:1.5;direction:rtl;text-align:right;word-break:break-word;opacity:0;transform:translateY(6px) scale(.96);transition:opacity .18s ease,transform .22s cubic-bezier(.34,1.4,.64,1);pointer-events:none;}
+.title-tip.show{opacity:1;transform:none;pointer-events:auto;}
+.title-tip-arrow{position:absolute;width:0;height:0;}
+.title-tip.above .title-tip-arrow{bottom:-7px;border-left:7px solid transparent;border-right:7px solid transparent;border-top:7px solid white;}
+.title-tip.below .title-tip-arrow{top:-7px;border-left:7px solid transparent;border-right:7px solid transparent;border-bottom:7px solid white;}
 
 /* ── Card share footer ── */
 .card-share{padding:10px 14px 12px 18px;display:flex;align-items:center;gap:8px;cursor:pointer;border-top:2px solid #f0d8c8;background:#fdf3ec;transition:background .13s;}
@@ -731,14 +730,6 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 </head>
 <body>
 <div class="phone">
-
-<!-- ════ TITLE EXPAND POPUP ════ -->
-<div class="title-popup-bg" id="titlePopupBg" onclick="closeTitlePopup()">
-  <div class="title-popup" onclick="event.stopPropagation()">
-    <div class="title-popup-text" id="titlePopupText"></div>
-    <button class="title-popup-close" onclick="closeTitlePopup()">סגור</button>
-  </div>
-</div>
 
 <!-- ════ SCREEN 0: LANGUAGE PICKER ════ -->
 <div class="app-screen" id="s-lang">
@@ -1980,12 +1971,57 @@ document.getElementById('drawerOpts').addEventListener('click', e => {
 // ─── Share drawer ─────────────────────────────────────────────────
 let shareTask = null, shareSaveCb = null;
 
-function openTitlePopup(text) {
-  document.getElementById('titlePopupText').textContent = text;
-  document.getElementById('titlePopupBg').classList.add('open');
+// Long-title inline tooltip — replaces modal popup. Toggles on repeat trigger;
+// dismisses on outside tap, scroll inside list, or 6s timeout.
+let _titleTip = null, _titleTipAnchor = null, _titleTipTimer = null;
+let _titleTipDismissCl = null, _titleTipDismissScroll = null;
+
+function showTitleTip(text, anchorEl) {
+  if (_titleTip && _titleTipAnchor === anchorEl) { hideTitleTip(); return; }
+  hideTitleTip();
+  const phone = document.querySelector('.phone');
+  if (!phone) return;
+  const tip = document.createElement('div');
+  tip.className = 'title-tip';
+  tip.textContent = text;
+  const arrow = document.createElement('div');
+  arrow.className = 'title-tip-arrow';
+  tip.appendChild(arrow);
+  phone.appendChild(tip);
+  const aR = anchorEl.getBoundingClientRect();
+  const pR = phone.getBoundingClientRect();
+  const tR = tip.getBoundingClientRect();
+  const m = 12;
+  const above = (aR.top - pR.top) >= (tR.height + 14) || (aR.top - pR.top) >= (pR.bottom - aR.bottom);
+  const aCenterX = aR.left + aR.width / 2;
+  const tipLeft = Math.max(pR.left + m, Math.min(aCenterX - tR.width / 2, pR.right - tR.width - m));
+  tip.style.left = (tipLeft - pR.left) + 'px';
+  if (above) { tip.classList.add('above'); tip.style.top = (aR.top - pR.top - tR.height - 9) + 'px'; }
+  else       { tip.classList.add('below'); tip.style.top = (aR.bottom - pR.top + 9) + 'px'; }
+  const arrowLeft = aCenterX - tipLeft;
+  arrow.style.left = Math.max(14, Math.min(arrowLeft, tR.width - 14)) - 7 + 'px';
+  _titleTip = tip;
+  _titleTipAnchor = anchorEl;
+  requestAnimationFrame(() => tip.classList.add('show'));
+  _titleTipTimer = setTimeout(hideTitleTip, 6000);
+  _titleTipDismissCl = (e) => { if (!tip.contains(e.target) && !anchorEl.contains(e.target)) hideTitleTip(); };
+  setTimeout(() => document.addEventListener('click', _titleTipDismissCl), 50);
+  _titleTipDismissScroll = () => hideTitleTip();
+  document.querySelectorAll('.dp-list, .t-scroll').forEach(el => el.addEventListener('scroll', _titleTipDismissScroll, { passive: true }));
 }
-function closeTitlePopup() {
-  document.getElementById('titlePopupBg').classList.remove('open');
+
+function hideTitleTip() {
+  if (!_titleTip) return;
+  const tip = _titleTip;
+  _titleTip = null; _titleTipAnchor = null;
+  tip.classList.remove('show');
+  setTimeout(() => tip.remove(), 240);
+  if (_titleTipTimer) { clearTimeout(_titleTipTimer); _titleTipTimer = null; }
+  if (_titleTipDismissCl) { document.removeEventListener('click', _titleTipDismissCl); _titleTipDismissCl = null; }
+  if (_titleTipDismissScroll) {
+    document.querySelectorAll('.dp-list, .t-scroll').forEach(el => el.removeEventListener('scroll', _titleTipDismissScroll));
+    _titleTipDismissScroll = null;
+  }
 }
 
 function openShareDrawer(task, onSave) {
@@ -2741,7 +2777,7 @@ function _buildCardEl(task) {
     const expBtn = document.createElement('button');
     expBtn.className = 'title-exp';
     expBtn.textContent = '···';
-    expBtn.addEventListener('click', e => { e.stopPropagation(); openTitlePopup(task.title); });
+    expBtn.addEventListener('click', e => { e.stopPropagation(); showTitleTip(task.title, expBtn); });
     titleEl.after(expBtn);
   }
   const shareFooter = document.createElement('div');
@@ -3252,7 +3288,7 @@ function renderToday() {
       const expBtn = document.createElement('button');
       expBtn.className = 'title-exp';
       expBtn.textContent = '···';
-      expBtn.addEventListener('click', e => { e.stopPropagation(); openTitlePopup(t.title); });
+      expBtn.addEventListener('click', e => { e.stopPropagation(); showTitleTip(t.title, expBtn); });
       ttitle.after(expBtn);
     }
     el.querySelector('.t-bell').addEventListener('click', e => {
