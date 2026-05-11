@@ -183,8 +183,25 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 @keyframes orgPulse{0%,100%{opacity:1;}50%{opacity:.45;}}
 .wdots{display:flex;gap:5px;align-items:center;height:22px;opacity:0;transition:opacity .3s;}
 .wdots.on{opacity:1;}
-.wd{width:4px;border-radius:4px;background:#e07c3a;}
+.wd{width:4px;border-radius:4px;background:#e07c3a;transform-origin:center;transition:transform .18s cubic-bezier(.34,1.2,.64,1);}
 .wd1{height:8px;}.wd2{height:14px;}.wd3{height:20px;}.wd4{height:14px;}.wd5{height:8px;}
+/* Voice-activity burst — bars briefly scale on incoming transcript chars,
+   giving live feedback that the engine is hearing the user. */
+@keyframes wdBurst{0%{transform:scaleY(1);}45%{transform:scaleY(var(--burst-y,1.7));}100%{transform:scaleY(1);}}
+.wd.burst{animation:wdBurst .42s cubic-bezier(.4,0,.2,1);}
+
+/* ── Mic permission recovery panel — shown after a permission-denied error.
+      Anchored above the bottom nav, centered, with a "try again" button that
+      re-requests via getUserMedia (which re-prompts when state==='prompt'). */
+.mic-perm-help{position:absolute;bottom:100px;left:50%;transform:translateX(-50%) translateY(16px);width:calc(100% - 36px);max-width:340px;background:#fffaf5;border-radius:22px;padding:18px 20px 14px;box-shadow:0 16px 44px rgba(80,40,10,.20),0 2px 8px rgba(80,40,10,.06);opacity:0;pointer-events:none;transition:opacity .26s ease,transform .3s cubic-bezier(.34,1.2,.64,1);z-index:500;text-align:center;}
+.mic-perm-help.show{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:auto;}
+.mph-icon{font-size:30px;line-height:1;margin-bottom:6px;}
+.mph-title{font-weight:900;color:#2d2018;font-size:14.5px;margin-bottom:4px;}
+.mph-hint{font-size:12.5px;color:#9e8878;line-height:1.5;margin-bottom:12px;padding:0 4px;}
+.mph-btn{display:inline-block;padding:9px 24px;border-radius:999px;background:linear-gradient(135deg,#ff9a4e,#ff5e14);color:white;font-weight:900;font-size:13.5px;font-family:'Nunito',sans-serif;border:none;cursor:pointer;box-shadow:0 5px 14px rgba(255,94,20,.28);transition:transform .14s,box-shadow .14s;}
+.mph-btn:active{transform:scale(.96);box-shadow:0 2px 8px rgba(255,94,20,.18);}
+.mph-close{position:absolute;top:9px;left:11px;background:none;border:none;color:#9e8878;font-size:18px;cursor:pointer;padding:4px 8px;line-height:1;}
+.mph-close:active{color:#2d2018;}
 @keyframes wdPulse{0%,100%{transform:scaleY(1);}50%{transform:scaleY(.22);}}
 .wdots.on .wd1{animation:wdPulse .9s ease-in-out 0s infinite;}
 .wdots.on .wd2{animation:wdPulse .9s ease-in-out .12s infinite;}
@@ -1643,6 +1660,38 @@ function _beepStop()  { _tone(880, 0, 0.09, 0.2); _tone(580, 0.1, 0.14, 0.16); }
 const SpeechAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
 let recognition = null;
 
+// Platform detection — iOS Safari has its own quirks (no real continuous
+// mode, mic locks briefly between sessions). We use this to tune the
+// onend restart delay and to keep iOS-specific knobs in one place.
+const _isIOS       = /iPad|iPhone|iPod/.test(navigator.platform) ||
+                     (navigator.userAgent.includes('Mac') && 'ontouchend' in document);
+const _isIOSSafari = _isIOS && !/CriOS|FxiOS|EdgiOS/.test(navigator.userAgent);
+const _restartDelay = _isIOSSafari ? 50 : 200;
+
+// _signalVoiceActivity — burst the wdots when new transcript chars arrive,
+// so the user sees the engine actually reacting to their voice. Cheap, no
+// AudioContext / getUserMedia stream needed, and works alongside the
+// existing keepAlive without competing for the mic.
+let _wdBurstTimer = null;
+function _signalVoiceActivity() {
+  if (!wdots || !wdots.classList.contains('on')) return;
+  const bars = wdots.querySelectorAll('.wd');
+  bars.forEach((b) => {
+    b.classList.remove('burst');
+    // Random burst factor 1.4–2.0 per bar so it doesn't look mechanical
+    const y = (1.4 + Math.random() * 0.6).toFixed(2);
+    b.style.setProperty('--burst-y', y);
+    // Force reflow before re-adding the class — otherwise the animation
+    // won't restart for back-to-back bursts.
+    void b.offsetWidth;
+    b.classList.add('burst');
+  });
+  clearTimeout(_wdBurstTimer);
+  _wdBurstTimer = setTimeout(() => {
+    bars.forEach((b) => b.classList.remove('burst'));
+  }, 460);
+}
+
 // _recStart — wrap recognition.start() with proper error handling.
 // Returns true on success (incl. "already started" which is non-fatal),
 // false on real failure. Callers decide how to react.
@@ -1699,10 +1748,63 @@ function _onRecFatal(message) {
   }, 4000);
 }
 
-// _showMicPermissionHelp — Phase 2 placeholder. In Phase 2 this will show
-// a clear recovery panel ("Open Settings → Mic"). For now it's a no-op so
-// onerror can call it unconditionally without breaking anything.
-function _showMicPermissionHelp() { /* Phase 2 — to be filled in */ }
+// _showMicPermissionHelp — shown after a fatal permission denial. Renders
+// a small panel anchored above the bottom nav with a "Try again" button.
+// The retry calls navigator.mediaDevices.getUserMedia({audio:true}); if the
+// permission state is 'prompt', the browser re-prompts the user. If the
+// permission was permanently denied, the catch path swaps the hint to
+// guide the user to browser settings.
+function _showMicPermissionHelp() {
+  if (document.getElementById('micPermHelp')) return; // don't double-show
+  const panel = document.createElement('div');
+  panel.id = 'micPermHelp';
+  panel.className = 'mic-perm-help';
+  panel.innerHTML = `
+    <button class="mph-close" id="mphClose" aria-label="close">✕</button>
+    <div class="mph-icon">🎤</div>
+    <div class="mph-title">${t('voice_mic_denied')}</div>
+    <div class="mph-hint" id="mphHint">${t('voice_mic_denied_hint')}</div>
+    <button class="mph-btn" id="mphRetry">${t('voice_retry')}</button>
+  `;
+  // Append to the active phone shell so positioning is relative to it
+  const shell = document.querySelector('.phone') || document.body;
+  shell.appendChild(panel);
+  requestAnimationFrame(() => panel.classList.add('show'));
+
+  panel.querySelector('#mphClose').addEventListener('click', _closeMicPermHelp);
+  panel.querySelector('#mphRetry').addEventListener('click', async () => {
+    const hint = panel.querySelector('#mphHint');
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      // Very old browser — can't re-prompt programmatically. Just close.
+      _closeMicPermHelp();
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      // We just wanted the permission — stop the tracks immediately so the
+      // SpeechRecognition engine can claim the mic when the user taps again.
+      stream.getTracks().forEach(tr => tr.stop());
+      _closeMicPermHelp();
+      if (ltxt) {
+        ltxt.textContent = t('voice_tap');
+        ltxt.style.color = '';
+      }
+    } catch (err) {
+      AppLog.warn('mic re-request failed', err.name || '', err.message || '');
+      // Permanently denied — guide the user toward browser settings.
+      if (hint) hint.textContent = t('voice_mic_denied_hint');
+      const retryBtn = panel.querySelector('#mphRetry');
+      if (retryBtn) retryBtn.style.display = 'none';
+    }
+  });
+}
+
+function _closeMicPermHelp() {
+  const p = document.getElementById('micPermHelp');
+  if (!p) return;
+  p.classList.remove('show');
+  setTimeout(() => p.remove(), 320);
+}
 
 let vTranscript    = '';
 let vCarryOver     = '';  // confirmed text from previous recognition sessions
@@ -1730,6 +1832,10 @@ function _appendAnimChars(parent, str) {
 
 function showBubble(text) {
   const incoming = text || '';
+  // Live voice-activity feedback: trigger a wdots burst whenever incoming
+  // grows beyond what's already rendered. Cheap, gives the user a clear
+  // "I hear you" signal in addition to the bubble text itself.
+  if (incoming.length > _sbRendered.length) _signalVoiceActivity();
   // Starting a fresh recording: _sbRendered was reset to '' by hideBubble,
   // but old spans may still be in sbText (kept to preserve bubble height).
   // Clear them now, before the bubble becomes visible, so no stale text shows.
@@ -1908,7 +2014,7 @@ if (SpeechAPI) {
         AppLog.warn('onend restart', 'recognition.start() failed — fatal');
         _onRecFatal(t('voice_err_generic'));
       }
-    }, 200);
+    }, _restartDelay);
   };
 }
 
@@ -2594,6 +2700,9 @@ zone.addEventListener('click', () => {
 });
 
 function vStart() {
+  // Close any open mic-permission panel — if the user got here, they're
+  // re-trying after a denial; the panel has done its job.
+  _closeMicPermHelp();
   vTranscript              = '';
   vCarryOver               = '';
   vSessionFinal            = '';
