@@ -1693,15 +1693,13 @@ function aiParsedToTask(t, idx) {
     timeSource:            t.time ? 'explicit' : 'suggested',
     date:                  dateStr,
     recurrence:            { type: 'none' },
-    // If vOrganize's agenda-merge pass produced a summary at the
-    // pre-parse level, copy it onto the task here so the card shows
-    // the clean mainTitle and the tooltip shows the bullets — no need
-    // for the per-card summarize pass to run again.
+    // Agenda-summary fields — both gated by AGENDA_SUMMARY_ENABLED.
+    // When the flag is off (current default), _subItemsFromAgenda will
+    // never be set by vOrganize and the per-card pass won't run, so
+    // these are no-ops. Kept in place so flipping the flag restores
+    // the feature with no further code changes.
     subItems:              t._subItemsFromAgenda || undefined,
-    // _isNew marks this task as a candidate for the per-card
-    // summarize pass (see summarizeAgendaTitle). When the agenda-
-    // merge already produced subItems, we skip the per-card pass.
-    _isNew:                !t._subItemsFromAgenda,
+    _isNew:                AGENDA_SUMMARY_ENABLED && !t._subItemsFromAgenda,
   };
 }
 
@@ -2575,7 +2573,16 @@ function isAgendaCandidate(title) {
 // as categorizeShoppingTitle: only runs on tasks freshly created in this
 // session (marked with _isNew in aiParsedToTask), only runs once, never
 // fights the shopping categorizer.
+// Feature flag — gates the agenda summarization (long-task → mainTitle
+// + sub-items). Disabled per user request: the prompt-tuning loop on
+// the AI side was producing inconsistent results, and we're focusing
+// on UX polish for the launch-ready state instead. The code and the
+// /api/summarize-task endpoint stay in the repo so we can flip this
+// back on later (e.g. after the Capacitor port or a prompt redesign).
+const AGENDA_SUMMARY_ENABLED = false;
+
 async function summarizeAgendaTitle(task) {
+  if (!AGENDA_SUMMARY_ENABLED) return;
   if (!task)               return;
   if (!task._isNew)        return;            // not a fresh task → don't retroactively summarize
   if (task.subItems)       return;            // already summarized
@@ -3298,16 +3305,13 @@ async function vOrganize() {
   AppLog.groupEnd();
 
   // ── Agenda-merge pass ─────────────────────────────────────────────
-  // If the parser split the transcript into multiple tasks AND the
-  // original is long with multiple commas, the user may actually have
-  // dictated a single multi-part task (meeting agenda, multi-step
-  // chore). Ask /api/summarize-task on the FULL transcript:
-  //   - skip → keep parser's split (truly separate tasks)
-  //   - mainTitle + items → override parser's split with ONE task
-  //     carrying the sub-items, so the card shows a clean short title
-  //     and the ··· tooltip drills into the bullets.
-  // Skips for shopping (categorize-shopping handles those).
-  if (spokenText && result.tasks && result.tasks.length >= 2
+  // Gated by AGENDA_SUMMARY_ENABLED (currently false — see flag def).
+  // When enabled: if the parser split the transcript into multiple tasks
+  // AND the original is long with multiple commas, ask /api/summarize-task
+  // whether it's actually one multi-part task (meeting agenda etc.) and
+  // override the split. While disabled, parser output is used verbatim.
+  if (AGENDA_SUMMARY_ENABLED
+      && spokenText && result.tasks && result.tasks.length >= 2
       && spokenText.length >= 30 && !isShoppingListTitle(spokenText)) {
     const commaCount   = (spokenText.match(/,|،/g) || []).length;
     const wConnectors  = (spokenText.match(/\s+ו[א-ת]/g) || []).length;
@@ -5504,7 +5508,7 @@ if ('serviceWorker' in navigator) {
 // device. If you delete a card and the console doesn't show
 // "[delete] surgical refresh…", you're on a stale cached HTML and need
 // to hard-reload (or the SW will catch up on next visit).
-console.log('%c[Family App] build: summarize-prompt-fix-2026-05-11', 'background:#ff5e14;color:#fff;padding:3px 8px;border-radius:6px;font-weight:bold');
+console.log('%c[Family App] build: agenda-disabled-2026-05-11', 'background:#ff5e14;color:#fff;padding:3px 8px;border-radius:6px;font-weight:bold');
 loadState();
 updateDateBadge();
 // Run the reminder check ONCE immediately after state loads so opening
