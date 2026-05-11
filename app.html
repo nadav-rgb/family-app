@@ -486,11 +486,18 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 .t-task{overflow:hidden;position:relative;}
 .task-card{overflow:hidden;}
 .t-swipe-track,.card-swipe-track{position:relative;z-index:1;background:white;will-change:transform;}
-/* Stabilize scroll during card delete — prevents browser scroll-anchoring jumps */
-.task-card,.t-task,.list-shimmer{overflow-anchor:none;}
-/* Suppress cardSettle re-animation during a delete-induced rerender so the
-   remaining cards don't visibly "twitch" right after a card is removed. */
-.deleting-rerender .task-card,.deleting-rerender .t-task{animation:none!important;}
+/* Disable browser scroll-anchoring on card lists AND their scroll containers —
+   prevents the list jumping up when DOM is rebuilt after delete. */
+.dp-list,.t-scroll,.t-tasks,.task-card,.t-task,.list-shimmer{overflow-anchor:none;}
+/* Suppress every settle/entry animation on rebuilt cards so the list doesn't
+   visibly "twitch" right after a card is removed. Higher specificity than
+   .t-task.entering / .task-card.entering / .task-card.settling so !important
+   reliably wins. */
+.deleting-rerender .task-card,
+.deleting-rerender .task-card.entering,
+.deleting-rerender .task-card.settling,
+.deleting-rerender .t-task,
+.deleting-rerender .t-task.entering{animation:none!important;-webkit-animation:none!important;transform:none!important;opacity:1!important;}
 .t-swipe-bg,.card-swipe-bg{position:absolute;inset:0;background:#ff3b30;border-radius:20px;}
 .swipe-del-lbl{position:absolute;right:22px;top:50%;transform:translateY(-50%);font-size:13px;font-weight:800;color:white;letter-spacing:.2px;pointer-events:none;}
 
@@ -3692,18 +3699,27 @@ function attachSwipeDelete(el, task, screen) {
       el.style.opacity       = '0';
     }, 240);
     setTimeout(() => {
-      // Stabilize scroll across the doDelete-triggered rerender, and suppress
-      // the new cards' settle animation so the list doesn't visibly "twitch".
+      // Stabilize scroll across doDelete's rerender. Add the suppression class
+      // to BOTH the scroll container and the immediate list parent — needed
+      // because renderToday wipes #tTasks (inner list), not .t-scroll.
       const scrollContainer = el.closest('.dp-list, .t-scroll');
+      const innerList       = el.parentElement;
       const savedScrollTop  = scrollContainer ? scrollContainer.scrollTop : 0;
       if (scrollContainer) scrollContainer.classList.add('deleting-rerender');
+      if (innerList && innerList !== scrollContainer) innerList.classList.add('deleting-rerender');
       el.remove();
       doDelete(task, screen);
       if (scrollContainer) {
+        // Sync restore + re-affirm in next rAFs in case browser layout/anchor
+        // adjustment fires after our sync write.
         scrollContainer.scrollTop = savedScrollTop;
-        requestAnimationFrame(() => requestAnimationFrame(() =>
-          scrollContainer.classList.remove('deleting-rerender')
-        ));
+        requestAnimationFrame(() => {
+          scrollContainer.scrollTop = savedScrollTop;
+          requestAnimationFrame(() => {
+            scrollContainer.classList.remove('deleting-rerender');
+            if (innerList) innerList.classList.remove('deleting-rerender');
+          });
+        });
       }
     }, 590);
   }
