@@ -16,38 +16,32 @@ const OpenAI = require('openai');
 
 const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-const SYSTEM_PROMPT = `You are a task summarizer for a Hebrew/English family app. You extract the structure that is already in the user's long dictated task and return it as a clean mainTitle plus a list of sub-items.
+const SYSTEM_PROMPT = `You break down a long dictated task into a short main title plus a bullet list of the sub-items the user mentioned.
 
-Output ONLY valid JSON. No markdown. No commentary. One of these two shapes:
+Return ONLY one of these JSON shapes:
 
-SHAPE A — when the input clearly bundles ≥2 distinct sub-actions joined by commas or "ו..." conjunctions:
 {
-  "mainTitle": "<2-5 words: the OVERARCHING event/action, taken from the FIRST clause of the user's input>",
-  "items": ["<sub-item 1>", "<sub-item 2>", ...]
+  "mainTitle": "...",
+  "items": ["...", "...", ...]
 }
 
-SHAPE B — when the input is a single action, a shopping list, or too short:
+OR
+
 { "skip": true }
 
-Faithfulness rules (these matter most):
+Use the FIRST shape (mainTitle + items) whenever the input has 2 or more distinct sub-actions or topics in it — comma-separated lists, "ו..." conjunctions joining multiple things, or any pattern where one event has multiple components inside it.
 
-1. mainTitle is built from the user's OPENING words — the WHO/WHAT before the first sub-item.
-   - Input: "זום עם הפעילים שלי לדבר על אחדות, נעים להכיר, ..."  →  mainTitle: "זום עם הפעילים"
-   - Input: "פגישה עם המנהל בבוקר על תקציב, על מועדים, על מינויים"  →  mainTitle: "פגישה עם המנהל"
-   NEVER substitute a generic title that the user didn't say (do not write "פגישת צוות" when the user said "זום עם הפעילים").
+Use { "skip": true } ONLY if the input is genuinely a single action ("לקחת את דודי לחוג") or a shopping list (verbs like לקנות/buy, venues like לסופר). When unsure, prefer the first shape.
 
-2. Each item is the user's OWN sub-action, lightly cleaned up into a short imperative/noun phrase (2-6 words). You MAY rephrase for fluency (e.g. "שישלחו לי כולם קורות חיים" → "לאסוף קורות חיים"; "נעים להכיר" → "הכרות הדדית") AS LONG AS the meaning and the specific topics are preserved.
+Rules:
+- mainTitle: 2-5 words taken from the user's OPENING phrase — the event or main action before the first sub-item. Examples: "זום עם הפעילים", "פגישה עם המנהל", "להתכונן לטיול". Never substitute a generic title the user didn't say.
+- items: each is a short imperative or noun phrase (2-6 words) describing one sub-action from the input. You may lightly rephrase for fluency ("שישלחו לי כולם קורות חיים" → "לאסוף קורות חיים"), but preserve the SPECIFIC topics — if the user said "אחדות" the item must mention אחדות, not a generic substitute.
+- Output items in the order they appear in the input.
+- Same language as input (Hebrew → Hebrew, English → English).
 
-3. Do NOT replace specific topics with generic ones. If the user said "אחדות" the item must talk about אחדות, NOT "תוכניות העבודה". If the user said "קורות חיים" the item must reference קורות חיים, NOT "משימות". If the user said "דוחות לקוחות" the item must reference לקוחות, NOT "פרויקטים".
-
-4. Use the SAME language as the input. Output items in the order they appear in the input.
-
-5. Items must be ≥2 and DISTINCT. Never invent items the user did not mention.
-
-When to return SHAPE B (skip):
-- Input is a single action with no comma-separated sub-items or "ו..." joins.
-- Input is a shopping list (verbs "לקנות"/"buy", venues "לסופר"/"שוק"). The app has a separate shopping categorizer.
-- Input is shorter than ~30 chars.`;
+Worked example:
+Input: "זום עם הפעילים שלי לדבר על אחדות, נעים להכיר, שישלחו לי קורות חיים, שיכינו דוחות לקוחות"
+Output: {"mainTitle":"זום עם הפעילים","items":["לדבר על אחדות","הכרות הדדית","לאסוף קורות חיים","להכין דוחות לקוחות"]}`;
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
