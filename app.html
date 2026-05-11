@@ -1676,11 +1676,30 @@ const _restartDelay = _isIOSSafari ? 50 : 200;
 // so the user sees the engine actually reacting to their voice. Cheap, no
 // AudioContext / getUserMedia stream needed, and works alongside the
 // existing keepAlive without competing for the mic.
-let _wdBurstTimer = null;
+//
+// Tuning notes: Chrome's interimResults stream is extremely chatty — even
+// faint ambient noise (a fan, distant tapping) makes the engine emit
+// interim hypotheses like "א" → "אה" → "" → "אם" → "". Single-char growth
+// on each tick triggered bursts perpetually and the bars looked alive
+// even with no real speech. We now require a meaningful growth threshold
+// AND a hard throttle, so bursts only fire on real word-level activity.
+const _BURST_MIN_GROWTH = 3;     // chars added since last burst
+const _BURST_MIN_INTERVAL = 220; // ms between bursts
+let _wdBurstTimer  = null;
 let _lastTranscriptAt = 0;
-function _signalVoiceActivity() {
+let _lastBurstAt   = 0;
+let _lastBurstLen  = 0;
+function _signalVoiceActivity(currentLen) {
   _lastTranscriptAt = Date.now();
   if (!wdots || !wdots.classList.contains('on')) return;
+  // Filter out interim flicker: must grow by at least _BURST_MIN_GROWTH chars
+  // AND respect the throttle interval.
+  if (typeof currentLen === 'number') {
+    if (currentLen - _lastBurstLen < _BURST_MIN_GROWTH) return;
+  }
+  if (Date.now() - _lastBurstAt < _BURST_MIN_INTERVAL) return;
+  _lastBurstAt  = Date.now();
+  if (typeof currentLen === 'number') _lastBurstLen = currentLen;
   const bars = wdots.querySelectorAll('.wd');
   bars.forEach((b) => {
     b.classList.remove('burst');
@@ -1902,10 +1921,10 @@ function _appendAnimChars(parent, str) {
 
 function showBubble(text) {
   const incoming = text || '';
-  // Live voice-activity feedback: trigger a wdots burst whenever incoming
-  // grows beyond what's already rendered. Cheap, gives the user a clear
-  // "I hear you" signal in addition to the bubble text itself.
-  if (incoming.length > _sbRendered.length) _signalVoiceActivity();
+  // Live voice-activity feedback: ask _signalVoiceActivity to consider a
+  // burst. It applies its own growth threshold + throttle so interim
+  // flicker doesn't produce a constantly-bursting UI.
+  if (incoming.length > _sbRendered.length) _signalVoiceActivity(incoming.length);
   // Starting a fresh recording: _sbRendered was reset to '' by hideBubble,
   // but old spans may still be in sbText (kept to preserve bubble height).
   // Clear them now, before the bubble becomes visible, so no stale text shows.
@@ -2073,16 +2092,21 @@ if (SpeechAPI) {
 
   recognition.onend = () => {
     if (!vListening) return;
-    _silentPing(); // claim audio session immediately — suppresses Chrome's session-end sound
-    // Session ended — carry full transcript, reset per-session state
+    // NOTE: previously called _silentPing() here and again right before
+    // restart, on the theory that a 256-sample empty buffer would claim
+    // the audio session and suppress Chrome's session-end "thunk". In
+    // practice, rapidly starting/stopping AudioBufferSourceNodes on every
+    // restart produces audible click artifacts on some systems — exactly
+    // the periodic "every two seconds" sound users complained about.
+    // The looping _keepAlive buffer (already running throughout the
+    // session) is sufficient to maintain audio ownership without clicks.
     vCarryOver    = vTranscript;
     vSessionFinal = '';
-    _freshSession = !!vCarryOver; // skip cross-session repeats in next onresult
-    AppLog.info('debounce restart', `in 200ms, carryOver="${vCarryOver}"`);
+    _freshSession = !!vCarryOver;
+    AppLog.info('debounce restart', `in ${_restartDelay}ms, carryOver="${vCarryOver}"`);
     clearTimeout(_restartTimer);
     _restartTimer = setTimeout(() => {
       if (!vListening) return;
-      _silentPing();
       if (!_recStart()) {
         AppLog.warn('onend restart', 'recognition.start() failed — fatal');
         _onRecFatal(t('voice_err_generic'));
@@ -2782,6 +2806,8 @@ function vStart() {
   _freshSession            = false;
   _lastAcceptedFinal       = '';
   _lastProcessedTranscript = '';
+  _lastBurstLen            = 0;   // fresh threshold reference per session
+  _lastBurstAt             = 0;
   _beepStart();
   _startKeepAlive();
   vListening    = true;
@@ -4527,6 +4553,8 @@ function _setAtdRecording(isRec) {
 
 function _atdStartRec() {
   if (!addMode) return;
+  _lastBurstLen = 0;   // fresh threshold reference per session
+  _lastBurstAt  = 0;
   _beepStart();
   _startKeepAlive();
   vListening = true;
