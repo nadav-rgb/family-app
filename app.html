@@ -616,6 +616,18 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 .title-tip.structured .tip-subtitle{font-size:10.5px;font-weight:600;color:#a08070;line-height:1.35;}
 .title-tip.structured .tip-action-pill{display:inline-block;margin:10px 18px 0;padding:5px 12px;background:linear-gradient(135deg,#ffefd9,#ffe1c2);color:#b85416;font-size:11.5px;font-weight:800;border-radius:14px;letter-spacing:.2px;align-self:flex-start;}
 .title-tip.structured .tip-cats{padding:10px 14px 16px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;scrollbar-width:thin;-webkit-overflow-scrolling:touch;}
+
+/* ── Agenda-style tooltip (task with sub-items: meeting agenda, multi-step
+      chore, etc.). Numbered rows with staggered entrance — quieter than
+      the shopping tooltip since there's only ONE list, not categorized. */
+.title-tip.structured.agenda .tip-header-icon{background:linear-gradient(135deg,#ffe1bf,#ffc995);color:#a8470b;}
+.title-tip.structured .tip-agenda-list{padding:10px 14px 16px;overflow-y:auto;display:flex;flex-direction:column;gap:7px;scrollbar-width:thin;-webkit-overflow-scrolling:touch;max-height:60vh;}
+.title-tip.structured .tip-agenda-list::-webkit-scrollbar{width:6px;}
+.title-tip.structured .tip-agenda-list::-webkit-scrollbar-thumb{background:rgba(180,100,50,.22);border-radius:3px;}
+@keyframes tipAgendaRowIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+.tip-agenda-row{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:linear-gradient(135deg,#fff6ec,#fff2e3);border-radius:13px;border:1px solid rgba(224,180,140,.32);animation:tipAgendaRowIn .32s cubic-bezier(.34,1.2,.64,1) both;}
+.tip-agenda-bullet{flex-shrink:0;min-width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#ff9a4e,#ff5e14);color:white;font-weight:900;font-size:11.5px;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(255,94,20,.28);}
+.tip-agenda-text{flex:1;font-size:13.5px;font-weight:700;color:#2d2018;line-height:1.45;word-break:break-word;}
 .title-tip.structured .tip-cats::-webkit-scrollbar{width:6px;}
 .title-tip.structured .tip-cats::-webkit-scrollbar-thumb{background:rgba(180,100,50,.22);border-radius:3px;}
 .title-tip.structured .tip-cat-card{background:#fff7ef;border-radius:14px;padding:10px 12px 11px;box-shadow:0 1px 3px rgba(80,40,10,.04),inset 0 0 0 1px rgba(224,180,140,.14);opacity:0;transform:translateY(6px);animation:tipCatIn .32s cubic-bezier(.34,1.3,.64,1) both;transition:transform .14s ease;}
@@ -1681,6 +1693,13 @@ function aiParsedToTask(t, idx) {
     timeSource:            t.time ? 'explicit' : 'suggested',
     date:                  dateStr,
     recurrence:            { type: 'none' },
+    // _isNew marks this task as a candidate for the new
+    // "agenda-style summarization" pass (see summarizeAgendaTitle).
+    // It's deleted from the task object as soon as the summary attempt
+    // finishes (success, skip, or failure), so on the next page load
+    // tasks already loaded from localStorage don't get re-summarized.
+    // Existing pre-feature tasks lack this flag entirely → skipped.
+    _isNew:                true,
   };
 }
 
@@ -2511,6 +2530,12 @@ function isShoppingListTitle(title) {
 // Async-categorize a task title via /api/categorize-shopping. Idempotent + dedupe.
 // On success, sets task.shoppingList = { action, categories } and persists state.
 async function categorizeShoppingTitle(task) {
+  // Entry guards — restored from the original implementation (they were
+  // collateral damage in an earlier shop-debug log cleanup that used too
+  // broad a regex). Without these, the function reruns on every render,
+  // wastes API calls, and can overwrite an existing shoppingList.
+  if (!task || task.shoppingList || task._categorizing) return;
+  if (!isShoppingListTitle(task.title)) return;
   task._categorizing = true;
   try {
     const res = await fetch('/api/categorize-shopping', {
@@ -2523,12 +2548,97 @@ async function categorizeShoppingTitle(task) {
     if (data && data.action && data.categories && Object.keys(data.categories).length > 0) {
       task.shoppingList = { action: data.action, categories: data.categories };
       try { saveState(); } catch(_) {}
-    } else {
     }
-  } catch (err) {
+  } catch (_) {
+    // Shopping categorization is enrichment-only; silently fall back to
+    // the plain title if AI is unreachable.
   } finally {
     delete task._categorizing;
   }
+}
+
+// Is this title a candidate for the agenda-style summarization?
+// Heuristic: long enough + has 2+ commas or 2+ Hebrew "ו" connectors at
+// clause boundaries. Shopping-list titles are filtered out separately.
+function isAgendaCandidate(title) {
+  if (!title || typeof title !== 'string') return false;
+  if (title.length < 30) return false;
+  if (isShoppingListTitle(title)) return false;
+  const commaCount = (title.match(/,|،/g) || []).length;
+  const wConnectors = (title.match(/\s+ו[א-ת]/g) || []).length;
+  return commaCount >= 2 || (commaCount >= 1 && wConnectors >= 1) || wConnectors >= 2;
+}
+
+// Async-summarize a long task title via /api/summarize-task. Same shape
+// as categorizeShoppingTitle: only runs on tasks freshly created in this
+// session (marked with _isNew in aiParsedToTask), only runs once, never
+// fights the shopping categorizer.
+async function summarizeAgendaTitle(task) {
+  if (!task)               return;
+  if (!task._isNew)        return;            // not a fresh task → don't retroactively summarize
+  if (task.subItems)       return;            // already summarized
+  if (task.shoppingList)   return;            // shopping handles this path
+  if (task._summarizing)   return;            // already in flight
+  if (task._categorizing)  return;            // wait — let shopping check finish first
+  if (!isAgendaCandidate(task.title)) {
+    delete task._isNew;                       // not a candidate → close the new-task window
+    return;
+  }
+  task._summarizing = true;
+  try {
+    const res = await fetch('/api/summarize-task', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ title: task.title, lang: AppState.lang }),
+    });
+    if (!res.ok) throw new Error('summarize HTTP ' + res.status);
+    const data = await res.json();
+    if (data && !data.skip
+        && typeof data.mainTitle === 'string' && data.mainTitle.trim()
+        && Array.isArray(data.items) && data.items.length >= 2) {
+      task.subItems = {
+        mainTitle: data.mainTitle.trim(),
+        items:     data.items.map(s => String(s).trim()).filter(Boolean),
+      };
+      try { saveState(); } catch(_) {}
+      _refreshTaskTitleDom(task);
+    }
+  } catch (_) {
+    // Enrichment-only; if the API is unreachable, the original title
+    // just stays on the card.
+  } finally {
+    delete task._summarizing;
+    delete task._isNew;
+  }
+}
+
+// Surgically update a card's visible title once subItems arrives — no
+// full rerender. Replaces the title text with the short mainTitle and
+// ensures the "···" tooltip button exists so the user can drill in.
+function _refreshTaskTitleDom(task) {
+  if (!task || !task.subItems) return;
+  const newTitle = task.subItems.mainTitle;
+  // Both screens use data-id on the card root. The title element class
+  // differs: .card-title (preview) vs .t-ttitle (today).
+  document.querySelectorAll(`[data-id="${task.id}"]`).forEach(card => {
+    const titleEl = card.querySelector('.card-title, .t-ttitle');
+    if (!titleEl) return;
+    titleEl.textContent = newTitle;
+    titleEl.classList.remove('long-title');   // mainTitle is short by design
+    // Ensure a ··· button exists; create one if not.
+    const parent = titleEl.parentElement;
+    if (!parent) return;
+    let exp = parent.querySelector('.title-exp');
+    if (!exp) {
+      exp = document.createElement('button');
+      exp.className = 'title-exp';
+      exp.textContent = '···';
+      exp.addEventListener('click', e => { e.stopPropagation(); showTitleTip(task, exp); });
+      titleEl.after(exp);
+    } else {
+      exp.style.display = '';
+    }
+  });
 }
 
 // Emoji mapping for the structured shopping tooltip — keyed by AI-returned category names.
@@ -2542,6 +2652,62 @@ const _CAT_EMOJI = {
   'פחמימות ודגנים':    '🍞',
   'אחר':                '🛒',
 };
+
+// Build the structured tooltip content for an agenda-style task —
+// a clean bulleted list of sub-items, with a header showing the main
+// title and an optional gentle pill that hints at the count.
+function _renderAgendaTipContent(tip, subItems) {
+  tip.classList.add('structured');
+  tip.classList.add('agenda');
+
+  // Close button (no auto-dismiss for structured tips)
+  const closeBtn = document.createElement('button');
+  closeBtn.className = 'tip-close';
+  closeBtn.textContent = '✕';
+  closeBtn.addEventListener('click', e => { e.stopPropagation(); hideTitleTip(); });
+  tip.appendChild(closeBtn);
+
+  // Header
+  const header = document.createElement('div');
+  header.className = 'tip-header';
+  const headerIcon = document.createElement('div');
+  headerIcon.className = 'tip-header-icon';
+  headerIcon.textContent = '📋';
+  header.appendChild(headerIcon);
+  const headerText = document.createElement('div');
+  headerText.className = 'tip-header-text';
+  const headerTitle = document.createElement('div');
+  headerTitle.className = 'tip-title';
+  headerTitle.textContent = subItems.mainTitle;
+  headerText.appendChild(headerTitle);
+  const subtitle = document.createElement('div');
+  subtitle.className = 'tip-subtitle';
+  subtitle.textContent = AppState.lang === 'he'
+    ? `${subItems.items.length} סעיפים`
+    : `${subItems.items.length} items`;
+  headerText.appendChild(subtitle);
+  header.appendChild(headerText);
+  tip.appendChild(header);
+
+  // Items as a clean list — each its own soft pill with stagger entrance.
+  const list = document.createElement('div');
+  list.className = 'tip-agenda-list';
+  subItems.items.forEach((item, i) => {
+    const row = document.createElement('div');
+    row.className = 'tip-agenda-row';
+    row.style.animationDelay = (60 + i * 50) + 'ms';
+    const bullet = document.createElement('span');
+    bullet.className = 'tip-agenda-bullet';
+    bullet.textContent = (i + 1).toString();
+    row.appendChild(bullet);
+    const txt = document.createElement('span');
+    txt.className = 'tip-agenda-text';
+    txt.textContent = item;
+    row.appendChild(txt);
+    list.appendChild(row);
+  });
+  tip.appendChild(list);
+}
 
 // Build the structured tooltip content for a shopping-list task — premium card layout.
 function _renderShoppingTipContent(tip, shoppingList) {
@@ -2631,17 +2797,23 @@ function showTitleTip(textOrTask, anchorEl) {
   if (!phone) return;
   let text = '';
   let shoppingList = null;
+  let subItems     = null;
   if (typeof textOrTask === 'string') {
     text = textOrTask;
   } else if (textOrTask && typeof textOrTask === 'object') {
-    text = textOrTask.title || '';
+    text         = textOrTask.title || '';
     shoppingList = textOrTask.shoppingList;
+    subItems     = textOrTask.subItems;
   } else { return; }
-  const willRenderStructured = !!(shoppingList && shoppingList.categories && Object.keys(shoppingList.categories).length > 0);
+  const willRenderShopping = !!(shoppingList && shoppingList.categories && Object.keys(shoppingList.categories).length > 0);
+  const willRenderAgenda   = !willRenderShopping && !!(subItems && Array.isArray(subItems.items) && subItems.items.length >= 2);
+  const willRenderStructured = willRenderShopping || willRenderAgenda;
   const tip = document.createElement('div');
   tip.className = 'title-tip';
-  if (willRenderStructured) {
+  if (willRenderShopping) {
     _renderShoppingTipContent(tip, shoppingList);
+  } else if (willRenderAgenda) {
+    _renderAgendaTipContent(tip, subItems);
   } else {
     tip.textContent = text;
   }
@@ -3482,14 +3654,17 @@ function _buildCardEl(task) {
         <div class="card-accent" style="background:${p.color}"></div>
         <div class="card-time-col"><span class="card-time">${m2t(task.mins)}</span><span class="card-ampm">${ampm(task.mins)}</span><span class="card-ts ${task.timeSource}">${tsLabel[task.timeSource]}</span></div>
         <div class="card-vline"></div>
-        <div class="card-body"><div class="card-title">${task.title}</div><div class="card-chip"><span class="chip-dot" style="background:${p.color}"></span>${personLabel(task.person)}</div></div>
+        <div class="card-body"><div class="card-title">${task.subItems?.mainTitle || task.title}</div><div class="card-chip"><span class="chip-dot" style="background:${p.color}"></span>${personLabel(task.person)}</div></div>
         <div class="card-av" style="background:${p.bg}">${p.emoji}</div>
         <div class="card-bell${task.notify===false?' off':''}">${task.notify===false?'🔕':'🔔'}</div>
       </div>
     </div>`;
-  if (task.title.length > 45) {
+  // Show the "···" expander when either the title is long OR an agenda
+  // summary exists (subItems carries the structured breakdown the user
+  // wants to drill into, even if mainTitle itself is short).
+  if (task.title.length > 45 || task.subItems) {
     const titleEl = c.querySelector('.card-title');
-    titleEl.classList.add('long-title');
+    if (task.title.length > 45 && !task.subItems) titleEl.classList.add('long-title');
     const expBtn = document.createElement('button');
     expBtn.className = 'title-exp';
     expBtn.textContent = '···';
@@ -3538,6 +3713,7 @@ function _buildCardEl(task) {
   attachSplitGesture(c, task);
   attachSwipeDelete(c, task, 'preview');
   categorizeShoppingTitle(task);
+  summarizeAgendaTitle(task);
   return c;
 }
 
@@ -4005,7 +4181,7 @@ function renderToday() {
           <div class="t-ck ${t.completed?'ck-done':isNx?'ck-nxt':'ck-open'}">${t.completed?'<span style="color:white;font-size:14px;font-weight:900;">✓</span>':''}</div>
           <div class="t-tcol"><div class="t-ttime${isNx&&!t.completed?' ora':''}">${m2t(t.mins)}</div><div class="t-tampm">${ampm(t.mins)}</div></div>
           <div class="t-tvline"></div>
-          <div class="t-tbody"><div class="t-ttitle">${t.title}</div><div class="t-tchip"><span class="t-dot" style="background:${p.color}"></span>${personLabel(t.person)}</div></div>
+          <div class="t-tbody"><div class="t-ttitle">${t.subItems?.mainTitle || t.title}</div><div class="t-tchip"><span class="t-dot" style="background:${p.color}"></span>${personLabel(t.person)}</div></div>
           <div class="t-miniav" style="background:${p.bg}">${p.emoji}</div>
           <div class="t-bell${t.notify===false?' off':''}">${t.notify===false?'🔕':'🔔'}</div>
         </div>
@@ -4015,9 +4191,11 @@ function renderToday() {
           <span class="t-share-arrow">›</span>
         </div>
       </div>`;
-    if (t.title.length > 45) {
+    // Show the "···" expander when title is long OR when an agenda
+    // summary exists (subItems carries the structured breakdown).
+    if (t.title.length > 45 || t.subItems) {
       const ttitle = el.querySelector('.t-ttitle');
-      ttitle.classList.add('long-title');
+      if (t.title.length > 45 && !t.subItems) ttitle.classList.add('long-title');
       const expBtn = document.createElement('button');
       expBtn.className = 'title-exp';
       expBtn.textContent = '···';
@@ -4159,6 +4337,7 @@ function renderToday() {
     el.classList.add('entering');
     attachSwipeDelete(el, t, 'today');
     categorizeShoppingTitle(t);
+    summarizeAgendaTitle(t);
     container.appendChild(el);
   });
 
@@ -5268,7 +5447,7 @@ if ('serviceWorker' in navigator) {
 // device. If you delete a card and the console doesn't show
 // "[delete] surgical refresh…", you're on a stale cached HTML and need
 // to hard-reload (or the SW will catch up on next visit).
-console.log('%c[Family App] build: heart-mic-add-sheet-2026-05-11', 'background:#ff5e14;color:#fff;padding:3px 8px;border-radius:6px;font-weight:bold');
+console.log('%c[Family App] build: agenda-summary-2026-05-11', 'background:#ff5e14;color:#fff;padding:3px 8px;border-radius:6px;font-weight:bold');
 loadState();
 updateDateBadge();
 // Run the reminder check ONCE immediately after state loads so opening
