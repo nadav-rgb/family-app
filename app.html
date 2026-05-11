@@ -335,8 +335,6 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 .btn-add-more{width:100%;padding:13px;border-radius:18px;border:1.5px dashed rgba(224,124,58,.35);cursor:pointer;background:rgba(255,112,51,.04);font-family:'Nunito',sans-serif;font-size:14px;font-weight:800;color:#e07c3a;transition:background .18s;}
 .btn-add-more:active{background:rgba(224,124,58,.1);}
 /* Adjust mode */
-.adj-banner{display:none;flex-shrink:0;background:linear-gradient(90deg,rgba(255,112,51,.13),rgba(255,154,78,.06));border-left:3px solid #ff7033;border-radius:0 10px 10px 0;padding:9px 16px 9px 13px;margin:0 16px 4px;font-size:12px;font-weight:800;color:#c05a1a;letter-spacing:.15px;}
-.adj-banner.on{display:block;}
 .ai-banner{display:none;flex-shrink:0;border-radius:10px;padding:9px 14px;margin:0 16px 4px;font-size:12px;font-weight:700;letter-spacing:.1px;}
 .ai-banner.on{display:block;}
 .ai-banner--review{background:linear-gradient(90deg,rgba(255,193,7,.15),rgba(255,193,7,.05));border-left:3px solid #f0a500;color:#a06a00;}
@@ -344,12 +342,16 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 .phone[dir="rtl"] .ai-banner{border-left:none;border-right:3px solid;}
 .phone[dir="rtl"] .ai-banner--review{border-right-color:#f0a500;}
 .phone[dir="rtl"] .ai-banner--fallback{border-right-color:#aaa;}
-#dpList.adj-mode{gap:13px;}
-#dpList.adj-mode .task-card{border:2px solid rgba(224,124,58,.52);box-shadow:0 8px 28px rgba(224,124,58,.18),0 2px 8px rgba(100,60,20,.07);}
-.card-time-col{border-radius:8px;transition:background .15s,transform .18s cubic-bezier(.34,1.3,.64,1);cursor:default;}
-#dpList.adj-mode .card-time-col{cursor:pointer;background:rgba(255,112,51,.06);}
-#dpList.adj-mode .card-time-col:hover{background:rgba(255,112,51,.14);transform:translateY(-2px) scale(1.08);}
-#dpList.adj-mode .card-time-col:active{transform:scale(.92)!important;}
+/* Time column is always editable now — tap to open the keypad. The
+   previous adj-mode gate is gone, so the inviting hover/press styles
+   apply by default. */
+.card-time-col{border-radius:8px;transition:background .15s,transform .18s cubic-bezier(.34,1.3,.64,1);cursor:pointer;background:rgba(255,112,51,.04);}
+.card-time-col:hover{background:rgba(255,112,51,.12);transform:translateY(-1px) scale(1.04);}
+.card-time-col:active{transform:scale(.94);}
+/* Empty-time placeholder — when task has no time yet, show a clock-
+   like __:__ that looks softer than a real time but still inviting. */
+.card-time.empty,
+.t-ttime.empty{color:#c4ae9f;letter-spacing:2px;font-weight:800;}
 .card-time{transition:opacity .09s ease;}
 .card-ampm{transition:opacity .09s ease;}
 @keyframes timeAccepted{0%,100%{background:transparent;}38%{background:rgba(255,112,51,.13);}}
@@ -358,8 +360,6 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 .task-card.snap-glow{animation:snapGlow .44s ease both;}
 @keyframes timeFlash{0%{opacity:0;transform:translateY(-4px);}50%{opacity:1;transform:translateY(1px);}100%{transform:translateY(0);}}
 .card-time.time-flash{animation:timeFlash .3s cubic-bezier(.34,1.2,.64,1) both;}
-@keyframes adjWake{from{transform:scale(.994);box-shadow:0 2px 14px rgba(100,60,20,.08);}to{transform:scale(1);}}
-.task-card.adj-wake{animation:adjWake .3s cubic-bezier(.34,1.3,.64,1) both;}
 /* ── Time strip manual button ── */
 /* ── Time strip manual button ── */
 .ts-manual-btn{position:sticky;top:0;padding:7px 8px 6px;font-size:10px;font-weight:900;color:#e07c3a;background:linear-gradient(180deg,#fffaf5 85%,rgba(255,250,245,0));cursor:pointer;text-align:center;letter-spacing:.2px;z-index:2;transition:background .13s;line-height:1.35;}
@@ -656,6 +656,11 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 .t-share:active{background:rgba(0,0,0,.07);}
 .t-share-lbl{font-size:11px;font-weight:700;color:#a8917f;flex-shrink:0;}
 .t-share-name{font-size:13px;font-weight:800;color:#5a3e2b;flex:1;letter-spacing:.1px;}
+/* Subtle "more options" hint added before the arrow so the user knows
+   tapping the bar opens a panel with extra settings (sharing, reminder,
+   recurrence, etc.). Same style for preview cards (.card-share-more-hint)
+   and today cards (.t-share-more-hint). */
+.t-share-more-hint,.card-share-more-hint{font-size:11px;font-weight:700;color:#b8a090;flex-shrink:0;letter-spacing:.1px;margin-inline-end:4px;}
 .t-share-arrow{font-size:15px;color:#b8a090;line-height:1;flex-shrink:0;}
 
 /* ── User switcher ── */
@@ -711,13 +716,17 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 .share-remind-block.dim{opacity:.35;pointer-events:none;}
 .reminder-note{font-size:11px;font-weight:700;color:#b0a098;line-height:1.5;padding:8px 10px;background:rgba(0,0,0,.03);border-radius:10px;margin-top:8px;}
 /* ── More options collapse ── */
-.share-more-toggle{display:flex;align-items:center;justify-content:space-between;padding:11px 12px;cursor:pointer;border-radius:12px;margin-top:10px;background:rgba(0,0,0,.03);border:1.5px solid transparent;transition:background .13s,border-color .13s;}
-.share-more-toggle:active{background:rgba(0,0,0,.06);}
-.share-more-lbl{font-size:12px;font-weight:900;color:#9e8878;letter-spacing:.3px;}
-.share-more-arrow{font-size:17px;color:#c4ae9f;line-height:1;transition:transform .26s cubic-bezier(.34,1.2,.64,1);}
-.share-more-toggle.open{background:rgba(224,124,58,.05);border-color:rgba(224,124,58,.2);}
-.share-more-toggle.open .share-more-lbl{color:#e07c3a;}
-.share-more-toggle.open .share-more-arrow{transform:rotate(90deg);}
+/* "More options" toggle — warm palette by default so it reads as
+   inviting/clickable, not as a disabled gray block. Open state goes a
+   shade deeper. */
+.share-more-toggle{display:flex;align-items:center;justify-content:space-between;padding:11px 12px;cursor:pointer;border-radius:12px;margin-top:10px;background:rgba(255,154,78,.08);border:1.5px solid rgba(255,154,78,.22);transition:background .13s,border-color .13s;}
+.share-more-toggle:hover{background:rgba(255,154,78,.14);border-color:rgba(255,154,78,.32);}
+.share-more-toggle:active{background:rgba(255,154,78,.18);}
+.share-more-lbl{font-size:12px;font-weight:900;color:#c87633;letter-spacing:.3px;}
+.share-more-arrow{font-size:17px;color:#c87633;line-height:1;transition:transform .26s cubic-bezier(.34,1.2,.64,1);}
+.share-more-toggle.open{background:rgba(224,124,58,.14);border-color:rgba(224,124,58,.38);}
+.share-more-toggle.open .share-more-lbl{color:#a85614;}
+.share-more-toggle.open .share-more-arrow{color:#a85614;transform:rotate(90deg);}
 .share-more-body{max-height:0;overflow:hidden;transition:max-height .34s cubic-bezier(.4,0,.2,1);}
 .share-more-body.open{max-height:700px;}
 /* ── Recurrence section ── */
@@ -825,7 +834,6 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 /* Card inner — swap the 0-padding side (accent now on right) */
 .phone[dir="rtl"] .card-inner{padding:14px 0 14px 14px;}
 /* Adjust-mode banner — flip side border */
-.phone[dir="rtl"] .adj-banner{border-left:none;border-right:3px solid #ff7033;border-radius:10px 0 0 10px;}
 /* Time strip — slide in/out from right in RTL */
 .phone[dir="rtl"] .ts-overlay{left:auto;right:0;border-radius:16px 0 0 16px;box-shadow:-6px 0 28px rgba(100,60,20,.18),-2px 0 8px rgba(100,60,20,.08);border:1.5px solid rgba(224,180,140,.35);border-right:none;}
 @keyframes tsSlideInRTL{from{transform:translateX(100%);opacity:0;}to{transform:translateX(0);opacity:1;}}
@@ -998,16 +1006,12 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
     <div class="dp-sub" id="dpSub">Feel free to tweak anything</div>
     <div class="dp-meta"><span class="dp-pill">📋 4 tasks</span><span class="dp-pill">👩 Mom · 👨 Dad</span></div>
   </div>
-  <div class="adj-banner" id="adjBanner">✏️ Editing schedule — tap any time to change it</div>
   <div class="ai-banner ai-banner--review" id="dpReviewBanner">⚠️ יש כמה פרטים שכדאי לבדוק לפני שמוסיפים ליום</div>
   <div class="ai-banner ai-banner--fallback" id="dpFallbackBanner">ℹ️ השתמשנו בפענוח בסיסי כי ה-AI לא היה זמין</div>
   <div class="dp-list" id="dpList"><div class="list-shimmer"></div></div>
   <div class="dp-bottom">
     <button class="btn-primary" id="btnOk">Looks good ✓</button>
-    <div style="display:flex;gap:8px;">
-      <button class="btn-ghost"   id="btnAdjust" style="flex:1;">Adjust</button>
-      <button class="btn-add-more" id="btnAddMore" style="flex:1;">+ Add more</button>
-    </div>
+    <button class="btn-add-more" id="btnAddMore">+ Add more</button>
   </div>
   <!-- Add-to-day sheet -->
   <div class="atd-bg" id="atdBg">
@@ -1310,7 +1314,8 @@ const I18N = {
     mic_heart:'Heart', mic_star:'Star', mic_classic:'Classic', mic_blob:'Blob',
     share_title:'Share Task', share_responsible:'Who is responsible?',
     share_visible:'Who can see this?', share_notified:'Who gets notified?',
-    share_more:'More options', share_when_remind:'When to remind?',
+    share_more:'More options', share_more_hint:'more options',
+    share_when_remind:'When to remind?',
     share_mins_before:'minutes before',
     share_note:"If not completed on time, we'll remind the assigned person and visible family members after 5, 10, and 15 minutes.",
     share_repeat:'Repeat', share_done:'Done',
@@ -1386,7 +1391,8 @@ const I18N = {
     mic_heart:'לב', mic_star:'כוכב', mic_classic:'קלאסי', mic_blob:'בלוב',
     share_title:'שיתוף משימה', share_responsible:'מי אחראי?',
     share_visible:'מי יכול לראות?', share_notified:'מי מקבל התראה?',
-    share_more:'עוד אפשרויות', share_when_remind:'מתי להזכיר?',
+    share_more:'עוד אפשרויות', share_more_hint:'אפשרויות נוספות',
+    share_when_remind:'מתי להזכיר?',
     share_mins_before:'דקות לפני',
     share_note:'אם לא יושלם בזמן, נזכיר את האחראי ובני המשפחה לאחר 5, 10 ו-15 דקות.',
     share_repeat:'חזרה', share_done:'סיום',
@@ -1577,9 +1583,7 @@ function _applyLang() {
   set('dpTag',       t('dp_tag'));
   set('dpH1',        t('dp_h1'), true);
   set('dpSub',       t('dp_sub'));
-  set('adjBanner',   t('dp_adj_banner'));
   set('btnOk',       t('dp_ok'));
-  set('btnAdjust',   t('dp_adjust'));
   set('btnAddMore',  t('add_more'));
   set('atdTypeToggle', t('atd_type_toggle'));
   set('atdVoiceBack',  t('atd_voice_back'));
@@ -3263,7 +3267,6 @@ async function vOrganize() {
   vListening = false;
   wdots.classList.remove('on');
   const spokenText = vTranscript.trim();
-  if (!addMode) dpAdjustMode = false;
 
   // Processing lock: drop concurrent calls (e.g. double-tap on mic button)
   if (_vOrganizerBusy) {
@@ -3423,7 +3426,6 @@ async function vOrganize() {
     // Reset Day Preview UI state
     document.getElementById('dpSub').style.color = '';
     document.getElementById('dpSub').textContent = t('dp_sub');
-    document.getElementById('btnAdjust').style.display = '';
     dpRender(true);
     const sh = document.querySelector('#s-dp .list-shimmer');
     if (sh) { sh.style.animation = 'none'; void sh.offsetWidth; sh.style.animation = ''; }
@@ -3475,7 +3477,6 @@ const PEOPLE = {
   Dudi:    { color:'#86efac', bg:'linear-gradient(135deg,#c8f5c5,#86efac)', emoji:'🧒' },
   Yonatan: { color:'#fde68a', bg:'linear-gradient(135deg,#fef3c7,#fde68a)', emoji:'👶' },
 };
-let dpAdjustMode = false;
 let addMode = false;
 let _appendToToday = false; // true when "+" from Today with existing tasks → append instead of replace
 function m2t(m) { if (m == null) return ''; return `${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`; }
@@ -3749,7 +3750,7 @@ function _buildCardEl(task) {
     <div class="card-swipe-track">
       <div class="card-inner">
         <div class="card-accent" style="background:${p.color}"></div>
-        <div class="card-time-col"><span class="card-time">${m2t(task.mins)}</span><span class="card-ampm">${ampm(task.mins)}</span><span class="card-ts ${task.timeSource}">${tsLabel[task.timeSource]}</span></div>
+        <div class="card-time-col"><span class="card-time${task.mins==null?' empty':''}">${m2t(task.mins) || '__:__'}</span><span class="card-ampm">${ampm(task.mins)}</span><span class="card-ts ${task.timeSource}">${task.mins==null?'':tsLabel[task.timeSource]}</span></div>
         <div class="card-vline"></div>
         <div class="card-body"><div class="card-title">${task.subItems?.mainTitle || task.title}</div><div class="card-chip"><span class="chip-dot" style="background:${p.color}"></span>${personLabel(task.person)}</div></div>
         <div class="card-av" style="background:${p.bg}">${p.emoji}</div>
@@ -3771,7 +3772,7 @@ function _buildCardEl(task) {
   const shareFooter = document.createElement('div');
   shareFooter.className = 'card-share';
   shareFooter.style.cssText = 'display:flex!important;padding:10px 14px 12px 18px;align-items:center;gap:8px;cursor:pointer;border-top:2px solid #f0d8c8;background:#fdf3ec;';
-  shareFooter.innerHTML = `<span style="font-size:11px;font-weight:700;color:#a8917f;">${t('assigned_to')}</span><span class="card-share-name" style="font-size:13px;font-weight:800;color:#5a3e2b;flex:1;margin-inline-start:6px;">${assignedLabel(task)}</span><span class="card-share-arrow" style="font-size:15px;color:#b8a090;">›</span>`;
+  shareFooter.innerHTML = `<span style="font-size:11px;font-weight:700;color:#a8917f;">${t('assigned_to')}</span><span class="card-share-name" style="font-size:13px;font-weight:800;color:#5a3e2b;flex:1;margin-inline-start:6px;">${assignedLabel(task)}</span><span class="card-share-more-hint">${t('share_more_hint')}</span><span class="card-share-arrow" style="font-size:15px;color:#b8a090;">›</span>`;
   shareFooter.addEventListener('click', e => {
     e.stopPropagation();
     openShareDrawer(task, () => {
@@ -3780,7 +3781,9 @@ function _buildCardEl(task) {
   });
   c.querySelector('.card-swipe-track').appendChild(shareFooter);
   c.querySelector('.card-time-col').addEventListener('click', () => {
-    if (!dpAdjustMode) return;
+    // Adjust-mode gate removed: time is now always editable on the
+    // preview screen. Tapping the time column opens the strip
+    // picker (which exposes the manual keypad too).
     openTimeStrip(task.id, c);
   });
   c.querySelector('.card-bell').addEventListener('click', e => {
@@ -3818,8 +3821,6 @@ function dpRender(animate) {
   const tasks = AppState.previewTasks;
   const list  = document.getElementById('dpList');
   list.innerHTML = '<div class="list-shimmer"></div>';
-  list.classList.toggle('adj-mode', dpAdjustMode);
-  document.getElementById('adjBanner').classList.toggle('on', dpAdjustMode);
   _updateDpMeta();
   _splitHintShown = false;
   tasks.forEach((task, i) => {
@@ -3837,7 +3838,7 @@ function insertNewTasks(newTasks) {
   // Freeze existing cards so they don't re-animate
   const savedEls = {};
   document.querySelectorAll('#dpList .task-card').forEach(card => {
-    card.classList.remove('entering', 'settling', 'adj-wake', 'success-anim');
+    card.classList.remove('entering', 'settling', 'success-anim');
     card.style.cssText += ';animation:none!important;';
     savedEls[card.dataset.id] = card;
   });
@@ -3875,7 +3876,12 @@ function updateCardTime(taskId) {
   const card = document.querySelector(`#dpList .task-card[data-id="${taskId}"]`);
   if (!card) return;
   task.timeSource = 'manual';
-  card.querySelector('.card-time').textContent = m2t(task.mins);
+  const timeEl = card.querySelector('.card-time');
+  if (timeEl) {
+    timeEl.textContent = m2t(task.mins);
+    // Drop the placeholder class once a real time replaces __:__.
+    timeEl.classList.remove('empty');
+  }
   card.querySelector('.card-ampm').textContent = ampm(task.mins);
   const badge = card.querySelector('.card-ts');
   if (badge) { badge.className = 'card-ts manual'; badge.textContent = t('dp_time_manual'); }
@@ -4113,7 +4119,6 @@ document.getElementById('btnOk').addEventListener('click', function() {
     AppLog.info('date', activeDate);
     AppLog.groupEnd();
     AppState.previewTasks = [];
-    dpAdjustMode = false;
     saveState();
     renderToday();
     goto('s-today', 'txLeaveRise', 'txEnterSettle', () => {
@@ -4128,29 +4133,10 @@ document.getElementById('btnOk').addEventListener('click', function() {
   }, 720);
 });
 
-document.getElementById('btnAdjust').addEventListener('click', () => {
-  dpAdjustMode = true;
-  // Close any open swipe tracks before entering adjust mode
-  document.querySelectorAll('#dpList .card-swipe-track').forEach(tr => {
-    tr.style.transition = 'transform .18s ease';
-    tr.style.transform  = '';
-    tr.style.opacity    = '';
-    setTimeout(() => { tr.style.transition = ''; }, 200);
-  });
-  document.getElementById('dpList').classList.add('adj-mode');
-  const adjBanner = document.getElementById('adjBanner');
-  adjBanner.classList.add('on');
-  requestAnimationFrame(() => {
-    document.getElementById('dpList').scrollTop += adjBanner.offsetHeight;
-  });
-  document.querySelectorAll('#dpList .task-card').forEach((c, i) => {
-    setTimeout(() => { c.classList.remove('adj-wake'); void c.offsetWidth; c.classList.add('adj-wake'); }, i * 45);
-  });
-  const sub = document.getElementById('dpSub');
-  sub.style.color = '#e07c3a';
-  sub.textContent = t('dp_tap_time');
-  document.getElementById('btnAdjust').style.display = 'none';
-});
+// btnAdjust handler removed — the entire adjust-mode concept was
+// retired in favor of always-editable cards. Time is editable via the
+// card-time-col click handler from the moment the preview opens; the
+// banner, the button, and dpAdjustMode are all gone.
 
 // ─── Today screen ─────────────────────────────────────────────────
 function activeTasks() {
@@ -4294,7 +4280,7 @@ function renderToday() {
       <div class="t-swipe-track">
         <div class="t-task-main">
           <div class="t-ck ${t.completed?'ck-done':isNx?'ck-nxt':'ck-open'}">${t.completed?'<span style="color:white;font-size:14px;font-weight:900;">✓</span>':''}</div>
-          <div class="t-tcol"><div class="t-ttime${isNx&&!t.completed?' ora':''}">${m2t(t.mins)}</div><div class="t-tampm">${ampm(t.mins)}</div></div>
+          <div class="t-tcol"><div class="t-ttime${isNx&&!t.completed?' ora':''}${t.mins==null?' empty':''}">${m2t(t.mins) || '__:__'}</div><div class="t-tampm">${ampm(t.mins)}</div></div>
           <div class="t-tvline"></div>
           <div class="t-tbody"><div class="t-ttitle">${t.subItems?.mainTitle || t.title}</div><div class="t-tchip"><span class="t-dot" style="background:${p.color}"></span>${personLabel(t.person)}</div></div>
           <div class="t-miniav" style="background:${p.bg}">${p.emoji}</div>
@@ -4303,6 +4289,7 @@ function renderToday() {
         <div class="t-share">
           <span class="t-share-lbl">${(I18N[AppState.lang]||I18N.en).assigned_to}</span>
           <span class="t-share-name">${assignedLabel(t)}</span>
+          <span class="t-share-more-hint">${(I18N[AppState.lang]||I18N.en).share_more_hint}</span>
           <span class="t-share-arrow">›</span>
         </div>
       </div>`;
@@ -4440,7 +4427,11 @@ function renderToday() {
             t.lastReminderSentAt  = null;
             const ttime = el.querySelector('.t-ttime');
             const tampm = el.querySelector('.t-tampm');
-            if (ttime) ttime.textContent = m2t(realT.mins);
+            if (ttime) {
+              ttime.textContent = m2t(realT.mins);
+              // Clear the empty-placeholder class now that a real time exists.
+              ttime.classList.remove('empty');
+            }
             if (tampm) tampm.textContent = ampm(realT.mins);
             saveState();
           });
@@ -5575,7 +5566,7 @@ if ('serviceWorker' in navigator) {
 // device. If you delete a card and the console doesn't show
 // "[delete] surgical refresh…", you're on a stale cached HTML and need
 // to hard-reload (or the SW will catch up on next visit).
-console.log('%c[Family App] build: recurring-freeze-fix-2026-05-11', 'background:#ff5e14;color:#fff;padding:3px 8px;border-radius:6px;font-weight:bold');
+console.log('%c[Family App] build: always-editable-time-2026-05-12', 'background:#ff5e14;color:#fff;padding:3px 8px;border-radius:6px;font-weight:bold');
 loadState();
 updateDateBadge();
 // Run the reminder check ONCE immediately after state loads so opening
