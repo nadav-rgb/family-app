@@ -1129,8 +1129,15 @@ const I18N = {
     voice_type_btn:'Organize my day ✨', voice_type_btn_thinking:'Organizing your day',
     voice_back_btn:'🎙 Use voice instead',
     voice_mic_denied:'🎤 Microphone access denied',
+    voice_mic_denied_hint:'Allow microphone in your browser settings and try again',
     voice_not_supported:'Voice not supported — use typing ↓',
     voice_organizing:'Organizing your day ✨',
+    voice_err_network:'🌐 No connection — check internet and try again',
+    voice_err_audio:'🎤 Microphone issue — check your device and try again',
+    voice_err_lang:'Language not supported — try typing instead',
+    voice_err_generic:'Voice recognition error — please try again',
+    voice_no_speech:"Didn't catch that — try speaking again",
+    voice_retry:'Try again',
     dp_back:'Back', dp_tag:'✨ Ready', dp_h1:'We organized<br>your day ✨',
     dp_sub:'Feel free to tweak anything',
     dp_adj_banner:'✏️ Editing schedule — tap any time to change it',
@@ -1186,8 +1193,15 @@ const I18N = {
     voice_type_btn:'סדר לי את היום ✨', voice_type_btn_thinking:'מסדר לך את היום',
     voice_back_btn:'🎙 חזור לדיבור',
     voice_mic_denied:'🎤 אין גישה למיקרופון',
+    voice_mic_denied_hint:'אפשר גישה למיקרופון בהגדרות הדפדפן ונסה שוב',
     voice_not_supported:'זיהוי קולי לא נתמך — השתמש בהקלדה ↓',
     voice_organizing:'מסדר את היום ✨',
+    voice_err_network:'🌐 אין חיבור לאינטרנט — נסה שוב',
+    voice_err_audio:'🎤 בעיה במיקרופון — בדוק חיבור ונסה שוב',
+    voice_err_lang:'השפה לא נתמכת — אפשר להקליד במקום',
+    voice_err_generic:'שגיאה בזיהוי קולי — נסה שוב',
+    voice_no_speech:'לא הצלחתי לשמוע — נסה לדבר שוב',
+    voice_retry:'נסה שוב',
     dp_back:'חזרה', dp_tag:'✨ מוכן', dp_h1:'סידרנו לך<br>את היום ✨',
     dp_sub:'אפשר לשנות כל דבר',
     dp_adj_banner:'✏️ עריכת לוח זמנים — לחץ על שעה לשינוי',
@@ -1628,6 +1642,68 @@ function _beepStop()  { _tone(880, 0, 0.09, 0.2); _tone(580, 0.1, 0.14, 0.16); }
 // ─── Speech Recognition ───────────────────────────────────────────
 const SpeechAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
 let recognition = null;
+
+// _recStart — wrap recognition.start() with proper error handling.
+// Returns true on success (incl. "already started" which is non-fatal),
+// false on real failure. Callers decide how to react.
+function _recStart() {
+  if (!recognition) return false;
+  try { recognition.start(); return true; }
+  catch (err) {
+    AppLog.warn('rec.start failed', err.name || '', err.message || '');
+    // InvalidStateError = "already started"; treat as success (idempotent).
+    if (err.name === 'InvalidStateError') return true;
+    return false;
+  }
+}
+
+// _onRecFatal — fatal recognition error: stop the listening loop, abort the
+// engine, reset all UI affordances (main voice screen + add-sheet), and show
+// a localized message in the appropriate place. After 4s the message fades
+// back to the idle prompt so the screen doesn't stay "stuck" on an error.
+function _onRecFatal(message) {
+  vListening = false;
+  _stopKeepAlive();
+  clearTimeout(_restartTimer);
+  clearTimeout(vTimer);
+  if (recognition) { try { recognition.abort(); } catch(_) {} }
+
+  // Main voice screen reset
+  if (zone)  zone.classList.remove('rec', 'recede');
+  if (wdots) wdots.classList.remove('on');
+  if (typeof hideBubble === 'function') hideBubble(true);
+  if (ltxt) {
+    ltxt.textContent = message;
+    ltxt.className   = 'ltxt';
+    ltxt.style.color = '#c75139';
+  }
+
+  // Add-sheet reset, if open
+  if (addMode) {
+    const ring = document.getElementById('atdMicRing');
+    const st   = document.getElementById('atdStatus');
+    if (ring) ring.classList.remove('rec');
+    if (st)   { st.textContent = message; st.classList.remove('rec'); }
+  }
+
+  // Auto-restore idle prompt after a few seconds so the screen is usable again.
+  setTimeout(() => {
+    if (ltxt && ltxt.textContent === message) {
+      ltxt.textContent = t('voice_tap');
+      ltxt.style.color = '';
+    }
+    if (addMode) {
+      const st = document.getElementById('atdStatus');
+      if (st && st.textContent === message) st.textContent = t('atd_tap');
+    }
+  }, 4000);
+}
+
+// _showMicPermissionHelp — Phase 2 placeholder. In Phase 2 this will show
+// a clear recovery panel ("Open Settings → Mic"). For now it's a no-op so
+// onerror can call it unconditionally without breaking anything.
+function _showMicPermissionHelp() { /* Phase 2 — to be filled in */ }
+
 let vTranscript    = '';
 let vCarryOver     = '';  // confirmed text from previous recognition sessions
 let vSessionFinal  = '';  // isFinal-confirmed words within the current recognition session
@@ -1790,15 +1866,30 @@ if (SpeechAPI) {
   };
 
   recognition.onerror = (e) => {
-    if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
-      vListening = false;
-      zone.classList.remove('rec');
-      hideBubble(true);
-      ltxt.textContent = t('voice_mic_denied');
-      ltxt.className   = 'ltxt';
+    AppLog.warn('recognition.onerror', e.error || '(no code)');
+    const err = e.error || '';
+
+    // ── Non-fatal: legitimate continuations, let onend restart silently ──
+    // no-speech: user paused mid-utterance — restart and keep listening.
+    // aborted:   we initiated this via abort() — UI already updated by caller.
+    if (err === 'no-speech' || err === 'aborted') return;
+
+    // ── Fatal: stop the restart loop and inform the user ──
+    let msg = null;
+    if (err === 'not-allowed' || err === 'service-not-allowed') {
+      msg = t('voice_mic_denied');
+      _showMicPermissionHelp();    // Phase 2 hook — defined below; no-op until then
+    } else if (err === 'network') {
+      msg = t('voice_err_network');
+    } else if (err === 'audio-capture') {
+      msg = t('voice_err_audio');
+    } else if (err === 'language-not-supported' || err === 'bad-grammar') {
+      msg = t('voice_err_lang');
+    } else {
+      msg = t('voice_err_generic');
     }
-    // All other errors (no-speech, network, etc.) are silently ignored —
-    // onend will fire next and restart the session without touching the UI.
+
+    _onRecFatal(msg);
   };
 
   recognition.onend = () => {
@@ -1811,7 +1902,12 @@ if (SpeechAPI) {
     AppLog.info('debounce restart', `in 200ms, carryOver="${vCarryOver}"`);
     clearTimeout(_restartTimer);
     _restartTimer = setTimeout(() => {
-      if (vListening) { _silentPing(); try { recognition.start(); } catch(_) {} }
+      if (!vListening) return;
+      _silentPing();
+      if (!_recStart()) {
+        AppLog.warn('onend restart', 'recognition.start() failed — fatal');
+        _onRecFatal(t('voice_err_generic'));
+      }
     }, 200);
   };
 }
@@ -2517,7 +2613,10 @@ function vStart() {
     AppLog.info('lang', recognition.lang);
     AppLog.info('mode', vMode);
     AppLog.groupEnd();
-    try { recognition.start(); } catch(_) {}
+    if (!_recStart()) {
+      AppLog.warn('vStart', 'recognition.start() failed — fatal');
+      _onRecFatal(t('voice_err_generic'));
+    }
   } else {
     AppLog.info('speech', 'no SpeechAPI — mock timer');
     vTimer = setTimeout(() => vOrganize(), 1800);
@@ -2615,6 +2714,27 @@ async function vOrganize() {
   // Dedup: drop identical consecutive submissions (e.g. same transcript fired twice)
   if (spokenText && spokenText === _lastProcessedTranscript) {
     AppLog.warn('vOrganize', `duplicate transcript — skipping: "${spokenText.slice(0,40)}"`);
+    return;
+  }
+  // Empty transcript guard — recording ended with no text. Don't create a
+  // garbage task with an empty title; show "didn't catch that" and let the
+  // user retry. addMode just closes the sheet (the user can reopen it).
+  if (!spokenText) {
+    AppLog.warn('vOrganize', 'empty transcript at stop');
+    if (addMode) {
+      closeAddSheet();
+    } else if (ltxt) {
+      ltxt.textContent = t('voice_no_speech');
+      ltxt.className   = 'ltxt';
+      ltxt.style.color = '#c75139';
+      setTimeout(() => {
+        if (ltxt.textContent === t('voice_no_speech')) {
+          ltxt.textContent = t('voice_tap');
+          ltxt.style.color = '';
+        }
+      }, 3000);
+    }
+    vTypeBtnThinkingOff();
     return;
   }
   _vOrganizerBusy = true;
@@ -4219,7 +4339,10 @@ function _atdStartRec() {
   _setAtdRecording(true);
   if (recognition) {
     recognition.lang = AppState.lang === 'he' ? 'he-IL' : 'en-US';
-    try { recognition.start(); } catch(_) {}
+    if (!_recStart()) {
+      AppLog.warn('_atdStartRec', 'recognition.start() failed — fatal');
+      _onRecFatal(t('voice_err_generic'));
+    }
   }
 }
 
