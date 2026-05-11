@@ -4,6 +4,15 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
 <title>Family App</title>
+<!-- PWA: installable + offline + foundation for push notifications -->
+<link rel="manifest" href="/manifest.json"/>
+<meta name="theme-color" content="#ff5e14"/>
+<link rel="icon" type="image/svg+xml" href="/icon.svg"/>
+<link rel="apple-touch-icon" href="/icon.svg"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+<meta name="apple-mobile-web-app-title" content="Family"/>
+<meta name="mobile-web-app-capable" content="yes"/>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&family=Rubik:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
 <style>
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
@@ -4630,22 +4639,35 @@ function _chime() {
 // _fireRealNotification — single entry point that does all 3 channels:
 // (1) in-app toast (always), (2) browser Notification (if permitted),
 // (3) chime sound. tag dedupes identical pings (e.g. minute-grain re-runs).
-function _fireRealNotification(title, body, tag) {
+async function _fireRealNotification(title, body, tag) {
   showNotifToast(`${title} — ${body}`);
   _chime();
-  if (_notifSupported() && Notification.permission === 'granted') {
-    try {
-      const n = new Notification(title, {
+  if (!_notifSupported() || Notification.permission !== 'granted') return;
+  // Prefer the Service Worker's showNotification — it's the only API that
+  // works when the page is fully backgrounded on some browsers, and it's
+  // the same API a future server-side push would trigger. Falls back to
+  // the page-level Notification constructor if SW isn't ready yet.
+  try {
+    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+      const reg = await navigator.serviceWorker.ready;
+      await reg.showNotification(title, {
         body,
         tag: tag || undefined,
         renotify: false,
-        silent: true,                          // we play our own chime
+        silent: true,                        // we play our own chime
+        icon:  '/icon.svg',
+        badge: '/icon.svg',
       });
-      n.onclick = () => { try { window.focus(); } catch(_) {} n.close(); };
-      setTimeout(() => { try { n.close(); } catch(_) {} }, 8000);
-    } catch (e) {
-      AppLog.warn('Notification ctor failed', e.message || '');
+      return;
     }
+    // Page-level fallback
+    const n = new Notification(title, {
+      body, tag: tag || undefined, renotify: false, silent: true,
+    });
+    n.onclick = () => { try { window.focus(); } catch(_) {} n.close(); };
+    setTimeout(() => { try { n.close(); } catch(_) {} }, 8000);
+  } catch (e) {
+    AppLog.warn('Notification failed', e.message || '');
   }
 }
 
@@ -4782,6 +4804,20 @@ setTimeout(() => {
   _updateSbarClock();
   setInterval(_updateSbarClock, 60 * 1000);
 }, (60 - new Date().getSeconds()) * 1000);
+
+// ─── Service Worker registration ──────────────────────────────────
+// Registers /service-worker.js for: (a) offline shell cache so the app
+// loads with no network, (b) showNotification API that works even when
+// the page is backgrounded, (c) push handler — wired now so the eventual
+// backend (next sweep) can fire notifications when the tab is fully
+// closed. Registration is best-effort; failures don't block app boot.
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/service-worker.js')
+      .then(reg => AppLog.info('SW registered', reg.scope || ''))
+      .catch(err => AppLog.warn('SW register failed', err.message || ''));
+  });
+}
 
 // ─── Init ─────────────────────────────────────────────────────────
 loadState();

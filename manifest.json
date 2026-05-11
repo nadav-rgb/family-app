@@ -1,0 +1,17 @@
+{
+  "name": "Family",
+  "short_name": "Family",
+  "description": "אפליקציית משימות משפחתית",
+  "start_url": "/app.html",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#fffaf5",
+  "theme_color": "#ff5e14",
+  "dir": "rtl",
+  "lang": "he",
+  "icons": [
+    { "src": "/icon.svg", "type": "image/svg+xml", "sizes": "any", "purpose": "any" },
+    { "src": "/icon.svg", "type": "image/svg+xml", "sizes": "any", "purpose": "maskable" }
+  ]
+}
