@@ -4206,6 +4206,7 @@ function undoDelete() {
 // momentary "blank list" flash and the entry-animation vibration
 // users saw after deleting a card.
 function _refreshTodayMetadata() {
+  console.log('[delete] surgical refresh — no list rebuild (smooth-delete v2)');
   const tasks     = activeTasks();
   const container = document.getElementById('tTasks');
   if (!container) return;
@@ -4297,6 +4298,7 @@ function doDelete(task, screen) {
     if (idx >= 0) AppState.previewTasks.splice(idx, 1);
     state.idx  = idx;
     state.type = 'preview';
+    console.log('[delete] preview — surgical meta refresh (smooth-delete v2)');
     // Surgical: card already removed from DOM by the swipe animation.
     // Just refresh the meta pills — no list rebuild → no flicker / vibration.
     _updateDpMeta();
@@ -5225,6 +5227,11 @@ if ('serviceWorker' in navigator) {
 }
 
 // ─── Init ─────────────────────────────────────────────────────────
+// Version banner — verifies WHICH build is actually running on the
+// device. If you delete a card and the console doesn't show
+// "[delete] surgical refresh…", you're on a stale cached HTML and need
+// to hard-reload (or the SW will catch up on next visit).
+console.log('%c[Family App] build: smooth-delete-2026-05-11', 'background:#ff5e14;color:#fff;padding:3px 8px;border-radius:6px;font-weight:bold');
 loadState();
 updateDateBadge();
 // Run the reminder check ONCE immediately after state loads so opening

@@ -19,7 +19,10 @@
 //     home screen as a PWA (iOS 16.4+). The manifest.json + meta tags
 //     in app.html provide that.
 
-const CACHE_NAME = 'family-app-v1';
+// Bump this version on every meaningful release. The activate handler
+// drops any cache whose name doesn't match, so users on a stale cache
+// will get fresh HTML/assets on next visit.
+const CACHE_NAME = 'family-app-v2-smooth-delete-2026-05-11';
 const SHELL_FILES = [
   '/app.html',
   '/manifest.json',
@@ -55,13 +58,27 @@ self.addEventListener('fetch', (event) => {
 
   const isHTML = req.headers.get('accept')?.includes('text/html');
   if (isHTML) {
-    event.respondWith(
-      fetch(req).then((res) => {
-        const copy = res.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(req, copy)).catch(()=>{});
-        return res;
-      }).catch(() => caches.match(req).then(m => m || caches.match('/app.html')))
-    );
+    // Strict network-first with a short timeout — if the network is
+    // even slightly responsive, the user gets fresh code. Only fall
+    // back to cache on outright failure. Prevents the "weak signal
+    // serves stale HTML" pattern we hit on a train with bad 5G.
+    event.respondWith((async () => {
+      try {
+        const netRes = await Promise.race([
+          fetch(req, { cache: 'no-store' }),
+          new Promise((_, rej) => setTimeout(() => rej(new Error('html-timeout')), 4000)),
+        ]);
+        if (netRes && netRes.ok) {
+          const copy = netRes.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(req, copy)).catch(()=>{});
+          return netRes;
+        }
+        throw new Error('html-bad-status-' + (netRes && netRes.status));
+      } catch (_) {
+        const cached = await caches.match(req);
+        return cached || (await caches.match('/app.html'));
+      }
+    })());
     return;
   }
   event.respondWith(
