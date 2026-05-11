@@ -3473,9 +3473,13 @@ function _buildCardEl(task) {
     // Same gentle permission gate as the Today bell — ask on first turn-on.
     if (goingOn) {
       if (_notifSupported() && Notification.permission === 'default') {
-        _requestNotifPermission();
+        _requestNotifPermission().then(r => {
+          if (r === 'granted') _ensurePushSubscription().catch(()=>{});
+        });
       } else if (_notifSupported() && Notification.permission === 'denied') {
         showNotifToast(t('notif_perm_blocked'));
+      } else if (_notifSupported() && Notification.permission === 'granted') {
+        _ensurePushSubscription().catch(()=>{});
       }
     }
   });
@@ -3989,10 +3993,15 @@ function renderToday() {
       // shadowed, so we read the string directly from the I18N table.
       if (goingOn) {
         if (_notifSupported() && Notification.permission === 'default') {
-          _requestNotifPermission();
+          _requestNotifPermission().then(r => {
+            if (r === 'granted') _ensurePushSubscription().catch(()=>{});
+          });
         } else if (_notifSupported() && Notification.permission === 'denied') {
           const i18n = I18N[AppState.lang] || I18N.en;
           showNotifToast(i18n.notif_perm_blocked);
+        } else if (_notifSupported() && Notification.permission === 'granted') {
+          // Already granted but maybe no subscription yet — ensure one.
+          _ensurePushSubscription().catch(()=>{});
         }
       }
     });
@@ -4829,6 +4838,10 @@ window.addEventListener('appinstalled', () => {
         AppState.lang === 'he' ? 'תקבל תזכורות לפני כל משימה' : 'You will get reminders before each task',
         'family-app-test'
       );
+      // Permission just granted — establish the push subscription with
+      // the backend so future task-time reminders fire even when the
+      // browser/PWA is closed.
+      _ensurePushSubscription().catch(()=>{});
     }
     if (banner) banner.classList.remove('on');
   });
@@ -4912,6 +4925,165 @@ function checkOverdueReminders() {
 // the app inside a firing window doesn't miss it.
 setInterval(checkOverdueReminders, 30 * 1000);
 
+// ─── Server-side Web Push: subscription + per-task scheduling ──────
+// When the user grants notification permission, we subscribe to push
+// via the Service Worker and register the subscription with /api/subscribe.
+// Then on every saveState we recompute the schedule for this device and
+// POST it to /api/schedule-push, which stores the entries in Vercel KV.
+// An external cron pings /api/cron-push every minute, which fires due
+// pushes via web-push → the SW's `push` event → showNotification.
+//
+// Result: the user sees a real OS notification at the right time, EVEN
+// IF THE BROWSER / PWA IS CLOSED. The toast + chime + foreground
+// Notification path stays as a fast-fallback for the app-open case.
+const DEVICE_ID_KEY = 'family-app-device-id';
+let   _vapidPublicKey = null;
+let   _pushSubscribed = false;
+
+function _getDeviceId() {
+  let id = localStorage.getItem(DEVICE_ID_KEY);
+  if (!id) {
+    id = 'dev-' + Date.now() + '-' + Math.random().toString(36).slice(2, 10);
+    localStorage.setItem(DEVICE_ID_KEY, id);
+  }
+  return id;
+}
+
+function _urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64  = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const raw     = atob(base64);
+  const out     = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+  return out;
+}
+
+async function _ensurePushSubscription() {
+  if (_pushSubscribed) return true;
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+    AppLog.warn('push', 'browser does not support push');
+    return false;
+  }
+  if (Notification.permission !== 'granted') return false;
+  try {
+    if (!_vapidPublicKey) {
+      const r = await fetch('/api/vapid-public-key');
+      if (!r.ok) { AppLog.warn('push', 'vapid key endpoint failed', r.status); return false; }
+      const j = await r.json();
+      _vapidPublicKey = j.publicKey;
+    }
+    const reg = await navigator.serviceWorker.ready;
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) {
+      sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: _urlBase64ToUint8Array(_vapidPublicKey),
+      });
+    }
+    const r = await fetch('/api/subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ deviceId: _getDeviceId(), subscription: sub.toJSON() }),
+    });
+    if (!r.ok) { AppLog.warn('push', 'subscribe POST failed', r.status); return false; }
+    _pushSubscribed = true;
+    AppLog.info('push', 'subscribed', _getDeviceId());
+    // Subscription just established — push the current schedule for any
+    // existing tasks so the cron has something to fire.
+    _syncScheduledPushes().catch(() => {});
+    return true;
+  } catch (e) {
+    AppLog.warn('push subscription failed', e.message || '');
+    return false;
+  }
+}
+
+// Build the list of (pushId, fireAt, title, body, tag) entries we want
+// the server to fire on our behalf, derived from AppState.tasks for the
+// active date. We send the FULL set on each call — server-side this is
+// effectively a "replace my schedule" because we cancel old IDs that
+// aren't in the new set. Simple, idempotent, no diff logic needed
+// client-side.
+function _buildScheduledPushList() {
+  const out   = [];
+  const today = todayDate();
+  AppState.tasks.forEach(task => {
+    if ((task.date || today) !== today) return;
+    if (task.completed || task.notify === false) return;
+    if (typeof task.mins !== 'number') return;
+
+    // Anchor fire times to TODAY's local midnight + task.mins
+    const base = new Date();
+    base.setHours(0, 0, 0, 0);
+    const taskAt = base.getTime() + task.mins * 60 * 1000;
+
+    const offset    = (task.reminderOffsetMinutes ?? 10) * 60 * 1000;
+    const initialAt = taskAt - offset;
+    const offLabel  = offset === 0 ? t('notif_starting') : tFmt('time_in_min',{n:task.reminderOffsetMinutes ?? 10});
+
+    out.push({
+      id:     `task-${task.id}-initial`,
+      taskId: task.id,
+      fireAt: initialAt,
+      title:  task.title,
+      body:   offLabel,
+      tag:    `task-${task.id}-initial`,
+    });
+
+    (task.overdueReminderOffsets || [5, 10, 15]).forEach((stageOffset, idx) => {
+      out.push({
+        id:     `task-${task.id}-overdue-${idx}`,
+        taskId: task.id,
+        fireAt: taskAt + stageOffset * 60 * 1000,
+        title:  task.title,
+        body:   tFmt('notif_overdue', { n: stageOffset }),
+        tag:    `task-${task.id}-overdue-${idx}`,
+      });
+    });
+  });
+  return out;
+}
+
+async function _syncScheduledPushes() {
+  if (!_pushSubscribed) return;
+  const pushes = _buildScheduledPushList();
+  // POST the current schedule. Server stores; cron drains.
+  try {
+    await fetch('/api/schedule-push', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ deviceId: _getDeviceId(), pushes }),
+    });
+  } catch (e) {
+    AppLog.warn('schedule-push failed', e.message || '');
+  }
+}
+
+async function _cancelScheduledPushesForTask(taskId) {
+  if (!_pushSubscribed) return;
+  try {
+    await fetch('/api/cancel-push', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ taskId }),
+    });
+  } catch (e) {
+    AppLog.warn('cancel-push failed', e.message || '');
+  }
+}
+
+// Hook into saveState: every persisted change re-syncs the schedule so
+// new/edited tasks get push entries and completed/deleted ones don't.
+// We debounce so a rapid burst of edits produces one server roundtrip.
+let _syncDebounce = null;
+const _origSaveState = saveState;
+saveState = function(...args) {
+  const r = _origSaveState.apply(this, args);
+  clearTimeout(_syncDebounce);
+  _syncDebounce = setTimeout(() => _syncScheduledPushes(), 600);
+  return r;
+};
+
 // ─── Status-bar clock: replace hardcoded 9:41 with real device time ──
 // The 9:41 in the markup was the iPhone-mockup convention. It misled
 // users into thinking the app had its own clock that drove reminders.
@@ -4934,13 +5106,22 @@ setTimeout(() => {
 // ─── Service Worker registration ──────────────────────────────────
 // Registers /service-worker.js for: (a) offline shell cache so the app
 // loads with no network, (b) showNotification API that works even when
-// the page is backgrounded, (c) push handler — wired now so the eventual
-// backend (next sweep) can fire notifications when the tab is fully
-// closed. Registration is best-effort; failures don't block app boot.
+// the page is backgrounded, (c) push handler — fires real OS-level
+// notifications when our backend sends a Web Push.
+// Once registration succeeds, if the user has already granted permission
+// in a previous session we re-establish the push subscription so reminders
+// keep flowing without requiring another bell tap.
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/service-worker.js')
-      .then(reg => AppLog.info('SW registered', reg.scope || ''))
+      .then(reg => {
+        AppLog.info('SW registered', reg.scope || '');
+        if (_notifSupported() && Notification.permission === 'granted') {
+          // Returning user — re-establish push subscription quietly so
+          // scheduled reminders continue working across sessions.
+          _ensurePushSubscription().catch(()=>{});
+        }
+      })
       .catch(err => AppLog.warn('SW register failed', err.message || ''));
   });
 }
