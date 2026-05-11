@@ -1316,7 +1316,7 @@ const I18N = {
     share_repeat:'Repeat', share_done:'Done',
     remind_at_time:'At task time', remind_10:'10 min before',
     remind_30:'30 min before', remind_60:'1 hour before', remind_custom:'Custom',
-    repeat_none:'None', repeat_weekly:'Weekly',
+    repeat_none:'None', repeat_daily:'Daily', repeat_weekly:'Weekly',
     user_switch:'Switch user',
     family_mom:'Mom', family_dad:'Dad', family_dudi:'Dudi', family_yonatan:'Yonatan',
     date_today:'Today', date_tomorrow:'Tomorrow',
@@ -1392,7 +1392,7 @@ const I18N = {
     share_repeat:'חזרה', share_done:'סיום',
     remind_at_time:'בזמן המשימה', remind_10:'10 דקות לפני',
     remind_30:'30 דקות לפני', remind_60:'שעה לפני', remind_custom:'מותאם אישית',
-    repeat_none:'ללא', repeat_weekly:'שבועי',
+    repeat_none:'ללא', repeat_daily:'יומי', repeat_weekly:'שבועי',
     user_switch:'החלף משתמש',
     family_mom:'אמא', family_dad:'אבא', family_dudi:'דודי', family_yonatan:'יונתן',
     date_today:'היום', date_tomorrow:'מחר',
@@ -1461,6 +1461,17 @@ function loadState() {
     const s = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
     if (s && Array.isArray(s.tasks))          AppState.tasks               = s.tasks;
     if (s && s.recurringCompletions)           AppState.recurringCompletions = s.recurringCompletions;
+    // Migration — legacy weekly tasks used a single `dayOfWeek`. Convert
+    // to `daysOfWeek` array so the multi-day UI + activeTasks projector
+    // see a consistent shape. Idempotent: if already migrated, no-op.
+    AppState.tasks.forEach(t => {
+      if (t.recurrence && t.recurrence.type === 'weekly'
+          && !Array.isArray(t.recurrence.daysOfWeek)
+          && typeof t.recurrence.dayOfWeek === 'number') {
+        t.recurrence.daysOfWeek = [t.recurrence.dayOfWeek];
+        delete t.recurrence.dayOfWeek;
+      }
+    });
   } catch(e) {}
 }
 
@@ -2972,6 +2983,7 @@ function renderReminderSection() {
 
 const REPEAT_TYPES = [
   { labelKey: 'repeat_none',   val: 'none'   },
+  { labelKey: 'repeat_daily',  val: 'daily'  },
   { labelKey: 'repeat_weekly', val: 'weekly' },
 ];
 
@@ -2981,16 +2993,31 @@ function renderRepeatSection() {
   const dowRow  = document.getElementById('repeatDowRow');
   const rec     = task.recurrence || { type: 'none' };
 
+  // Backward-compat: legacy weekly tasks may have a single `dayOfWeek`
+  // instead of a `daysOfWeek` array. Normalize on read so the UI works
+  // regardless of which shape is stored (loadState's migration pass
+  // also normalizes on init, this is the secondary safety net).
+  if (rec.type === 'weekly' && !Array.isArray(rec.daysOfWeek)) {
+    rec.daysOfWeek = (typeof rec.dayOfWeek === 'number') ? [rec.dayOfWeek] : [];
+    task.recurrence.daysOfWeek = rec.daysOfWeek;
+    delete task.recurrence.dayOfWeek;
+  }
+
   typeEl.innerHTML = '';
   REPEAT_TYPES.forEach(r => {
     const chip = document.createElement('div');
     chip.className = 'repeat-chip' + (rec.type === r.val ? ' sel' : '');
     chip.textContent = t(r.labelKey);
     chip.addEventListener('click', () => {
-      task.recurrence = { type: r.val };
       if (r.val === 'weekly') {
+        // Seed with the current active date's weekday so "weekly" is
+        // useful immediately without an extra tap.
         const dt = new Date(activeDate + 'T00:00:00');
-        task.recurrence.dayOfWeek = dt.getDay();
+        task.recurrence = { type: 'weekly', daysOfWeek: [dt.getDay()] };
+      } else if (r.val === 'daily') {
+        task.recurrence = { type: 'daily' };
+      } else {
+        task.recurrence = { type: 'none' };
       }
       renderRepeatSection();
     });
@@ -3001,12 +3028,21 @@ function renderRepeatSection() {
     dowRow.style.display = '';
     dowRow.innerHTML = '';
     const dowLabels = (I18N[AppState.lang] || I18N.en).days_short;
+    const selected  = new Set(Array.isArray(rec.daysOfWeek) ? rec.daysOfWeek : []);
     dowLabels.forEach((lbl, i) => {
       const chip = document.createElement('div');
-      chip.className = 'repeat-dow-chip' + (rec.dayOfWeek === i ? ' sel' : '');
+      chip.className = 'repeat-dow-chip' + (selected.has(i) ? ' sel' : '');
       chip.textContent = lbl;
       chip.addEventListener('click', () => {
-        task.recurrence.dayOfWeek = i;
+        // Toggle this day in/out of daysOfWeek. Guard against
+        // emptying the array entirely — without a day the weekly task
+        // would never appear; keep at least one day selected.
+        if (selected.has(i)) {
+          if (selected.size > 1) selected.delete(i);
+        } else {
+          selected.add(i);
+        }
+        task.recurrence.daysOfWeek = Array.from(selected).sort((a, b) => a - b);
         renderRepeatSection();
       });
       dowRow.appendChild(chip);
@@ -4126,13 +4162,31 @@ function activeTasks() {
     (!t.recurrence || t.recurrence.type === 'none') &&
     isVisible(t)
   );
+  // Project recurring TEMPLATES into one virtual instance per matching
+  // day. The template lives once in AppState.tasks; instances here have
+  // a deterministic id (`rec_${templateId}_${activeDate}`) so re-running
+  // activeTasks() for the same date never creates duplicates — the same
+  // virtual id is rebuilt each time.
+  //
+  // Match rules:
+  //   - 'daily'  → matches EVERY day from creation date forward.
+  //   - 'weekly' → matches when activeDate's weekday is in daysOfWeek
+  //                (array). Legacy templates that only have `dayOfWeek`
+  //                (singular) are accepted as a fallback so a one-off
+  //                un-migrated record doesn't disappear.
   const recurring = AppState.tasks
-    .filter(t =>
-      t.recurrence?.type === 'weekly' &&
-      t.recurrence.dayOfWeek === dow &&
-      (t.date || todayDate()) <= activeDate &&
-      isVisible(t)
-    )
+    .filter(t => {
+      if (!t.recurrence) return false;
+      if ((t.date || todayDate()) > activeDate) return false;   // template created after this date
+      if (!isVisible(t)) return false;
+      if (t.recurrence.type === 'daily') return true;
+      if (t.recurrence.type === 'weekly') {
+        const days = Array.isArray(t.recurrence.daysOfWeek) ? t.recurrence.daysOfWeek
+                   : (typeof t.recurrence.dayOfWeek === 'number' ? [t.recurrence.dayOfWeek] : []);
+        return days.includes(dow);
+      }
+      return false;
+    })
     .map(t => ({
       ...t,
       id: `rec_${t.id}_${activeDate}`,
@@ -5508,7 +5562,7 @@ if ('serviceWorker' in navigator) {
 // device. If you delete a card and the console doesn't show
 // "[delete] surgical refresh…", you're on a stale cached HTML and need
 // to hard-reload (or the SW will catch up on next visit).
-console.log('%c[Family App] build: agenda-disabled-2026-05-11', 'background:#ff5e14;color:#fff;padding:3px 8px;border-radius:6px;font-weight:bold');
+console.log('%c[Family App] build: recurring-tasks-2026-05-11', 'background:#ff5e14;color:#fff;padding:3px 8px;border-radius:6px;font-weight:bold');
 loadState();
 updateDateBadge();
 // Run the reminder check ONCE immediately after state loads so opening
