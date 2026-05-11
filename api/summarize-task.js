@@ -16,62 +16,33 @@ const OpenAI = require('openai');
 
 const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-const SYSTEM_PROMPT = `You are a Hebrew task summarizer for a family app.
+const SYSTEM_PROMPT = `You are a strict, faithful task summarizer for a Hebrew/English family app. Your ONLY job is to extract structure that is ALREADY PRESENT in the user's input — never to invent, paraphrase, or generalize.
 
-Given one task title in Hebrew (or English) that contains MULTIPLE
-sub-items packed into one long sentence (e.g. a meeting agenda, a
-project's checklist, a multi-step chore), return a clean structured
-JSON breakdown.
+CRITICAL RULE: Every word in your output must come directly from the user's input, or be a minimal grammatical adjustment of words in the input. NEVER substitute the user's specific topics with generic placeholders.
 
-Return ONLY valid JSON in ONE of these shapes:
+Output ONLY valid JSON. No markdown. No commentary. One of these two shapes:
 
-A) When the title bundles 2+ distinct sub-items:
-   {
-     "mainTitle": "<short label of the main event/action, 2-5 words>",
-     "items": ["<sub-item 1>", "<sub-item 2>", "<sub-item 3>", ...]
-   }
-
-B) When the title is actually ONE single action (not bundled), OR is
-   a shopping list (handled elsewhere), OR is too short to summarize:
-   { "skip": true }
-
-Rules:
-- mainTitle captures the OVERARCHING action/event (the WHO/WHAT), not
-  the individual items inside. Examples:
-    "זום עם הפעילים", "פגישת צוות", "להתכונן לטיול".
-- items are the SPECIFIC sub-actions or topics. Each one is a short
-  imperative or noun phrase, 2-6 words. Examples:
-    "לדבר על אחדות", "הכרות הדדית", "לאסוף קורות חיים".
-- Items must be DISTINCT and DERIVED from the original title — do
-  not invent items the user didn't mention.
-- Output in the SAME language as the input title (Hebrew or English).
-- A title is a single action and should be skipped if it has no
-  comma-separated sub-items and no clear "ו..." conjunctions joining
-  multiple actions.
-- Shopping lists ("ללכת לסופר לקנות X Y Z", "לקנות מלפפונים עגבניות
-  חלב") → always { "skip": true } (they have their own categorizer).
-- Output strictly valid JSON. No markdown, no commentary.
-
-Example A:
-Input: "זום עם הפעילים שלי לדבר על אחדות עכשיו, נעים להכיר, שישלחו לי כולם קורות חיים, שיכינו לי דוחות לקוחות"
-Output:
+SHAPE A (the title bundles ≥2 distinct sub-items joined by commas or "ו"):
 {
-  "mainTitle": "זום עם הפעילים",
-  "items": [
-    "לדבר על אחדות",
-    "הכרות הדדית",
-    "לאסוף קורות חיים מכולם",
-    "להכין דוחות לקוחות"
-  ]
+  "mainTitle": "<2-5 word label that captures the OVERARCHING event/action, using the user's own opening words>",
+  "items": ["<sub-item 1>", "<sub-item 2>", ...]
 }
 
-Example B:
-Input: "לקחת את דודי לחוג בנהריה"
-Output: { "skip": true }
+SHAPE B (single action, or a shopping list, or too short — anything that should not be summarized):
+{ "skip": true }
 
-Example C (shopping → skip, categorizer handles it):
-Input: "ללכת לסופר לקנות מלפפונים עגבניות חלב גבינה"
-Output: { "skip": true }`;
+Rules for SHAPE A:
+- mainTitle is the WHO/WHAT, taken from the FIRST clause of the user's input (e.g. if the user says "זום עם הפעילים שלי לדבר על X, Y, Z" → mainTitle = "זום עם הפעילים"). Do NOT replace it with a generic phrase like "פגישת צוות" if the user didn't say "פגישת צוות".
+- items must be the user's ACTUAL listed sub-tasks, in the order they appear. Each item is a short imperative/noun phrase (2-6 words) using the user's own vocabulary. Do NOT replace specific topics with generic ones (e.g. if the user says "לדבר על אחדות" do NOT write "לדבר על תוכניות העבודה").
+- Items must be DISTINCT and DERIVED from the source — never invented.
+- Output in the SAME language as the input.
+
+When to return SHAPE B (skip):
+- The input is a single action with no comma-separated sub-items and no "ו..." clause joins (e.g. "לקחת את דודי לחוג בנהריה").
+- The input is a shopping list (verbs like "לקנות"/"buy", venues like "לסופר"/"שוק"; the app has a separate categorizer for those).
+- The input is shorter than ~30 chars.
+
+Test your output before returning: every word of mainTitle and every word of every item should appear somewhere in the user's input (or be its obvious grammatical inflection). If any word is invented, return { "skip": true } instead.`;
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -91,9 +62,10 @@ module.exports = async function handler(req, res) {
       model:           process.env.OPENAI_MODEL || 'gpt-4o-mini',
       messages:        [
         { role: 'system', content: SYSTEM_PROMPT },
-        { role: 'user',   content: `Title: "${title}"` },
+        { role: 'user',   content: `User's task title (extract structure FAITHFULLY, do not paraphrase): "${title}"` },
       ],
       response_format: { type: 'json_object' },
+      temperature:     0,           // deterministic — no random paraphrasing
       max_tokens:      500,
     });
 
