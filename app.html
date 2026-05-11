@@ -287,15 +287,50 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 .atd-cancel{border:none;background:none;color:#a08070;font-size:14px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;padding:6px 2px;flex-shrink:0;}
 .atd-body{display:flex;flex-direction:column;align-items:center;padding:14px 20px 8px;gap:14px;}
 .atd-mic-area{display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;-webkit-tap-highlight-color:transparent;}
-.atd-mic-ring{width:68px;height:68px;border-radius:50%;background:linear-gradient(135deg,#ff9a4e,#ff5e14);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(255,94,20,.26);transition:transform .16s,box-shadow .16s;}
+/* Cute kitschy heart-shaped mic — beats softly at rest, faster + glowing
+   while recording so it feels alive in both states. */
+.atd-mic-ring{width:96px;height:84px;position:relative;display:flex;align-items:center;justify-content:center;background:transparent;box-shadow:none;border-radius:0;filter:drop-shadow(0 6px 16px rgba(255,94,20,.30));animation:atdHeartIdle 1.6s ease-in-out infinite;transition:filter .2s,transform .14s;}
 .atd-mic-ring:active{transform:scale(.93);}
-.atd-mic-ring.rec{animation:atdPulse 1.5s ease-in-out infinite;box-shadow:0 4px 22px rgba(255,94,20,.46);}
-@keyframes atdPulse{0%,100%{transform:scale(1);}50%{transform:scale(1.09);}}
-.atd-mic-icon{font-size:26px;line-height:1;}
+.atd-mic-ring.rec{animation:atdHeartBeat .85s ease-in-out infinite;filter:drop-shadow(0 9px 24px rgba(255,94,20,.55));}
+.atd-heart-svg{width:100%;height:100%;display:block;pointer-events:none;}
+.atd-mic-icon{position:absolute;top:50%;left:50%;transform:translate(-50%,-58%);font-size:24px;line-height:1;pointer-events:none;filter:drop-shadow(0 1px 2px rgba(0,0,0,.32));}
+/* Resting heartbeat — gentle double-pulse like a real heart at ~60bpm */
+@keyframes atdHeartIdle{
+  0%,100% { transform:scale(1); }
+  18%     { transform:scale(1.05); }
+  30%     { transform:scale(1); }
+  48%     { transform:scale(1.03); }
+  62%     { transform:scale(1); }
+}
+/* Recording — faster, more emphatic double-pulse (~90bpm) */
+@keyframes atdHeartBeat{
+  0%,100% { transform:scale(1); }
+  14%     { transform:scale(1.14); }
+  28%     { transform:scale(0.98); }
+  42%     { transform:scale(1.09); }
+  60%     { transform:scale(1); }
+}
 .atd-status{font-size:12px;font-weight:700;color:#b09080;letter-spacing:.2px;}
 .atd-status.rec{color:#e07c3a;}
 .atd-bubble{width:100%;min-height:40px;background:#fff3ec;border-radius:14px;padding:10px 14px;font-size:15px;font-weight:700;color:#2d1a0e;direction:rtl;text-align:right;line-height:1.5;display:none;word-break:break-word;}
 .atd-bubble.has-text{display:block;}
+
+/* Typing mode — toggle + textarea, mirroring the main voice screen's
+   pattern. When .atd-bg has class .typing-mode, the mic + status +
+   toggle hide and the textarea + voice-back appear. */
+.atd-type-toggle{font-size:12.5px;font-weight:800;color:#9e8878;cursor:pointer;padding:6px 14px;border-radius:999px;background:rgba(0,0,0,.04);transition:background .15s,color .15s;letter-spacing:.02em;border:1.2px solid rgba(0,0,0,.06);}
+.atd-type-toggle:active{background:rgba(0,0,0,.08);color:#2d2018;}
+.atd-type-area{display:none;flex-direction:column;width:100%;gap:9px;}
+.atd-type-inp{width:100%;border:1.5px solid rgba(255,112,51,.22);outline:none;background:#fffaf5;border-radius:14px;padding:12px 14px;min-height:88px;max-height:150px;overflow-y:auto;font-family:'Rubik','Nunito',sans-serif;font-size:15.5px;font-weight:600;color:#2d1a0e;direction:rtl;text-align:right;line-height:1.6;white-space:pre-wrap;word-break:break-word;cursor:text;transition:border-color .15s;}
+.atd-type-inp:empty:before{content:attr(data-placeholder);color:#cbb5a8;font-style:italic;font-weight:400;pointer-events:none;display:block;}
+.atd-type-inp:focus{border-color:#e07c3a;}
+.atd-voice-back{font-size:13px;font-weight:800;color:#9e8878;text-align:center;cursor:pointer;padding:4px 8px;letter-spacing:.02em;display:none;border-bottom:1.5px solid rgba(158,136,120,.30);align-self:center;transition:color .15s;}
+.atd-voice-back:active{color:#6b4f3a;}
+.atd-bg.typing-mode .atd-mic-area,
+.atd-bg.typing-mode .atd-bubble,
+.atd-bg.typing-mode .atd-type-toggle{display:none;}
+.atd-bg.typing-mode .atd-type-area{display:flex;}
+.atd-bg.typing-mode .atd-voice-back{display:inline-block;}
 .atd-foot{padding:8px 20px 24px;}
 .btn-add-more{width:100%;padding:13px;border-radius:18px;border:1.5px dashed rgba(224,124,58,.35);cursor:pointer;background:rgba(255,112,51,.04);font-family:'Nunito',sans-serif;font-size:14px;font-weight:800;color:#e07c3a;transition:background .18s;}
 .btn-add-more:active{background:rgba(224,124,58,.1);}
@@ -972,8 +1007,25 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
       </div>
       <div class="atd-body">
         <div class="atd-mic-area" id="atdMicArea">
-          <div class="atd-mic-ring" id="atdMicRing"><div class="atd-mic-icon">🎙️</div></div>
+          <div class="atd-mic-ring" id="atdMicRing">
+            <svg class="atd-heart-svg" viewBox="0 0 100 90" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <defs>
+                <radialGradient id="atdHeartG" cx="50%" cy="38%" r="65%">
+                  <stop offset="0%"  stop-color="#ffb585"/>
+                  <stop offset="48%" stop-color="#ff7a3a"/>
+                  <stop offset="100%" stop-color="#e8460a"/>
+                </radialGradient>
+              </defs>
+              <path d="M50 82 C 14 62 4 38 4 22 C 4 10 16 2 28 2 C 38 2 45 8 50 18 C 55 8 62 2 72 2 C 84 2 96 10 96 22 C 96 38 86 62 50 82 Z" fill="url(#atdHeartG)"/>
+            </svg>
+            <div class="atd-mic-icon">🎙️</div>
+          </div>
           <div class="atd-status" id="atdStatus">לחץ לדיבור</div>
+        </div>
+        <div class="atd-type-toggle" id="atdTypeToggle">או הקלד במקום</div>
+        <div class="atd-type-area" id="atdTypeArea">
+          <div class="atd-type-inp" id="atdTypeInp" contenteditable="true" role="textbox" aria-multiline="true" spellcheck="false" data-placeholder="כתוב משימה חדשה..."></div>
+          <div class="atd-voice-back" id="atdVoiceBack">🎙 חזור לדיבור</div>
         </div>
         <div class="atd-bubble" id="atdBubble"></div>
       </div>
@@ -1272,6 +1324,9 @@ const I18N = {
     voice_lang_fallback:'Smart task splitting is available in Hebrew. Switch language to try it ✨',
     atd_title:'Add tasks', atd_cancel:'Cancel', atd_add:'Add to day ✓',
     atd_tap:'Tap mic to speak', atd_recording:'Tap to stop',
+    atd_type_toggle:'Or type it instead', atd_type_placeholder:'Write a new task...',
+    atd_voice_back:'🎙 Use voice instead',
+    add_more:'+ Add more',
   },
   he: {
     voice_eyebrow:'✨ קלט קולי', voice_prompt:'ספר לי מה<br>צריך לקרות היום',
@@ -1345,6 +1400,9 @@ const I18N = {
     voice_lang_fallback:'פירוק חכם למשימות זמין כרגע בעברית. תמיכה באנגלית תתווסף בהמשך ✨',
     atd_title:'הוסף משימות', atd_cancel:'ביטול', atd_add:'הוסף ליום ✓',
     atd_tap:'לחץ לדיבור', atd_recording:'לחץ לעצירה',
+    atd_type_toggle:'או הקלד במקום', atd_type_placeholder:'כתוב משימה חדשה...',
+    atd_voice_back:'🎙 חזור לדיבור',
+    add_more:'+ הוסף משימה',
   }
 };
 function t(key) { return (I18N[AppState.lang] || I18N.en)[key] || key; }
@@ -1499,6 +1557,9 @@ function _applyLang() {
   set('adjBanner',   t('dp_adj_banner'));
   set('btnOk',       t('dp_ok'));
   set('btnAdjust',   t('dp_adjust'));
+  set('btnAddMore',  t('add_more'));
+  set('atdTypeToggle', t('atd_type_toggle'));
+  set('atdVoiceBack',  t('atd_voice_back'));
   // Today screen
   set('tPlbl',       t('today_tasks'));
   set('tComingLbl',  t('today_coming'));
@@ -5207,7 +5268,7 @@ if ('serviceWorker' in navigator) {
 // device. If you delete a card and the console doesn't show
 // "[delete] surgical refresh…", you're on a stale cached HTML and need
 // to hard-reload (or the SW will catch up on next visit).
-console.log('%c[Family App] build: truly-smooth-delete-2026-05-11', 'background:#ff5e14;color:#fff;padding:3px 8px;border-radius:6px;font-weight:bold');
+console.log('%c[Family App] build: heart-mic-add-sheet-2026-05-11', 'background:#ff5e14;color:#fff;padding:3px 8px;border-radius:6px;font-weight:bold');
 loadState();
 updateDateBadge();
 // Run the reminder check ONCE immediately after state loads so opening
@@ -5249,8 +5310,14 @@ function openAddSheet() {
   if (addBtn) { addBtn.disabled = true; addBtn.textContent = t('atd_add'); }
   document.getElementById('atdTitle').textContent  = t('atd_title');
   document.getElementById('atdCancel').textContent = t('atd_cancel');
+  // Always open in voice mode — typing-mode class is cleared so the
+  // heart mic + status are visible, the textarea is hidden.
+  const sheet = document.getElementById('atdBg');
+  sheet.classList.remove('typing-mode');
+  const typeInp = document.getElementById('atdTypeInp');
+  if (typeInp) typeInp.innerHTML = '';
   _setAtdRecording(false);
-  document.getElementById('atdBg').classList.add('open');
+  sheet.classList.add('open');
   // Start recording automatically after sheet animates in
   setTimeout(() => _atdStartRec(), 360);
 }
@@ -5265,7 +5332,10 @@ function closeAddSheet() {
     if (recognition) { try { recognition.abort(); } catch(_) {} }
     _setAtdRecording(false);
   }
-  document.getElementById('atdBg').classList.remove('open');
+  const sheet = document.getElementById('atdBg');
+  sheet.classList.remove('open', 'typing-mode');
+  const typeInp = document.getElementById('atdTypeInp');
+  if (typeInp) typeInp.innerHTML = '';
 }
 
 function _setAtdRecording(isRec) {
@@ -5324,8 +5394,78 @@ document.getElementById('atdMicArea').addEventListener('click', () => {
 
 document.getElementById('atdAddBtn').addEventListener('click', () => {
   if (!addMode) return;
+  const sheet = document.getElementById('atdBg');
+  // Typing-mode submit path: pick up text from the textarea, push it
+  // into vTranscript, and route through vOrganize directly. No
+  // recording to stop, so we skip _atdStopAndOrganize's abort logic.
+  if (sheet.classList.contains('typing-mode')) {
+    const inp = document.getElementById('atdTypeInp');
+    const val = inp ? _getInpText(inp).trim() : '';
+    if (!val) return;
+    vTranscript = val;
+    vOrganize();
+    return;
+  }
   _atdStopAndOrganize();
 });
+
+// ─── Typing toggle inside the Add-Task sheet ──────────────────────
+// Lets the user opt out of dictation and type a task instead — useful
+// in quiet environments or when speech recognition is misbehaving.
+document.getElementById('atdTypeToggle').addEventListener('click', () => {
+  // Stop any active recording cleanly so the keepAlive doesn't keep
+  // playing the silent buffer in the background while typing.
+  if (vListening) {
+    _stopKeepAlive();
+    _clearMaxRecTimers();
+    clearTimeout(_restartTimer);
+    vListening = false;
+    if (recognition) { try { recognition.abort(); } catch(_) {} }
+    _setAtdRecording(false);
+  }
+  const sheet = document.getElementById('atdBg');
+  sheet.classList.add('typing-mode');
+  const addBtn = document.getElementById('atdAddBtn');
+  if (addBtn) addBtn.disabled = true;
+  // Focus the input — short delay lets the layout transition settle
+  // before the soft keyboard pushes the viewport.
+  setTimeout(() => {
+    const inp = document.getElementById('atdTypeInp');
+    if (inp) inp.focus();
+  }, 80);
+});
+
+document.getElementById('atdVoiceBack').addEventListener('click', () => {
+  const sheet = document.getElementById('atdBg');
+  sheet.classList.remove('typing-mode');
+  const inp = document.getElementById('atdTypeInp');
+  if (inp) inp.innerHTML = '';
+  const addBtn = document.getElementById('atdAddBtn');
+  if (addBtn) addBtn.disabled = true;
+  // Restart recording so the user can dictate immediately without
+  // having to tap the heart again — matches the user's expectation
+  // that "voice mode" means actively listening.
+  _atdStartRec();
+});
+
+// Enable / disable the Add button based on whether the textarea has
+// non-whitespace content. Enter submits (Shift+Enter inserts newline).
+(function _wireAtdTypeInput(){
+  const inp = document.getElementById('atdTypeInp');
+  if (!inp) return;
+  inp.addEventListener('input', () => {
+    const txt = _getInpText(inp).trim();
+    const addBtn = document.getElementById('atdAddBtn');
+    if (addBtn) addBtn.disabled = !txt;
+  });
+  inp.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      const addBtn = document.getElementById('atdAddBtn');
+      if (addBtn && !addBtn.disabled) addBtn.click();
+    }
+  });
+})();
 
 document.getElementById('atdCancel').addEventListener('click', () => {
   closeAddSheet();
