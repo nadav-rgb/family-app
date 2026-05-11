@@ -1155,6 +1155,8 @@ const I18N = {
     voice_err_generic:'Voice recognition error — please try again',
     voice_no_speech:"Didn't catch that — try speaking again",
     voice_retry:'Try again',
+    voice_rec_30s_left:'⏱ 30 seconds left',
+    voice_silence_hint:'Done? Tap to stop',
     dp_back:'Back', dp_tag:'✨ Ready', dp_h1:'We organized<br>your day ✨',
     dp_sub:'Feel free to tweak anything',
     dp_adj_banner:'✏️ Editing schedule — tap any time to change it',
@@ -1219,6 +1221,8 @@ const I18N = {
     voice_err_generic:'שגיאה בזיהוי קולי — נסה שוב',
     voice_no_speech:'לא הצלחתי לשמוע — נסה לדבר שוב',
     voice_retry:'נסה שוב',
+    voice_rec_30s_left:'⏱ עוד 30 שניות',
+    voice_silence_hint:'סיימת? לחץ לעצירה',
     dp_back:'חזרה', dp_tag:'✨ מוכן', dp_h1:'סידרנו לך<br>את היום ✨',
     dp_sub:'אפשר לשנות כל דבר',
     dp_adj_banner:'✏️ עריכת לוח זמנים — לחץ על שעה לשינוי',
@@ -1673,7 +1677,9 @@ const _restartDelay = _isIOSSafari ? 50 : 200;
 // AudioContext / getUserMedia stream needed, and works alongside the
 // existing keepAlive without competing for the mic.
 let _wdBurstTimer = null;
+let _lastTranscriptAt = 0;
 function _signalVoiceActivity() {
+  _lastTranscriptAt = Date.now();
   if (!wdots || !wdots.classList.contains('on')) return;
   const bars = wdots.querySelectorAll('.wd');
   bars.forEach((b) => {
@@ -1690,6 +1696,68 @@ function _signalVoiceActivity() {
   _wdBurstTimer = setTimeout(() => {
     bars.forEach((b) => b.classList.remove('burst'));
   }, 460);
+}
+
+// Max-recording length + silence hint. Two safety timers per session:
+//   - WARN_REC_MS  → flip the status text to "30 seconds left" warning
+//   - MAX_REC_MS   → auto-stop and route the transcript to vOrganize
+// _startSilencePoll runs alongside and shows a gentle "Done?" hint after
+// the user has stopped speaking for SILENCE_HINT_MS while there's already
+// some transcript to commit. The hint is text-only on ltxt; the next new
+// transcript chunk (via showBubble) overwrites it back to "Tap to stop".
+const MAX_REC_MS       = 120000;
+const WARN_REC_MS      = 90000;
+const SILENCE_HINT_MS  = 3000;
+let _maxRecTimer     = null;
+let _maxRecWarnTimer = null;
+let _silencePoll     = null;
+
+function _startMaxRecTimers(isAddMode) {
+  _clearMaxRecTimers();
+  _maxRecWarnTimer = setTimeout(() => {
+    if (!vListening) return;
+    if (isAddMode) {
+      const st = document.getElementById('atdStatus');
+      if (st) { st.textContent = t('voice_rec_30s_left'); st.style.color = '#c75139'; }
+    } else if (ltxt) {
+      ltxt.textContent = t('voice_rec_30s_left');
+      ltxt.style.color = '#c75139';
+    }
+  }, WARN_REC_MS);
+  _maxRecTimer = setTimeout(() => {
+    if (!vListening) return;
+    AppLog.info('vMaxRec', 'auto-stop at MAX_REC_MS');
+    if (isAddMode) _atdStopAndOrganize();
+    else vStop(false);
+  }, MAX_REC_MS);
+}
+function _clearMaxRecTimers() {
+  clearTimeout(_maxRecTimer);     _maxRecTimer = null;
+  clearTimeout(_maxRecWarnTimer); _maxRecWarnTimer = null;
+  // Restore any warning-color ltxt
+  if (ltxt && ltxt.style.color === 'rgb(199, 81, 57)') ltxt.style.color = '';
+  const st = document.getElementById('atdStatus');
+  if (st && st.style.color === 'rgb(199, 81, 57)') st.style.color = '';
+}
+
+function _startSilencePoll() {
+  _stopSilencePoll();
+  _lastTranscriptAt = 0; // reset; first growth in showBubble will set it
+  _silencePoll = setInterval(() => {
+    if (!vListening) return;
+    if (!_lastTranscriptAt) return;            // user hasn't spoken yet
+    if (!ltxt) return;
+    const idle = Date.now() - _lastTranscriptAt;
+    if (idle > SILENCE_HINT_MS && ltxt.textContent !== t('voice_silence_hint') &&
+        ltxt.textContent !== t('voice_rec_30s_left')) {
+      ltxt.textContent = t('voice_silence_hint');
+      ltxt.style.color = '#9e8878';
+    }
+  }, 500);
+}
+function _stopSilencePoll() {
+  clearInterval(_silencePoll);
+  _silencePoll = null;
 }
 
 // _recStart — wrap recognition.start() with proper error handling.
@@ -1713,6 +1781,8 @@ function _recStart() {
 function _onRecFatal(message) {
   vListening = false;
   _stopKeepAlive();
+  _clearMaxRecTimers();
+  _stopSilencePoll();
   clearTimeout(_restartTimer);
   clearTimeout(vTimer);
   if (recognition) { try { recognition.abort(); } catch(_) {} }
@@ -1859,9 +1929,12 @@ function showBubble(text) {
   }
   sbBubble.classList.add('on', 'bubble-live');
   sbBubble.classList.remove('fading');
-  ltxt.textContent = t('voice_stop');
-  ltxt.className   = 'ltxt v-stop-hint';
+  // Restore live "Tap to stop" label even if a silence/warning color was
+  // applied earlier — new transcript means user is still speaking.
+  ltxt.textContent   = t('voice_stop');
+  ltxt.className     = 'ltxt v-stop-hint';
   ltxt.style.opacity = '';
+  ltxt.style.color   = '';
   // Mirror transcript into add-sheet bubble when in add mode
   if (addMode) {
     const atdBub = document.getElementById('atdBubble');
@@ -2725,7 +2798,10 @@ function vStart() {
     if (!_recStart()) {
       AppLog.warn('vStart', 'recognition.start() failed — fatal');
       _onRecFatal(t('voice_err_generic'));
+      return;
     }
+    _startMaxRecTimers(false);
+    _startSilencePoll();
   } else {
     AppLog.info('speech', 'no SpeechAPI — mock timer');
     vTimer = setTimeout(() => vOrganize(), 1800);
@@ -2734,6 +2810,8 @@ function vStart() {
 
 function vStop(userInitiated = true) {
   _stopKeepAlive();
+  _clearMaxRecTimers();
+  _stopSilencePoll();
   if (userInitiated) _beepStop();
   clearTimeout(vTimer);
   clearTimeout(_restartTimer);
@@ -2748,10 +2826,14 @@ function vStop(userInitiated = true) {
   if (recognition) { try { recognition.abort(); } catch(_) {} }
   // Remove the live glow but keep bubble visible so user sees their frozen transcript.
   sbBubble.classList.remove('bubble-live');
+  // Tightened from 480ms+320ms (=800ms) to a single 200ms pause. The previous
+  // gap was perceived as the app "thinking before thinking" — now hideBubble
+  // and vOrganize start almost together, so the user gets the "organizing"
+  // pulsing label as the bubble fades.
   setTimeout(() => {
     hideBubble(false);
-    setTimeout(() => vOrganize(), 320);
-  }, 480);
+    vOrganize();
+  }, 200);
 }
 
 // ─── Time extraction helper ───────────────────────────────────────
@@ -3540,6 +3622,8 @@ function resetVoiceScreen() {
   if (recognition) { try { recognition.abort(); } catch(_) {} }
   clearTimeout(vTimer);
   clearTimeout(_restartTimer);
+  _clearMaxRecTimers();
+  _stopSilencePoll();
   zone.style.animation = '';
   zone.classList.remove('recede', 'rec');
   vTranscript = '';
@@ -4425,6 +4509,7 @@ function closeAddSheet() {
   addMode = false;
   if (vListening) {
     _stopKeepAlive();
+    _clearMaxRecTimers();
     clearTimeout(_restartTimer);
     vListening = false;
     if (recognition) { try { recognition.abort(); } catch(_) {} }
@@ -4451,20 +4536,25 @@ function _atdStartRec() {
     if (!_recStart()) {
       AppLog.warn('_atdStartRec', 'recognition.start() failed — fatal');
       _onRecFatal(t('voice_err_generic'));
+      return;
     }
+    _startMaxRecTimers(true);
   }
 }
 
 function _atdStopAndOrganize() {
   if (!addMode) return;
   _stopKeepAlive();
+  _clearMaxRecTimers();
   _beepStop();
   clearTimeout(_restartTimer);
   vListening = false;
   _setAtdRecording(false);
   if (recognition) { try { recognition.abort(); } catch(_) {} }
-  // Small delay so final transcript settles, then organise
-  setTimeout(() => { if (addMode) vOrganize(); }, 320);
+  // Tightened from 320ms to 120ms — transcript is already in vTranscript by
+  // the time we get here (we aborted above); the original delay was just
+  // belt-and-suspenders.
+  setTimeout(() => { if (addMode) vOrganize(); }, 120);
 }
 
 document.getElementById('atdMicArea').addEventListener('click', () => {
