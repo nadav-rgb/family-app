@@ -4198,6 +4198,98 @@ function undoDelete() {
   }
 }
 
+// _refreshTodayMetadata — surgical update of the Today screen's UI bits
+// AFTER a card has already been removed from the DOM (e.g. via the
+// swipe-delete animation). Updates avatar badges, hero card, "nxt"
+// highlight, progress bar, and the empty-state placeholder — but DOES
+// NOT rebuild the task list. Removing the rebuild eliminates the
+// momentary "blank list" flash and the entry-animation vibration
+// users saw after deleting a card.
+function _refreshTodayMetadata() {
+  const tasks     = activeTasks();
+  const container = document.getElementById('tTasks');
+  if (!container) return;
+
+  // Empty state: the deleted card was the last one. Show placeholder.
+  if (!tasks.length) {
+    container.innerHTML = `<div class="today-empty"><div class="today-empty-icon">📋</div><div class="today-empty-msg">${t('empty_title')}</div><div class="today-empty-sub">${t('empty_sub')}</div></div>`;
+    const pcnt = document.querySelector('.t-pcnt');
+    if (pcnt) pcnt.textContent = t('empty_title');
+    const pfill = document.getElementById('tPfill');
+    if (pfill) pfill.style.width = '0%';
+    const hero = document.querySelector('#s-today .t-hero-card');
+    if (hero) hero.style.display = 'none';
+    const sl0 = document.querySelectorAll('#s-today .t-slabel')[0];
+    if (sl0) sl0.style.display = 'none';
+    return;
+  }
+
+  // Recompute avatar badges from current AppState.tasks
+  const avMap = { mom:'av-mom', dad:'av-dad', dudi:'av-dudi', yonatan:'av-yona' };
+  const taskCounts = {};
+  tasks.forEach(task => {
+    const id = task.assignedTo || PERSON_TO_ID[task.person];
+    if (id) taskCounts[id] = (taskCounts[id] || 0) + 1;
+  });
+  FAMILY.forEach(f => {
+    const avEl = document.querySelector(`#s-today .${avMap[f.id]}`);
+    if (!avEl) return;
+    let badge = avEl.querySelector('.av-badge');
+    if (!badge) { badge = document.createElement('div'); badge.className = 'av-badge'; avEl.appendChild(badge); }
+    const count = taskCounts[f.id] || 0;
+    badge.textContent = count || '';
+    badge.style.display = count > 0 ? '' : 'none';
+  });
+
+  // Update hero card to reflect the new "next" task. If the deleted
+  // card was the next, the hero will repoint to the new next; if not,
+  // the same task stays in the hero and nothing flickers.
+  const nextTask = tasks.find(task => !task.completed);
+  const hero = document.querySelector('#s-today .t-hero-card');
+  if (nextTask && hero) {
+    const p = taskPerson(nextTask);
+    const now = new Date();
+    const nowMins = now.getHours() * 60 + now.getMinutes();
+    const diff = nextTask.mins - nowMins;
+    const pill = diff <= 0 ? t('time_now')
+               : diff < 60  ? tFmt('time_in_min', { n: diff })
+               :              tFmt('time_in_hr',  { n: Math.round(diff/60) });
+    const htime  = document.querySelector('.t-htime');
+    const htask  = document.querySelector('.t-htask');
+    const hav    = document.querySelector('.t-hav');
+    const hname  = document.querySelector('.t-hname');
+    const hpill  = document.querySelector('.t-hpill');
+    if (htime) htime.textContent = m2t(nextTask.mins);
+    if (htask) htask.textContent = nextTask.title;
+    if (hav)   hav.textContent   = p.emoji;
+    if (hname) hname.textContent = personLabel(nextTask.person);
+    if (hpill) hpill.textContent = pill;
+    hero.style.display = '';
+    const sl0 = document.querySelectorAll('#s-today .t-slabel')[0];
+    if (sl0) sl0.style.display = '';
+
+    // Move the .nxt highlight to the actual DOM card for the new next.
+    document.querySelectorAll('#tTasks .t-task.nxt').forEach(n => {
+      n.classList.remove('nxt');
+      const ck = n.querySelector('.t-ck');
+      if (ck && !n.classList.contains('done')) ck.className = 't-ck ck-open';
+      n.querySelector('.t-ttime')?.classList.remove('ora');
+    });
+    const nextEl = document.querySelector(`#tTasks .t-task[data-id="${nextTask.id}"]`);
+    if (nextEl) {
+      nextEl.classList.add('nxt');
+      const ck = nextEl.querySelector('.t-ck');
+      if (ck) ck.className = 't-ck ck-nxt';
+      nextEl.querySelector('.t-ttime')?.classList.add('ora');
+    }
+  } else if (hero) {
+    // All remaining tasks are completed — hide hero
+    hero.style.display = 'none';
+  }
+
+  updateProgress();
+}
+
 function doDelete(task, screen) {
   let state = { task, screen };
   if (screen === 'preview') {
@@ -4205,7 +4297,9 @@ function doDelete(task, screen) {
     if (idx >= 0) AppState.previewTasks.splice(idx, 1);
     state.idx  = idx;
     state.type = 'preview';
-    dpRender(false);
+    // Surgical: card already removed from DOM by the swipe animation.
+    // Just refresh the meta pills — no list rebuild → no flicker / vibration.
+    _updateDpMeta();
   } else {
     const isCreator = !task.createdBy || task.createdBy === currentUser;
     const isAlone   = !task.visibleTo || task.visibleTo.length <= 1;
@@ -4224,7 +4318,11 @@ function doDelete(task, screen) {
       task.notifyTo  = (task.notifyTo || []).filter(id => id !== currentUser);
     }
     saveState();
-    renderToday();
+    // Surgical: card already removed by swipe animation. Just refresh
+    // avatars / hero / progress / next-highlight — DO NOT rerender the
+    // list. The full renderToday() was producing a momentary blank-list
+    // flash + an entry-animation "vibration" on the remaining cards.
+    _refreshTodayMetadata();
   }
   showDeleteToast(state);
 }
