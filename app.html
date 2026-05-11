@@ -688,6 +688,18 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 .notif-close{font-size:16px;color:#c4ae9f;cursor:pointer;flex-shrink:0;padding:2px 4px;transition:opacity .15s;}
 .notif-close:active{opacity:.5;}
 
+/* ── Notification-permission banner — shown once at the top of Today
+      when the browser permission is still 'default' and the user has
+      tasks with notify=true. Self-dismissing on Enable or "Not now". */
+.notif-perm-banner{display:none;align-items:center;gap:10px;margin:0 20px 12px;padding:10px 14px;background:#fff;border:1.5px solid rgba(255,112,51,.18);border-radius:14px;box-shadow:0 4px 18px rgba(100,60,20,.08);animation:notifIn .32s cubic-bezier(.34,1.2,.64,1) both;}
+.notif-perm-banner.on{display:flex;}
+.notif-perm-banner.hide{animation:notifOut .22s ease both;}
+.npb-text{flex:1;min-width:0;font-size:12.5px;font-weight:700;color:#2d2018;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.npb-enable{flex-shrink:0;padding:7px 14px;border-radius:999px;background:linear-gradient(135deg,#ff9a4e,#ff5e14);color:white;font-family:'Nunito',sans-serif;font-size:12.5px;font-weight:900;border:none;cursor:pointer;box-shadow:0 4px 12px rgba(255,94,20,.22);transition:transform .14s;}
+.npb-enable:active{transform:scale(.96);}
+.npb-dismiss{flex-shrink:0;background:none;border:none;color:#9e8878;font-size:12.5px;font-weight:700;cursor:pointer;padding:6px 8px;font-family:'Nunito',sans-serif;}
+.npb-dismiss:active{color:#2d2018;}
+
 /* ── Calendar icon + date badge ── */
 .t-header-top{display:flex;align-items:center;justify-content:space-between;}
 .cal-btn{background:none;border:none;cursor:pointer;font-size:19px;padding:5px 7px;border-radius:12px;transition:background .15s;line-height:1;}
@@ -988,6 +1000,11 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
       <div class="t-hfoot"><div class="t-hwho"><div class="t-hav">👨</div><span class="t-hname">Dad</span></div><div class="t-hpill">in 58 min</div></div>
     </div>
     <div class="t-slabel" id="tAllLbl">📋 All Tasks</div>
+    <div class="notif-perm-banner" id="notifPermBanner">
+      <span class="npb-text" id="npbText">🔔 Get reminders for your tasks</span>
+      <button class="npb-enable"  id="npbEnable">Enable</button>
+      <button class="npb-dismiss" id="npbDismiss">Not now</button>
+    </div>
     <div class="t-tasks" id="tTasks"></div>
   </div>
   <div class="notif-toast" id="notifToast">
@@ -1172,6 +1189,10 @@ const I18N = {
     voice_retry:'Try again',
     voice_rec_30s_left:'⏱ 30 seconds left',
     voice_silence_hint:'Done? Tap to stop',
+    notif_perm_text:'🔔 Get reminders for your tasks',
+    notif_perm_enable:'Enable',
+    notif_perm_dismiss:'Not now',
+    notif_perm_blocked:'Browser blocked notifications — change in browser settings',
     dp_back:'Back', dp_tag:'✨ Ready', dp_h1:'We organized<br>your day ✨',
     dp_sub:'Feel free to tweak anything',
     dp_adj_banner:'✏️ Editing schedule — tap any time to change it',
@@ -1238,6 +1259,10 @@ const I18N = {
     voice_retry:'נסה שוב',
     voice_rec_30s_left:'⏱ עוד 30 שניות',
     voice_silence_hint:'סיימת? לחץ לעצירה',
+    notif_perm_text:'🔔 קבל תזכורות למשימות שלך',
+    notif_perm_enable:'הפעל',
+    notif_perm_dismiss:'אולי מאוחר יותר',
+    notif_perm_blocked:'הדפדפן חוסם התראות — שנה בהגדרות הדפדפן',
     dp_back:'חזרה', dp_tag:'✨ מוכן', dp_h1:'סידרנו לך<br>את היום ✨',
     dp_sub:'אפשר לשנות כל דבר',
     dp_adj_banner:'✏️ עריכת לוח זמנים — לחץ על שעה לשינוי',
@@ -3404,10 +3429,19 @@ function _buildCardEl(task) {
   });
   c.querySelector('.card-bell').addEventListener('click', e => {
     e.stopPropagation();
-    task.notify = task.notify === false ? true : false;
+    const goingOn = task.notify === false;
+    task.notify = goingOn ? true : false;
     const bell = c.querySelector('.card-bell');
     bell.textContent = task.notify ? '🔔' : '🔕';
     bell.classList.toggle('off', !task.notify);
+    // Same gentle permission gate as the Today bell — ask on first turn-on.
+    if (goingOn) {
+      if (_notifSupported() && Notification.permission === 'default') {
+        _requestNotifPermission();
+      } else if (_notifSupported() && Notification.permission === 'denied') {
+        showNotifToast(t('notif_perm_blocked'));
+      }
+    }
   });
   const titleEl = c.querySelector('.card-title');
   titleEl.setAttribute('contenteditable', 'plaintext-only');
@@ -3906,12 +3940,25 @@ function renderToday() {
     el.querySelector('.t-bell').addEventListener('click', e => {
       e.stopPropagation();
       const realT = t.isRecurring ? (AppState.tasks.find(rt => rt.id === t.recurrenceId) || t) : t;
-      realT.notify = realT.notify === false ? true : false;
+      const goingOn = realT.notify === false;          // about to turn ON
+      realT.notify = goingOn ? true : false;
       t.notify = realT.notify;
       const bell = el.querySelector('.t-bell');
       bell.textContent = realT.notify ? '🔔' : '🔕';
       bell.classList.toggle('off', !realT.notify);
       saveState();
+      // Gentle permission gate: only ask when the user actually expressed
+      // intent to be notified (i.e. turned bell ON) AND we haven't asked yet.
+      // NB: inside this forEach `t` is the task — the i18n function `t` is
+      // shadowed, so we read the string directly from the I18N table.
+      if (goingOn) {
+        if (_notifSupported() && Notification.permission === 'default') {
+          _requestNotifPermission();
+        } else if (_notifSupported() && Notification.permission === 'denied') {
+          const i18n = I18N[AppState.lang] || I18N.en;
+          showNotifToast(i18n.notif_perm_blocked);
+        }
+      }
     });
     el.querySelector('.t-share').addEventListener('click', e => {
       e.stopPropagation();
@@ -4014,6 +4061,7 @@ function renderToday() {
   });
 
   updateProgress();
+  _maybeShowNotifPermBanner();
 }
 
 document.getElementById('tNavAdd').addEventListener('click', () => {
@@ -4533,6 +4581,130 @@ function showNotifToast(msg) {
   notifTimer = setTimeout(() => hideNotifToast(), 5000);
 }
 
+// ─── Real browser notifications + chime ───────────────────────────
+// Pairs the in-app toast with a real OS-level Notification (when the
+// browser permission is granted) plus a brief two-tone chime, so the
+// user actually notices the reminder even if the tab is backgrounded.
+//
+// IMPORTANT: this does NOT work when the tab is fully closed — that
+// requires a Service Worker + Push backend (separate piece of work).
+// What we do cover: app open, foregrounded OR backgrounded tab.
+const NOTIF_BANNER_DISMISSED_KEY = 'family-app-notif-banner-dismissed';
+
+function _notifSupported() { return 'Notification' in window; }
+function _notifPermission() { return _notifSupported() ? Notification.permission : 'unsupported'; }
+
+async function _requestNotifPermission() {
+  if (!_notifSupported()) return 'unsupported';
+  if (Notification.permission !== 'default') return Notification.permission;
+  try {
+    const r = await Notification.requestPermission();
+    AppLog.info('notif perm', r);
+    return r;
+  } catch (_) { return 'default'; }
+}
+
+// _chime — pleasant two-tone reminder sound. Uses the existing _getAudio
+// helper so we don't conflict with the recording keepAlive buffer.
+function _chime() {
+  try {
+    const ctx = _getAudio();
+    const playTone = (freq, atTime, dur, peakVol) => {
+      const osc = ctx.createOscillator();
+      const g   = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      const start = ctx.currentTime + atTime;
+      g.gain.setValueAtTime(0, start);
+      g.gain.linearRampToValueAtTime(peakVol, start + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0008, start + dur);
+      osc.connect(g); g.connect(ctx.destination);
+      osc.start(start);
+      osc.stop(start + dur + 0.04);
+    };
+    playTone(880,  0.00, 0.20, 0.11);   // mi-ish
+    playTone(1175, 0.10, 0.26, 0.09);   // higher 4th — soft chime
+  } catch (_) {}
+}
+
+// _fireRealNotification — single entry point that does all 3 channels:
+// (1) in-app toast (always), (2) browser Notification (if permitted),
+// (3) chime sound. tag dedupes identical pings (e.g. minute-grain re-runs).
+function _fireRealNotification(title, body, tag) {
+  showNotifToast(`${title} — ${body}`);
+  _chime();
+  if (_notifSupported() && Notification.permission === 'granted') {
+    try {
+      const n = new Notification(title, {
+        body,
+        tag: tag || undefined,
+        renotify: false,
+        silent: true,                          // we play our own chime
+      });
+      n.onclick = () => { try { window.focus(); } catch(_) {} n.close(); };
+      setTimeout(() => { try { n.close(); } catch(_) {} }, 8000);
+    } catch (e) {
+      AppLog.warn('Notification ctor failed', e.message || '');
+    }
+  }
+}
+
+// _maybeShowNotifPermBanner — show the soft "Enable notifications" banner
+// on the Today screen IFF permission is still 'default' AND user hasn't
+// dismissed it AND they have at least one task on the active date with
+// notify=true. Always re-evaluated when renderToday runs.
+function _maybeShowNotifPermBanner() {
+  const banner = document.getElementById('notifPermBanner');
+  if (!banner) return;
+  if (!_notifSupported() || Notification.permission !== 'default') {
+    banner.classList.remove('on');
+    return;
+  }
+  if (localStorage.getItem(NOTIF_BANNER_DISMISSED_KEY) === '1') {
+    banner.classList.remove('on');
+    return;
+  }
+  const today = todayDate();
+  const hasNotifyTask = AppState.tasks.some(tk =>
+    (tk.date || today) === activeDate && !tk.completed && tk.notify !== false
+  );
+  if (!hasNotifyTask) {
+    banner.classList.remove('on');
+    return;
+  }
+  // Refresh i18n text in case the language changed
+  const txt = document.getElementById('npbText');
+  const ena = document.getElementById('npbEnable');
+  const dis = document.getElementById('npbDismiss');
+  if (txt) txt.textContent = t('notif_perm_text');
+  if (ena) ena.textContent = t('notif_perm_enable');
+  if (dis) dis.textContent = t('notif_perm_dismiss');
+  banner.classList.add('on');
+}
+
+// Banner buttons (wired once at load)
+(function _wireNotifBanner(){
+  const ena = document.getElementById('npbEnable');
+  const dis = document.getElementById('npbDismiss');
+  const banner = document.getElementById('notifPermBanner');
+  if (ena) ena.addEventListener('click', async () => {
+    const r = await _requestNotifPermission();
+    if (r === 'granted') {
+      _chime();                              // confirmation chime
+      _fireRealNotification(
+        AppState.lang === 'he' ? '✅ התראות הופעלו' : '✅ Notifications enabled',
+        AppState.lang === 'he' ? 'תקבל תזכורות לפני כל משימה' : 'You will get reminders before each task',
+        'family-app-test'
+      );
+    }
+    if (banner) banner.classList.remove('on');
+  });
+  if (dis) dis.addEventListener('click', () => {
+    localStorage.setItem(NOTIF_BANNER_DISMISSED_KEY, '1');
+    if (banner) banner.classList.remove('on');
+  });
+})();
+
 function hideNotifToast() {
   const toast = document.getElementById('notifToast');
   toast.classList.remove('show');
@@ -4569,7 +4741,7 @@ function checkOverdueReminders() {
       task.sentInitialReminder = true;
       task.lastReminderSentAt  = now.toISOString();
       const label = offset === 0 ? t('notif_starting') : tFmt('time_in_min',{n:offset});
-      showNotifToast(`${task.title} — ${label}`);
+      _fireRealNotification(task.title, label, `task-${task.id}-initial`);
       changed = true;
     }
 
@@ -4581,7 +4753,7 @@ function checkOverdueReminders() {
       if (elapsedMins >= stageOffset && !task.sentReminderStages.includes(idx)) {
         task.sentReminderStages.push(idx);
         task.lastReminderSentAt = now.toISOString();
-        showNotifToast(`${task.title} — ${tFmt('notif_overdue',{n:stageOffset})}`);
+        _fireRealNotification(task.title, tFmt('notif_overdue',{n:stageOffset}), `task-${task.id}-overdue-${idx}`);
         changed = true;
       }
     });
