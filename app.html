@@ -697,6 +697,21 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 .notif-close{font-size:16px;color:#c4ae9f;cursor:pointer;flex-shrink:0;padding:2px 4px;transition:opacity .15s;}
 .notif-close:active{opacity:.5;}
 
+/* ── Install-PWA banner — shown when the browser fires
+      beforeinstallprompt (i.e. install is possible). Hides itself
+      after install or dismiss. iOS Safari can't be prompted
+      programmatically; for that case the banner shows iOS-specific
+      instructions instead. */
+.install-banner{display:none;align-items:center;gap:10px;margin:0 20px 10px;padding:10px 14px;background:linear-gradient(135deg,#fff,#fff8f0);border:1.5px solid rgba(255,112,51,.22);border-radius:14px;box-shadow:0 4px 18px rgba(100,60,20,.08);animation:notifIn .32s cubic-bezier(.34,1.2,.64,1) both;}
+.install-banner.on{display:flex;}
+.install-banner.hide{animation:notifOut .22s ease both;}
+.ib-icon{font-size:20px;flex-shrink:0;}
+.ib-text{flex:1;min-width:0;font-size:12.5px;font-weight:700;color:#2d2018;line-height:1.35;overflow:hidden;}
+.ib-btn{flex-shrink:0;padding:7px 14px;border-radius:999px;background:linear-gradient(135deg,#ff9a4e,#ff5e14);color:white;font-family:'Nunito',sans-serif;font-size:12.5px;font-weight:900;border:none;cursor:pointer;box-shadow:0 4px 12px rgba(255,94,20,.22);transition:transform .14s;}
+.ib-btn:active{transform:scale(.96);}
+.ib-close{flex-shrink:0;background:none;border:none;color:#9e8878;font-size:16px;cursor:pointer;padding:4px 6px;font-family:'Nunito',sans-serif;line-height:1;}
+.ib-close:active{color:#2d2018;}
+
 /* ── Notification-permission banner — shown once at the top of Today
       when the browser permission is still 'default' and the user has
       tasks with notify=true. Self-dismissing on Enable or "Not now". */
@@ -1009,6 +1024,12 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
       <div class="t-hfoot"><div class="t-hwho"><div class="t-hav">👨</div><span class="t-hname">Dad</span></div><div class="t-hpill">in 58 min</div></div>
     </div>
     <div class="t-slabel" id="tAllLbl">📋 All Tasks</div>
+    <div class="install-banner" id="installBanner">
+      <span class="ib-icon">📲</span>
+      <span class="ib-text" id="ibText">Install for full home-screen experience</span>
+      <button class="ib-btn"  id="ibInstall">Install</button>
+      <button class="ib-close" id="ibClose" aria-label="dismiss">✕</button>
+    </div>
     <div class="notif-perm-banner" id="notifPermBanner">
       <span class="npb-text" id="npbText">🔔 Get reminders for your tasks</span>
       <button class="npb-enable"  id="npbEnable">Enable</button>
@@ -1202,6 +1223,9 @@ const I18N = {
     notif_perm_enable:'Enable',
     notif_perm_dismiss:'Not now',
     notif_perm_blocked:'Browser blocked notifications — change in browser settings',
+    install_text:'Install Family for a real app experience',
+    install_btn:'Install',
+    install_ios_text:'iPhone: tap Share → Add to Home Screen',
     dp_back:'Back', dp_tag:'✨ Ready', dp_h1:'We organized<br>your day ✨',
     dp_sub:'Feel free to tweak anything',
     dp_adj_banner:'✏️ Editing schedule — tap any time to change it',
@@ -1272,6 +1296,9 @@ const I18N = {
     notif_perm_enable:'הפעל',
     notif_perm_dismiss:'אולי מאוחר יותר',
     notif_perm_blocked:'הדפדפן חוסם התראות — שנה בהגדרות הדפדפן',
+    install_text:'התקן את Family לחוויה כמו אפליקציה אמיתית',
+    install_btn:'התקן',
+    install_ios_text:'אייפון: לחץ שיתוף → הוסף למסך הבית',
     dp_back:'חזרה', dp_tag:'✨ מוכן', dp_h1:'סידרנו לך<br>את היום ✨',
     dp_sub:'אפשר לשנות כל דבר',
     dp_adj_banner:'✏️ עריכת לוח זמנים — לחץ על שעה לשינוי',
@@ -4052,6 +4079,16 @@ function renderToday() {
             // Only update visuals if the keypad actually changed the time.
             if (realT.mins === prevMins) return;
             t.mins = realT.mins;
+            // Reset reminder dedup flags so the new time gets a fresh
+            // initial reminder + a fresh set of overdue stages — without
+            // this, a task whose time we moved later would never alert
+            // again (sentInitialReminder=true from the old schedule).
+            realT.sentInitialReminder = false;
+            realT.sentReminderStages  = [];
+            realT.lastReminderSentAt  = null;
+            t.sentInitialReminder = false;
+            t.sentReminderStages  = [];
+            t.lastReminderSentAt  = null;
             const ttime = el.querySelector('.t-ttime');
             const tampm = el.querySelector('.t-tampm');
             if (ttime) ttime.textContent = m2t(realT.mins);
@@ -4704,6 +4741,80 @@ function _maybeShowNotifPermBanner() {
   banner.classList.add('on');
 }
 
+// ─── PWA install prompt — capture beforeinstallprompt + visible button
+// Chrome/Edge/Brave fire `beforeinstallprompt` BEFORE showing their own
+// install UI; we capture and stash the event so a user-gesture click on
+// our Install button can call .prompt() later. iOS Safari doesn't fire
+// this event at all — for that case we show a banner with instructions
+// for "Share → Add to Home Screen" since there's no programmatic path.
+const INSTALL_DISMISSED_KEY = 'family-app-install-dismissed';
+let _deferredInstallPrompt = null;
+const _isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
+                     window.navigator.standalone === true;
+
+function _showInstallBanner(mode) {
+  const banner = document.getElementById('installBanner');
+  if (!banner) return;
+  if (_isStandalone) { banner.classList.remove('on'); return; }
+  if (localStorage.getItem(INSTALL_DISMISSED_KEY) === '1') { banner.classList.remove('on'); return; }
+  const txt = document.getElementById('ibText');
+  const btn = document.getElementById('ibInstall');
+  if (mode === 'ios') {
+    if (txt) txt.textContent = t('install_ios_text');
+    if (btn) btn.style.display = 'none';
+  } else {
+    if (txt) txt.textContent = t('install_text');
+    if (btn) { btn.style.display = ''; btn.textContent = t('install_btn'); }
+  }
+  banner.classList.add('on');
+}
+function _hideInstallBanner() {
+  const banner = document.getElementById('installBanner');
+  if (banner) banner.classList.remove('on');
+}
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  _deferredInstallPrompt = e;
+  AppLog.info('PWA install', 'beforeinstallprompt captured');
+  _showInstallBanner('chrome');
+});
+window.addEventListener('appinstalled', () => {
+  AppLog.info('PWA install', 'appinstalled — banner dismissed');
+  _deferredInstallPrompt = null;
+  _hideInstallBanner();
+});
+
+(function _wireInstallBanner(){
+  const btn   = document.getElementById('ibInstall');
+  const close = document.getElementById('ibClose');
+  if (btn) btn.addEventListener('click', async () => {
+    if (!_deferredInstallPrompt) return;
+    _deferredInstallPrompt.prompt();
+    try {
+      const choice = await _deferredInstallPrompt.userChoice;
+      AppLog.info('PWA install choice', choice.outcome);
+    } catch(_) {}
+    _deferredInstallPrompt = null;
+    _hideInstallBanner();
+  });
+  if (close) close.addEventListener('click', () => {
+    localStorage.setItem(INSTALL_DISMISSED_KEY, '1');
+    _hideInstallBanner();
+  });
+})();
+
+// iOS Safari fallback: no beforeinstallprompt event ever fires there, so
+// we detect iOS Safari and surface the manual instructions instead.
+(function _maybeIosBanner(){
+  const ua = navigator.userAgent;
+  const isIOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
+  const isSafari = /Safari/.test(ua) && !/CriOS|FxiOS|EdgiOS/.test(ua);
+  if (isIOS && isSafari && !_isStandalone) {
+    setTimeout(() => _showInstallBanner('ios'), 800);
+  }
+})();
+
 // Banner buttons (wired once at load)
 (function _wireNotifBanner(){
   const ena = document.getElementById('npbEnable');
@@ -4743,9 +4854,16 @@ function checkOverdueReminders() {
   let changed   = false;
 
   const today = todayDate();
+  // Diagnostic: surface everything we evaluate so the user can see in
+  // DevTools console why a reminder did (or didn't) fire.
+  console.log(`[reminders] tick @ ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')} (nowMins=${nowMins}) — ${AppState.tasks.length} task(s) total, today=${today}, activeDate=${activeDate}`);
+
   AppState.tasks.forEach(task => {
-    if ((task.date || today) !== today) return;
-    if (task.completed || task.notify === false) return;
+    const matchDate = (task.date || today) === today;
+    const notNotify = task.completed || task.notify === false;
+    console.log(`  [task] id=${task.id} title="${(task.title||'').slice(0,30)}" date=${task.date||today} mins=${task.mins} notify=${task.notify!==false} done=${!!task.completed} sentInit=${!!task.sentInitialReminder} reminderOff=${task.reminderOffsetMinutes ?? '(default 10)'}`);
+    if (!matchDate) { console.log('    → skipped: wrong date'); return; }
+    if (notNotify)  { console.log('    → skipped: completed or notify=false'); return; }
 
     // Apply defaults for older tasks
     if (!task.overdueReminderOffsets) task.overdueReminderOffsets = [5, 10, 15];
@@ -4759,22 +4877,27 @@ function checkOverdueReminders() {
     // Initial reminder (reminderOffsetMinutes before task time)
     const offset     = task.reminderOffsetMinutes ?? 10;
     const fireMins   = task.mins - offset;
-    if (!task.sentInitialReminder && nowMins >= fireMins && nowMins < task.mins + 30) {
+    const inWindow   = nowMins >= fireMins && nowMins < task.mins + 30;
+    console.log(`    initial check: fireMins=${fireMins} (${Math.floor(fireMins/60)}:${String(fireMins%60).padStart(2,'0')}), window=[${fireMins},${task.mins+30}), inWindow=${inWindow}, sentInit=${!!task.sentInitialReminder}`);
+    if (!task.sentInitialReminder && inWindow) {
       task.sentInitialReminder = true;
       task.lastReminderSentAt  = now.toISOString();
       const label = offset === 0 ? t('notif_starting') : tFmt('time_in_min',{n:offset});
+      console.log(`    → FIRING initial: "${task.title}" — ${label}`);
       _fireRealNotification(task.title, label, `task-${task.id}-initial`);
       changed = true;
     }
 
     // Overdue reminders (after task time)
     const elapsedMins = nowMins - task.mins;
-    if (elapsedMins < 0) return;
+    if (elapsedMins < 0) { console.log(`    not yet at task time (elapsed=${elapsedMins})`); return; }
 
     task.overdueReminderOffsets.forEach((stageOffset, idx) => {
-      if (elapsedMins >= stageOffset && !task.sentReminderStages.includes(idx)) {
+      const stageDue = elapsedMins >= stageOffset && !task.sentReminderStages.includes(idx);
+      if (stageDue) {
         task.sentReminderStages.push(idx);
         task.lastReminderSentAt = now.toISOString();
+        console.log(`    → FIRING overdue stage ${idx} (+${stageOffset} min)`);
         _fireRealNotification(task.title, tFmt('notif_overdue',{n:stageOffset}), `task-${task.id}-overdue-${idx}`);
         changed = true;
       }
@@ -4784,7 +4907,10 @@ function checkOverdueReminders() {
   if (changed) saveState();
 }
 
-setInterval(checkOverdueReminders, 60 * 1000);
+// Reminders: tick every 30s (instead of 60s) so a reminder can't be
+// delayed by up to a full minute. Also run once immediately so opening
+// the app inside a firing window doesn't miss it.
+setInterval(checkOverdueReminders, 30 * 1000);
 
 // ─── Status-bar clock: replace hardcoded 9:41 with real device time ──
 // The 9:41 in the markup was the iPhone-mockup convention. It misled
@@ -4822,6 +4948,10 @@ if ('serviceWorker' in navigator) {
 // ─── Init ─────────────────────────────────────────────────────────
 loadState();
 updateDateBadge();
+// Run the reminder check ONCE immediately after state loads so opening
+// the app inside an active reminder window fires right away (instead of
+// waiting up to 30s for the first interval tick).
+try { checkOverdueReminders(); } catch (e) { console.warn('initial reminders check failed', e); }
 
 const _savedLang = localStorage.getItem(LANG_KEY);
 if (_savedLang) {
