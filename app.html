@@ -4379,27 +4379,17 @@ function attachSwipeDelete(el, task, screen) {
     el.style.opacity      = '0';
 
     setTimeout(() => {
-      // Scroll stabilization across doDelete's rerender — kept from previous
-      // implementation. renderToday wipes #tTasks (inner list), not .t-scroll,
-      // so suppression class goes on both the scroll container and the
-      // immediate list parent.
-      const scrollContainer = el.closest('.dp-list, .t-scroll');
-      const innerList       = el.parentElement;
-      const savedScrollTop  = scrollContainer ? scrollContainer.scrollTop : 0;
-      if (scrollContainer) scrollContainer.classList.add('deleting-rerender');
-      if (innerList && innerList !== scrollContainer) innerList.classList.add('deleting-rerender');
+      // Surgical delete: just remove the card and update metadata. doDelete
+      // now calls _refreshTodayMetadata / _updateDpMeta which DO NOT rebuild
+      // the list — so we don't need to suppress entry animations or save/
+      // restore scrollTop anymore. The old .deleting-rerender class added
+      // `animation:none!important; transform:none!important` to every
+      // .task-card / .t-task, which mid-delete aborted any in-progress
+      // cardEnter / cardSettle / taskSlideIn animation, making the
+      // remaining cards visibly snap to their final state (the "flash" /
+      // "vibration" the user reported). Removing both restores smoothness.
       el.remove();
       doDelete(task, screen);
-      if (scrollContainer) {
-        scrollContainer.scrollTop = savedScrollTop;
-        requestAnimationFrame(() => {
-          scrollContainer.scrollTop = savedScrollTop;
-          requestAnimationFrame(() => {
-            scrollContainer.classList.remove('deleting-rerender');
-            if (innerList) innerList.classList.remove('deleting-rerender');
-          });
-        });
-      }
     }, DUR + 10);
   }
 
@@ -5217,7 +5207,7 @@ if ('serviceWorker' in navigator) {
 // device. If you delete a card and the console doesn't show
 // "[delete] surgical refresh…", you're on a stale cached HTML and need
 // to hard-reload (or the SW will catch up on next visit).
-console.log('%c[Family App] build: smooth-delete-2026-05-11', 'background:#ff5e14;color:#fff;padding:3px 8px;border-radius:6px;font-weight:bold');
+console.log('%c[Family App] build: truly-smooth-delete-2026-05-11', 'background:#ff5e14;color:#fff;padding:3px 8px;border-radius:6px;font-weight:bold');
 loadState();
 updateDateBadge();
 // Run the reminder check ONCE immediately after state loads so opening
