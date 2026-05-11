@@ -1693,13 +1693,15 @@ function aiParsedToTask(t, idx) {
     timeSource:            t.time ? 'explicit' : 'suggested',
     date:                  dateStr,
     recurrence:            { type: 'none' },
-    // _isNew marks this task as a candidate for the new
-    // "agenda-style summarization" pass (see summarizeAgendaTitle).
-    // It's deleted from the task object as soon as the summary attempt
-    // finishes (success, skip, or failure), so on the next page load
-    // tasks already loaded from localStorage don't get re-summarized.
-    // Existing pre-feature tasks lack this flag entirely → skipped.
-    _isNew:                true,
+    // If vOrganize's agenda-merge pass produced a summary at the
+    // pre-parse level, copy it onto the task here so the card shows
+    // the clean mainTitle and the tooltip shows the bullets — no need
+    // for the per-card summarize pass to run again.
+    subItems:              t._subItemsFromAgenda || undefined,
+    // _isNew marks this task as a candidate for the per-card
+    // summarize pass (see summarizeAgendaTitle). When the agenda-
+    // merge already produced subItems, we skip the per-card pass.
+    _isNew:                !t._subItemsFromAgenda,
   };
 }
 
@@ -3294,6 +3296,61 @@ async function vOrganize() {
   AppLog.info('tasks', result.tasks.length);
   AppLog.info('result', result);
   AppLog.groupEnd();
+
+  // ── Agenda-merge pass ─────────────────────────────────────────────
+  // If the parser split the transcript into multiple tasks AND the
+  // original is long with multiple commas, the user may actually have
+  // dictated a single multi-part task (meeting agenda, multi-step
+  // chore). Ask /api/summarize-task on the FULL transcript:
+  //   - skip → keep parser's split (truly separate tasks)
+  //   - mainTitle + items → override parser's split with ONE task
+  //     carrying the sub-items, so the card shows a clean short title
+  //     and the ··· tooltip drills into the bullets.
+  // Skips for shopping (categorize-shopping handles those).
+  if (spokenText && result.tasks && result.tasks.length >= 2
+      && spokenText.length >= 30 && !isShoppingListTitle(spokenText)) {
+    const commaCount   = (spokenText.match(/,|،/g) || []).length;
+    const wConnectors  = (spokenText.match(/\s+ו[א-ת]/g) || []).length;
+    if (commaCount >= 2 || (commaCount >= 1 && wConnectors >= 1) || wConnectors >= 2) {
+      try {
+        const sumRes = await fetch('/api/summarize-task', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ title: spokenText, lang: AppState.lang }),
+        });
+        if (sumRes.ok) {
+          const sumData = await sumRes.json();
+          if (sumData && !sumData.skip
+              && typeof sumData.mainTitle === 'string' && sumData.mainTitle.trim()
+              && Array.isArray(sumData.items) && sumData.items.length >= 2) {
+            const cleanItems = sumData.items.map(s => String(s).trim()).filter(Boolean);
+            if (cleanItems.length >= 2) {
+              AppLog.info('agenda merge', `${result.tasks.length} parsed tasks → 1 agenda task`);
+              // Replace the parser's split with one agenda task. The
+              // _subItemsFromAgenda hint is consumed by aiParsedToTask.
+              result.tasks = [{
+                title:    sumData.mainTitle.trim(),
+                time:     null,
+                date:     null,
+                assignee: null,
+                _subItemsFromAgenda: {
+                  mainTitle: sumData.mainTitle.trim(),
+                  items:     cleanItems,
+                },
+              }];
+              // The merged task counts as AI-reviewed at the agenda level;
+              // not "uncertain" even if the parser flagged any individual
+              // sub-tasks as such.
+              result.needsReview = false;
+            }
+          }
+        }
+      } catch (e) {
+        AppLog.warn('agenda check failed', e.message || '');
+        // Fall through with the parser's split — feature is enrichment only.
+      }
+    }
+  }
 
   if (addMode) {
     const newTasks = result.tasks.length > 0
@@ -5447,7 +5504,7 @@ if ('serviceWorker' in navigator) {
 // device. If you delete a card and the console doesn't show
 // "[delete] surgical refresh…", you're on a stale cached HTML and need
 // to hard-reload (or the SW will catch up on next visit).
-console.log('%c[Family App] build: agenda-summary-2026-05-11', 'background:#ff5e14;color:#fff;padding:3px 8px;border-radius:6px;font-weight:bold');
+console.log('%c[Family App] build: agenda-merge-2026-05-11', 'background:#ff5e14;color:#fff;padding:3px 8px;border-radius:6px;font-weight:bold');
 loadState();
 updateDateBadge();
 // Run the reminder check ONCE immediately after state loads so opening
