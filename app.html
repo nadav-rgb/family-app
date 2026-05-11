@@ -446,6 +446,15 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 .t-tbody{flex:1;min-width:0;}
 .t-ttitle{font-size:14px;font-weight:700;color:#1c110a;line-height:1.3;white-space:normal;overflow-wrap:break-word;word-break:break-word;}
 .t-task.done .t-ttitle{text-decoration:line-through;color:#b8a89c;}
+/* Edit affordances on Today — title is contenteditable when task is not
+   yet completed; tapping focuses an editable field with a warm highlight
+   so the user sees they can change it. */
+.t-ttitle[contenteditable="plaintext-only"]{outline:none;cursor:text;border-radius:6px;transition:background .18s,box-shadow .18s,padding .18s,margin .18s;-webkit-user-select:text;user-select:text;}
+.t-ttitle[contenteditable="plaintext-only"]:focus{background:rgba(255,110,50,.06);box-shadow:0 0 0 2px rgba(255,120,60,.15);padding:1px 4px;margin:-1px -4px;}
+/* Tappable time column on Today — pointer cursor + gentle press feedback
+   so users discover it can be edited. */
+.t-task:not(.done) .t-tcol{cursor:pointer;border-radius:8px;transition:background .14s;}
+.t-task:not(.done) .t-tcol:active{background:rgba(255,110,50,.08);}
 .t-tchip{display:inline-flex;align-items:center;gap:5px;margin-top:4px;font-size:11px;font-weight:700;color:#9e8878;}
 .t-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
 .dc-mom{background:#ffb3c8;}.dc-dad{background:#93c5fd;}
@@ -3906,6 +3915,91 @@ function renderToday() {
         saveState();
       });
     });
+
+    // ── Edit-in-place: title (contenteditable) + time (tap-to-keypad) ──
+    // Completed tasks are read-only; this is intentional — once done, they
+    // shouldn't surprise the user with stealth edits. Recurring tasks edit
+    // their template task in AppState.tasks (same pattern as the bell + share
+    // handlers above) so changes persist across days.
+    if (!t.completed) {
+      const titleEl = el.querySelector('.t-ttitle');
+      if (titleEl) {
+        titleEl.setAttribute('contenteditable', 'plaintext-only');
+        titleEl.spellcheck = false;
+        // Stop the propagation chain at every interaction so the parent
+        // .t-task click (which marks complete) doesn't fire during editing.
+        ['click','mousedown','touchstart','pointerdown'].forEach(ev => {
+          titleEl.addEventListener(ev, e => e.stopPropagation());
+        });
+        // On focus, expand a truncated long title so the user can see and
+        // edit the full text. On blur, re-truncate and refresh the `···`
+        // tooltip button so the read mode still looks tidy.
+        titleEl.addEventListener('focus', () => {
+          titleEl.classList.remove('long-title');
+          const exp = titleEl.parentElement && titleEl.parentElement.querySelector('.title-exp');
+          if (exp) exp.style.display = 'none';
+        });
+        titleEl.addEventListener('input', () => {
+          const u = titleEl.textContent.trim();
+          if (!u) return;                                  // never blank-out
+          const realT = t.isRecurring
+            ? (AppState.tasks.find(rt => rt.id === t.recurrenceId) || t)
+            : t;
+          realT.title = u;
+          t.title     = u;
+        });
+        titleEl.addEventListener('keydown', e => {
+          if (e.key === 'Enter') { e.preventDefault(); titleEl.blur(); }
+        });
+        titleEl.addEventListener('blur', () => {
+          // Restore previous title if user blanked it out
+          const u = titleEl.textContent.trim();
+          if (!u) titleEl.textContent = t.title;
+          saveState();
+
+          // Re-apply read-mode truncation if title is long
+          const final = titleEl.textContent.trim();
+          const parent = titleEl.parentElement;
+          let exp = parent && parent.querySelector('.title-exp');
+          if (final.length > 45) {
+            titleEl.classList.add('long-title');
+            if (!exp) {
+              exp = document.createElement('button');
+              exp.className = 'title-exp';
+              exp.textContent = '···';
+              exp.addEventListener('click', ev => { ev.stopPropagation(); showTitleTip(t, exp); });
+              titleEl.after(exp);
+            } else {
+              exp.style.display = '';
+            }
+          } else if (exp) {
+            exp.remove();
+          }
+        });
+      }
+
+      const tcol = el.querySelector('.t-tcol');
+      if (tcol) {
+        tcol.addEventListener('click', e => {
+          e.stopPropagation();
+          const realT = t.isRecurring
+            ? (AppState.tasks.find(rt => rt.id === t.recurrenceId) || t)
+            : t;
+          const prevMins = realT.mins;
+          openManualTimeModal(realT, () => {
+            // Only update visuals if the keypad actually changed the time.
+            if (realT.mins === prevMins) return;
+            t.mins = realT.mins;
+            const ttime = el.querySelector('.t-ttime');
+            const tampm = el.querySelector('.t-tampm');
+            if (ttime) ttime.textContent = m2t(realT.mins);
+            if (tampm) tampm.textContent = ampm(realT.mins);
+            saveState();
+          });
+        });
+      }
+    }
+
     el.style.animationDelay = `${i * 68}ms`;
     el.classList.add('entering');
     attachSwipeDelete(el, t, 'today');
