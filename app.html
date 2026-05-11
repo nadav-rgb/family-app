@@ -4228,6 +4228,28 @@ document.getElementById('atdBg').addEventListener('click', e => {
 document.getElementById('btnAddMore').addEventListener('click', () => {
   openAddSheet();
 });
+
+/* Mobile keyboard handling: on phones, shrink .phone to window.visualViewport.height
+   so that when the keyboard opens, inputs/submit buttons stay visible above it.
+   Desktop (>500px) is untouched. Easy to revert: remove this IIFE. */
+(function () {
+  if (!window.visualViewport) return;
+  var vv = window.visualViewport;
+  var mq = window.matchMedia('(max-width:500px)');
+  function apply() {
+    if (!mq.matches) return;
+    var ph = document.querySelectorAll('.phone');
+    for (var i = 0; i < ph.length; i++) ph[i].style.height = vv.height + 'px';
+  }
+  function clear() {
+    var ph = document.querySelectorAll('.phone');
+    for (var i = 0; i < ph.length; i++) ph[i].style.height = '';
+  }
+  vv.addEventListener('resize', apply);
+  window.addEventListener('orientationchange', function () { setTimeout(function(){ clear(); apply(); }, 400); });
+  if (mq.addEventListener) mq.addEventListener('change', function(){ if (!mq.matches) clear(); else apply(); });
+  apply();
+})();
 </script>
 </body>
 </html>
