@@ -2893,6 +2893,7 @@ if (SpeechAPI) {
 }
 
 document.getElementById('vTypeToggle').addEventListener('click', () => {
+  console.log('[DBG-VTT-A] vTypeToggle clicked. vListening=', vListening, '_pendingOrganize=', _pendingOrganize, 'addMode=', addMode, 's-voice classes=', document.getElementById('s-voice').className);
   if (vListening) {
     _stopKeepAlive(); _clearMaxRecTimers(); _stopSilencePoll();
     _pendingOrganize = false;
@@ -2902,12 +2903,19 @@ document.getElementById('vTypeToggle').addEventListener('click', () => {
     sbBubble.classList.remove('bubble-live');
     if (recognition) { try { recognition.abort(); } catch(_) {} }
   }
+  console.log('[DBG-VTT-B] after stop. s-voice classes=', document.getElementById('s-voice').className);
   document.getElementById('vTypeToggle').style.display = 'none';
   zone.classList.add('recede');
   document.getElementById('s-voice').classList.add('typing-mode');
   const area = document.getElementById('vTypeArea');
   area.classList.add('open');
-  setTimeout(() => document.getElementById('vTypeInp').focus(), 80);
+  console.log('[DBG-VTT-C] after typing-mode add. s-voice classes=', document.getElementById('s-voice').className, 'vTypeArea classes=', area.className);
+  setTimeout(() => {
+    const inp = document.getElementById('vTypeInp');
+    console.log('[DBG-VTT-D] focusing input. s-voice classes=', document.getElementById('s-voice').className, 'inp exists=', !!inp, 'inp parent=', inp?.parentElement?.id);
+    if (inp) inp.focus();
+    console.log('[DBG-VTT-E] after focus. s-voice classes=', document.getElementById('s-voice').className);
+  }, 80);
 });
 
 // ── Contenteditable helpers ───────────────────────────────────────
@@ -6428,7 +6436,7 @@ window.addEventListener('unhandledrejection', e => {
 (function _dbgObserveAtdBg(){
   const atdBg = document.getElementById('atdBg');
   if (!atdBg) { console.log('[DBG-OBS] atdBg not found at load'); return; }
-  console.log('[DBG-OBS] starting observer. initial classes=', atdBg.className);
+  console.log('[DBG-OBS] starting observer. initial atdBg classes=', atdBg.className);
   new MutationObserver(muts => {
     muts.forEach(m => {
       if (m.attributeName === 'class') {
@@ -6436,6 +6444,33 @@ window.addEventListener('unhandledrejection', e => {
       }
     });
   }).observe(atdBg, { attributes: true, attributeFilter: ['class'], attributeOldValue: true });
+})();
+(function _dbgObserveSVoice(){
+  const sv = document.getElementById('s-voice');
+  const ta = document.getElementById('vTypeArea');
+  const vt = document.getElementById('vTypeToggle');
+  if (sv) {
+    console.log('[DBG-OBS] starting observer. initial s-voice classes=', sv.className);
+    new MutationObserver(muts => muts.forEach(m => {
+      if (m.attributeName === 'class') console.log('[DBG-OBS] s-voice class changed:', m.oldValue, '->', sv.className);
+      if (m.attributeName === 'style') console.log('[DBG-OBS] s-voice style changed:', m.oldValue, '->', sv.getAttribute('style'));
+    })).observe(sv, { attributes: true, attributeFilter: ['class','style'], attributeOldValue: true });
+  }
+  if (ta) {
+    new MutationObserver(muts => muts.forEach(m => {
+      if (m.attributeName === 'class') console.log('[DBG-OBS] vTypeArea class changed:', m.oldValue, '->', ta.className);
+    })).observe(ta, { attributes: true, attributeFilter: ['class'], attributeOldValue: true });
+  }
+  if (vt) {
+    new MutationObserver(muts => muts.forEach(m => {
+      if (m.attributeName === 'style') console.log('[DBG-OBS] vTypeToggle style changed:', m.oldValue, '->', vt.getAttribute('style'));
+    })).observe(vt, { attributes: true, attributeFilter: ['style'], attributeOldValue: true });
+  }
+  document.querySelectorAll('.app-screen').forEach(sc => {
+    new MutationObserver(muts => muts.forEach(m => {
+      if (m.attributeName === 'class') console.log('[DBG-OBS] app-screen', sc.id, 'class changed:', m.oldValue, '->', sc.className);
+    })).observe(sc, { attributes: true, attributeFilter: ['class'], attributeOldValue: true });
+  });
 })();
 
 /* Mobile keyboard handling: on phones, shrink .phone to window.visualViewport.height
