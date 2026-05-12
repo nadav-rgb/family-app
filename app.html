@@ -2894,7 +2894,7 @@ if (SpeechAPI) {
 }
 
 document.getElementById('vTypeToggle').addEventListener('click', () => {
-  if (vListening) vStop(false);
+  if (vListening) vStop(false, false);
   document.getElementById('vTypeToggle').style.display = 'none';
   zone.classList.add('recede');
   document.getElementById('s-voice').classList.add('typing-mode');
@@ -3087,7 +3087,7 @@ const MIC_STYLE_KEY = 'family-app-mic-style';
 
 function switchMode(m) {
   if (m === vMode) return;
-  if (vListening) vStop(false);
+  if (vListening) vStop(false, false);
   const oldWrap = document.getElementById(wrapIds[vMode]);
   vMode = m;
   oldWrap.classList.add('fade-out');
@@ -3787,7 +3787,10 @@ function vStart() {
   }
 }
 
-function vStop(userInitiated = true) {
+// organize=false: abort silently, no vOrganize (mode-switch path — vTypeToggle, switchMode)
+// organize=true + userInitiated=true: graceful stop(), wait for pending audio, then vOrganize
+// organize=true + userInitiated=false: abort + 200ms + vOrganize (auto-stop timer path)
+function vStop(userInitiated = true, organize = true) {
   _stopKeepAlive();
   _clearMaxRecTimers();
   _stopSilencePoll();
@@ -3799,23 +3802,37 @@ function vStop(userInitiated = true) {
   wdots.classList.remove('on');
   AppLog.group('speech stopped');
   AppLog.info('userInitiated', userInitiated);
+  AppLog.info('organize', organize);
   AppLog.info('transcript', vTranscript);
   AppLog.groupEnd();
-  // stop() asks the engine to finish processing pending audio and deliver a
-  // final result before firing onend — so the last spoken words aren't lost
-  // when the user presses stop immediately after finishing a sentence.
-  // onend will call vOrganize() via _pendingOrganize once finals arrive.
-  // Falls back to immediate organize if stop() throws (e.g. not started).
   sbBubble.classList.remove('bubble-live');
-  if (recognition) {
-    try {
-      _pendingOrganize = true;
-      recognition.stop();
-    } catch(_) {
-      _pendingOrganize = false;
+
+  if (!organize) {
+    // Mode-switch: abort immediately, leave the screen as-is.
+    _pendingOrganize = false;
+    if (recognition) { try { recognition.abort(); } catch(_) {} }
+    hideBubble(true);
+    return;
+  }
+
+  if (userInitiated) {
+    // User tapped stop: use recognition.stop() so pending audio is delivered
+    // before vOrganize runs — prevents last words being cut off.
+    if (recognition) {
+      try {
+        _pendingOrganize = true;
+        recognition.stop();
+      } catch(_) {
+        _pendingOrganize = false;
+        setTimeout(() => { hideBubble(false); vOrganize(); }, 200);
+      }
+    } else {
       setTimeout(() => { hideBubble(false); vOrganize(); }, 200);
     }
   } else {
+    // Auto-stop (max-rec timer): abort + brief delay + vOrganize.
+    _pendingOrganize = false;
+    if (recognition) { try { recognition.abort(); } catch(_) {} }
     setTimeout(() => { hideBubble(false); vOrganize(); }, 200);
   }
 }
