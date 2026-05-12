@@ -2348,6 +2348,7 @@ function makeMockTasks() {
 let busy = false;
 
 function goto(toId, leaveKf, enterKf, onDone) {
+  console.warn('[DBG-GOTO] goto(' + toId + ') called. busy=' + busy + ' from=' + document.querySelector('.app-screen.active')?.id, 'Stack:', new Error().stack);
   if (busy) return;
   busy = true;
   const from = document.querySelector('.app-screen.active');
