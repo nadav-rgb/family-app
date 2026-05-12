@@ -5666,9 +5666,7 @@ function updateTodayTitle() {
 }
 
 document.getElementById('calBtn').addEventListener('click', openCalDrawer);
-document.getElementById('userSwBtn').innerHTML = avImg(currentUser);
 updateHeroPortrait();
-document.getElementById('userSwBtn').addEventListener('click', openUserSwitcher);
 document.getElementById('uswBg').addEventListener('click', e => { if (e.target === document.getElementById('uswBg')) closeUserSwitcher(); });
 document.getElementById('calBg').addEventListener('click', e => { if (e.target === document.getElementById('calBg')) closeCalDrawer(); });
 document.getElementById('calPrev').addEventListener('click', () => { calViewMonth--; if (calViewMonth < 0) { calViewMonth=11; calViewYear--; } renderCalGrid(); });
