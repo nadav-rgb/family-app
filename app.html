@@ -991,11 +991,11 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 #s-today .t-hero-card:hover{animation:none;transform:translateY(-2px);}
 #s-today .t-hero-card:active{animation:none;transform:scale(.97);}
 
-/* Accent ribbon at top — RTL: stronger on right where text starts */
+/* Accent ribbon at top — stronger on left where text starts */
 #s-today .t-hero-card::before{
   content:'';position:absolute;top:0;left:0;right:0;
   height:3px;
-  background:linear-gradient(270deg,#ff7033 0%,#f5a623 55%,transparent 100%);
+  background:linear-gradient(90deg,#ff7033 0%,#f5a623 55%,transparent 100%);
   pointer-events:none;z-index:3;
 }
 
@@ -1015,13 +1015,13 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
   background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .5 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
 }
 
-/* Right text section — all dark on light background */
+/* Left text section — all dark on light background */
 .t-hero-right{
   position:relative;z-index:2;
   flex:1;
   display:flex;flex-direction:column;align-items:flex-start;
   text-align:right;color:#1c110a;
-  padding:20px 18px 20px 0;
+  padding:20px 14px 20px 18px;
 }
 .t-hbadge{
   display:inline-flex;align-items:center;gap:5px;
@@ -1033,11 +1033,11 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 }
 #s-today .t-heyebrow{display:none;}
 #s-today .t-htime{
-  font-family:'Frank Ruhl Libre','Instrument Serif',serif;
+  font-family:'Nunito','Heebo',sans-serif;
   direction:ltr;unicode-bidi:isolate;
   margin-top:8px;
-  font-size:56px;font-weight:300;line-height:1;
-  letter-spacing:-1.5px;color:#1c110a;
+  font-size:52px;font-weight:300;line-height:1;
+  letter-spacing:-1px;color:#1c110a;
   align-self:flex-end;
 }
 #s-today .t-htask{
@@ -1111,6 +1111,7 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
   display:flex;align-items:center;justify-content:space-between;
   padding:0 16px;
   pointer-events:auto;
+  direction:ltr;
 }
 #s-today .t-ntab{
   flex:1;
@@ -1613,11 +1614,15 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
       </div>
       <!-- Grain overlay -->
       <div class="t-hero-grain"></div>
-      <!-- Text content (right side, JS-driven) -->
+      <!-- Portrait (right side) -->
+      <div class="t-hero-portrait">
+        <img id="heroPortraitImg" src="" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top center;display:block;">
+      </div>
+      <!-- Text content (left side, JS-driven) -->
       <div class="t-hero-right">
         <div class="t-hbadge">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6L12 3Z"/></svg>
-          <span id="tHeyebrow">Coming up at</span>
+          <span id="tHeyebrow">הבא בתור בשעה</span>
         </div>
         <div class="t-htime">15:00</div>
         <div class="t-htask">Pick up Yonatan<br>from kindergarten</div>
@@ -1625,10 +1630,6 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
           <div class="t-hwho"><span class="t-hname">Dad</span></div>
           <div class="t-hpill">in 58 min</div>
         </div>
-      </div>
-      <!-- Portrait (left side, real photo) -->
-      <div class="t-hero-portrait">
-        <img id="heroPortraitImg" src="" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top center;display:block;">
       </div>
     </div>
 
@@ -2094,7 +2095,6 @@ function openUserSwitcher() {
       currentUser = f.id;
       saveCurrentUser();
       closeUserSwitcher();
-      document.getElementById('userSwBtn').innerHTML = avImg(currentUser);
       updateHeroPortrait();
       renderToday();
     });
@@ -4896,7 +4896,7 @@ function renderToday() {
           <div class="t-ck ${t.completed?'ck-done':isNx?'ck-nxt':'ck-open'}">${t.completed?'<span style="color:white;font-size:14px;font-weight:900;">✓</span>':''}</div>
           <div class="t-tcol"><div class="t-ttime${isNx&&!t.completed?' ora':''}${t.mins==null?' empty':''}">${m2t(t.mins) || '__:__'}</div><div class="t-tampm">${ampm(t.mins)}</div></div>
           <div class="t-tvline"></div>
-          <div class="t-tbody"><div class="t-ttitle">${t.subItems?.mainTitle || t.title}</div><div class="t-tchip"><span class="t-dot" style="background:${p.color}"></span>${personLabel(t.person)}</div>${tCanSplit?'<button class="t-split-btn">פצל</button>':''}</div>
+          <div class="t-tbody"><div class="t-ttitle">${t.subItems?.mainTitle || t.title}</div><div class="t-tchip"><span class="t-dot" style="background:${p.color}"></span>${personLabel(t.person)}</div></div>
           <div class="t-miniav" style="background:${p.bg}">${taskAvImg(t)}</div>
           <div class="t-bell${t.notify===false?' off':''}">${t.notify===false?'🔕':'🔔'}</div>
         </div>
