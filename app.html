@@ -262,7 +262,7 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 .card-title[contenteditable]:focus{background:rgba(255,110,50,.06);box-shadow:0 0 0 2px rgba(255,120,60,.15);padding:1px 4px;margin:-1px -4px;}
 .card-chip{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:#9e8878;}
 .chip-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
-.card-av{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.card-av{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0;flex-shrink:0;overflow:hidden;}
 .card-ts{display:block;font-size:8px;font-weight:800;letter-spacing:.25px;text-align:center;margin-top:4px;opacity:.72;white-space:nowrap;}
 .card-ts.explicit{color:#5a9e6a;}
 .card-ts.suggested{color:#a08840;}
@@ -459,7 +459,7 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 .t-htask{font-family:'Heebo','Manrope',sans-serif;font-size:17px;font-weight:500;color:rgba(255,250,242,.96);line-height:1.4;letter-spacing:-.1px;margin-bottom:18px;position:relative;}
 .t-hfoot{display:flex;align-items:center;justify-content:space-between;position:relative;}
 .t-hwho{display:flex;align-items:center;gap:9px;}
-.t-hav{width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.22);border:2px solid rgba(255,255,255,.45);display:flex;align-items:center;justify-content:center;font-size:16px;}
+.t-hav{width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.22);border:2px solid rgba(255,255,255,.45);display:flex;align-items:center;justify-content:center;font-size:0;overflow:hidden;}
 .t-hname{font-size:14px;font-weight:800;color:rgba(255,255,255,.92);}
 .t-hpill{background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.25);border-radius:20px;padding:6px 14px;font-size:12px;font-weight:800;color:white;}
 
@@ -508,7 +508,7 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 .t-tchip{display:inline-flex;align-items:center;gap:5px;margin-top:4px;font-size:11px;font-weight:700;color:#9e8878;}
 .t-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
 .dc-mom{background:#ffb3c8;}.dc-dad{background:#93c5fd;}
-.t-miniav{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
+.t-miniav{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0;flex-shrink:0;overflow:hidden;}
 
 #s-today .t-nav{position:absolute;bottom:0;left:0;right:0;height:80px;background:rgba(255,252,248,.88);backdrop-filter:blur(24px);border-top:1px solid rgba(255,255,255,.7);box-shadow:0 -4px 20px rgba(100,60,20,.06);display:flex;align-items:center;justify-content:space-around;padding:0 8px 8px;z-index:10;animation:fadeUp .4s ease .26s both;}
 .t-ntab{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;padding:8px 22px;border-radius:18px;transition:transform .18s;}
@@ -664,7 +664,7 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 .t-share-arrow{font-size:15px;color:#b8a090;line-height:1;flex-shrink:0;}
 
 /* ── User switcher ── */
-.user-sw-btn{width:28px;height:28px;border-radius:50%;border:1.5px dashed #c4ae9f;background:rgba(255,255,255,.6);font-size:15px;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;transition:transform .15s;opacity:.7;}
+.user-sw-btn{width:28px;height:28px;border-radius:50%;border:1.5px dashed #c4ae9f;background:rgba(255,255,255,.6);font-size:0;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;transition:transform .15s;opacity:.7;overflow:hidden;}
 .user-sw-btn:active{transform:scale(.88);}
 .usw-bg{position:fixed;inset:0;z-index:950;background:rgba(28,17,10,.32);opacity:0;pointer-events:none;transition:opacity .22s;}
 .usw-bg.open{opacity:1;pointer-events:auto;}
@@ -675,7 +675,7 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 .usw-row{display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:14px;cursor:pointer;transition:background .13s;margin-bottom:4px;}
 .usw-row:active{background:rgba(224,124,58,.08);}
 .usw-row.active{background:rgba(224,124,58,.12);border:1.5px solid rgba(224,124,58,.3);}
-.usw-em{font-size:22px;line-height:1;}
+.usw-em{width:38px;height:38px;border-radius:50%;overflow:hidden;flex-shrink:0;font-size:0;display:block;}
 .usw-name{font-size:15px;font-weight:800;color:#2d2018;flex:1;}
 .usw-check{font-size:16px;color:#e07c3a;}
 
@@ -687,7 +687,7 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 .share-sec{font-size:10.5px;font-weight:900;text-transform:uppercase;letter-spacing:1px;color:#c4ae9f;margin:14px 0 4px;transition:opacity .2s;}
 .share-member{display:flex;align-items:center;gap:12px;padding:8px 10px;border-radius:12px;cursor:pointer;transition:background .13s;}
 .share-member:active{background:rgba(0,0,0,.04);}
-.share-em{font-size:20px;line-height:1;flex-shrink:0;}
+.share-em{width:36px;height:36px;border-radius:50%;overflow:hidden;flex-shrink:0;font-size:0;display:block;}
 .share-lbl{flex:1;font-size:14px;font-weight:700;color:#1c110a;}
 .share-cb{width:22px;height:22px;border-radius:7px;border:2px solid #e0d4cc;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .14s,border-color .14s;}
 .share-cb.on{background:#e07c3a;border-color:#e07c3a;}
@@ -1047,7 +1047,7 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
   width:30px;height:30px;border-radius:50%;
   background:rgba(28,17,10,.06);
   border:1.5px solid rgba(28,17,10,.14);
-  display:flex;align-items:center;justify-content:center;font-size:14px;
+  display:flex;align-items:center;justify-content:center;font-size:0;overflow:hidden;
 }
 #s-today .t-hname{font-family:'Heebo',sans-serif;font-size:13px;font-weight:700;color:#3a2010;}
 #s-today .t-hpill{
@@ -2068,6 +2068,16 @@ const ALL_MEMBER_IDS = FAMILY.map(f => f.id);
 const PERSON_TO_ID   = Object.fromEntries(FAMILY.map(f => [f.label, f.id]));
 const ID_TO_PERSON   = Object.fromEntries(FAMILY.map(f => [f.id,    f.label]));
 
+function avImg(id) {
+  const cls = {mom:'av-mom',dad:'av-dad',dudi:'av-dudi',yonatan:'av-yona'}[id];
+  if (!cls) return '';
+  const src = (document.querySelector(`#s-today .t-av.${cls} img`) || {}).src || '';
+  return src ? `<img src="${src}" style="width:100%;height:100%;object-fit:cover;display:block;" alt="">` : '';
+}
+function taskAvImg(task) {
+  return avImg(task.assignedTo || PERSON_TO_ID[task.person] || 'mom');
+}
+
 // Single source of truth for the parser — built from FAMILY + I18N.
 // Any new member added to FAMILY is automatically recognized by the parser.
 function buildParserPeople() {
@@ -2093,12 +2103,12 @@ function openUserSwitcher() {
   FAMILY.forEach(f => {
     const row = document.createElement('div');
     row.className = 'usw-row' + (f.id === currentUser ? ' active' : '');
-    row.innerHTML = `<span class="usw-em">${f.emoji}</span><span class="usw-name">${t('family_' + f.id)}</span>${f.id === currentUser ? '<span class="usw-check">✓</span>' : ''}`;
+    row.innerHTML = `<span class="usw-em">${avImg(f.id)}</span><span class="usw-name">${t('family_' + f.id)}</span>${f.id === currentUser ? '<span class="usw-check">✓</span>' : ''}`;
     row.addEventListener('click', () => {
       currentUser = f.id;
       saveCurrentUser();
       closeUserSwitcher();
-      document.getElementById('userSwBtn').textContent = FAMILY.find(x => x.id === currentUser).emoji;
+      document.getElementById('userSwBtn').innerHTML = avImg(currentUser);
       renderToday();
     });
     rows.appendChild(row);
@@ -3499,7 +3509,7 @@ function renderAssignedSection() {
     const row = document.createElement('div');
     row.className = 'share-member';
     const sel = task.assignedTo === f.id;
-    row.innerHTML = `<span class="share-em">${f.emoji}</span><span class="share-lbl">${t('family_' + f.id)}</span><span class="share-radio${sel?' on':''}"></span>`;
+    row.innerHTML = `<span class="share-em">${avImg(f.id)}</span><span class="share-lbl">${t('family_' + f.id)}</span><span class="share-radio${sel?' on':''}"></span>`;
     row.addEventListener('click', () => {
       task.assignedTo = f.id;
       if (!task.visibleTo.includes(f.id)) task.visibleTo.push(f.id);
@@ -3648,7 +3658,7 @@ function renderShareRows() {
       row.dataset.id = f.id;
 
       if (which === 'Vis') {
-        row.innerHTML = `<span class="share-em">${f.emoji}</span><span class="share-lbl">${t('family_' + f.id)}</span><span class="share-cb${inVis?' on':''}"></span>`;
+        row.innerHTML = `<span class="share-em">${avImg(f.id)}</span><span class="share-lbl">${t('family_' + f.id)}</span><span class="share-cb${inVis?' on':''}"></span>`;
         row.addEventListener('click', () => {
           if (task.visibleTo.includes(f.id)) {
             task.visibleTo = task.visibleTo.filter(id => id !== f.id);
@@ -3660,7 +3670,7 @@ function renderShareRows() {
         });
       } else {
         const disabled = !inVis || notifyOff;
-        row.innerHTML = `<span class="share-em">${f.emoji}</span><span class="share-lbl">${t('family_' + f.id)}</span><span class="share-ntog${!inNot?' off':''}${disabled?' dim':''}">${inNot?'🔔':'🔕'}</span>`;
+        row.innerHTML = `<span class="share-em">${avImg(f.id)}</span><span class="share-lbl">${t('family_' + f.id)}</span><span class="share-ntog${!inNot?' off':''}${disabled?' dim':''}">${inNot?'🔔':'🔕'}</span>`;
         if (!disabled) {
           row.querySelector('.share-ntog').addEventListener('click', e => {
             e.stopPropagation();
@@ -4330,7 +4340,7 @@ function _buildCardEl(task) {
         <div class="card-time-col"><span class="card-time${task.mins==null?' empty':''}">${m2t(task.mins) || '__:__'}</span><span class="card-ampm">${ampm(task.mins)}</span><span class="card-ts ${task.timeSource}">${task.mins==null?'':tsLabel[task.timeSource]}</span></div>
         <div class="card-vline"></div>
         <div class="card-body"><div class="card-title">${task.subItems?.mainTitle || task.title}</div><div class="card-chip"><span class="chip-dot" style="background:${p.color}"></span>${personLabel(task.person)}</div></div>
-        <div class="card-av" style="background:${p.bg}">${p.emoji}</div>
+        <div class="card-av" style="background:${p.bg}">${taskAvImg(task)}</div>
         <div class="card-bell${task.notify===false?' off':''}">${task.notify===false?'🔕':'🔔'}</div>
       </div>
     </div>`;
@@ -4831,7 +4841,7 @@ function renderToday() {
     const pill = diff <= 0 ? t('time_now') : diff < 60 ? tFmt('time_in_min',{n:diff}) : tFmt('time_in_hr',{n:Math.round(diff/60)});
     document.querySelector('.t-htime').textContent  = m2t(nextTask.mins);
     document.querySelector('.t-htask').textContent  = nextTask.title;
-    document.querySelector('.t-hav').textContent    = p.emoji;
+    document.querySelector('.t-hav').innerHTML      = taskAvImg(nextTask);
     document.querySelector('.t-hname').textContent  = personLabel(nextTask.person);
     document.querySelector('.t-hpill').textContent  = pill;
   } else {
@@ -4860,7 +4870,7 @@ function renderToday() {
           <div class="t-tcol"><div class="t-ttime${isNx&&!t.completed?' ora':''}${t.mins==null?' empty':''}">${m2t(t.mins) || '__:__'}</div><div class="t-tampm">${ampm(t.mins)}</div></div>
           <div class="t-tvline"></div>
           <div class="t-tbody"><div class="t-ttitle">${t.subItems?.mainTitle || t.title}</div><div class="t-tchip"><span class="t-dot" style="background:${p.color}"></span>${personLabel(t.person)}</div></div>
-          <div class="t-miniav" style="background:${p.bg}">${p.emoji}</div>
+          <div class="t-miniav" style="background:${p.bg}">${taskAvImg(t)}</div>
           <div class="t-bell${t.notify===false?' off':''}">${t.notify===false?'🔕':'🔔'}</div>
         </div>
         <div class="t-share">
@@ -5171,7 +5181,7 @@ function _refreshTodayMetadata() {
     const hpill  = document.querySelector('.t-hpill');
     if (htime) htime.textContent = m2t(nextTask.mins);
     if (htask) htask.textContent = nextTask.title;
-    if (hav)   hav.textContent   = p.emoji;
+    if (hav)   hav.innerHTML     = taskAvImg(nextTask);
     if (hname) hname.textContent = personLabel(nextTask.person);
     if (hpill) hpill.textContent = pill;
     hero.style.display = '';
@@ -5424,7 +5434,7 @@ document.getElementById('tTasks').addEventListener('click', e => {
         heroCard.classList.remove('refreshing'); void heroCard.offsetWidth; heroCard.classList.add('refreshing');
         document.querySelector('.t-htime').textContent = m2t(nextTask.mins);
         document.querySelector('.t-htask').textContent = nextTask.title;
-        document.querySelector('.t-hav').textContent   = p.emoji;
+        document.querySelector('.t-hav').innerHTML     = taskAvImg(nextTask);
         document.querySelector('.t-hname').textContent = personLabel(nextTask.person);
         document.querySelector('.t-hpill').textContent = diff<=0?t('time_now'):diff<60?tFmt('time_in_min',{n:diff}):tFmt('time_in_hr',{n:Math.round(diff/60)});
       }
@@ -5504,7 +5514,7 @@ document.getElementById('tTasks').addEventListener('click', e => {
       heroCard.classList.remove('refreshing'); void heroCard.offsetWidth; heroCard.classList.add('refreshing');
       document.querySelector('.t-htime').textContent  = m2t(nextTask.mins);
       document.querySelector('.t-htask').textContent  = nextTask.title;
-      document.querySelector('.t-hav').textContent    = p.emoji;
+      document.querySelector('.t-hav').innerHTML      = taskAvImg(nextTask);
       document.querySelector('.t-hname').textContent  = personLabel(nextTask.person);
       document.querySelector('.t-hpill').textContent  = diff<=0?t('time_now'):diff<60?tFmt('time_in_min',{n:diff}):tFmt('time_in_hr',{n:Math.round(diff/60)});
     } else {
@@ -5624,11 +5634,11 @@ function updateTodayTitle() {
   const h = new Date().getHours();
   const greet = h < 5 ? t('greet_night') : h < 12 ? t('greet_morning') : h < 17 ? t('greet_afternoon') : h < 21 ? t('greet_evening') : t('greet_night');
   const f = FAMILY.find(x => x.id === currentUser) || { id:'', label: 'Family', emoji: '🏠' };
-  document.getElementById('tTitle').innerHTML = `${greet},<br>${t('family_' + f.id) || f.label} ${f.emoji}`;
+  document.getElementById('tTitle').innerHTML = `${greet},<br>${t('family_' + f.id) || f.label}`;
 }
 
 document.getElementById('calBtn').addEventListener('click', openCalDrawer);
-document.getElementById('userSwBtn').textContent = FAMILY.find(f => f.id === currentUser).emoji;
+document.getElementById('userSwBtn').innerHTML = avImg(currentUser);
 document.getElementById('userSwBtn').addEventListener('click', openUserSwitcher);
 document.getElementById('uswBg').addEventListener('click', e => { if (e.target === document.getElementById('uswBg')) closeUserSwitcher(); });
 document.getElementById('calBg').addEventListener('click', e => { if (e.target === document.getElementById('calBg')) closeCalDrawer(); });
