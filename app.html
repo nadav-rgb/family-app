@@ -6348,8 +6348,7 @@ document.getElementById('atdAddBtn').addEventListener('click', () => {
 // Lets the user opt out of dictation and type a task instead — useful
 // in quiet environments or when speech recognition is misbehaving.
 document.getElementById('atdTypeToggle').addEventListener('click', () => {
-  // Stop any active recording cleanly so the keepAlive doesn't keep
-  // playing the silent buffer in the background while typing.
+  _pendingOrganize = false; // prevent stale onend from calling vOrganize after abort
   if (vListening) {
     _stopKeepAlive();
     _clearMaxRecTimers();
@@ -6362,11 +6361,9 @@ document.getElementById('atdTypeToggle').addEventListener('click', () => {
   sheet.classList.add('typing-mode');
   const addBtn = document.getElementById('atdAddBtn');
   if (addBtn) addBtn.disabled = true;
-  // Focus the input — short delay lets the layout transition settle
-  // before the soft keyboard pushes the viewport.
   setTimeout(() => {
     const inp = document.getElementById('atdTypeInp');
-    if (inp) inp.focus();
+    if (inp) inp.focus({ preventScroll: true });
   }, 80);
 });
 
