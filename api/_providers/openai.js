@@ -129,6 +129,9 @@ mins:
     "שש וחצי"     → 1110 (18:30)
   Morning context ("בבוקר") shifts שבע/שמונה/תשע to 07:00/08:00/09:00.
   null if no time is mentioned for this specific task.
+  CRITICAL: Never guess or infer a time. Set mins to null unless the user explicitly
+  spoke a time word or number in the transcript. The current time provided as context
+  is only for reference (e.g. resolving "today") — never use it as the task time.
 
 date:
   "today" | "tomorrow" | "day-after-tomorrow" | null

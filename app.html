@@ -278,7 +278,7 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 .btn-ghost{width:100%;padding:13px;border-radius:18px;border:1.5px solid rgba(224,124,58,.28);cursor:pointer;background:none;font-family:'Nunito',sans-serif;font-size:15px;font-weight:800;color:#e07c3a;transition:background .18s;}
 .btn-ghost:active{background:rgba(224,124,58,.07);}
 /* ── Add-to-day sheet ── */
-.atd-bg{position:absolute;inset:0;background:rgba(28,17,10,.42);opacity:0;pointer-events:none;transition:opacity .26s ease;z-index:90;border-radius:46px;}
+.atd-bg{position:fixed;inset:0;background:rgba(28,17,10,.42);opacity:0;pointer-events:none;transition:opacity .26s ease;z-index:90;}
 .atd-bg.open{opacity:1;pointer-events:auto;}
 .atd-sheet{position:absolute;left:0;right:0;bottom:0;background:#fff8f2;border-radius:28px 28px 0 0;transform:translateY(100%);transition:transform .34s cubic-bezier(.32,1,.3,1);box-shadow:0 -4px 32px rgba(28,17,10,.16);}
 .atd-bg.open .atd-sheet{transform:translateY(0);}
@@ -395,12 +395,12 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 .ts-modal.ts-modal-in{animation:tsModalIn .26s cubic-bezier(.34,1.3,.64,1) both;}
 .ts-modal.ts-modal-out{animation:tsModalOut .15s ease both;}
 .kp-label{font-size:10px;font-weight:900;color:#c4ae9f;text-transform:uppercase;letter-spacing:.1em;margin-bottom:14px;}
-.kp-display{font-family:'Nunito',sans-serif;font-size:48px;font-weight:900;color:#1c110a;letter-spacing:3px;margin-bottom:6px;min-height:58px;line-height:1;}
+.kp-display{font-family:'Nunito',sans-serif;font-size:48px;font-weight:900;color:#1c110a;letter-spacing:3px;margin-bottom:6px;min-height:58px;line-height:1;direction:ltr;unicode-bidi:isolate;}
 .kp-display span.kp-sep{color:#e07c3a;}
 .kp-display span.kp-digit{color:#1c110a;}
 .kp-display span.kp-blank{color:#e0d5cc;}
 .kp-hint{font-size:10px;color:#c4ae9f;font-weight:700;margin-bottom:16px;min-height:14px;}
-.kp-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:12px;}
+.kp-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:12px;direction:ltr;}
 .kp-btn{height:52px;border:none;border-radius:16px;font-family:'Nunito',sans-serif;font-size:22px;font-weight:900;cursor:pointer;transition:transform .1s,background .1s;user-select:none;}
 .kp-btn:active{transform:scale(.91);}
 .kp-num{background:#f5ede5;color:#1c110a;}
@@ -507,6 +507,8 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 .t-task:not(.done) .t-tcol:active{background:rgba(255,110,50,.08);}
 .t-tchip{display:inline-flex;align-items:center;gap:5px;margin-top:4px;font-size:11px;font-weight:700;color:#9e8878;}
 .t-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.t-split-btn{display:inline-block;background:#fff3ee;border:1.5px solid #e07040;color:#c05020;font-family:'Nunito',sans-serif;font-size:10px;font-weight:800;border-radius:6px;padding:2px 7px;cursor:pointer;line-height:1.4;letter-spacing:.3px;margin-top:4px;}
+.t-split-btn:active{background:#ffe0d0;transform:scale(.93);}
 .dc-mom{background:#ffb3c8;}.dc-dad{background:#93c5fd;}
 .t-miniav{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0;flex-shrink:0;overflow:hidden;}
 
@@ -728,7 +730,7 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 .share-more-toggle.open .share-more-lbl{color:#a85614;}
 .share-more-toggle.open .share-more-arrow{color:#a85614;transform:rotate(90deg);}
 .share-more-body{max-height:0;overflow:hidden;transition:max-height .34s cubic-bezier(.4,0,.2,1);}
-.share-more-body.open{max-height:700px;}
+.share-more-body.open{max-height:1400px;}
 /* ── Recurrence section ── */
 .repeat-opts{display:flex;gap:8px;padding:2px 0 6px;flex-wrap:wrap;}
 .repeat-chip{padding:7px 13px;border-radius:12px;background:rgba(0,0,0,.04);border:1.5px solid transparent;font-size:12px;font-weight:800;color:#7a6055;cursor:pointer;transition:background .13s,border-color .13s,transform .1s;}
@@ -1124,9 +1126,13 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
     inset 0 1px 0 rgba(255,255,255,.35);
   pointer-events:auto;cursor:pointer;
   font-size:0;
-  animation:addBreathe 2.4s ease-in-out 1.2s infinite;
+  animation:addBreatheCenter 2.4s ease-in-out 1.2s infinite;
 }
-#s-today .t-nadd:hover,#s-today .t-nadd:active{animation:none;}
+@keyframes addBreatheCenter{
+  0%,100%{transform:translateX(-50%) scale(1);box-shadow:0 12px 28px -8px rgba(220,80,20,.48),0 4px 10px -4px rgba(220,80,20,.28),inset 0 1px 0 rgba(255,255,255,.35);}
+  50%{transform:translateX(-50%) scale(1.09);box-shadow:0 16px 36px -8px rgba(220,80,20,.6),0 6px 14px -4px rgba(220,80,20,.38),inset 0 1px 0 rgba(255,255,255,.35);}
+}
+#s-today .t-nadd:hover,#s-today .t-nadd:active{animation:none;transform:translateX(-50%);}
 #s-today .t-nadd::after{
   content:"";position:absolute;inset:-5px;border-radius:50%;
   background:radial-gradient(50% 50% at 50% 50%,rgba(255,120,40,.28),transparent 70%);
@@ -1642,13 +1648,13 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
         <div class="t-htime">15:00</div>
         <div class="t-htask">Pick up Yonatan<br>from kindergarten</div>
         <div class="t-hfoot">
-          <div class="t-hwho"><div class="t-hav">👨</div><span class="t-hname">Dad</span></div>
+          <div class="t-hwho"><span class="t-hname">Dad</span></div>
           <div class="t-hpill">in 58 min</div>
         </div>
       </div>
-      <!-- Portrait (left side, decorative) -->
+      <!-- Portrait (left side, real photo) -->
       <div class="t-hero-portrait">
-        <svg viewBox="0 0 200 260" width="100%" height="100%"><use href="#hero-dad"/></svg>
+        <img id="heroPortraitImg" src="" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top center;display:block;">
       </div>
     </div>
 
@@ -1787,8 +1793,8 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
     </div>
     <div class="split-sh-body" id="splitShBody"></div>
     <div class="split-sh-foot">
-      <button class="split-sh-confirm" id="splitShConfirm"></button>
       <button class="split-sh-cancel"  id="splitShCancel"></button>
+      <button class="split-sh-confirm" id="splitShConfirm"></button>
     </div>
   </div>
 </div>
@@ -2068,11 +2074,17 @@ const ALL_MEMBER_IDS = FAMILY.map(f => f.id);
 const PERSON_TO_ID   = Object.fromEntries(FAMILY.map(f => [f.label, f.id]));
 const ID_TO_PERSON   = Object.fromEntries(FAMILY.map(f => [f.id,    f.label]));
 
-function avImg(id) {
+function avSrc(id) {
   const cls = {mom:'av-mom',dad:'av-dad',dudi:'av-dudi',yonatan:'av-yona'}[id];
-  if (!cls) return '';
-  const src = (document.querySelector(`#s-today .t-av.${cls} img`) || {}).src || '';
+  return cls ? ((document.querySelector(`#s-today .t-av.${cls} img`) || {}).src || '') : '';
+}
+function avImg(id) {
+  const src = avSrc(id);
   return src ? `<img src="${src}" style="width:100%;height:100%;object-fit:cover;display:block;" alt="">` : '';
+}
+function updateHeroPortrait() {
+  const img = document.getElementById('heroPortraitImg');
+  if (img) img.src = avSrc(currentUser);
 }
 function taskAvImg(task) {
   return avImg(task.assignedTo || PERSON_TO_ID[task.person] || 'mom');
@@ -2109,6 +2121,7 @@ function openUserSwitcher() {
       saveCurrentUser();
       closeUserSwitcher();
       document.getElementById('userSwBtn').innerHTML = avImg(currentUser);
+      updateHeroPortrait();
       renderToday();
     });
     rows.appendChild(row);
@@ -2132,10 +2145,8 @@ function sharedWithEmojis(visibleTo) {
 function assignedLabel(task) {
   const assignedId = task.assignedTo;
   const name = (assignedId && ID_TO_PERSON[assignedId]) || task.person || 'Mom';
-  const personData = PEOPLE[name];
-  const emoji = personData ? personData.emoji : '👤';
   const id = PERSON_TO_ID[name] || assignedId || 'mom';
-  return `${emoji} ${t('family_' + id) || name}`;
+  return t('family_' + id) || name;
 }
 
 // ─── Language ─────────────────────────────────────────────────────
@@ -4298,7 +4309,6 @@ function attachSplitGesture(cardEl, task) {
       // Snap any residual swipe before panel opens
       const tr = cardEl.querySelector('.card-swipe-track');
       if (tr && tr.style.transform) { tr.style.transition = 'transform .15s ease'; tr.style.transform = ''; }
-      if (navigator.vibrate) navigator.vibrate(8);
       openSplitSheet(task, cardEl);
     }, 420);
   }, { passive: true });
@@ -4317,7 +4327,7 @@ function attachSplitGesture(cardEl, task) {
 
 function _updateDpMeta() {
   const tasks = AppState.previewTasks;
-  const people = [...new Set(tasks.map(task => PEOPLE[task.person].emoji + ' ' + personLabel(task.person)))];
+  const people = [...new Set(tasks.map(task => personLabel(task.person)))];
   document.querySelector('.dp-meta').innerHTML =
     `<span class="dp-pill">📋 ${tasks.length} ${t('dp_tasks_lbl')}</span><span class="dp-pill">${people.join(' · ')}</span>`;
 }
@@ -4339,7 +4349,7 @@ function _buildCardEl(task) {
         <div class="card-accent" style="background:${p.color}"></div>
         <div class="card-time-col"><span class="card-time${task.mins==null?' empty':''}">${m2t(task.mins) || '__:__'}</span><span class="card-ampm">${ampm(task.mins)}</span><span class="card-ts ${task.timeSource}">${task.mins==null?'':tsLabel[task.timeSource]}</span></div>
         <div class="card-vline"></div>
-        <div class="card-body"><div class="card-title">${task.subItems?.mainTitle || task.title}</div><div class="card-chip"><span class="chip-dot" style="background:${p.color}"></span>${personLabel(task.person)}</div></div>
+        <div class="card-body"><div class="card-title">${task.subItems?.mainTitle || task.title}</div><div class="card-chip"><span class="chip-dot" style="background:${p.color}"></span>${personLabel(task.person)}</div><button class="t-split-btn">פצל</button></div>
         <div class="card-av" style="background:${p.bg}">${taskAvImg(task)}</div>
         <div class="card-bell${task.notify===false?' off':''}">${task.notify===false?'🔕':'🔔'}</div>
       </div>
@@ -4398,6 +4408,7 @@ function _buildCardEl(task) {
   titleEl.addEventListener('input', () => { const u = titleEl.textContent.trim(); if (u) task.title = u; });
   titleEl.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); titleEl.blur(); } });
   attachSplitGesture(c, task);
+  c.querySelector('.t-split-btn').addEventListener('click', e => { e.stopPropagation(); openSplitSheet(task, c); });
   attachSwipeDelete(c, task, 'preview');
   categorizeShoppingTitle(task);
   summarizeAgendaTitle(task);
@@ -4587,9 +4598,9 @@ function openManualTimeModal(task, onDone) {
         <button class="kp-btn kp-num" data-d="7">7</button>
         <button class="kp-btn kp-num" data-d="8">8</button>
         <button class="kp-btn kp-num" data-d="9">9</button>
-        <button class="kp-btn kp-del" id="kpDel">⌫</button>
-        <button class="kp-btn kp-num" data-d="0">0</button>
         <button class="kp-btn kp-ok"  id="kpOk">✓</button>
+        <button class="kp-btn kp-num" data-d="0">0</button>
+        <button class="kp-btn kp-del" id="kpDel">⌫</button>
       </div>
       <button class="kp-cancel" id="kpCancel">${t('tp_cancel')}</button>
     </div>`;
@@ -4841,7 +4852,7 @@ function renderToday() {
     const pill = diff <= 0 ? t('time_now') : diff < 60 ? tFmt('time_in_min',{n:diff}) : tFmt('time_in_hr',{n:Math.round(diff/60)});
     document.querySelector('.t-htime').textContent  = m2t(nextTask.mins);
     document.querySelector('.t-htask').textContent  = nextTask.title;
-    document.querySelector('.t-hav').innerHTML      = taskAvImg(nextTask);
+    updateHeroPortrait();
     document.querySelector('.t-hname').textContent  = personLabel(nextTask.person);
     document.querySelector('.t-hpill').textContent  = pill;
   } else {
@@ -4869,7 +4880,7 @@ function renderToday() {
           <div class="t-ck ${t.completed?'ck-done':isNx?'ck-nxt':'ck-open'}">${t.completed?'<span style="color:white;font-size:14px;font-weight:900;">✓</span>':''}</div>
           <div class="t-tcol"><div class="t-ttime${isNx&&!t.completed?' ora':''}${t.mins==null?' empty':''}">${m2t(t.mins) || '__:__'}</div><div class="t-tampm">${ampm(t.mins)}</div></div>
           <div class="t-tvline"></div>
-          <div class="t-tbody"><div class="t-ttitle">${t.subItems?.mainTitle || t.title}</div><div class="t-tchip"><span class="t-dot" style="background:${p.color}"></span>${personLabel(t.person)}</div></div>
+          <div class="t-tbody"><div class="t-ttitle">${t.subItems?.mainTitle || t.title}</div><div class="t-tchip"><span class="t-dot" style="background:${p.color}"></span>${personLabel(t.person)}</div><button class="t-split-btn">פצל</button></div>
           <div class="t-miniav" style="background:${p.bg}">${taskAvImg(t)}</div>
           <div class="t-bell${t.notify===false?' off':''}">${t.notify===false?'🔕':'🔔'}</div>
         </div>
@@ -4927,6 +4938,7 @@ function renderToday() {
         saveState();
       });
     });
+    el.querySelector('.t-split-btn')?.addEventListener('click', e => { e.stopPropagation(); openSplitSheet(t, el); });
 
     // ── Edit-in-place: title (contenteditable) + time (tap-to-keypad) ──
     // Completed tasks are read-only; this is intentional — once done, they
@@ -5181,7 +5193,7 @@ function _refreshTodayMetadata() {
     const hpill  = document.querySelector('.t-hpill');
     if (htime) htime.textContent = m2t(nextTask.mins);
     if (htask) htask.textContent = nextTask.title;
-    if (hav)   hav.innerHTML     = taskAvImg(nextTask);
+    updateHeroPortrait();
     if (hname) hname.textContent = personLabel(nextTask.person);
     if (hpill) hpill.textContent = pill;
     hero.style.display = '';
@@ -5434,7 +5446,7 @@ document.getElementById('tTasks').addEventListener('click', e => {
         heroCard.classList.remove('refreshing'); void heroCard.offsetWidth; heroCard.classList.add('refreshing');
         document.querySelector('.t-htime').textContent = m2t(nextTask.mins);
         document.querySelector('.t-htask').textContent = nextTask.title;
-        document.querySelector('.t-hav').innerHTML     = taskAvImg(nextTask);
+        updateHeroPortrait();
         document.querySelector('.t-hname').textContent = personLabel(nextTask.person);
         document.querySelector('.t-hpill').textContent = diff<=0?t('time_now'):diff<60?tFmt('time_in_min',{n:diff}):tFmt('time_in_hr',{n:Math.round(diff/60)});
       }
@@ -5514,7 +5526,7 @@ document.getElementById('tTasks').addEventListener('click', e => {
       heroCard.classList.remove('refreshing'); void heroCard.offsetWidth; heroCard.classList.add('refreshing');
       document.querySelector('.t-htime').textContent  = m2t(nextTask.mins);
       document.querySelector('.t-htask').textContent  = nextTask.title;
-      document.querySelector('.t-hav').innerHTML      = taskAvImg(nextTask);
+      updateHeroPortrait();
       document.querySelector('.t-hname').textContent  = personLabel(nextTask.person);
       document.querySelector('.t-hpill').textContent  = diff<=0?t('time_now'):diff<60?tFmt('time_in_min',{n:diff}):tFmt('time_in_hr',{n:Math.round(diff/60)});
     } else {
@@ -5639,6 +5651,7 @@ function updateTodayTitle() {
 
 document.getElementById('calBtn').addEventListener('click', openCalDrawer);
 document.getElementById('userSwBtn').innerHTML = avImg(currentUser);
+updateHeroPortrait();
 document.getElementById('userSwBtn').addEventListener('click', openUserSwitcher);
 document.getElementById('uswBg').addEventListener('click', e => { if (e.target === document.getElementById('uswBg')) closeUserSwitcher(); });
 document.getElementById('calBg').addEventListener('click', e => { if (e.target === document.getElementById('calBg')) closeCalDrawer(); });
