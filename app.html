@@ -13,7 +13,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
 <meta name="apple-mobile-web-app-title" content="Family"/>
 <meta name="mobile-web-app-capable" content="yes"/>
-<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&family=Rubik:wght@400;600;700;800;900&family=Heebo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&family=Rubik:wght@400;600;700;800;900&family=Heebo:wght@400;500;600;700;800;900&family=Frank+Ruhl+Libre:wght@300;400;500;700;900&family=Instrument+Serif:ital@0;1&family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
 <style>
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
 *:focus{outline:none;}
@@ -431,10 +431,10 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 .av-yona{animation:avFloat 5.2s ease-in-out 2.5s infinite;}
 .t-mem:active .t-av{animation:none;}
 .t-av.online::after{content:'';position:absolute;bottom:1px;right:1px;width:13px;height:13px;background:#34c759;border-radius:50%;border:2px solid white;}
-.av-mom{background:linear-gradient(135deg,#ffd6e6,#ffb3c8);}
-.av-dad{background:linear-gradient(135deg,#c8e4ff,#93c5fd);}
-.av-dudi{background:linear-gradient(135deg,#c8f5c5,#86efac);}
-.av-yona{background:linear-gradient(135deg,#fef3c7,#fde68a);}
+.av-mom{background:linear-gradient(160deg,#f0d4c5,#c89f88);}
+.av-dad{background:linear-gradient(160deg,#d9d0c1,#9d917f);}
+.av-dudi{background:linear-gradient(160deg,#ddd6c0,#a39c80);}
+.av-yona{background:linear-gradient(160deg,#e7d5b8,#b89972);}
 .t-avname{font-size:11px;font-weight:800;color:#7a6055;}
 
 #s-today .t-prog{padding:0 24px 10px;animation:fadeUp .4s ease .12s both;}
@@ -449,14 +449,14 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 
 .t-slabel{padding:4px 24px 8px;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:1.1px;color:#c4ae9f;animation:fadeUp .4s ease .15s both;}
 
-#s-today .t-hero-card{margin:0 20px 14px;background:linear-gradient(140deg,#ff8c42 0%,#ff5e14 60%,#e8460a 100%);border-radius:26px;padding:22px 22px 20px;box-shadow:0 14px 36px rgba(255,94,20,.38);position:relative;overflow:hidden;cursor:pointer;animation:fadeUp .42s ease .18s both, heroBreath 4.5s ease-in-out 1s infinite;transition:transform .2s,box-shadow .2s;}
-#s-today .t-hero-card:hover{transform:translateY(-3px);box-shadow:0 20px 48px rgba(255,94,20,.42);animation:none;}
+#s-today .t-hero-card{margin:0 20px 14px;background:radial-gradient(ellipse 90% 60% at 30% 110%,rgba(255,210,150,.45),rgba(255,210,150,0) 70%),linear-gradient(155deg,#3a1818 0%,#7a2a26 32%,#c7563c 62%,#e89760 88%,#f4d1a3 100%);border-radius:26px;padding:22px 22px 20px;box-shadow:0 40px 80px -16px rgba(140,50,30,.45),0 20px 36px -10px rgba(140,50,30,.32),0 4px 10px rgba(120,40,20,.16),inset 0 1.5px 0 rgba(255,255,255,.30);position:relative;overflow:hidden;cursor:pointer;animation:fadeUp .42s ease .18s both, heroBreath 4.5s ease-in-out 1s infinite;transition:transform .2s,box-shadow .2s;}
+#s-today .t-hero-card:hover{transform:translateY(-3px);box-shadow:0 48px 96px -16px rgba(140,50,30,.52),0 24px 44px -10px rgba(140,50,30,.36);animation:none;}
 #s-today .t-hero-card:active{transform:scale(.97);animation:none;}
-@keyframes heroBreath{0%,100%{transform:scale(1);box-shadow:0 14px 36px rgba(255,94,20,.38);}50%{transform:scale(1.012);box-shadow:0 18px 42px rgba(255,94,20,.44);}}
-#s-today .t-hero-card::before{content:'';position:absolute;top:-44px;right:-44px;width:160px;height:160px;background:rgba(255,255,255,.13);border-radius:50%;pointer-events:none;}
+@keyframes heroBreath{0%,100%{transform:scale(1);box-shadow:0 40px 80px -16px rgba(140,50,30,.45);}50%{transform:scale(1.012);box-shadow:0 44px 88px -16px rgba(140,50,30,.52);}}
+#s-today .t-hero-card::before{content:'';position:absolute;top:12px;left:22px;width:46px;height:46px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#ffeed1 0%,#f8c98a 55%,#d7965b 100%);box-shadow:0 0 36px rgba(255,220,160,.55),inset -2px -4px 8px rgba(140,70,30,.32);opacity:.85;pointer-events:none;}
 .t-heyebrow{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;color:rgba(255,255,255,.65);margin-bottom:10px;position:relative;}
-.t-htime{font-size:46px;font-weight:900;color:white;line-height:1;letter-spacing:-1px;margin-bottom:8px;position:relative;}
-.t-htask{font-size:18px;font-weight:700;color:rgba(255,255,255,.95);line-height:1.3;margin-bottom:18px;position:relative;}
+.t-htime{font-family:'Frank Ruhl Libre','Instrument Serif',serif;font-size:58px;font-weight:300;color:white;line-height:.9;letter-spacing:-2px;margin-bottom:10px;position:relative;text-shadow:0 6px 24px rgba(40,10,5,.3);}
+.t-htask{font-family:'Heebo','Manrope',sans-serif;font-size:17px;font-weight:500;color:rgba(255,250,242,.96);line-height:1.4;letter-spacing:-.1px;margin-bottom:18px;position:relative;}
 .t-hfoot{display:flex;align-items:center;justify-content:space-between;position:relative;}
 .t-hwho{display:flex;align-items:center;gap:9px;}
 .t-hav{width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.22);border:2px solid rgba(255,255,255,.45);display:flex;align-items:center;justify-content:center;font-size:16px;}
@@ -1120,59 +1120,210 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 </head>
 <body>
 
-<!-- ════ SVG PORTRAIT SPRITES (Family Today design) ════ -->
+<!-- ════ SVG PORTRAIT SPRITES (Family Today v2 editorial design) ════ -->
 <svg width="0" height="0" style="position:absolute;overflow:hidden" aria-hidden="true">
   <defs>
-    <!-- Yonatan: teen boy, short brown hair, green hoodie -->
-    <symbol id="p-yonatan" viewBox="0 0 100 100">
-      <path d="M10 100 C 12 78, 26 70, 38 67 L 62 67 C 74 70, 88 78, 90 100 Z" fill="#2F5E45"/>
-      <path d="M34 70 C 40 76, 60 76, 66 70 L 64 80 C 58 84, 42 84, 36 80 Z" fill="#244B37"/>
-      <path d="M42 64 L 42 74 C 46 78, 54 78, 58 74 L 58 64 Z" fill="#C9C4BF"/>
-      <ellipse cx="50" cy="44" rx="20" ry="24" fill="#C9C4BF"/>
-      <ellipse cx="30.5" cy="45" rx="2.5" ry="4" fill="#B7B1AB"/>
-      <ellipse cx="69.5" cy="45" rx="2.5" ry="4" fill="#B7B1AB"/>
-      <path d="M30 38 C 30 24, 44 17, 52 17 C 64 17, 72 24, 72 36 C 72 38, 71 40, 70 42 C 68 36, 64 34, 60 33 C 54 32, 46 33, 41 36 C 36 38, 33 41, 32 44 C 30 42, 30 40, 30 38 Z" fill="#3C2517"/>
-    </symbol>
-    <!-- Dudi: boy with curly hair, slate-blue hoodie -->
-    <symbol id="p-dudi" viewBox="0 0 100 100">
-      <path d="M10 100 C 12 78, 26 70, 38 67 L 62 67 C 74 70, 88 78, 90 100 Z" fill="#5B6B78"/>
-      <path d="M34 70 C 40 76, 60 76, 66 70 L 64 80 C 58 84, 42 84, 36 80 Z" fill="#465562"/>
-      <path d="M42 64 L 42 74 C 46 78, 54 78, 58 74 L 58 64 Z" fill="#C9C4BF"/>
-      <ellipse cx="30.5" cy="46" rx="2.5" ry="4" fill="#B7B1AB"/>
-      <ellipse cx="69.5" cy="46" rx="2.5" ry="4" fill="#B7B1AB"/>
-      <ellipse cx="50" cy="44" rx="20" ry="24" fill="#C9C4BF"/>
-      <g fill="#3C2010"><circle cx="34" cy="32" r="6"/><circle cx="40" cy="24" r="7"/><circle cx="50" cy="20" r="8"/><circle cx="60" cy="23" r="7.5"/><circle cx="68" cy="30" r="6.5"/><circle cx="71" cy="38" r="5"/><circle cx="30" cy="40" r="5"/><circle cx="44" cy="30" r="6"/><circle cx="56" cy="29" r="6"/><circle cx="64" cy="34" r="5.5"/></g>
-    </symbol>
-    <!-- Aba: dad, short clean hair, denim/blue collared shirt -->
-    <symbol id="p-aba" viewBox="0 0 100 100">
-      <path d="M8 100 C 10 78, 24 70, 36 67 L 64 67 C 76 70, 90 78, 92 100 Z" fill="#3F5D72"/>
-      <path d="M40 68 L 50 80 L 60 68 L 55 66 L 50 72 L 45 66 Z" fill="#FBF6EE"/>
-      <path d="M43 62 L 43 72 C 47 76, 53 76, 57 72 L 57 62 Z" fill="#C9C4BF"/>
-      <ellipse cx="50" cy="42" rx="20.5" ry="24" fill="#C9C4BF"/>
-      <ellipse cx="30" cy="44" rx="2.5" ry="4.2" fill="#B7B1AB"/>
-      <ellipse cx="70" cy="44" rx="2.5" ry="4.2" fill="#B7B1AB"/>
-      <path d="M30 38 C 30 22, 42 15, 52 15 C 64 15, 72 23, 72 35 C 72 38, 71 41, 69 42 C 67 36, 62 33, 56 32 C 50 31, 44 32, 38 35 C 34 37, 31 40, 30 42 C 29 40, 30 39, 30 38 Z" fill="#2B1810"/>
-    </symbol>
-    <!-- Ima: long wavy brown hair, soft cream top -->
+    <!-- backgrounds -->
+    <linearGradient id="bgA" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f0d4c5"/><stop offset="1" stop-color="#c89f88"/></linearGradient>
+    <linearGradient id="bgB" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d9d0c1"/><stop offset="1" stop-color="#9d917f"/></linearGradient>
+    <linearGradient id="bgC" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ddd6c0"/><stop offset="1" stop-color="#a39c80"/></linearGradient>
+    <linearGradient id="bgD" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e7d5b8"/><stop offset="1" stop-color="#b89972"/></linearGradient>
+    <!-- skin -->
+    <linearGradient id="skin1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f0d2b1"/><stop offset=".55" stop-color="#e0b58f"/><stop offset="1" stop-color="#cc9670"/></linearGradient>
+    <linearGradient id="skin2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#eccba6"/><stop offset=".55" stop-color="#d4a87e"/><stop offset="1" stop-color="#b8865a"/></linearGradient>
+    <linearGradient id="skin3" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f1d3b0"/><stop offset=".55" stop-color="#dfb086"/><stop offset="1" stop-color="#c28e60"/></linearGradient>
+    <linearGradient id="skin4" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f4d8b6"/><stop offset=".55" stop-color="#e3ba90"/><stop offset="1" stop-color="#c89968"/></linearGradient>
+    <!-- hair -->
+    <linearGradient id="hairA" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4a2c1a"/><stop offset="1" stop-color="#26150a"/></linearGradient>
+    <linearGradient id="hairB" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#36230f"/><stop offset="1" stop-color="#1a0d05"/></linearGradient>
+    <linearGradient id="hairC" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5d3a1f"/><stop offset="1" stop-color="#33200d"/></linearGradient>
+    <linearGradient id="hairD" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6e4a26"/><stop offset="1" stop-color="#3e2914"/></linearGradient>
+    <!-- clothing -->
+    <linearGradient id="shirtA" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a85d70"/><stop offset="1" stop-color="#75394a"/></linearGradient>
+    <linearGradient id="shirtB" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3d4d63"/><stop offset="1" stop-color="#23303f"/></linearGradient>
+    <linearGradient id="shirtC" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5e6a4d"/><stop offset="1" stop-color="#3a4230"/></linearGradient>
+    <linearGradient id="shirtD" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b58348"/><stop offset="1" stop-color="#7b5429"/></linearGradient>
+    <radialGradient id="cheekRose" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="rgba(200,90,80,.35)"/><stop offset="1" stop-color="rgba(200,90,80,0)"/></radialGradient>
+    <!-- hero-dad gradients -->
+    <linearGradient id="g-skin-h" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F4D2AC"/><stop offset="1" stop-color="#D9A672"/></linearGradient>
+    <linearGradient id="g-jacket-h" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8A4D26"/><stop offset="1" stop-color="#5A2E12"/></linearGradient>
+
+    <!-- ═════ IMA (mother) — long wavy hair, soft blouse ═════ -->
     <symbol id="p-ima" viewBox="0 0 100 100">
-      <path d="M22 100 C 18 84, 18 70, 26 60 C 30 55, 36 52, 42 51 L 58 51 C 64 52, 70 55, 74 60 C 82 70, 82 84, 78 100 Z" fill="#3E2218"/>
-      <path d="M14 100 C 16 80, 28 72, 40 68 L 60 68 C 72 72, 84 80, 86 100 Z" fill="#E5C8A6"/>
-      <path d="M40 68 C 44 76, 56 76, 60 68 L 60 75 C 56 80, 44 80, 40 75 Z" fill="#C9A781"/>
-      <path d="M43 60 L 43 72 C 47 76, 53 76, 57 72 L 57 60 Z" fill="#C9C4BF"/>
-      <ellipse cx="50" cy="42" rx="20.5" ry="24" fill="#C9C4BF"/>
-      <path d="M28 38 C 28 22, 42 12, 52 12 C 66 12, 76 22, 76 38 C 76 50, 73 60, 71 66 C 70 60, 70 54, 68 50 C 66 46, 62 44, 58 43 C 54 42, 50 41, 46 41 C 40 41, 34 43, 31 47 C 29 44, 28 41, 28 38 Z" fill="#3E2218"/>
-      <ellipse cx="30" cy="46" rx="2" ry="3" fill="#B7B1AB"/>
+      <rect width="100" height="100" fill="url(#bgA)"/>
+      <ellipse cx="50" cy="35" rx="60" ry="40" fill="rgba(255,230,210,.32)"/>
+      <path d="M-2 102 Q22 72 50 70 Q78 72 102 102 Z" fill="url(#shirtA)"/>
+      <path d="M40 70 Q50 80 60 70 L60 76 Q50 84 40 76 Z" fill="#5a2a3a" opacity=".4"/>
+      <path d="M-2 102 Q22 78 50 76 Q78 78 102 102 Z" fill="rgba(40,15,20,.22)"/>
+      <path d="M44 64 Q50 70 56 64 L56.5 76 Q50 80 43.5 76 Z" fill="url(#skin1)"/>
+      <path d="M43.5 76 Q50 80 56.5 76 L56.5 78 Q50 82 43.5 78 Z" fill="rgba(80,40,20,.18)"/>
+      <path d="M22 50 Q18 24 50 18 Q82 24 78 50 Q80 78 70 88 L70 60 Q70 38 50 36 Q30 38 30 60 L30 88 Q20 78 22 50 Z" fill="url(#hairA)"/>
+      <path d="M26 36 Q34 24 50 22 Q44 24 38 30 Q32 36 26 46 Z" fill="rgba(255,225,200,.16)"/>
+      <ellipse cx="50" cy="50" rx="18.5" ry="22" fill="url(#skin1)"/>
+      <path d="M64 44 Q66 56 60 66 Q66 56 64 44 Z" fill="rgba(120,60,30,.15)"/>
+      <path d="M31 38 Q38 30 50 30 Q40 32 32 42 Z" fill="url(#hairA)"/>
+      <path d="M69 38 Q62 30 50 30 Q60 32 68 42 Z" fill="url(#hairA)"/>
+      <path d="M32 40 Q50 26 68 40 Q68 32 50 28 Q32 32 32 40 Z" fill="url(#hairA)"/>
+      <circle cx="32" cy="54" r="1.1" fill="#c8a169"/>
+      <circle cx="68" cy="54" r="1.1" fill="#c8a169"/>
+      <path d="M40 46 Q44 44 47 45.6" stroke="#3a1f0e" stroke-width="1" fill="none" stroke-linecap="round"/>
+      <path d="M53 45.6 Q56 44 60 46" stroke="#3a1f0e" stroke-width="1" fill="none" stroke-linecap="round"/>
+      <path d="M40 51.2 Q43.5 49.6 46.5 51.2 Q43.5 52.4 40 51.2 Z" fill="#2a160a"/>
+      <path d="M53.5 51.2 Q56.5 49.6 60 51.2 Q56.5 52.4 53.5 51.2 Z" fill="#2a160a"/>
+      <path d="M40 50.6 Q43.5 49 46.5 50.6" stroke="#1a0c04" stroke-width=".5" fill="none" stroke-linecap="round" opacity=".7"/>
+      <path d="M53.5 50.6 Q56.5 49 60 50.6" stroke="#1a0c04" stroke-width=".5" fill="none" stroke-linecap="round" opacity=".7"/>
+      <path d="M49.5 54 Q49 60 50.2 62 Q51 60 50.5 54" stroke="#a87049" stroke-width=".5" fill="none" stroke-linecap="round" opacity=".7"/>
+      <ellipse cx="49.3" cy="62.4" rx="1.2" ry=".5" fill="rgba(140,80,50,.18)"/>
+      <ellipse cx="38" cy="59" rx="3.5" ry="2" fill="url(#cheekRose)"/>
+      <ellipse cx="62" cy="59" rx="3.5" ry="2" fill="url(#cheekRose)"/>
+      <path d="M45.5 66.5 Q50 68.2 54.5 66.5 Q50 67.8 45.5 66.5 Z" fill="#9c4a52"/>
+      <path d="M45.5 66.5 Q50 64.8 54.5 66.5" stroke="#7a3540" stroke-width=".6" fill="none" stroke-linecap="round" opacity=".5"/>
     </symbol>
-    <!-- Hero portrait: Dad bust -->
+
+    <!-- ═════ ABA (father) — beard, glasses, sweater ═════ -->
+    <symbol id="p-aba" viewBox="0 0 100 100">
+      <rect width="100" height="100" fill="url(#bgB)"/>
+      <ellipse cx="50" cy="35" rx="60" ry="40" fill="rgba(255,230,210,.22)"/>
+      <path d="M-2 102 Q22 72 50 70 Q78 72 102 102 Z" fill="url(#shirtB)"/>
+      <path d="M42 74 L50 80 L58 74 L58 80 Q50 84 42 80 Z" fill="#efe7d8" opacity=".88"/>
+      <path d="M-2 102 Q22 78 50 76 Q78 78 102 102 Z" fill="rgba(15,20,30,.28)"/>
+      <path d="M44 64 Q50 70 56 64 L56.5 76 Q50 80 43.5 76 Z" fill="url(#skin2)"/>
+      <path d="M43.5 76 Q50 80 56.5 76 L56.5 78 Q50 82 43.5 78 Z" fill="rgba(80,40,20,.20)"/>
+      <path d="M28 42 Q28 22 50 18 Q72 22 72 42 Q72 36 64 32 Q56 28 50 28 Q44 28 36 32 Q28 36 28 42 Z" fill="url(#hairB)"/>
+      <path d="M30 42 Q29 36 32 32 Q31 38 31.5 44" fill="none" stroke="rgba(220,210,200,.32)" stroke-width=".8" stroke-linecap="round"/>
+      <path d="M70 42 Q71 36 68 32 Q69 38 68.5 44" fill="none" stroke="rgba(220,210,200,.32)" stroke-width=".8" stroke-linecap="round"/>
+      <ellipse cx="50" cy="50" rx="19" ry="22" fill="url(#skin2)"/>
+      <path d="M65 44 Q67 56 61 66 Q67 56 65 44 Z" fill="rgba(100,50,20,.18)"/>
+      <ellipse cx="30" cy="52" rx="2.4" ry="3.2" fill="url(#skin2)"/>
+      <ellipse cx="70" cy="52" rx="2.4" ry="3.2" fill="url(#skin2)"/>
+      <path d="M39 47 Q43.5 45 47.5 46.6" stroke="#1a0c04" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+      <path d="M52.5 46.6 Q56.5 45 61 47" stroke="#1a0c04" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+      <ellipse cx="43.5" cy="51.6" rx="1.6" ry="1.3" fill="#1a0c04"/>
+      <ellipse cx="56.5" cy="51.6" rx="1.6" ry="1.3" fill="#1a0c04"/>
+      <circle cx="43.8" cy="51.3" r=".35" fill="rgba(255,255,255,.6)"/>
+      <circle cx="56.8" cy="51.3" r=".35" fill="rgba(255,255,255,.6)"/>
+      <path d="M49.4 54 Q48.6 60 50.2 62.4 Q51.2 60 50.6 54" stroke="#8a5026" stroke-width=".6" fill="none" stroke-linecap="round" opacity=".7"/>
+      <ellipse cx="49.3" cy="62.6" rx="1.4" ry=".55" fill="rgba(110,60,25,.22)"/>
+      <path d="M34 62 Q50 80 66 62 Q64 74 50 76 Q36 74 34 62 Z" fill="rgba(26,12,4,.32)"/>
+      <path d="M43 64.5 Q50 66.5 57 64.5 Q54 66 50 66 Q46 66 43 64.5 Z" fill="rgba(26,12,4,.42)"/>
+      <path d="M45.5 68.4 Q50 70 54.5 68.4 Q50 69.4 45.5 68.4 Z" fill="#7a3a2a"/>
+      <g fill="none" stroke="#1F1410" stroke-width="1.1">
+        <ellipse cx="43.5" cy="51.6" rx="5.5" ry="4.2"/>
+        <ellipse cx="56.5" cy="51.6" rx="5.5" ry="4.2"/>
+        <path d="M49 51.5 Q50 50 51 51.5" stroke-linecap="round"/>
+        <path d="M38 51 L34 52" stroke-linecap="round"/>
+        <path d="M62 51 L66 52" stroke-linecap="round"/>
+      </g>
+      <ellipse cx="41.5" cy="49.8" rx="1.6" ry=".7" fill="#fff" opacity=".3"/>
+      <ellipse cx="54.5" cy="49.8" rx="1.6" ry=".7" fill="#fff" opacity=".3"/>
+    </symbol>
+
+    <!-- ═════ DUDI (teen boy) — messy hair, olive hoodie ═════ -->
+    <symbol id="p-dudi" viewBox="0 0 100 100">
+      <rect width="100" height="100" fill="url(#bgC)"/>
+      <ellipse cx="50" cy="35" rx="60" ry="40" fill="rgba(255,230,210,.22)"/>
+      <path d="M-2 102 Q22 72 50 70 Q78 72 102 102 Z" fill="url(#shirtC)"/>
+      <path d="M40 72 Q50 80 60 72 L60 78 Q50 84 40 78 Z" fill="#2c361f" opacity=".4"/>
+      <path d="M-2 102 Q22 78 50 76 Q78 78 102 102 Z" fill="rgba(20,30,15,.32)"/>
+      <path d="M44 64 Q50 70 56 64 L56.5 76 Q50 80 43.5 76 Z" fill="url(#skin3)"/>
+      <path d="M43.5 76 Q50 80 56.5 76 L56.5 78 Q50 82 43.5 78 Z" fill="rgba(80,40,20,.18)"/>
+      <path d="M28 44 Q26 20 50 17 Q74 20 72 44 Q72 38 66 34 Q58 30 50 30 Q42 30 34 34 Q28 38 28 44 Z" fill="url(#hairC)"/>
+      <path d="M30 38 Q40 22 56 26 Q44 26 36 34 Q32 38 30 44 Z" fill="url(#hairC)"/>
+      <path d="M32 36 Q44 24 54 26 Q44 26 36 34" stroke="rgba(255,220,180,.16)" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <path d="M32 40 Q44 36 56 38 Q44 42 32 42 Z" fill="rgba(20,12,5,.18)"/>
+      <ellipse cx="50" cy="50" rx="18.5" ry="21.5" fill="url(#skin3)"/>
+      <path d="M64 44 Q66 56 60 66 Q66 56 64 44 Z" fill="rgba(120,60,30,.16)"/>
+      <ellipse cx="30" cy="53" rx="2.4" ry="3.2" fill="url(#skin3)"/>
+      <ellipse cx="70" cy="53" rx="2.4" ry="3.2" fill="url(#skin3)"/>
+      <path d="M40 47 Q44 45 47 46.4" stroke="#2a160a" stroke-width="1" fill="none" stroke-linecap="round"/>
+      <path d="M53 46.4 Q56 45 60 47" stroke="#2a160a" stroke-width="1" fill="none" stroke-linecap="round"/>
+      <ellipse cx="43.5" cy="52" rx="1.7" ry="1.5" fill="#1a0c04"/>
+      <ellipse cx="56.5" cy="52" rx="1.7" ry="1.5" fill="#1a0c04"/>
+      <circle cx="43.8" cy="51.6" r=".4" fill="rgba(255,255,255,.65)"/>
+      <circle cx="56.8" cy="51.6" r=".4" fill="rgba(255,255,255,.65)"/>
+      <path d="M49.5 55 Q48.8 60 50.2 62.4 Q51 60 50.5 55" stroke="#a06840" stroke-width=".55" fill="none" stroke-linecap="round" opacity=".7"/>
+      <path d="M45.5 67 Q50 68.4 54.5 67 Q50 67.8 45.5 67 Z" fill="#8c4030"/>
+      <path d="M45.8 67 Q50 65.8 54.2 67" stroke="#6a2818" stroke-width=".5" fill="none" stroke-linecap="round" opacity=".5"/>
+    </symbol>
+
+    <!-- ═════ YONATAN (boy) — soft side-part, warm knit ═════ -->
+    <symbol id="p-yonatan" viewBox="0 0 100 100">
+      <rect width="100" height="100" fill="url(#bgD)"/>
+      <ellipse cx="50" cy="35" rx="60" ry="40" fill="rgba(255,230,210,.28)"/>
+      <path d="M-2 102 Q22 72 50 70 Q78 72 102 102 Z" fill="url(#shirtD)"/>
+      <path d="M40 72 Q50 80 60 72 L60 78 Q50 84 40 78 Z" fill="#5a3a18" opacity=".4"/>
+      <path d="M-2 102 Q22 78 50 76 Q78 78 102 102 Z" fill="rgba(60,35,10,.28)"/>
+      <path d="M44 66 Q50 71 56 66 L56.5 76 Q50 80 43.5 76 Z" fill="url(#skin4)"/>
+      <path d="M43.5 76 Q50 80 56.5 76 L56.5 78 Q50 82 43.5 78 Z" fill="rgba(80,40,20,.16)"/>
+      <path d="M26 42 Q24 20 50 16 Q76 20 74 42 Q74 34 66 32 Q58 28 50 28 Q42 28 34 32 Q26 34 26 42 Z" fill="url(#hairD)"/>
+      <path d="M28 38 Q40 26 56 28 Q42 30 32 40 Z" fill="rgba(20,12,5,.20)"/>
+      <path d="M30 36 Q42 24 56 26 Q44 26 34 36" stroke="rgba(255,220,180,.18)" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <ellipse cx="50" cy="52" rx="19" ry="21" fill="url(#skin4)"/>
+      <ellipse cx="30" cy="54" rx="2.6" ry="3.4" fill="url(#skin4)"/>
+      <ellipse cx="70" cy="54" rx="2.6" ry="3.4" fill="url(#skin4)"/>
+      <path d="M40 49 Q44 47 47 48.4" stroke="#5a3818" stroke-width=".9" fill="none" stroke-linecap="round"/>
+      <path d="M53 48.4 Q56 47 60 49" stroke="#5a3818" stroke-width=".9" fill="none" stroke-linecap="round"/>
+      <ellipse cx="43.5" cy="53.6" rx="1.9" ry="1.8" fill="#1a0c04"/>
+      <ellipse cx="56.5" cy="53.6" rx="1.9" ry="1.8" fill="#1a0c04"/>
+      <circle cx="43.9" cy="53.1" r=".55" fill="rgba(255,255,255,.75)"/>
+      <circle cx="56.9" cy="53.1" r=".55" fill="rgba(255,255,255,.75)"/>
+      <path d="M49.5 57 Q49 61 50.2 63 Q51 61 50.5 57" stroke="#a87049" stroke-width=".55" fill="none" stroke-linecap="round" opacity=".7"/>
+      <ellipse cx="37" cy="61" rx="3.8" ry="2.2" fill="url(#cheekRose)"/>
+      <ellipse cx="63" cy="61" rx="3.8" ry="2.2" fill="url(#cheekRose)"/>
+      <path d="M45.5 68 Q50 69.4 54.5 68 Q50 68.8 45.5 68 Z" fill="#a84a3e"/>
+      <path d="M45.8 68 Q50 66.8 54.2 68" stroke="#7c2e22" stroke-width=".5" fill="none" stroke-linecap="round" opacity=".5"/>
+    </symbol>
+
+    <!-- ═════ HERO DAD bust — beard, glasses, jacket ═════ -->
     <symbol id="hero-dad" viewBox="0 0 200 260">
-      <path d="M-10 260 C -6 215, 10 198, 40 188 L 160 188 C 190 198, 206 215, 210 260 Z" fill="#3F5D72"/>
-      <path d="M68 195 L 100 230 L 132 195 L 124 188 L 100 215 L 76 188 Z" fill="#2B3D4A"/>
-      <path d="M82 198 L 100 218 L 118 198 Z" fill="#F1E2CB"/>
-      <path d="M88 178 L 88 200 C 94 208, 106 208, 112 200 L 112 178 Z" fill="#C9C4BF"/>
-      <ellipse cx="100" cy="120" rx="44" ry="54" fill="#C9C4BF"/>
-      <ellipse cx="58" cy="124" rx="5" ry="9" fill="#B0AAA4"/>
-      <ellipse cx="142" cy="124" rx="5" ry="9" fill="#B0AAA4"/>
-      <path d="M54 110 C 54 76, 72 56, 100 56 C 130 56, 148 76, 148 110 C 148 116, 146 122, 142 124 C 138 110, 126 102, 116 100 C 100 96, 84 100, 72 110 C 64 114, 58 118, 56 122 C 54 118, 54 114, 54 110 Z" fill="#2B1810"/>
+      <path d="M-10 260 C -6 215 10 198 40 188 L 160 188 C 190 198 206 215 210 260 Z" fill="url(#g-jacket-h)"/>
+      <path d="M70 195 L 100 232 L 130 195 L 122 188 L 100 215 L 78 188 Z" fill="#3E1F0B"/>
+      <path d="M82 198 L 100 220 L 118 198 Z" fill="#FBF1DB"/>
+      <path d="M84 202 L 100 216 L 116 202 Z" fill="#EDD9B3"/>
+      <path d="M88 178 L 88 200 C 94 208 106 208 112 200 L 112 178 Z" fill="url(#g-skin-h)"/>
+      <path d="M88 198 L 112 198 L 110 202 C 105 205 95 205 90 202 Z" fill="#A26A38" opacity=".25"/>
+      <ellipse cx="58" cy="124" rx="5" ry="9" fill="#C28B58"/>
+      <ellipse cx="142" cy="124" rx="5" ry="9" fill="#C28B58"/>
+      <ellipse cx="100" cy="118" rx="43" ry="54" fill="url(#g-skin-h)"/>
+      <path d="M58 118 C 60 152 70 168 92 174 C 78 170 64 156 60 134 Z" fill="#A26A38" opacity=".15"/>
+      <ellipse cx="74" cy="138" rx="9" ry="5.5" fill="#E69378" opacity=".5"/>
+      <ellipse cx="126" cy="138" rx="9" ry="5.5" fill="#E69378" opacity=".5"/>
+      <path d="M76 106 Q 86 102 96 106" stroke="#1F100A" stroke-width="2.8" fill="none" stroke-linecap="round"/>
+      <path d="M104 106 Q 114 102 124 106" stroke="#1F100A" stroke-width="2.8" fill="none" stroke-linecap="round"/>
+      <ellipse cx="86" cy="118" rx="6.5" ry="4.8" fill="#FBFAF6"/>
+      <ellipse cx="114" cy="118" rx="6.5" ry="4.8" fill="#FBFAF6"/>
+      <circle cx="86" cy="118.5" r="4" fill="#5A3320"/>
+      <circle cx="114" cy="118.5" r="4" fill="#5A3320"/>
+      <circle cx="86" cy="118.5" r="2" fill="#0F0703"/>
+      <circle cx="114" cy="118.5" r="2" fill="#0F0703"/>
+      <ellipse cx="87.6" cy="116.8" rx="1.3" ry="1" fill="#fff"/>
+      <ellipse cx="115.6" cy="116.8" rx="1.3" ry="1" fill="#fff"/>
+      <path d="M80 115 Q 86 112 92 115" stroke="#1F100A" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+      <path d="M108 115 Q 114 112 120 115" stroke="#1F100A" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+      <path d="M100 128 Q 95 142 100 146 Q 105 146 104 142" stroke="#A26A38" stroke-width="1.6" fill="none" stroke-linecap="round" opacity=".75"/>
+      <path d="M62 130 C 62 158 76 174 100 176 C 124 174 138 158 138 130 C 136 142 128 150 116 153 C 108 155 102 156 100 156 C 98 156 92 155 84 153 C 72 150 64 142 62 130 Z" fill="#2D1810"/>
+      <g stroke="#5B3520" stroke-width="1" fill="none" opacity=".7">
+        <path d="M72 140 Q 76 154 82 164"/><path d="M86 144 Q 88 158 92 168"/>
+        <path d="M108 168 Q 112 158 114 144"/><path d="M122 142 Q 122 156 118 164"/>
+      </g>
+      <g stroke="#8C7466" stroke-width="1.1" fill="none" opacity=".55">
+        <path d="M76 148 Q 80 158 84 164"/><path d="M118 148 Q 114 158 110 164"/>
+      </g>
+      <path d="M84 150 Q 100 144 116 150 Q 110 156 100 154 Q 90 156 84 150 Z" fill="#2D1810"/>
+      <path d="M90 156 Q 100 160 110 156" stroke="#6B2812" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <path d="M54 110 C 54 76 72 56 100 56 C 130 56 148 76 148 110 C 148 116 146 122 142 124 C 138 110 126 102 116 100 C 100 96 84 100 72 110 C 64 114 58 118 56 122 C 54 118 54 114 54 110 Z" fill="#2D1810"/>
+      <path d="M76 66 C 90 58 110 58 128 68 C 116 64 102 64 92 66 C 84 70 78 72 76 66 Z" fill="#150905" opacity=".7"/>
+      <path d="M54 108 C 54 96 58 84 62 78 C 62 90 60 102 58 116 Z" fill="#8C7466" opacity=".5"/>
+      <path d="M146 108 C 146 96 142 84 138 78 C 138 90 140 102 142 116 Z" fill="#8C7466" opacity=".5"/>
+      <g fill="none" stroke="#1F1410" stroke-width="2.2">
+        <ellipse cx="86" cy="118.5" rx="12" ry="9"/>
+        <ellipse cx="114" cy="118.5" rx="12" ry="9"/>
+        <path d="M98 118 Q 100 115 102 118" stroke-linecap="round"/>
+        <path d="M74 118 L 65 120" stroke-linecap="round"/>
+        <path d="M126 118 L 135 120" stroke-linecap="round"/>
+      </g>
+      <ellipse cx="82" cy="115" rx="3.5" ry="1.6" fill="#fff" opacity=".3"/>
+      <ellipse cx="110" cy="115" rx="3.5" ry="1.6" fill="#fff" opacity=".3"/>
     </symbol>
   </defs>
 </svg>
