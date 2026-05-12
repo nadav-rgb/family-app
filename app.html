@@ -2348,12 +2348,11 @@ function makeMockTasks() {
 let busy = false;
 
 function goto(toId, leaveKf, enterKf, onDone) {
+  console.log('[GOTO]', toId, 'busy=', busy, 'from=', document.querySelector('.app-screen.active')?.id, 'allActive=', Array.from(document.querySelectorAll('.app-screen.active')).map(e=>e.id));
   if (busy) return;
   const from = document.querySelector('.app-screen.active');
-  // No-op if already on target — otherwise from===to and the deferred
-  // `from.classList.remove('active')` strips the active class from the
-  // very screen we just "navigated to", leaving the UI blank.
   if (from && from.id === toId) {
+    console.log('[GOTO] no-op (already on target)');
     if (onDone) onDone();
     return;
   }
