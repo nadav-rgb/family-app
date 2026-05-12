@@ -13,7 +13,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
 <meta name="apple-mobile-web-app-title" content="Family"/>
 <meta name="mobile-web-app-capable" content="yes"/>
-<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&family=Rubik:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&family=Rubik:wght@400;600;700;800;900&family=Heebo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
 <style>
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
 *:focus{outline:none;}
@@ -895,9 +895,288 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 .dbg-i{padding:1px 18px;color:#b8b8b8;}
 .dbg-w{padding:1px 18px;color:#ffaa44;}
 .dbg-ts{color:#555;font-size:9px;margin-right:4px;}
+
+/* ══════════════════════════════════════════
+   TODAY SCREEN — PREMIUM REDESIGN
+══════════════════════════════════════════ */
+
+/* Avatar strip — SVG portraits */
+#s-today .t-av{
+  font-size:0; /* hide any fallback emoji */
+  background:radial-gradient(120% 100% at 30% 25%,#FFE8D2 0%,#F6D3B1 60%,#EFC59E 100%);
+  overflow:hidden;
+  box-shadow:
+    inset 0 -4px 10px rgba(180,100,40,.12),
+    inset 0 2px 0 rgba(255,255,255,.5),
+    0 5px 12px -5px rgba(120,60,20,.22),
+    0 2px 4px -1px rgba(120,60,20,.10);
+}
+#s-today .t-av svg{display:block;width:100%;height:100%;}
+#s-today .av-mom{background:radial-gradient(120% 100% at 30% 25%,#FFE8D2 0%,#F6D3B1 60%,#EFC59E 100%);}
+#s-today .av-dad{background:radial-gradient(120% 100% at 30% 25%,#dbe8f5 0%,#c2d8ed 60%,#a8c5e0 100%);}
+#s-today .av-dudi{background:radial-gradient(120% 100% at 30% 25%,#d5e8f0 0%,#b8d6e8 60%,#9ac3d8 100%);}
+#s-today .av-yona{background:radial-gradient(120% 100% at 30% 25%,#d4eeda 0%,#b5dfc0 60%,#96cfa7 100%);}
+#s-today .t-av.online::after{
+  content:'';position:absolute;bottom:2px;left:2px;
+  width:13px;height:13px;border-radius:50%;
+  background:#2DCB6B;
+  box-shadow:0 0 0 2.5px #fff;
+}
+#s-today .t-avname{
+  font-family:'Heebo',sans-serif;
+  font-size:12px;font-weight:600;
+  color:#3A322D;letter-spacing:-.1px;
+}
+
+/* Progress card — white elevated card */
+#s-today .t-prog{
+  margin:14px 18px 0;
+  background:#fff;
+  border-radius:20px;
+  padding:13px 16px 15px;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.9),
+    0 12px 24px -14px rgba(120,60,20,.18),
+    0 4px 8px -4px rgba(120,60,20,.08);
+}
+#s-today .t-prow{margin-bottom:10px;}
+#s-today .t-plbl{font-family:'Heebo',sans-serif;font-size:13px;font-weight:600;color:#3A322D;}
+#s-today .t-pcnt{font-family:'Heebo',sans-serif;font-size:12.5px;font-weight:800;color:#B85518;
+  background:linear-gradient(180deg,#FFE9D7 0%,#FFD4B0 100%);
+  padding:4px 10px;border-radius:999px;
+  box-shadow:inset 0 0 0 1px rgba(255,160,100,.22);}
+#s-today .t-pbg{height:10px;background:#FFEDDD;border-radius:999px;overflow:hidden;
+  box-shadow:inset 0 1px 2px rgba(160,80,30,.14);}
+#s-today .t-pfill{
+  background:linear-gradient(90deg,#FFA46B 0%,#FF7033 60%,#E96322 100%);
+  border-radius:999px;
+  box-shadow:0 2px 5px rgba(255,90,20,.38);
+}
+#s-today .t-pfill::after{
+  content:"";position:absolute;inset:1px 1px auto 1px;height:3px;
+  background:linear-gradient(180deg,rgba(255,255,255,.5),transparent);
+  border-radius:999px;
+}
+#s-today .t-pbg{position:relative;}
+
+/* Hero card — premium with portrait + backdrop */
+#s-today .t-hero-card{
+  margin:16px 18px 0;
+  position:relative;
+  border-radius:26px;
+  overflow:hidden;
+  background:radial-gradient(120% 90% at 80% 0%,#FF8C4A 0%,#F26A20 55%,#D85410 100%);
+  box-shadow:
+    0 28px 55px -20px rgba(200,80,20,.52),
+    0 10px 22px -10px rgba(200,80,20,.32),
+    inset 0 1px 0 rgba(255,255,255,.22);
+  min-height:210px;
+  display:flex;
+  justify-content:space-between;
+  direction:rtl;
+  animation:fadeUp .42s ease .18s both, heroBreath 4.5s ease-in-out 1s infinite;
+}
+#s-today .t-hero-card:hover{animation:none;transform:translateY(-2px);}
+#s-today .t-hero-card:active{animation:none;transform:scale(.97);}
+
+/* Backdrop scene */
+.t-hero-scene{
+  position:absolute;inset:0;pointer-events:none;
+  overflow:hidden;
+}
+.t-hero-scene svg{position:absolute;inset:0;width:100%;height:100%;}
+
+/* Grain texture */
+.t-hero-grain{
+  position:absolute;inset:0;pointer-events:none;
+  mix-blend-mode:overlay;opacity:.15;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .5 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+
+/* Right text section */
+.t-hero-right{
+  position:relative;z-index:2;
+  flex:1;
+  display:flex;flex-direction:column;align-items:flex-start;
+  text-align:right;color:#fff;
+  padding:18px 18px 18px 0;
+}
+.t-hbadge{
+  display:inline-flex;align-items:center;gap:5px;
+  background:rgba(255,255,255,.15);
+  border:1px solid rgba(255,255,255,.28);
+  backdrop-filter:blur(6px);
+  color:#fff;font-size:11.5px;font-weight:600;
+  padding:5px 11px;border-radius:999px;
+  font-family:'Heebo',sans-serif;
+}
+#s-today .t-heyebrow{display:none;} /* replaced by t-hbadge */
+#s-today .t-htime{
+  font-family:'Heebo',sans-serif;
+  direction:ltr;unicode-bidi:isolate;
+  margin-top:8px;
+  font-size:58px;font-weight:800;line-height:1;
+  letter-spacing:-2px;color:#fff;
+  text-shadow:0 5px 16px rgba(120,40,5,.32);
+  align-self:flex-end;
+}
+#s-today .t-htask{
+  font-family:'Heebo',sans-serif;
+  margin-top:6px;font-size:14.5px;font-weight:600;
+  color:#fff;line-height:1.35;
+  text-align:right;align-self:flex-end;
+  max-width:190px;
+}
+#s-today .t-hfoot{
+  margin-top:6px;align-self:flex-end;
+  display:flex;align-items:center;gap:8px;
+}
+#s-today .t-hwho{display:flex;align-items:center;gap:6px;}
+#s-today .t-hav{
+  width:28px;height:28px;border-radius:50%;
+  background:rgba(255,255,255,.2);
+  border:1.5px solid rgba(255,255,255,.4);
+  display:flex;align-items:center;justify-content:center;font-size:14px;
+}
+#s-today .t-hname{font-family:'Heebo',sans-serif;font-size:13px;font-weight:700;color:rgba(255,255,255,.92);}
+#s-today .t-hpill{
+  background:rgba(255,255,255,.16);
+  border:1px solid rgba(255,255,255,.28);
+  border-radius:20px;padding:5px 12px;
+  font-size:11.5px;font-weight:700;color:#fff;
+  font-family:'Heebo',sans-serif;
+}
+
+/* Portrait left side */
+.t-hero-portrait{
+  position:relative;z-index:2;
+  flex:0 0 148px;align-self:stretch;
+  overflow:hidden;
+}
+.t-hero-portrait svg{
+  position:absolute;left:-8px;bottom:0;
+  width:168px;height:210px;display:block;
+}
+
+/* Bottom nav — floating pill */
+#s-today .t-nav{
+  position:absolute;bottom:0;left:0;right:0;
+  height:96px;
+  z-index:10;
+  pointer-events:none;
+  background:none;
+  border-top:none;
+  box-shadow:none;
+}
+.t-nav-bg{
+  position:absolute;left:12px;right:12px;bottom:16px;
+  height:68px;
+  background:#fff;
+  border-radius:26px;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.9),
+    0 16px 36px -14px rgba(120,60,20,.26),
+    0 5px 12px -6px rgba(120,60,20,.14);
+  pointer-events:auto;
+}
+.t-nav-items{
+  position:absolute;left:12px;right:12px;bottom:16px;
+  height:68px;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 16px;
+  pointer-events:auto;
+}
+#s-today .t-ntab{
+  flex:1;
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+  color:#C7BDB3;font-size:10.5px;font-weight:600;
+  font-family:'Heebo',sans-serif;letter-spacing:-.1px;
+  cursor:pointer;
+}
+#s-today .t-ntab.on{color:#B85518;}
+.t-ntab-center{flex:0 0 64px;position:relative;}
+#s-today .t-nadd{
+  position:absolute;left:50%;bottom:14px;
+  transform:translateX(-50%);
+  width:58px;height:58px;border-radius:50%;
+  background:radial-gradient(120% 100% at 30% 25%,#FF8C4A 0%,#F26A20 60%,#D85410 100%);
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:
+    0 14px 28px -8px rgba(220,80,20,.52),
+    0 5px 12px -4px rgba(220,80,20,.32),
+    inset 0 1px 0 rgba(255,255,255,.38);
+  pointer-events:auto;cursor:pointer;
+  font-size:0;
+  animation:addBreathe 2.4s ease-in-out 1.2s infinite;
+}
+#s-today .t-nadd:hover,#s-today .t-nadd:active{animation:none;}
+#s-today .t-nadd::after{
+  content:"";position:absolute;inset:-5px;border-radius:50%;
+  background:radial-gradient(50% 50% at 50% 50%,rgba(255,120,40,.3),transparent 70%);
+  z-index:-1;filter:blur(5px);
+}
+#s-today .t-scroll{padding-bottom:110px;}
 </style>
 </head>
 <body>
+
+<!-- ════ SVG PORTRAIT SPRITES (Family Today design) ════ -->
+<svg width="0" height="0" style="position:absolute;overflow:hidden" aria-hidden="true">
+  <defs>
+    <!-- Yonatan: teen boy, short brown hair, green hoodie -->
+    <symbol id="p-yonatan" viewBox="0 0 100 100">
+      <path d="M10 100 C 12 78, 26 70, 38 67 L 62 67 C 74 70, 88 78, 90 100 Z" fill="#2F5E45"/>
+      <path d="M34 70 C 40 76, 60 76, 66 70 L 64 80 C 58 84, 42 84, 36 80 Z" fill="#244B37"/>
+      <path d="M42 64 L 42 74 C 46 78, 54 78, 58 74 L 58 64 Z" fill="#C9C4BF"/>
+      <ellipse cx="50" cy="44" rx="20" ry="24" fill="#C9C4BF"/>
+      <ellipse cx="30.5" cy="45" rx="2.5" ry="4" fill="#B7B1AB"/>
+      <ellipse cx="69.5" cy="45" rx="2.5" ry="4" fill="#B7B1AB"/>
+      <path d="M30 38 C 30 24, 44 17, 52 17 C 64 17, 72 24, 72 36 C 72 38, 71 40, 70 42 C 68 36, 64 34, 60 33 C 54 32, 46 33, 41 36 C 36 38, 33 41, 32 44 C 30 42, 30 40, 30 38 Z" fill="#3C2517"/>
+    </symbol>
+    <!-- Dudi: boy with curly hair, slate-blue hoodie -->
+    <symbol id="p-dudi" viewBox="0 0 100 100">
+      <path d="M10 100 C 12 78, 26 70, 38 67 L 62 67 C 74 70, 88 78, 90 100 Z" fill="#5B6B78"/>
+      <path d="M34 70 C 40 76, 60 76, 66 70 L 64 80 C 58 84, 42 84, 36 80 Z" fill="#465562"/>
+      <path d="M42 64 L 42 74 C 46 78, 54 78, 58 74 L 58 64 Z" fill="#C9C4BF"/>
+      <ellipse cx="30.5" cy="46" rx="2.5" ry="4" fill="#B7B1AB"/>
+      <ellipse cx="69.5" cy="46" rx="2.5" ry="4" fill="#B7B1AB"/>
+      <ellipse cx="50" cy="44" rx="20" ry="24" fill="#C9C4BF"/>
+      <g fill="#3C2010"><circle cx="34" cy="32" r="6"/><circle cx="40" cy="24" r="7"/><circle cx="50" cy="20" r="8"/><circle cx="60" cy="23" r="7.5"/><circle cx="68" cy="30" r="6.5"/><circle cx="71" cy="38" r="5"/><circle cx="30" cy="40" r="5"/><circle cx="44" cy="30" r="6"/><circle cx="56" cy="29" r="6"/><circle cx="64" cy="34" r="5.5"/></g>
+    </symbol>
+    <!-- Aba: dad, short clean hair, denim/blue collared shirt -->
+    <symbol id="p-aba" viewBox="0 0 100 100">
+      <path d="M8 100 C 10 78, 24 70, 36 67 L 64 67 C 76 70, 90 78, 92 100 Z" fill="#3F5D72"/>
+      <path d="M40 68 L 50 80 L 60 68 L 55 66 L 50 72 L 45 66 Z" fill="#FBF6EE"/>
+      <path d="M43 62 L 43 72 C 47 76, 53 76, 57 72 L 57 62 Z" fill="#C9C4BF"/>
+      <ellipse cx="50" cy="42" rx="20.5" ry="24" fill="#C9C4BF"/>
+      <ellipse cx="30" cy="44" rx="2.5" ry="4.2" fill="#B7B1AB"/>
+      <ellipse cx="70" cy="44" rx="2.5" ry="4.2" fill="#B7B1AB"/>
+      <path d="M30 38 C 30 22, 42 15, 52 15 C 64 15, 72 23, 72 35 C 72 38, 71 41, 69 42 C 67 36, 62 33, 56 32 C 50 31, 44 32, 38 35 C 34 37, 31 40, 30 42 C 29 40, 30 39, 30 38 Z" fill="#2B1810"/>
+    </symbol>
+    <!-- Ima: long wavy brown hair, soft cream top -->
+    <symbol id="p-ima" viewBox="0 0 100 100">
+      <path d="M22 100 C 18 84, 18 70, 26 60 C 30 55, 36 52, 42 51 L 58 51 C 64 52, 70 55, 74 60 C 82 70, 82 84, 78 100 Z" fill="#3E2218"/>
+      <path d="M14 100 C 16 80, 28 72, 40 68 L 60 68 C 72 72, 84 80, 86 100 Z" fill="#E5C8A6"/>
+      <path d="M40 68 C 44 76, 56 76, 60 68 L 60 75 C 56 80, 44 80, 40 75 Z" fill="#C9A781"/>
+      <path d="M43 60 L 43 72 C 47 76, 53 76, 57 72 L 57 60 Z" fill="#C9C4BF"/>
+      <ellipse cx="50" cy="42" rx="20.5" ry="24" fill="#C9C4BF"/>
+      <path d="M28 38 C 28 22, 42 12, 52 12 C 66 12, 76 22, 76 38 C 76 50, 73 60, 71 66 C 70 60, 70 54, 68 50 C 66 46, 62 44, 58 43 C 54 42, 50 41, 46 41 C 40 41, 34 43, 31 47 C 29 44, 28 41, 28 38 Z" fill="#3E2218"/>
+      <ellipse cx="30" cy="46" rx="2" ry="3" fill="#B7B1AB"/>
+    </symbol>
+    <!-- Hero portrait: Dad bust -->
+    <symbol id="hero-dad" viewBox="0 0 200 260">
+      <path d="M-10 260 C -6 215, 10 198, 40 188 L 160 188 C 190 198, 206 215, 210 260 Z" fill="#3F5D72"/>
+      <path d="M68 195 L 100 230 L 132 195 L 124 188 L 100 215 L 76 188 Z" fill="#2B3D4A"/>
+      <path d="M82 198 L 100 218 L 118 198 Z" fill="#F1E2CB"/>
+      <path d="M88 178 L 88 200 C 94 208, 106 208, 112 200 L 112 178 Z" fill="#C9C4BF"/>
+      <ellipse cx="100" cy="120" rx="44" ry="54" fill="#C9C4BF"/>
+      <ellipse cx="58" cy="124" rx="5" ry="9" fill="#B0AAA4"/>
+      <ellipse cx="142" cy="124" rx="5" ry="9" fill="#B0AAA4"/>
+      <path d="M54 110 C 54 76, 72 56, 100 56 C 130 56, 148 76, 148 110 C 148 116, 146 122, 142 124 C 138 110, 126 102, 116 100 C 100 96, 84 100, 72 110 C 64 114, 58 118, 56 122 C 54 118, 54 114, 54 110 Z" fill="#2B1810"/>
+    </symbol>
+  </defs>
+</svg>
+
 <div class="phone">
 
 <!-- ════ SCREEN 0: LANGUAGE PICKER ════ -->
@@ -1063,6 +1342,7 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
     </div>
   </div>
   <div class="t-scroll">
+    <!-- Header -->
     <div class="t-header">
       <div class="t-header-top">
         <div class="t-greeting" id="tGreeting">Tuesday, May 6 ☀️</div>
@@ -1074,23 +1354,72 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
       <div class="t-title" id="tTitle">Good morning,<br>Cohen Family 🏠</div>
       <div class="t-date-badge" id="tDateBadge">Today</div>
     </div>
+
+    <!-- Avatar strip — SVG illustrated portraits -->
     <div class="t-avatars">
-      <div class="t-mem"><div class="t-av av-mom online">👩</div><span class="t-avname">Mom</span></div>
-      <div class="t-mem"><div class="t-av av-dad online">👨</div><span class="t-avname">Dad</span></div>
-      <div class="t-mem"><div class="t-av av-dudi">🧒</div><span class="t-avname">Dudi</span></div>
-      <div class="t-mem"><div class="t-av av-yona">👶</div><span class="t-avname">Yonatan</span></div>
+      <div class="t-mem">
+        <div class="t-av av-mom online"><svg viewBox="0 0 100 100" width="100%" height="100%"><use href="#p-ima"/></svg></div>
+        <span class="t-avname">Mom</span>
+      </div>
+      <div class="t-mem">
+        <div class="t-av av-dad online"><svg viewBox="0 0 100 100" width="100%" height="100%"><use href="#p-aba"/></svg></div>
+        <span class="t-avname">Dad</span>
+      </div>
+      <div class="t-mem">
+        <div class="t-av av-dudi"><svg viewBox="0 0 100 100" width="100%" height="100%"><use href="#p-dudi"/></svg></div>
+        <span class="t-avname">Dudi</span>
+      </div>
+      <div class="t-mem">
+        <div class="t-av av-yona"><svg viewBox="0 0 100 100" width="100%" height="100%"><use href="#p-yonatan"/></svg></div>
+        <span class="t-avname">Yonatan</span>
+      </div>
     </div>
+
+    <!-- Progress card -->
     <div class="t-prog">
       <div class="t-prow"><span class="t-plbl" id="tPlbl">Today's tasks</span><span class="t-pcnt">1 of 5 done ✨</span></div>
       <div class="t-pbg"><div class="t-pfill" id="tPfill"></div></div>
     </div>
+
     <div class="t-slabel" id="tComingLbl">✨ Coming up</div>
+
+    <!-- Hero card — premium design with portrait -->
     <div class="t-hero-card">
-      <div class="t-heyebrow" id="tHeyebrow">Coming up at</div>
-      <div class="t-htime">15:00</div>
-      <div class="t-htask">Pick up Yonatan<br>from kindergarten</div>
-      <div class="t-hfoot"><div class="t-hwho"><div class="t-hav">👨</div><span class="t-hname">Dad</span></div><div class="t-hpill">in 58 min</div></div>
+      <!-- Backdrop city scene -->
+      <div class="t-hero-scene">
+        <svg viewBox="0 0 240 230" preserveAspectRatio="xMidYMax slice" width="100%" height="100%">
+          <g opacity=".2" fill="#7A2E0E">
+            <rect x="0" y="150" width="40" height="80"/><rect x="45" y="135" width="30" height="95"/>
+            <rect x="80" y="160" width="50" height="70"/><rect x="140" y="125" width="34" height="105"/>
+            <rect x="180" y="150" width="60" height="80"/>
+          </g>
+          <g opacity=".3" fill="#3E1305">
+            <path d="M0 230 L 0 200 C 10 196, 30 196, 50 200 C 70 204, 90 204, 110 200 L 110 230 Z"/>
+            <path d="M120 230 L 120 196 C 140 192, 170 192, 200 198 L 240 198 L 240 230 Z"/>
+          </g>
+        </svg>
+      </div>
+      <!-- Grain overlay -->
+      <div class="t-hero-grain"></div>
+      <!-- Text content (right side, JS-driven) -->
+      <div class="t-hero-right">
+        <div class="t-hbadge">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6L12 3Z"/></svg>
+          <span id="tHeyebrow">Coming up at</span>
+        </div>
+        <div class="t-htime">15:00</div>
+        <div class="t-htask">Pick up Yonatan<br>from kindergarten</div>
+        <div class="t-hfoot">
+          <div class="t-hwho"><div class="t-hav">👨</div><span class="t-hname">Dad</span></div>
+          <div class="t-hpill">in 58 min</div>
+        </div>
+      </div>
+      <!-- Portrait (left side, decorative) -->
+      <div class="t-hero-portrait">
+        <svg viewBox="0 0 200 260" width="100%" height="100%"><use href="#hero-dad"/></svg>
+      </div>
     </div>
+
     <div class="t-slabel" id="tAllLbl">📋 All Tasks</div>
     <div class="install-banner" id="installBanner">
       <span class="ib-icon">📲</span>
@@ -1105,15 +1434,31 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
     </div>
     <div class="t-tasks" id="tTasks"></div>
   </div>
+
   <div class="notif-toast" id="notifToast">
     <span class="notif-icon">🔔</span>
     <div class="notif-body"><div class="notif-lbl" id="notifLbl">Reminder</div><div class="notif-msg" id="notifMsg"></div></div>
     <span class="notif-close" id="notifClose">✕</span>
   </div>
+
+  <!-- Bottom nav — floating pill -->
   <div class="t-nav">
-    <div class="t-ntab on"><span class="t-ni">☀️</span><span class="t-nl" id="navTodayLbl">Today</span></div>
-    <div class="t-nadd" id="tNavAdd">+</div>
-    <div class="t-ntab"><span class="t-ni">👨‍👩‍👧‍👦</span><span class="t-nl" id="navFamilyLbl">Family</span></div>
+    <div class="t-nav-bg"></div>
+    <div class="t-nav-items">
+      <div class="t-ntab on">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3.5 11.5 12 4l8.5 7.5V20a1 1 0 0 1-1 1H15v-6h-6v6H4.5a1 1 0 0 1-1-1v-8.5Z" stroke-linejoin="round"/></svg>
+        <span class="t-nl" id="navTodayLbl">Today</span>
+      </div>
+      <div class="t-ntab t-ntab-center">
+        <div class="t-nadd" id="tNavAdd">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+        </div>
+      </div>
+      <div class="t-ntab">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="8" r="3.5"/><path d="M4.5 20c1.4-3.8 4.4-5.5 7.5-5.5s6.1 1.7 7.5 5.5" stroke-linecap="round"/></svg>
+        <span class="t-nl" id="navFamilyLbl">Family</span>
+      </div>
+    </div>
   </div>
 </div>
 
