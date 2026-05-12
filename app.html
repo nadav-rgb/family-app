@@ -1443,11 +1443,11 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 <!-- ════ SCREEN 1: VOICE ════ -->
 <div class="app-screen active" id="s-voice">
   <div class="v-topbar">
-    <button class="back-btn" onclick="goto('s-today','txLeaveFade','txEnterFade')"><svg width="8" height="14" viewBox="0 0 8 14" fill="none"><path d="M7 1L1 7l6 6" stroke="#9e8878" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span id="vBackTxt">Today</span></button>
+    <button class="back-btn" onclick="goto('s-today','txLeaveFade','txEnterFade')"><svg width="8" height="14" viewBox="0 0 8 14" fill="none"><path d="M7 1L1 7l6 6" stroke="#9e8878" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span id="vBackTxt">היום</span></button>
     <button class="v-settings-btn" id="vSettingsBtn"><svg width="20" height="16" viewBox="0 0 20 16" fill="none"><line x1="1" y1="2.5" x2="19" y2="2.5" stroke="#9e8878" stroke-width="1.8" stroke-linecap="round"/><circle cx="14" cy="2.5" r="2.2" fill="#fffaf5" stroke="#9e8878" stroke-width="1.6"/><line x1="1" y1="8" x2="19" y2="8" stroke="#9e8878" stroke-width="1.8" stroke-linecap="round"/><circle cx="6" cy="8" r="2.2" fill="#fffaf5" stroke="#9e8878" stroke-width="1.6"/><line x1="1" y1="13.5" x2="19" y2="13.5" stroke="#9e8878" stroke-width="1.8" stroke-linecap="round"/><circle cx="14" cy="13.5" r="2.2" fill="#fffaf5" stroke="#9e8878" stroke-width="1.6"/></svg></button>
   </div>
   <div class="sp"></div>
-  <div class="prompt"><div class="v-eyebrow" id="vPromptEyebrow">✨ Voice Input</div><div class="v-ptxt" id="vPromptText">Tell me what needs<br>to happen today</div></div>
+  <div class="prompt"><div class="v-eyebrow" id="vPromptEyebrow">✨ קלט קולי</div><div class="v-ptxt" id="vPromptText">ספר לי מה<br>צריך לקרות היום</div></div>
   <div class="sp-lg"></div>
   <div class="mic-zone" id="micZone">
     <div class="mwrap" id="wrap-heart">
@@ -1482,16 +1482,16 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
     <div class="sb-dots"><span></span><span></span><span></span></div>
   </div>
   <div class="listen-sec">
-    <div class="ltxt" id="ltxt">Tap to speak</div>
+    <div class="ltxt" id="ltxt">לחץ לדיבור</div>
     <div class="wdots" id="wdots"><div class="wd wd1"></div><div class="wd wd2"></div><div class="wd wd3"></div><div class="wd wd4"></div><div class="wd wd5"></div></div>
   </div>
   <div class="v-type-row" id="vTypeRow">
-    <div class="v-type-toggle" id="vTypeToggle">Or type it instead</div>
+    <div class="v-type-toggle" id="vTypeToggle">או הקלד במקום</div>
     <div class="v-type-area" id="vTypeArea">
       <div class="v-type-inp" id="vTypeInp" contenteditable="true" role="textbox" aria-multiline="true" spellcheck="false"></div>
-      <div class="v-type-helper" id="vTypeHelper">Write freely — we'll organize it for you</div>
-      <button class="v-type-btn" id="vTypeBtn" disabled>Organize my day ✨</button>
-      <div class="v-voice-back" id="vVoiceBack">🎙 Use voice instead</div>
+      <div class="v-type-helper" id="vTypeHelper">כתוב בחופשיות — אנחנו נסדר לך</div>
+      <button class="v-type-btn" id="vTypeBtn" disabled>סדר לי את היום ✨</button>
+      <div class="v-voice-back" id="vVoiceBack">🎙 חזור לדיבור</div>
     </div>
   </div>
   <div class="sp"></div>
@@ -1499,19 +1499,19 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 
 <!-- ════ SCREEN 2: DAY PREVIEW ════ -->
 <div class="app-screen" id="s-dp">
-  <div class="dp-topbar"><button class="back-btn" id="dpBack"><svg width="8" height="14" viewBox="0 0 8 14" fill="none"><path d="M7 1L1 7l6 6" stroke="#9e8878" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span id="dpBackTxt">Back</span></button></div>
+  <div class="dp-topbar"><button class="back-btn" id="dpBack"><svg width="8" height="14" viewBox="0 0 8 14" fill="none"><path d="M7 1L1 7l6 6" stroke="#9e8878" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span id="dpBackTxt">חזור</span></button></div>
   <div class="dp-hero">
-    <div class="dp-tag" id="dpTag">✨ Ready</div>
-    <div class="dp-h1" id="dpH1">We organized<br>your day <span class="sparkle-emoji">✨</span></div>
-    <div class="dp-sub" id="dpSub">Feel free to tweak anything</div>
+    <div class="dp-tag" id="dpTag">✨ מוכן</div>
+    <div class="dp-h1" id="dpH1">סידרנו לך<br>את היום <span class="sparkle-emoji">✨</span></div>
+    <div class="dp-sub" id="dpSub">תרגיש חופשי לשנות</div>
     <div class="dp-meta"><span class="dp-pill">📋 4 tasks</span><span class="dp-pill">👩 Mom · 👨 Dad</span></div>
   </div>
   <div class="ai-banner ai-banner--review" id="dpReviewBanner">⚠️ יש כמה פרטים שכדאי לבדוק לפני שמוסיפים ליום</div>
   <div class="ai-banner ai-banner--fallback" id="dpFallbackBanner">ℹ️ השתמשנו בפענוח בסיסי כי ה-AI לא היה זמין</div>
   <div class="dp-list" id="dpList"><div class="list-shimmer"></div></div>
   <div class="dp-bottom">
-    <button class="btn-primary" id="btnOk">Looks good ✓</button>
-    <button class="btn-add-more" id="btnAddMore">+ Add more</button>
+    <button class="btn-primary" id="btnOk">נראה טוב ✓</button>
+    <button class="btn-add-more" id="btnAddMore">+ הוסף עוד</button>
   </div>
   <!-- Add-to-day sheet -->
   <div class="atd-bg" id="atdBg">
@@ -1659,7 +1659,7 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
     <div class="t-nav-items">
       <div class="t-ntab on">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3.5 11.5 12 4l8.5 7.5V20a1 1 0 0 1-1 1H15v-6h-6v6H4.5a1 1 0 0 1-1-1v-8.5Z" stroke-linejoin="round"/></svg>
-        <span class="t-nl" id="navTodayLbl">Today</span>
+        <span class="t-nl" id="navTodayLbl">היום</span>
       </div>
       <div class="t-ntab t-ntab-center">
         <div class="t-nadd" id="tNavAdd">
@@ -1668,7 +1668,7 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
       </div>
       <div class="t-ntab">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        <span class="t-nl" id="navFamilyLbl">Settings</span>
+        <span class="t-nl" id="navFamilyLbl">הגדרות</span>
       </div>
     </div>
   </div>
@@ -1676,7 +1676,7 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 
 <div class="undo-toast" id="undoToast">
   <span class="undo-msg" id="undoMsg"></span>
-  <button class="undo-btn" id="undoBtn">Undo</button>
+  <button class="undo-btn" id="undoBtn">בטל</button>
 </div>
 
 <!-- ════ CALENDAR DRAWER ════ -->
