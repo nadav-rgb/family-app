@@ -183,7 +183,7 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 .v-voice-back:active{color:#6b4f3a;}
 .v-type-btn{width:100%;padding:15px;border:none;border-radius:16px;background:linear-gradient(135deg,#ff9a4e,#ff5e14);font-family:'Nunito',sans-serif;font-size:15px;font-weight:900;color:white;cursor:pointer;box-shadow:0 5px 18px rgba(255,94,20,.3);transition:transform .18s,box-shadow .18s,opacity .2s,background .2s;}
 .v-type-btn:active:not(:disabled){transform:scale(.97);box-shadow:0 2px 10px rgba(255,94,20,.2);}
-.v-type-btn:disabled{background:linear-gradient(135deg,#e8d8cc,#d4c4b8);box-shadow:none;cursor:default;opacity:.7;}
+.v-type-btn:disabled{background:linear-gradient(135deg,#fdd8b0,#f8c08a);box-shadow:none;cursor:default;opacity:1;}
 /* Thinking state — shown while vOrganize is processing typed input */
 .v-type-btn.thinking{background:linear-gradient(135deg,#f3b984,#e88a4a);color:white;box-shadow:0 3px 14px rgba(232,138,74,.28);opacity:.92;cursor:default;display:inline-flex;align-items:center;justify-content:center;gap:8px;}
 .v-type-btn.thinking .v-think-dots{display:inline-flex;gap:4px;align-items:center;}
@@ -1426,14 +1426,6 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 
 <!-- ════ SCREEN 0: LANGUAGE PICKER ════ -->
 <div class="app-screen" id="s-lang">
-  <div class="sbar">
-    <span class="sb-clock">9:41</span>
-    <div class="sbar-r">
-      <svg width="16" height="12" viewBox="0 0 16 12" fill="none"><rect x="0" y="4" width="3" height="8" rx="1" fill="#2d2018"/><rect x="4" y="2.5" width="3" height="9.5" rx="1" fill="#2d2018"/><rect x="8" y="1" width="3" height="11" rx="1" fill="#2d2018"/><rect x="12" y="0" width="3" height="12" rx="1" fill="#2d2018"/></svg>
-      <svg width="16" height="12" viewBox="0 0 20 14" fill="none"><path d="M10 2.5C13.5 2.5 16.6 4 18.8 6.4L20 5.2C17.5 2.4 13.9.5 10 .5 6.1.5 2.5 2.4 0 5.2L1.2 6.4C3.4 4 6.5 2.5 10 2.5Z" fill="#2d2018"/><path d="M10 6C12.4 6 14.5 7 16 8.7L17.2 7.5C15.4 5.5 12.8 4 10 4 7.2 4 4.6 5.5 2.8 7.5L4 8.7C5.5 7 7.6 6 10 6Z" fill="#2d2018"/><path d="M10 9.5C11.4 9.5 12.6 10.1 13.5 11L10 14.5 6.5 11C7.4 10.1 8.6 9.5 10 9.5Z" fill="#2d2018"/></svg>
-      <svg width="26" height="12" viewBox="0 0 26 12" fill="none"><rect x=".5" y=".5" width="22" height="11" rx="3.5" stroke="#2d2018" stroke-opacity=".35"/><rect x="1.5" y="1.5" width="18" height="9" rx="2.5" fill="#2d2018"/><path d="M24 4.5v3a2 2 0 0 1 0-3Z" fill="#2d2018" fill-opacity=".4"/></svg>
-    </div>
-  </div>
   <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 32px;">
     <div class="lang-title">Choose your language</div>
     <div class="lang-sub">You can change this later in settings</div>
@@ -1450,14 +1442,6 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 
 <!-- ════ SCREEN 1: VOICE ════ -->
 <div class="app-screen active" id="s-voice">
-  <div class="sbar">
-    <span class="sb-clock">9:41</span>
-    <div class="sbar-r">
-      <svg width="16" height="12" viewBox="0 0 16 12" fill="none"><rect x="0" y="4" width="3" height="8" rx="1" fill="#2d2018"/><rect x="4" y="2.5" width="3" height="9.5" rx="1" fill="#2d2018"/><rect x="8" y="1" width="3" height="11" rx="1" fill="#2d2018"/><rect x="12" y="0" width="3" height="12" rx="1" fill="#2d2018"/></svg>
-      <svg width="16" height="12" viewBox="0 0 20 14" fill="none"><path d="M10 2.5C13.5 2.5 16.6 4 18.8 6.4L20 5.2C17.5 2.4 13.9.5 10 .5 6.1.5 2.5 2.4 0 5.2L1.2 6.4C3.4 4 6.5 2.5 10 2.5Z" fill="#2d2018"/><path d="M10 6C12.4 6 14.5 7 16 8.7L17.2 7.5C15.4 5.5 12.8 4 10 4 7.2 4 4.6 5.5 2.8 7.5L4 8.7C5.5 7 7.6 6 10 6Z" fill="#2d2018"/><path d="M10 9.5C11.4 9.5 12.6 10.1 13.5 11L10 14.5 6.5 11C7.4 10.1 8.6 9.5 10 9.5Z" fill="#2d2018"/></svg>
-      <svg width="26" height="12" viewBox="0 0 26 12" fill="none"><rect x=".5" y=".5" width="22" height="11" rx="3.5" stroke="#2d2018" stroke-opacity=".35"/><rect x="1.5" y="1.5" width="18" height="9" rx="2.5" fill="#2d2018"/><path d="M24 4.5v3a2 2 0 0 1 0-3Z" fill="#2d2018" fill-opacity=".4"/></svg>
-    </div>
-  </div>
   <div class="v-topbar">
     <button class="back-btn" onclick="goto('s-today','txLeaveFade','txEnterFade')"><svg width="8" height="14" viewBox="0 0 8 14" fill="none"><path d="M7 1L1 7l6 6" stroke="#9e8878" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span id="vBackTxt">Today</span></button>
     <button class="v-settings-btn" id="vSettingsBtn"><svg width="20" height="16" viewBox="0 0 20 16" fill="none"><line x1="1" y1="2.5" x2="19" y2="2.5" stroke="#9e8878" stroke-width="1.8" stroke-linecap="round"/><circle cx="14" cy="2.5" r="2.2" fill="#fffaf5" stroke="#9e8878" stroke-width="1.6"/><line x1="1" y1="8" x2="19" y2="8" stroke="#9e8878" stroke-width="1.8" stroke-linecap="round"/><circle cx="6" cy="8" r="2.2" fill="#fffaf5" stroke="#9e8878" stroke-width="1.6"/><line x1="1" y1="13.5" x2="19" y2="13.5" stroke="#9e8878" stroke-width="1.8" stroke-linecap="round"/><circle cx="14" cy="13.5" r="2.2" fill="#fffaf5" stroke="#9e8878" stroke-width="1.6"/></svg></button>
@@ -1515,14 +1499,6 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 
 <!-- ════ SCREEN 2: DAY PREVIEW ════ -->
 <div class="app-screen" id="s-dp">
-  <div class="sbar">
-    <span class="sb-clock">9:41</span>
-    <div class="sbar-r">
-      <svg width="16" height="12" viewBox="0 0 16 12" fill="none"><rect x="0" y="4" width="3" height="8" rx="1" fill="#2d2018"/><rect x="4" y="2.5" width="3" height="9.5" rx="1" fill="#2d2018"/><rect x="8" y="1" width="3" height="11" rx="1" fill="#2d2018"/><rect x="12" y="0" width="3" height="12" rx="1" fill="#2d2018"/></svg>
-      <svg width="16" height="12" viewBox="0 0 20 14" fill="none"><path d="M10 2.5C13.5 2.5 16.6 4 18.8 6.4L20 5.2C17.5 2.4 13.9.5 10 .5 6.1.5 2.5 2.4 0 5.2L1.2 6.4C3.4 4 6.5 2.5 10 2.5Z" fill="#2d2018"/><path d="M10 6C12.4 6 14.5 7 16 8.7L17.2 7.5C15.4 5.5 12.8 4 10 4 7.2 4 4.6 5.5 2.8 7.5L4 8.7C5.5 7 7.6 6 10 6Z" fill="#2d2018"/><path d="M10 9.5C11.4 9.5 12.6 10.1 13.5 11L10 14.5 6.5 11C7.4 10.1 8.6 9.5 10 9.5Z" fill="#2d2018"/></svg>
-      <svg width="26" height="12" viewBox="0 0 26 12" fill="none"><rect x=".5" y=".5" width="22" height="11" rx="3.5" stroke="#2d2018" stroke-opacity=".35"/><rect x="1.5" y="1.5" width="18" height="9" rx="2.5" fill="#2d2018"/><path d="M24 4.5v3a2 2 0 0 1 0-3Z" fill="#2d2018" fill-opacity=".4"/></svg>
-    </div>
-  </div>
   <div class="dp-topbar"><button class="back-btn" id="dpBack"><svg width="8" height="14" viewBox="0 0 8 14" fill="none"><path d="M7 1L1 7l6 6" stroke="#9e8878" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span id="dpBackTxt">Back</span></button></div>
   <div class="dp-hero">
     <div class="dp-tag" id="dpTag">✨ Ready</div>
@@ -1578,21 +1554,12 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 
 <!-- ════ SCREEN 3: TODAY ════ -->
 <div class="app-screen" id="s-today">
-  <div class="sbar">
-    <span class="sb-clock">9:41</span>
-    <div class="sbar-r">
-      <svg width="16" height="12" viewBox="0 0 16 12" fill="none"><rect x="0" y="4" width="3" height="8" rx="1" fill="#2d2018"/><rect x="4" y="2.5" width="3" height="9.5" rx="1" fill="#2d2018"/><rect x="8" y="1" width="3" height="11" rx="1" fill="#2d2018"/><rect x="12" y="0" width="3" height="12" rx="1" fill="#2d2018"/></svg>
-      <svg width="16" height="12" viewBox="0 0 20 14" fill="none"><path d="M10 2.5C13.5 2.5 16.6 4 18.8 6.4L20 5.2C17.5 2.4 13.9.5 10 .5 6.1.5 2.5 2.4 0 5.2L1.2 6.4C3.4 4 6.5 2.5 10 2.5Z" fill="#2d2018"/><path d="M10 6C12.4 6 14.5 7 16 8.7L17.2 7.5C15.4 5.5 12.8 4 10 4 7.2 4 4.6 5.5 2.8 7.5L4 8.7C5.5 7 7.6 6 10 6Z" fill="#2d2018"/><path d="M10 9.5C11.4 9.5 12.6 10.1 13.5 11L10 14.5 6.5 11C7.4 10.1 8.6 9.5 10 9.5Z" fill="#2d2018"/></svg>
-      <svg width="26" height="12" viewBox="0 0 26 12" fill="none"><rect x=".5" y=".5" width="22" height="11" rx="3.5" stroke="#2d2018" stroke-opacity=".35"/><rect x="1.5" y="1.5" width="18" height="9" rx="2.5" fill="#2d2018"/><path d="M24 4.5v3a2 2 0 0 1 0-3Z" fill="#2d2018" fill-opacity=".4"/></svg>
-    </div>
-  </div>
   <div class="t-scroll">
     <!-- Header -->
     <div class="t-header">
       <div class="t-header-top">
         <div class="t-greeting" id="tGreeting">Tuesday, May 6 ☀️</div>
         <div style="display:flex;gap:8px;align-items:center;">
-          <button class="user-sw-btn" id="userSwBtn">👨</button>
           <button class="cal-btn" id="calBtn">📅</button>
         </div>
       </div>
@@ -1700,8 +1667,8 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
         </div>
       </div>
       <div class="t-ntab">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="8" r="3.5"/><path d="M4.5 20c1.4-3.8 4.4-5.5 7.5-5.5s6.1 1.7 7.5 5.5" stroke-linecap="round"/></svg>
-        <span class="t-nl" id="navFamilyLbl">Family</span>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span class="t-nl" id="navFamilyLbl">Settings</span>
       </div>
     </div>
   </div>
@@ -1893,7 +1860,7 @@ const I18N = {
     dp_time_manual:'Adjusted', dp_edit_manually:'✏️\nEdit manually', dp_tasks_lbl:'tasks',
     today_tasks:"Today's tasks", today_coming:'✨ Coming up',
     today_coming_at:'Coming up at', today_all:'📋 All Tasks',
-    today_nav:'Today', family_nav:'Family',
+    today_nav:'Today', family_nav:'Settings',
     greet_night:'Good night', greet_morning:'Good morning',
     greet_afternoon:'Good afternoon', greet_evening:'Good evening',
     time_now:'now', time_in_min:'in {n} min', time_in_hr:'in {n}h',
@@ -1970,7 +1937,7 @@ const I18N = {
     dp_time_manual:'מעודכן', dp_edit_manually:'✏️\nעריכה ידנית', dp_tasks_lbl:'משימות',
     today_tasks:'משימות היום', today_coming:'✨ הבא בתור',
     today_coming_at:'הבא בתור בשעה', today_all:'📋 כל המשימות',
-    today_nav:'היום', family_nav:'משפחה',
+    today_nav:'היום', family_nav:'הגדרות',
     greet_night:'לילה טוב', greet_morning:'בוקר טוב',
     greet_afternoon:'צהריים טובים', greet_evening:'ערב טוב',
     time_now:'עכשיו', time_in_min:'בעוד {n} דק\'', time_in_hr:'בעוד {n} שע\'',
@@ -3597,7 +3564,7 @@ function renderReminderSection() {
     chip.textContent = t(p.labelKey);
     chip.addEventListener('click', () => {
       if (p.val === null) {
-        task.reminderOffsetMinutes = parseInt(custInp.value) || 10;
+        task.reminderOffsetMinutes = parseInt(custInp.value) || 15;
         custRow.style.display = '';
         setTimeout(() => custInp.focus(), 40);
       } else {
