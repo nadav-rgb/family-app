@@ -29,6 +29,13 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 /* ── Screen layer system ── */
 .app-screen{position:absolute;inset:0;display:flex;flex-direction:column;opacity:0;pointer-events:none;overflow:hidden;background:linear-gradient(175deg,#fffaf5 0%,#fff4e8 55%,#fdebd8 100%);}
 .app-screen.active{opacity:1;pointer-events:auto;}
+/* Inactive screens are visually hidden (opacity:0) but their descendants
+   can still steal clicks if they declare pointer-events:auto explicitly
+   (e.g. the bottom nav of s-today does this so its pill items remain
+   tappable while the .t-nav container is click-through). Force all
+   descendants of inactive screens to be non-interactive so the visible
+   active screen actually receives the click. */
+.app-screen:not(.active) *{pointer-events:none !important;}
 
 /* ── Transition keyframes ── */
 @keyframes txLeaveBloom {from{opacity:1;transform:scale(1);}to{opacity:0;transform:scale(1.07);}}
@@ -2348,11 +2355,12 @@ function makeMockTasks() {
 let busy = false;
 
 function goto(toId, leaveKf, enterKf, onDone) {
-  console.log('[GOTO]', toId, 'busy=', busy, 'from=', document.querySelector('.app-screen.active')?.id, 'allActive=', Array.from(document.querySelectorAll('.app-screen.active')).map(e=>e.id));
   if (busy) return;
   const from = document.querySelector('.app-screen.active');
+  // No-op if already on target — otherwise from===to and the deferred
+  // `from.classList.remove('active')` strips the active class from the
+  // very screen we just "navigated to", leaving the UI blank.
   if (from && from.id === toId) {
-    console.log('[GOTO] no-op (already on target)');
     if (onDone) onDone();
     return;
   }
@@ -2897,18 +2905,7 @@ if (SpeechAPI) {
   };
 }
 
-document.addEventListener('click', e => {
-  const t = e.target;
-  const path = [];
-  let el = t;
-  for (let i = 0; i < 5 && el; i++) {
-    path.push((el.tagName || '') + (el.id ? '#' + el.id : '') + (el.className && typeof el.className === 'string' ? '.' + el.className.split(' ').join('.') : ''));
-    el = el.parentElement;
-  }
-  console.log('[ANYCLICK] target=', path.join(' < '));
-}, true);
 document.getElementById('vTypeToggle').addEventListener('click', () => {
-  console.log('[TYPETOGGLE] clicked. vListening=', vListening, 'area display before=', getComputedStyle(document.getElementById('vTypeArea')).display);
   if (vListening) {
     _stopKeepAlive(); _clearMaxRecTimers(); _stopSilencePoll();
     _pendingOrganize = false;
@@ -2923,12 +2920,7 @@ document.getElementById('vTypeToggle').addEventListener('click', () => {
   document.getElementById('s-voice').classList.add('typing-mode');
   const area = document.getElementById('vTypeArea');
   area.classList.add('open');
-  console.log('[TYPETOGGLE] after classes. s-voice=', document.getElementById('s-voice').className, 'area=', area.className, 'area display=', getComputedStyle(area).display);
-  setTimeout(() => {
-    const inp = document.getElementById('vTypeInp');
-    console.log('[TYPETOGGLE] focusing. inp exists=', !!inp, 'area display now=', getComputedStyle(area).display);
-    if (inp) inp.focus();
-  }, 80);
+  setTimeout(() => document.getElementById('vTypeInp').focus(), 80);
 });
 
 // ── Contenteditable helpers ───────────────────────────────────────
