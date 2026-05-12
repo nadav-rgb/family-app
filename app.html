@@ -2899,6 +2899,7 @@ if (SpeechAPI) {
 }
 
 document.getElementById('vTypeToggle').addEventListener('click', () => {
+  console.log('[TYPETOGGLE] clicked. vListening=', vListening, 'area display before=', getComputedStyle(document.getElementById('vTypeArea')).display);
   if (vListening) {
     _stopKeepAlive(); _clearMaxRecTimers(); _stopSilencePoll();
     _pendingOrganize = false;
@@ -2913,7 +2914,12 @@ document.getElementById('vTypeToggle').addEventListener('click', () => {
   document.getElementById('s-voice').classList.add('typing-mode');
   const area = document.getElementById('vTypeArea');
   area.classList.add('open');
-  setTimeout(() => document.getElementById('vTypeInp').focus(), 80);
+  console.log('[TYPETOGGLE] after classes. s-voice=', document.getElementById('s-voice').className, 'area=', area.className, 'area display=', getComputedStyle(area).display);
+  setTimeout(() => {
+    const inp = document.getElementById('vTypeInp');
+    console.log('[TYPETOGGLE] focusing. inp exists=', !!inp, 'area display now=', getComputedStyle(area).display);
+    if (inp) inp.focus();
+  }, 80);
 });
 
 // ── Contenteditable helpers ───────────────────────────────────────
