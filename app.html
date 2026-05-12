@@ -2862,8 +2862,7 @@ if (SpeechAPI) {
   };
 
   recognition.onend = () => {
-    // User-initiated stop: all pending finals have now been delivered.
-    // Call vOrganize with the complete transcript.
+    console.log('[DBG-ONEND] onend fired. _pendingOrganize=', _pendingOrganize, 'vListening=', vListening, 'addMode=', addMode);
     if (_pendingOrganize) {
       _pendingOrganize = false;
       setTimeout(() => { hideBubble(false); vOrganize(); }, 100);
@@ -3897,6 +3896,7 @@ function extractTimeFromText(text) {
 }
 
 async function vOrganize() {
+  console.warn('[DBG-ORG] vOrganize called. addMode=', addMode, 'transcript=', JSON.stringify(vTranscript), '_vOrganizerBusy=', _vOrganizerBusy, 'Stack:', new Error().stack);
   vListening = false;
   wdots.classList.remove('on');
   const spokenText = vTranscript.trim();
@@ -6258,6 +6258,7 @@ function openAddSheet() {
 }
 
 function closeAddSheet() {
+  console.warn('[DBG-CLOSE] closeAddSheet called. Stack:', new Error().stack);
   addMode = false;
   if (vListening) {
     _stopKeepAlive();
@@ -6348,7 +6349,8 @@ document.getElementById('atdAddBtn').addEventListener('click', () => {
 // Lets the user opt out of dictation and type a task instead — useful
 // in quiet environments or when speech recognition is misbehaving.
 document.getElementById('atdTypeToggle').addEventListener('click', () => {
-  _pendingOrganize = false; // prevent stale onend from calling vOrganize after abort
+  console.log('[DBG-A] atdTypeToggle clicked. vListening=', vListening, '_pendingOrganize=', _pendingOrganize, 'addMode=', addMode, '_vOrganizerBusy=', _vOrganizerBusy);
+  _pendingOrganize = false;
   if (vListening) {
     _stopKeepAlive();
     _clearMaxRecTimers();
@@ -6357,13 +6359,17 @@ document.getElementById('atdTypeToggle').addEventListener('click', () => {
     if (recognition) { try { recognition.abort(); } catch(_) {} }
     _setAtdRecording(false);
   }
+  console.log('[DBG-B] before classList add. atdBg classes=', document.getElementById('atdBg').className);
   const sheet = document.getElementById('atdBg');
   sheet.classList.add('typing-mode');
   const addBtn = document.getElementById('atdAddBtn');
   if (addBtn) addBtn.disabled = true;
+  console.log('[DBG-C] after add typing-mode. atdBg classes=', sheet.className, 'addMode=', addMode);
   setTimeout(() => {
     const inp = document.getElementById('atdTypeInp');
+    console.log('[DBG-D] focusing input. atdBg classes=', document.getElementById('atdBg').className, 'addMode=', addMode);
     if (inp) inp.focus({ preventScroll: true });
+    console.log('[DBG-E] after focus. atdBg classes=', document.getElementById('atdBg').className, 'addMode=', addMode);
   }, 80);
 });
 
@@ -6404,12 +6410,33 @@ document.getElementById('atdCancel').addEventListener('click', () => {
 });
 
 document.getElementById('atdBg').addEventListener('click', e => {
+  console.log('[DBG-BGCLICK] target=', e.target.id || e.target.tagName, 'isBackdrop=', e.target === document.getElementById('atdBg'));
   if (e.target === document.getElementById('atdBg')) closeAddSheet();
 });
 
 document.getElementById('btnAddMore').addEventListener('click', () => {
   openAddSheet();
 });
+
+// === DEBUG INSTRUMENTATION ===
+window.addEventListener('error', e => {
+  console.error('[DBG-WINERR]', e.message, 'at', e.filename + ':' + e.lineno, e.error?.stack || '');
+});
+window.addEventListener('unhandledrejection', e => {
+  console.error('[DBG-PROMISE]', e.reason?.message || e.reason, e.reason?.stack || '');
+});
+(function _dbgObserveAtdBg(){
+  const atdBg = document.getElementById('atdBg');
+  if (!atdBg) { console.log('[DBG-OBS] atdBg not found at load'); return; }
+  console.log('[DBG-OBS] starting observer. initial classes=', atdBg.className);
+  new MutationObserver(muts => {
+    muts.forEach(m => {
+      if (m.attributeName === 'class') {
+        console.log('[DBG-OBS] atdBg class changed:', m.oldValue, '->', atdBg.className);
+      }
+    });
+  }).observe(atdBg, { attributes: true, attributeFilter: ['class'], attributeOldValue: true });
+})();
 
 /* Mobile keyboard handling: on phones, shrink .phone to window.visualViewport.height
    so that when the keyboard opens, inputs/submit buttons stay visible above it.
