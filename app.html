@@ -2348,10 +2348,16 @@ function makeMockTasks() {
 let busy = false;
 
 function goto(toId, leaveKf, enterKf, onDone) {
-  console.warn('[DBG-GOTO] goto(' + toId + ') called. busy=' + busy + ' from=' + document.querySelector('.app-screen.active')?.id, 'Stack:', new Error().stack);
   if (busy) return;
-  busy = true;
   const from = document.querySelector('.app-screen.active');
+  // No-op if already on target — otherwise from===to and the deferred
+  // `from.classList.remove('active')` strips the active class from the
+  // very screen we just "navigated to", leaving the UI blank.
+  if (from && from.id === toId) {
+    if (onDone) onDone();
+    return;
+  }
+  busy = true;
   const to   = document.getElementById(toId);
   const dur  = 440;
   const fl   = document.getElementById('txFlash');
@@ -2863,7 +2869,6 @@ if (SpeechAPI) {
   };
 
   recognition.onend = () => {
-    console.log('[DBG-ONEND] onend fired. _pendingOrganize=', _pendingOrganize, 'vListening=', vListening, 'addMode=', addMode);
     if (_pendingOrganize) {
       _pendingOrganize = false;
       setTimeout(() => { hideBubble(false); vOrganize(); }, 100);
@@ -2894,7 +2899,6 @@ if (SpeechAPI) {
 }
 
 document.getElementById('vTypeToggle').addEventListener('click', () => {
-  console.log('[DBG-VTT-A] vTypeToggle clicked. vListening=', vListening, '_pendingOrganize=', _pendingOrganize, 'addMode=', addMode, 's-voice classes=', document.getElementById('s-voice').className);
   if (vListening) {
     _stopKeepAlive(); _clearMaxRecTimers(); _stopSilencePoll();
     _pendingOrganize = false;
@@ -2904,19 +2908,12 @@ document.getElementById('vTypeToggle').addEventListener('click', () => {
     sbBubble.classList.remove('bubble-live');
     if (recognition) { try { recognition.abort(); } catch(_) {} }
   }
-  console.log('[DBG-VTT-B] after stop. s-voice classes=', document.getElementById('s-voice').className);
   document.getElementById('vTypeToggle').style.display = 'none';
   zone.classList.add('recede');
   document.getElementById('s-voice').classList.add('typing-mode');
   const area = document.getElementById('vTypeArea');
   area.classList.add('open');
-  console.log('[DBG-VTT-C] after typing-mode add. s-voice classes=', document.getElementById('s-voice').className, 'vTypeArea classes=', area.className);
-  setTimeout(() => {
-    const inp = document.getElementById('vTypeInp');
-    console.log('[DBG-VTT-D] focusing input. s-voice classes=', document.getElementById('s-voice').className, 'inp exists=', !!inp, 'inp parent=', inp?.parentElement?.id);
-    if (inp) inp.focus();
-    console.log('[DBG-VTT-E] after focus. s-voice classes=', document.getElementById('s-voice').className);
-  }, 80);
+  setTimeout(() => document.getElementById('vTypeInp').focus(), 80);
 });
 
 // ── Contenteditable helpers ───────────────────────────────────────
@@ -3905,7 +3902,6 @@ function extractTimeFromText(text) {
 }
 
 async function vOrganize() {
-  console.warn('[DBG-ORG] vOrganize called. addMode=', addMode, 'transcript=', JSON.stringify(vTranscript), '_vOrganizerBusy=', _vOrganizerBusy, 'Stack:', new Error().stack);
   vListening = false;
   wdots.classList.remove('on');
   const spokenText = vTranscript.trim();
@@ -6267,7 +6263,6 @@ function openAddSheet() {
 }
 
 function closeAddSheet() {
-  console.warn('[DBG-CLOSE] closeAddSheet called. Stack:', new Error().stack);
   addMode = false;
   if (vListening) {
     _stopKeepAlive();
@@ -6358,7 +6353,6 @@ document.getElementById('atdAddBtn').addEventListener('click', () => {
 // Lets the user opt out of dictation and type a task instead — useful
 // in quiet environments or when speech recognition is misbehaving.
 document.getElementById('atdTypeToggle').addEventListener('click', () => {
-  console.log('[DBG-A] atdTypeToggle clicked. vListening=', vListening, '_pendingOrganize=', _pendingOrganize, 'addMode=', addMode, '_vOrganizerBusy=', _vOrganizerBusy);
   _pendingOrganize = false;
   if (vListening) {
     _stopKeepAlive();
@@ -6368,17 +6362,13 @@ document.getElementById('atdTypeToggle').addEventListener('click', () => {
     if (recognition) { try { recognition.abort(); } catch(_) {} }
     _setAtdRecording(false);
   }
-  console.log('[DBG-B] before classList add. atdBg classes=', document.getElementById('atdBg').className);
   const sheet = document.getElementById('atdBg');
   sheet.classList.add('typing-mode');
   const addBtn = document.getElementById('atdAddBtn');
   if (addBtn) addBtn.disabled = true;
-  console.log('[DBG-C] after add typing-mode. atdBg classes=', sheet.className, 'addMode=', addMode);
   setTimeout(() => {
     const inp = document.getElementById('atdTypeInp');
-    console.log('[DBG-D] focusing input. atdBg classes=', document.getElementById('atdBg').className, 'addMode=', addMode);
     if (inp) inp.focus({ preventScroll: true });
-    console.log('[DBG-E] after focus. atdBg classes=', document.getElementById('atdBg').className, 'addMode=', addMode);
   }, 80);
 });
 
@@ -6419,60 +6409,12 @@ document.getElementById('atdCancel').addEventListener('click', () => {
 });
 
 document.getElementById('atdBg').addEventListener('click', e => {
-  console.log('[DBG-BGCLICK] target=', e.target.id || e.target.tagName, 'isBackdrop=', e.target === document.getElementById('atdBg'));
   if (e.target === document.getElementById('atdBg')) closeAddSheet();
 });
 
 document.getElementById('btnAddMore').addEventListener('click', () => {
   openAddSheet();
 });
-
-// === DEBUG INSTRUMENTATION ===
-window.addEventListener('error', e => {
-  console.error('[DBG-WINERR]', e.message, 'at', e.filename + ':' + e.lineno, e.error?.stack || '');
-});
-window.addEventListener('unhandledrejection', e => {
-  console.error('[DBG-PROMISE]', e.reason?.message || e.reason, e.reason?.stack || '');
-});
-(function _dbgObserveAtdBg(){
-  const atdBg = document.getElementById('atdBg');
-  if (!atdBg) { console.log('[DBG-OBS] atdBg not found at load'); return; }
-  console.log('[DBG-OBS] starting observer. initial atdBg classes=', atdBg.className);
-  new MutationObserver(muts => {
-    muts.forEach(m => {
-      if (m.attributeName === 'class') {
-        console.log('[DBG-OBS] atdBg class changed:', m.oldValue, '->', atdBg.className);
-      }
-    });
-  }).observe(atdBg, { attributes: true, attributeFilter: ['class'], attributeOldValue: true });
-})();
-(function _dbgObserveSVoice(){
-  const sv = document.getElementById('s-voice');
-  const ta = document.getElementById('vTypeArea');
-  const vt = document.getElementById('vTypeToggle');
-  if (sv) {
-    console.log('[DBG-OBS] starting observer. initial s-voice classes=', sv.className);
-    new MutationObserver(muts => muts.forEach(m => {
-      if (m.attributeName === 'class') console.log('[DBG-OBS] s-voice class changed:', m.oldValue, '->', sv.className);
-      if (m.attributeName === 'style') console.log('[DBG-OBS] s-voice style changed:', m.oldValue, '->', sv.getAttribute('style'));
-    })).observe(sv, { attributes: true, attributeFilter: ['class','style'], attributeOldValue: true });
-  }
-  if (ta) {
-    new MutationObserver(muts => muts.forEach(m => {
-      if (m.attributeName === 'class') console.log('[DBG-OBS] vTypeArea class changed:', m.oldValue, '->', ta.className);
-    })).observe(ta, { attributes: true, attributeFilter: ['class'], attributeOldValue: true });
-  }
-  if (vt) {
-    new MutationObserver(muts => muts.forEach(m => {
-      if (m.attributeName === 'style') console.log('[DBG-OBS] vTypeToggle style changed:', m.oldValue, '->', vt.getAttribute('style'));
-    })).observe(vt, { attributes: true, attributeFilter: ['style'], attributeOldValue: true });
-  }
-  document.querySelectorAll('.app-screen').forEach(sc => {
-    new MutationObserver(muts => muts.forEach(m => {
-      if (m.attributeName === 'class') console.log('[DBG-OBS] app-screen', sc.id, 'class changed:', m.oldValue, '->', sc.className);
-    })).observe(sc, { attributes: true, attributeFilter: ['class'], attributeOldValue: true });
-  });
-})();
 
 /* Mobile keyboard handling: on phones, shrink .phone to window.visualViewport.height
    so that when the keyboard opens, inputs/submit buttons stay visible above it.
