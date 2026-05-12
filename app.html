@@ -6190,10 +6190,8 @@ updateDateBadge();
 // waiting up to 30s for the first interval tick).
 try { checkOverdueReminders(); } catch (e) { console.warn('initial reminders check failed', e); }
 
-const _savedLang = localStorage.getItem(LANG_KEY) || 'he';
-localStorage.setItem(LANG_KEY, _savedLang);
-// Returning user — lang already chosen
-AppState.lang = _savedLang;
+localStorage.setItem(LANG_KEY, 'he');
+AppState.lang = 'he';
 _applyLang();
 if (activeTasks().length > 0) {
   renderToday();
