@@ -278,7 +278,7 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 .btn-ghost{width:100%;padding:13px;border-radius:18px;border:1.5px solid rgba(224,124,58,.28);cursor:pointer;background:none;font-family:'Nunito',sans-serif;font-size:15px;font-weight:800;color:#e07c3a;transition:background .18s;}
 .btn-ghost:active{background:rgba(224,124,58,.07);}
 /* ── Add-to-day sheet ── */
-.atd-bg{position:fixed;inset:0;background:rgba(28,17,10,.42);opacity:0;pointer-events:none;transition:opacity .26s ease;z-index:90;}
+.atd-bg{position:absolute;inset:0;background:rgba(28,17,10,.42);opacity:0;pointer-events:none;transition:opacity .26s ease;z-index:90;}
 .atd-bg.open{opacity:1;pointer-events:auto;}
 .atd-sheet{position:absolute;left:0;right:0;bottom:0;background:#fff8f2;border-radius:28px 28px 0 0;transform:translateY(100%);transition:transform .34s cubic-bezier(.32,1,.3,1);box-shadow:0 -4px 32px rgba(28,17,10,.16);}
 .atd-bg.open .atd-sheet{transform:translateY(0);}
@@ -2894,7 +2894,15 @@ if (SpeechAPI) {
 }
 
 document.getElementById('vTypeToggle').addEventListener('click', () => {
-  if (vListening) vStop(false, false);
+  if (vListening) {
+    _stopKeepAlive(); _clearMaxRecTimers(); _stopSilencePoll();
+    _pendingOrganize = false;
+    clearTimeout(_restartTimer); clearTimeout(vTimer);
+    vListening = false;
+    zone.classList.remove('rec'); wdots.classList.remove('on');
+    sbBubble.classList.remove('bubble-live');
+    if (recognition) { try { recognition.abort(); } catch(_) {} }
+  }
   document.getElementById('vTypeToggle').style.display = 'none';
   zone.classList.add('recede');
   document.getElementById('s-voice').classList.add('typing-mode');
@@ -3087,7 +3095,15 @@ const MIC_STYLE_KEY = 'family-app-mic-style';
 
 function switchMode(m) {
   if (m === vMode) return;
-  if (vListening) vStop(false, false);
+  if (vListening) {
+    _stopKeepAlive(); _clearMaxRecTimers(); _stopSilencePoll();
+    _pendingOrganize = false;
+    clearTimeout(_restartTimer); clearTimeout(vTimer);
+    vListening = false;
+    zone.classList.remove('rec'); wdots.classList.remove('on');
+    sbBubble.classList.remove('bubble-live');
+    if (recognition) { try { recognition.abort(); } catch(_) {} }
+  }
   const oldWrap = document.getElementById(wrapIds[vMode]);
   vMode = m;
   oldWrap.classList.add('fade-out');
@@ -3787,10 +3803,7 @@ function vStart() {
   }
 }
 
-// organize=false: abort silently, no vOrganize (mode-switch path — vTypeToggle, switchMode)
-// organize=true + userInitiated=true: graceful stop(), wait for pending audio, then vOrganize
-// organize=true + userInitiated=false: abort + 200ms + vOrganize (auto-stop timer path)
-function vStop(userInitiated = true, organize = true) {
+function vStop(userInitiated = true) {
   _stopKeepAlive();
   _clearMaxRecTimers();
   _stopSilencePoll();
@@ -3802,22 +3815,13 @@ function vStop(userInitiated = true, organize = true) {
   wdots.classList.remove('on');
   AppLog.group('speech stopped');
   AppLog.info('userInitiated', userInitiated);
-  AppLog.info('organize', organize);
   AppLog.info('transcript', vTranscript);
   AppLog.groupEnd();
   sbBubble.classList.remove('bubble-live');
 
-  if (!organize) {
-    // Mode-switch: abort immediately, leave the screen as-is.
-    _pendingOrganize = false;
-    if (recognition) { try { recognition.abort(); } catch(_) {} }
-    hideBubble(true);
-    return;
-  }
-
   if (userInitiated) {
     // User tapped stop: use recognition.stop() so pending audio is delivered
-    // before vOrganize runs — prevents last words being cut off.
+    // before vOrganize runs — last words are not cut off.
     if (recognition) {
       try {
         _pendingOrganize = true;
