@@ -507,7 +507,7 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 .t-task:not(.done) .t-tcol:active{background:rgba(255,110,50,.08);}
 .t-tchip{display:inline-flex;align-items:center;gap:5px;margin-top:4px;font-size:11px;font-weight:700;color:#9e8878;}
 .t-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
-.t-split-btn{display:inline-block;background:#fff3ee;border:1.5px solid #e07040;color:#c05020;font-family:'Nunito',sans-serif;font-size:10px;font-weight:800;border-radius:6px;padding:2px 7px;cursor:pointer;line-height:1.4;letter-spacing:.3px;margin-top:4px;}
+.t-split-btn{display:block;width:fit-content;margin:6px auto 0;background:#fff3ee;border:1.5px solid #e07040;color:#c05020;font-family:'Nunito',sans-serif;font-size:10px;font-weight:800;border-radius:6px;padding:2px 7px;cursor:pointer;line-height:1.4;letter-spacing:.3px;}
 .t-split-btn:active{background:#ffe0d0;transform:scale(.93);}
 .dc-mom{background:#ffb3c8;}.dc-dad{background:#93c5fd;}
 .t-miniav{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0;flex-shrink:0;overflow:hidden;}
@@ -2568,6 +2568,7 @@ function _recStart() {
 // back to the idle prompt so the screen doesn't stay "stuck" on an error.
 function _onRecFatal(message) {
   vListening = false;
+  _pendingOrganize = false;
   _stopKeepAlive();
   _clearMaxRecTimers();
   _stopSilencePoll();
@@ -2671,6 +2672,7 @@ let _freshSession  = false; // true right after onend restart — used to skip c
 let _lastAcceptedFinal = ''; // replay/cumulative guard: last isFinal transcript we processed
 let _vOrganizerBusy        = false; // processing lock — prevents concurrent vOrganize calls
 let _lastProcessedTranscript = '';  // dedup guard — ignores identical consecutive submissions
+let _pendingOrganize       = false; // set by vStop so onend calls vOrganize after final results
 
 const sbBubble = document.getElementById('speechBubble');
 const sbText   = document.getElementById('sbText');
@@ -2860,6 +2862,13 @@ if (SpeechAPI) {
   };
 
   recognition.onend = () => {
+    // User-initiated stop: all pending finals have now been delivered.
+    // Call vOrganize with the complete transcript.
+    if (_pendingOrganize) {
+      _pendingOrganize = false;
+      setTimeout(() => { hideBubble(false); vOrganize(); }, 100);
+      return;
+    }
     if (!vListening) return;
     // NOTE: previously called _silentPing() here and again right before
     // restart, on the theory that a 256-sample empty buffer would claim
@@ -3792,18 +3801,23 @@ function vStop(userInitiated = true) {
   AppLog.info('userInitiated', userInitiated);
   AppLog.info('transcript', vTranscript);
   AppLog.groupEnd();
-  // abort() cancels immediately and silently — no final-result event, no browser sound.
-  if (recognition) { try { recognition.abort(); } catch(_) {} }
-  // Remove the live glow but keep bubble visible so user sees their frozen transcript.
+  // stop() asks the engine to finish processing pending audio and deliver a
+  // final result before firing onend — so the last spoken words aren't lost
+  // when the user presses stop immediately after finishing a sentence.
+  // onend will call vOrganize() via _pendingOrganize once finals arrive.
+  // Falls back to immediate organize if stop() throws (e.g. not started).
   sbBubble.classList.remove('bubble-live');
-  // Tightened from 480ms+320ms (=800ms) to a single 200ms pause. The previous
-  // gap was perceived as the app "thinking before thinking" — now hideBubble
-  // and vOrganize start almost together, so the user gets the "organizing"
-  // pulsing label as the bubble fades.
-  setTimeout(() => {
-    hideBubble(false);
-    vOrganize();
-  }, 200);
+  if (recognition) {
+    try {
+      _pendingOrganize = true;
+      recognition.stop();
+    } catch(_) {
+      _pendingOrganize = false;
+      setTimeout(() => { hideBubble(false); vOrganize(); }, 200);
+    }
+  } else {
+    setTimeout(() => { hideBubble(false); vOrganize(); }, 200);
+  }
 }
 
 // ─── Time extraction helper ───────────────────────────────────────
@@ -4342,6 +4356,7 @@ function _buildCardEl(task) {
   if (task.reminderOffsetMinutes === undefined) task.reminderOffsetMinutes = 10;
   if (!task.timeSource)  task.timeSource = 'suggested';
   const tsLabel = { explicit:t('dp_time_explicit'), suggested:t('dp_time_suggested'), manual:t('dp_time_manual') };
+  const canSplit = sanitizeSegments(mockSplit(task.subItems?.mainTitle || task.title)).length >= 2;
   c.innerHTML = `
     <div class="card-swipe-bg"><svg class="swipe-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></div>
     <div class="card-swipe-track">
@@ -4349,7 +4364,7 @@ function _buildCardEl(task) {
         <div class="card-accent" style="background:${p.color}"></div>
         <div class="card-time-col"><span class="card-time${task.mins==null?' empty':''}">${m2t(task.mins) || '__:__'}</span><span class="card-ampm">${ampm(task.mins)}</span><span class="card-ts ${task.timeSource}">${task.mins==null?'':tsLabel[task.timeSource]}</span></div>
         <div class="card-vline"></div>
-        <div class="card-body"><div class="card-title">${task.subItems?.mainTitle || task.title}</div><div class="card-chip"><span class="chip-dot" style="background:${p.color}"></span>${personLabel(task.person)}</div><button class="t-split-btn">פצל</button></div>
+        <div class="card-body"><div class="card-title">${task.subItems?.mainTitle || task.title}</div><div class="card-chip"><span class="chip-dot" style="background:${p.color}"></span>${personLabel(task.person)}</div>${canSplit?'<button class="t-split-btn">פצל</button>':''}</div>
         <div class="card-av" style="background:${p.bg}">${taskAvImg(task)}</div>
         <div class="card-bell${task.notify===false?' off':''}">${task.notify===false?'🔕':'🔔'}</div>
       </div>
@@ -4408,7 +4423,7 @@ function _buildCardEl(task) {
   titleEl.addEventListener('input', () => { const u = titleEl.textContent.trim(); if (u) task.title = u; });
   titleEl.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); titleEl.blur(); } });
   attachSplitGesture(c, task);
-  c.querySelector('.t-split-btn').addEventListener('click', e => { e.stopPropagation(); openSplitSheet(task, c); });
+  c.querySelector('.t-split-btn')?.addEventListener('click', e => { e.stopPropagation(); openSplitSheet(task, c); });
   attachSwipeDelete(c, task, 'preview');
   categorizeShoppingTitle(task);
   summarizeAgendaTitle(task);
@@ -4873,6 +4888,7 @@ function renderToday() {
     if (!t.visibleTo) t.visibleTo = [...ALL_MEMBER_IDS];
     if (!t.notifyTo)  t.notifyTo  = [PERSON_TO_ID[t.person] || 'mom'];
     if (t.reminderOffsetMinutes === undefined) t.reminderOffsetMinutes = 10;
+    const tCanSplit = sanitizeSegments(mockSplit(t.subItems?.mainTitle || t.title)).length >= 2;
     el.innerHTML = `
       <div class="t-swipe-bg"><svg class="swipe-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></div>
       <div class="t-swipe-track">
@@ -4880,7 +4896,7 @@ function renderToday() {
           <div class="t-ck ${t.completed?'ck-done':isNx?'ck-nxt':'ck-open'}">${t.completed?'<span style="color:white;font-size:14px;font-weight:900;">✓</span>':''}</div>
           <div class="t-tcol"><div class="t-ttime${isNx&&!t.completed?' ora':''}${t.mins==null?' empty':''}">${m2t(t.mins) || '__:__'}</div><div class="t-tampm">${ampm(t.mins)}</div></div>
           <div class="t-tvline"></div>
-          <div class="t-tbody"><div class="t-ttitle">${t.subItems?.mainTitle || t.title}</div><div class="t-tchip"><span class="t-dot" style="background:${p.color}"></span>${personLabel(t.person)}</div><button class="t-split-btn">פצל</button></div>
+          <div class="t-tbody"><div class="t-ttitle">${t.subItems?.mainTitle || t.title}</div><div class="t-tchip"><span class="t-dot" style="background:${p.color}"></span>${personLabel(t.person)}</div>${tCanSplit?'<button class="t-split-btn">פצל</button>':''}</div>
           <div class="t-miniav" style="background:${p.bg}">${taskAvImg(t)}</div>
           <div class="t-bell${t.notify===false?' off':''}">${t.notify===false?'🔕':'🔔'}</div>
         </div>
