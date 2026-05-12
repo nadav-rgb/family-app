@@ -2898,6 +2898,16 @@ if (SpeechAPI) {
   };
 }
 
+document.addEventListener('click', e => {
+  const t = e.target;
+  const path = [];
+  let el = t;
+  for (let i = 0; i < 5 && el; i++) {
+    path.push((el.tagName || '') + (el.id ? '#' + el.id : '') + (el.className && typeof el.className === 'string' ? '.' + el.className.split(' ').join('.') : ''));
+    el = el.parentElement;
+  }
+  console.log('[ANYCLICK] target=', path.join(' < '));
+}, true);
 document.getElementById('vTypeToggle').addEventListener('click', () => {
   console.log('[TYPETOGGLE] clicked. vListening=', vListening, 'area display before=', getComputedStyle(document.getElementById('vTypeArea')).display);
   if (vListening) {
