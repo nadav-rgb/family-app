@@ -4733,6 +4733,7 @@ document.getElementById('btnOk').addEventListener('click', function() {
     AppLog.groupEnd();
     AppState.previewTasks = [];
     saveState();
+    newTasks.forEach(task => _capScheduleTask(task).catch(() => {}));
     renderToday();
     goto('s-today', 'txLeaveRise', 'txEnterSettle', () => {
       // Animate bar in from 0
@@ -5267,6 +5268,7 @@ function doDelete(task, screen) {
       task.notifyTo  = (task.notifyTo || []).filter(id => id !== currentUser);
     }
     saveState();
+    _capCancelTask(task.id).catch(() => {});
     // Surgical: card already removed by swipe animation. Just refresh
     // avatars / hero / progress / next-highlight — DO NOT rerender the
     // list. The full renderToday() was producing a momentary blank-list
@@ -5431,6 +5433,7 @@ document.getElementById('tTasks').addEventListener('click', e => {
     task.completed = true;
   }
   saveState();
+  _capCancelTask(task.id).catch(() => {});
 
   // Animate then settle
   el.classList.add('completing');
@@ -6175,6 +6178,71 @@ if ('serviceWorker' in navigator) {
   });
 }
 
+// ─── Capacitor Local Notifications (Android) ─────────────────────
+// Schedules OS-level notifications that fire even when the app is closed.
+// Complements the in-app toast path (checkOverdueReminders) — they cover
+// the app-open and app-closed cases respectively.
+const _CapLN = (() => {
+  try { return window.Capacitor?.Plugins?.LocalNotifications || null; } catch (_) { return null; }
+})();
+
+function _capNotifId(taskId, offset) {
+  // Map task id to a stable 32-bit Android notification id.
+  // offset: 0=initial reminder, 1-3=overdue stages 0-2.
+  return (Math.abs(Number(taskId)) % 200000000) * 10 + offset;
+}
+
+async function _capRequestPermissions() {
+  if (!_CapLN) return;
+  try { await _CapLN.requestPermissions(); }
+  catch (e) { AppLog.warn('capLN', 'requestPermissions failed', e.message || e); }
+}
+
+async function _capScheduleTask(task) {
+  if (!_CapLN) return;
+  const today = todayDate();
+  if ((task.date || today) !== today) return;
+  if (task.completed || task.notify === false) return;
+  if (typeof task.mins !== 'number') return;
+
+  const base = new Date(); base.setHours(0, 0, 0, 0);
+  const taskAt     = base.getTime() + task.mins * 60 * 1000;
+  const offsetMins = task.reminderOffsetMinutes ?? 10;
+  const initialAt  = new Date(taskAt - offsetMins * 60 * 1000);
+  const now        = Date.now();
+  const notifs     = [];
+
+  if (initialAt.getTime() > now) {
+    const label = offsetMins === 0 ? t('notif_starting') : tFmt('time_in_min', { n: offsetMins });
+    notifs.push({ id: _capNotifId(task.id, 0), title: task.title, body: label, schedule: { at: initialAt } });
+  }
+  (task.overdueReminderOffsets || [5, 10, 15]).forEach((stageOffset, idx) => {
+    const fireAt = new Date(taskAt + stageOffset * 60 * 1000);
+    if (fireAt.getTime() > now)
+      notifs.push({ id: _capNotifId(task.id, idx + 1), title: task.title, body: tFmt('notif_overdue', { n: stageOffset }), schedule: { at: fireAt } });
+  });
+
+  if (!notifs.length) return;
+  try { await _CapLN.schedule({ notifications: notifs }); }
+  catch (e) { AppLog.warn('capLN', 'schedule failed', e.message || e); }
+}
+
+async function _capCancelTask(taskId) {
+  if (!_CapLN) return;
+  try { await _CapLN.cancel({ notifications: [0, 1, 2, 3].map(o => ({ id: _capNotifId(taskId, o) })) }); }
+  catch (e) { AppLog.warn('capLN', 'cancel failed', e.message || e); }
+}
+
+async function _capRescheduleAll() {
+  if (!_CapLN) return;
+  try { await _CapLN.removeAllDeliveredNotifications(); } catch (_) {}
+  const today = todayDate();
+  for (const task of AppState.tasks) {
+    if ((task.date || today) !== today) continue;
+    await _capScheduleTask(task);
+  }
+}
+
 // ─── Init ─────────────────────────────────────────────────────────
 // Version banner — verifies WHICH build is actually running on the
 // device. If you delete a card and the console doesn't show
@@ -6191,6 +6259,8 @@ try { checkOverdueReminders(); } catch (e) { console.warn('initial reminders che
 localStorage.setItem(LANG_KEY, 'he');
 AppState.lang = 'he';
 _applyLang();
+_capRequestPermissions().catch(() => {});
+_capRescheduleAll().catch(() => {});
 if (activeTasks().length > 0) {
   renderToday();
   document.getElementById('s-voice').classList.remove('active');
