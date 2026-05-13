@@ -296,12 +296,18 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 .atd-mic-area{display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;-webkit-tap-highlight-color:transparent;}
 /* Cute kitschy heart-shaped mic — beats softly at rest, faster + glowing
    while recording so it feels alive in both states. */
-.atd-mic-ring{width:96px;height:84px;position:relative;display:flex;align-items:center;justify-content:center;background:transparent;box-shadow:none;border-radius:0;filter:drop-shadow(0 6px 16px rgba(255,94,20,.30));animation:atdHeartIdle 1.6s ease-in-out infinite;transition:filter .2s,transform .14s;}
+.atd-mic-ring{width:88px;height:88px;border-radius:50%;background:linear-gradient(145deg,#ff8040,#e05520);box-shadow:0 6px 24px rgba(255,90,20,.38);display:flex;align-items:center;justify-content:center;position:relative;animation:atdMicIdle 3s ease-in-out infinite;transition:box-shadow .3s,filter .3s,transform .14s;}
 .atd-mic-ring:active{transform:scale(.93);}
-.atd-mic-ring.rec{animation:atdHeartBeat .85s ease-in-out infinite;filter:drop-shadow(0 9px 24px rgba(255,94,20,.55));}
-.atd-heart-svg{width:100%;height:100%;display:block;pointer-events:none;}
-.atd-mic-icon{position:absolute;top:50%;left:50%;transform:translate(-50%,-58%);font-size:24px;line-height:1;pointer-events:none;filter:drop-shadow(0 1px 2px rgba(0,0,0,.32));}
+.atd-mic-ring.rec{animation:atdMicRec 1.8s ease-in-out infinite;background:linear-gradient(145deg,#ff9050,#ff6020);}
 /* Resting heartbeat — gentle double-pulse like a real heart at ~60bpm */
+@keyframes atdMicIdle{
+  0%,100%{transform:scale(1);box-shadow:0 6px 24px rgba(255,90,20,.38);}
+  50%{transform:scale(1.05);box-shadow:0 10px 32px rgba(255,90,20,.55);}
+}
+@keyframes atdMicRec{
+  0%,100%{transform:scale(1);filter:brightness(1);box-shadow:0 6px 28px rgba(255,90,20,.45);}
+  50%{transform:scale(1.08);filter:brightness(1.18);box-shadow:0 12px 40px rgba(255,90,20,.72);}
+}
 @keyframes atdHeartIdle{
   0%,100% { transform:scale(1); }
   18%     { transform:scale(1.05); }
@@ -896,6 +902,52 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 .split-sh-confirm:active{transform:scale(.95);}
 .split-sh-cancel{background:none;border:none;color:#b8a090;font-family:'Nunito',sans-serif;font-size:14px;font-weight:700;cursor:pointer;padding:12px 8px;}
 
+/* ─── Family settings sheet ─── */
+.fam-sheet-bg{position:absolute;inset:0;background:rgba(28,17,10,.42);opacity:0;pointer-events:none;transition:opacity .26s ease;z-index:92;}
+.fam-sheet-bg.open{opacity:1;pointer-events:auto;}
+.fam-sheet{position:absolute;bottom:0;left:0;right:0;background:#fffaf5;border-radius:26px 26px 0 0;box-shadow:0 -8px 40px rgba(100,60,20,.22);transform:translateY(100%);transition:transform .34s cubic-bezier(.34,1.1,.64,1);max-height:82%;display:flex;flex-direction:column;overflow:hidden;padding-bottom:env(safe-area-inset-bottom,0);}
+.fam-sheet-bg.open .fam-sheet{transform:translateY(0);}
+.fam-sh-handle{width:36px;height:4px;background:rgba(100,60,20,.15);border-radius:2px;margin:12px auto 0;flex-shrink:0;}
+.fam-sh-hdr{padding:16px 24px 14px;border-bottom:1px solid rgba(224,180,140,.2);flex-shrink:0;}
+.fam-sh-title{font-family:'Nunito',sans-serif;font-size:18px;font-weight:900;color:#1c110a;direction:rtl;}
+.fam-sh-body{flex:1;overflow-y:auto;padding:20px 24px 28px;direction:rtl;scrollbar-width:none;}
+.fam-sh-body::-webkit-scrollbar{display:none;}
+.fam-sh-badge{display:inline-flex;align-items:center;gap:6px;border-radius:10px;padding:5px 12px;font-size:12px;font-weight:700;margin-bottom:18px;}
+.fam-sh-badge.fam-active{background:rgba(255,180,120,.22);color:#c06030;}
+.fam-sh-badge.fam-local{background:rgba(180,180,180,.14);color:#9e8878;}
+.fam-sh-hint{font-size:14px;color:#9e8878;line-height:1.6;margin-bottom:20px;}
+.fam-sh-code-box{background:linear-gradient(135deg,#fff0e8,#ffe4d0);border-radius:18px;padding:22px;text-align:center;margin-bottom:20px;box-shadow:0 4px 20px rgba(255,120,50,.1);}
+.fam-sh-code-lbl{font-size:11px;font-weight:700;color:#b8a090;margin-bottom:10px;letter-spacing:.8px;text-transform:uppercase;}
+.fam-sh-code{font-family:'Manrope',sans-serif;font-size:34px;font-weight:800;color:#c06030;letter-spacing:8px;}
+.fam-sh-uid{font-size:11px;color:#c4ae9f;margin-top:10px;}
+.fam-sh-btn{width:100%;padding:16px;border:none;border-radius:16px;font-family:'Nunito',sans-serif;font-size:16px;font-weight:800;cursor:pointer;margin-bottom:12px;transition:transform .14s,box-shadow .14s;}
+.fam-sh-btn:active{transform:scale(.97);}
+.fam-sh-btn-primary{background:linear-gradient(135deg,#ff7033,#e05a20);color:#fff;box-shadow:0 4px 16px rgba(255,112,51,.3);}
+.fam-sh-btn-secondary{background:rgba(255,180,120,.22);color:#c06030;}
+.fam-sh-btn-danger{background:rgba(220,80,60,.1);color:#c03020;}
+.fam-sh-sep{display:flex;align-items:center;gap:12px;margin-bottom:18px;color:#c4ae9f;font-size:13px;font-weight:600;}
+.fam-sh-sep::before,.fam-sh-sep::after{content:'';flex:1;height:1px;background:rgba(224,180,140,.3);}
+.fam-sh-join-inp{width:100%;padding:16px;border:2px solid rgba(224,180,140,.4);border-radius:16px;font-family:'Manrope',sans-serif;font-size:24px;font-weight:700;color:#1c110a;text-align:center;letter-spacing:4px;background:#fff9f5;outline:none;margin-bottom:14px;text-transform:uppercase;}
+.fam-sh-join-inp:focus{border-color:#ff7033;}
+.fam-sh-note{font-size:11px;color:#c4ae9f;text-align:center;margin-bottom:16px;}
+.fam-sh-members-lbl{font-family:'Nunito',sans-serif;font-size:11px;font-weight:700;color:#c4ae9f;letter-spacing:.8px;text-transform:uppercase;margin-bottom:8px;}
+.fam-sh-members-list{display:flex;flex-direction:column;gap:8px;margin-bottom:4px;}
+.fam-sh-members-loading{font-size:13px;color:#c4ae9f;direction:rtl;}
+.fam-sh-member-row{display:flex;align-items:center;gap:12px;background:rgba(255,240,230,.5);border-radius:14px;padding:12px 14px;}
+.fam-sh-member-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#ffd0a8,#f0a870);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:#c06030;flex-shrink:0;}
+.fam-sh-member-info{flex:1;direction:rtl;}
+.fam-sh-member-name{font-size:14px;font-weight:700;color:#1c110a;}
+.fam-sh-member-role{font-size:11px;color:#b8a090;margin-top:1px;}
+.fam-sh-member-you{font-size:10px;font-weight:700;color:#ff7033;background:rgba(255,112,51,.12);border-radius:6px;padding:2px 6px;margin-right:6px;}
+.fam-sh-name-box{background:rgba(255,240,230,.5);border-radius:16px;padding:14px 16px;margin-bottom:16px;}
+.fam-sh-name-lbl{font-size:11px;font-weight:700;color:#c4ae9f;letter-spacing:.6px;text-transform:uppercase;margin-bottom:8px;}
+.fam-sh-name-row{display:flex;gap:8px;align-items:center;}
+.fam-sh-name-inp{flex:1;padding:10px 14px;border:2px solid rgba(224,180,140,.4);border-radius:12px;font-family:'Rubik',sans-serif;font-size:15px;font-weight:600;color:#1c110a;background:#fff9f5;outline:none;direction:rtl;}
+.fam-sh-name-inp:focus{border-color:#ff7033;}
+.fam-sh-name-save{padding:10px 18px;background:linear-gradient(135deg,#ff7033,#e05a20);color:#fff;border:none;border-radius:12px;font-family:'Nunito',sans-serif;font-size:14px;font-weight:800;cursor:pointer;white-space:nowrap;transition:transform .14s;}
+.fam-sh-name-save:active{transform:scale(.95);}
+.fam-sh-name-ok{font-size:12px;color:#3a9a5c;font-weight:700;margin-top:6px;text-align:right;direction:rtl;min-height:18px;}
+
 /* ─── Mobile debug overlay (?debug=1 or window.APP_DEBUG=true) ─── */
 #dbgOverlay{position:fixed;bottom:0;left:0;right:0;max-height:42vh;background:rgba(10,10,10,.93);z-index:9999;display:flex;flex-direction:column;font-family:'Courier New',monospace;font-size:11px;line-height:1.45;border-top:2px solid rgba(255,110,40,.55);}
 #dbgHead{display:flex;justify-content:space-between;align-items:center;padding:5px 10px;background:rgba(255,85,25,.22);color:#ff8844;font-weight:700;letter-spacing:.4px;flex-shrink:0;}
@@ -1149,6 +1201,9 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 }
 #s-today .t-scroll{padding-bottom:110px;}
 </style>
+<!-- Firebase SDK (compat — Phase 3) -->
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js"></script>
 </head>
 <body>
 
@@ -1526,7 +1581,13 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
       <div class="atd-body">
         <div class="atd-mic-area" id="atdMicArea">
           <div class="atd-mic-ring" id="atdMicRing">
-            <svg class="atd-heart-svg" viewBox="0 0 100 90" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <svg width="38" height="38" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <rect x="9" y="2" width="6" height="11" rx="3" fill="white"/>
+              <path d="M5 11a7 7 0 0 0 14 0" stroke="white" stroke-width="2" stroke-linecap="round"/>
+              <line x1="12" y1="18" x2="12" y2="22" stroke="white" stroke-width="2" stroke-linecap="round"/>
+              <line x1="8" y1="22" x2="16" y2="22" stroke="white" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            <svg style="display:none" viewBox="0 0 100 90" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
               <defs>
                 <radialGradient id="atdHeartG" cx="50%" cy="38%" r="65%">
                   <stop offset="0%"  stop-color="#ffb585"/>
@@ -1536,7 +1597,6 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
               </defs>
               <path d="M50 82 C 14 62 4 38 4 22 C 4 10 16 2 28 2 C 38 2 45 8 50 18 C 55 8 62 2 72 2 C 84 2 96 10 96 22 C 96 38 86 62 50 82 Z" fill="url(#atdHeartG)"/>
             </svg>
-            <div class="atd-mic-icon">🎙️</div>
           </div>
           <div class="atd-status" id="atdStatus">לחץ לדיבור</div>
         </div>
@@ -1673,6 +1733,17 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" stroke-linecap="round" stroke-linejoin="round"/></svg>
         <span class="t-nl" id="navFamilyLbl">הגדרות</span>
       </div>
+    </div>
+  </div>
+
+  <!-- Family settings sheet -->
+  <div class="fam-sheet-bg" id="famSheetBg">
+    <div class="fam-sheet">
+      <div class="fam-sh-handle"></div>
+      <div class="fam-sh-hdr">
+        <div class="fam-sh-title">הגדרות משפחה</div>
+      </div>
+      <div class="fam-sh-body" id="famShBody"></div>
     </div>
   </div>
 </div>
@@ -1954,7 +2025,7 @@ const I18N = {
     share_more:'עוד אפשרויות', share_more_hint:'אפשרויות נוספות',
     share_when_remind:'מתי להזכיר?',
     share_mins_before:'דקות לפני',
-    share_note:'אם לא יושלם בזמן, נזכיר את האחראי ובני המשפחה לאחר 5, 10 ו-15 דקות.',
+    share_note:'נשלח תזכורת בזמן המשימה. אם היא לא תסומן כהושלמה, יישלחו תזכורות נוספות לאחר 5, 10 ו־15 דקות.',
     share_repeat:'חזרה', share_done:'סיום',
     remind_at_time:'בזמן המשימה', remind_10:'10 דקות לפני',
     remind_30:'30 דקות לפני', remind_60:'שעה לפני', remind_custom:'מותאם אישית',
@@ -2119,6 +2190,7 @@ function sharedWithEmojis(visibleTo) {
 }
 
 function assignedLabel(task) {
+  if (task.assignedToName) return task.assignedToName;
   const assignedId = task.assignedTo;
   const name = (assignedId && ID_TO_PERSON[assignedId]) || task.person || 'Mom';
   const id = PERSON_TO_ID[name] || assignedId || 'mom';
@@ -2225,11 +2297,11 @@ function parsedToTask(p, idx) {
     ? dateToYMD(p.date.date)
     : todayDate();
   return {
-    id:                    Date.now() + idx,
+    id:                    DataAdapter.isFamily() ? _genCode(16) : Date.now() + idx,
     title:                 p.title,
     person,
     assignedTo,
-    createdBy:             currentUser,
+    createdBy:             DataAdapter.isFamily() ? DataAdapter.userId : currentUser,
     mins:                  p.mins,
     completed:             false,
     notify:                true,
@@ -2264,11 +2336,11 @@ function aiParsedToTask(t, idx) {
   }
 
   return {
-    id:                    Date.now() + idx,
+    id:                    DataAdapter.isFamily() ? _genCode(16) : Date.now() + idx,
     title:                 t.title,
     person,
     assignedTo,
-    createdBy:             currentUser,
+    createdBy:             DataAdapter.isFamily() ? DataAdapter.userId : currentUser,
     mins,
     completed:             false,
     notify:                true,
@@ -3522,6 +3594,31 @@ function renderAssignedSection() {
   const task = shareTask;
   const cont = document.getElementById('shareAssignedRows');
   cont.innerHTML = '';
+
+  // In family mode with cached cloud members, show them instead of hardcoded FAMILY
+  if (DataAdapter.isFamily() && _familyMembersCache.length > 0) {
+    _familyMembersCache.forEach(m => {
+      const row = document.createElement('div');
+      row.className = 'share-member';
+      const sel  = task.assignedToUserId === m.userId;
+      const ltr  = (m.displayName || m.userId)[0].toUpperCase();
+      const role = m.role === 'owner' ? 'בעלים' : 'חבר';
+      row.innerHTML = `
+        <span class="share-em" style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#ffd0a8,#f0a870);display:inline-flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:#c06030;flex-shrink:0;">${ltr}</span>
+        <span class="share-lbl" style="flex:1;">${m.displayName || m.userId}<small style="color:#c4ae9f;font-size:11px;margin-inline-start:6px;">${role}</small></span>
+        <span class="share-radio${sel ? ' on' : ''}"></span>`;
+      row.addEventListener('click', () => {
+        task.assignedToUserId = m.userId;
+        task.assignedToName   = m.displayName || m.userId;
+        renderAssignedSection();
+        renderShareRows();
+      });
+      cont.appendChild(row);
+    });
+    return;
+  }
+
+  // Fallback: hardcoded family list
   FAMILY.forEach(f => {
     const row = document.createElement('div');
     row.className = 'share-member';
@@ -3711,7 +3808,9 @@ function renderShareRows() {
 function closeShareDrawer() {
   document.getElementById('shareBg').classList.remove('open');
   if (shareSaveCb) { shareSaveCb(); shareSaveCb = null; }
+  const savedTask = shareTask;
   shareTask = null;
+  if (savedTask) _daWriteTask(savedTask).catch(() => {});
 }
 
 document.getElementById('shareMoreToggle').addEventListener('click', () => {
@@ -4739,6 +4838,7 @@ document.getElementById('btnOk').addEventListener('click', function() {
     AppLog.groupEnd();
     AppState.previewTasks = [];
     saveState();
+    newTasks.forEach(task => _daWriteTask(task, true).catch(() => {}));
     _capRescheduleAll().catch(() => {});
     renderToday();
     goto('s-today', 'txLeaveRise', 'txEnterSettle', () => {
@@ -4969,61 +5069,6 @@ function renderToday() {
     // their template task in AppState.tasks (same pattern as the bell + share
     // handlers above) so changes persist across days.
     if (!t.completed) {
-      const titleEl = el.querySelector('.t-ttitle');
-      if (titleEl) {
-        titleEl.setAttribute('contenteditable', 'plaintext-only');
-        titleEl.spellcheck = false;
-        // Stop the propagation chain at every interaction so the parent
-        // .t-task click (which marks complete) doesn't fire during editing.
-        ['click','mousedown','touchstart','pointerdown'].forEach(ev => {
-          titleEl.addEventListener(ev, e => e.stopPropagation());
-        });
-        // On focus, expand a truncated long title so the user can see and
-        // edit the full text. On blur, re-truncate and refresh the `···`
-        // tooltip button so the read mode still looks tidy.
-        titleEl.addEventListener('focus', () => {
-          titleEl.classList.remove('long-title');
-          const exp = titleEl.parentElement && titleEl.parentElement.querySelector('.title-exp');
-          if (exp) exp.style.display = 'none';
-        });
-        titleEl.addEventListener('input', () => {
-          const u = titleEl.textContent.trim();
-          if (!u) return;                                  // never blank-out
-          const realT = t.isRecurring
-            ? (AppState.tasks.find(rt => rt.id === t.recurrenceId) || t)
-            : t;
-          realT.title = u;
-          t.title     = u;
-        });
-        titleEl.addEventListener('keydown', e => {
-          if (e.key === 'Enter') { e.preventDefault(); titleEl.blur(); }
-        });
-        titleEl.addEventListener('blur', () => {
-          // Restore previous title if user blanked it out
-          const u = titleEl.textContent.trim();
-          if (!u) titleEl.textContent = t.title;
-          saveState();
-
-          // Re-apply read-mode truncation if title is long
-          const final = titleEl.textContent.trim();
-          const parent = titleEl.parentElement;
-          let exp = parent && parent.querySelector('.title-exp');
-          if (final.length > 45) {
-            titleEl.classList.add('long-title');
-            if (!exp) {
-              exp = document.createElement('button');
-              exp.className = 'title-exp';
-              exp.textContent = '···';
-              exp.addEventListener('click', ev => { ev.stopPropagation(); showTitleTip(t, exp); });
-              titleEl.after(exp);
-            } else {
-              exp.style.display = '';
-            }
-          } else if (exp) {
-            exp.remove();
-          }
-        });
-      }
 
       const tcol = el.querySelector('.t-tcol');
       if (tcol) {
@@ -5072,6 +5117,12 @@ function renderToday() {
   updateProgress();
   _maybeShowNotifPermBanner();
 }
+
+// "הגדרות" tab → open family sheet
+document.querySelector('#s-today .t-ntab:last-child').addEventListener('click', openFamilySheet);
+document.getElementById('famSheetBg').addEventListener('click', e => {
+  if (e.target === document.getElementById('famSheetBg')) closeFamilySheet();
+});
 
 document.getElementById('tNavAdd').addEventListener('click', () => {
   // Detect whether there are already tasks for the active date → append vs replace
@@ -5275,6 +5326,8 @@ function doDelete(task, screen) {
     }
     saveState();
     _capCancelTask(task.id).catch(() => {});
+    if (state.type === 'full')  _daDeleteTask(task.id).catch(() => {});
+    else if (state.type === 'hide') _daWriteTask(task).catch(() => {});
     // Surgical: card already removed by swipe animation. Just refresh
     // avatars / hero / progress / next-highlight — DO NOT rerender the
     // list. The full renderToday() was producing a momentary blank-list
@@ -5437,8 +5490,13 @@ document.getElementById('tTasks').addEventListener('click', e => {
     task = AppState.tasks.find(t => String(t.id) === id);
     if (!task) return;
     task.completed = true;
+    if (DataAdapter.isFamily()) {
+      task.completedBy = DataAdapter.userId;
+      task.completedAt = new Date().toISOString();
+    }
   }
   saveState();
+  _daWriteTask(task).catch(() => {});
   _capCancelTask(task.id).catch(() => {});
 
   // Animate then settle
@@ -6198,9 +6256,16 @@ function _getCapLN() {
 }
 
 function _capNotifId(taskId, offset) {
-  // Map task id to a stable 32-bit Android notification id.
-  // offset: 0=initial reminder, 1-3=overdue stages 0-2.
-  return (Math.abs(Number(taskId)) % 200000000) * 10 + offset;
+  // Map task id to a stable positive 32-bit Android notification id.
+  // Handles both legacy numeric ids and new string ids (family mode).
+  let num = Number(taskId);
+  if (isNaN(num)) {
+    num = 0;
+    const s = String(taskId);
+    for (let i = 0; i < s.length; i++)
+      num = (Math.imul(31, num) + s.charCodeAt(i)) | 0;
+  }
+  return (Math.abs(num) % 200000000) * 10 + offset;
 }
 
 async function _capInit() {
@@ -6210,6 +6275,9 @@ async function _capInit() {
   try {
     const result = await ln.requestPermissions();
     console.log('[capLN] permission result:', JSON.stringify(result));
+    if (result?.display !== 'granted') {
+      console.warn('[capLN] ⚠️ notification permission NOT granted — display:', result?.display);
+    }
   } catch (e) { AppLog.warn('capLN', 'requestPermissions failed', e.message || e); }
   // Create a high-importance channel so notifications play sound and
   // show as heads-up banners (pops on screen). Must be done before
@@ -6235,6 +6303,12 @@ async function _capInit() {
     });
     console.log('[capLN] channels created');
   } catch (e) { AppLog.warn('capLN', 'createChannel failed', e.message || e); }
+  try {
+    const pending = await ln.getPending();
+    const pendingList = pending?.notifications || [];
+    console.log('[capLN] pending notifications on startup:', pendingList.length,
+      pendingList.map(n => ({ id: n.id, at: n.schedule?.at })));
+  } catch (_) {}
 }
 
 async function _capScheduleTask(task) {
@@ -6291,6 +6365,32 @@ async function _capCancelTask(taskId) {
   catch (e) { AppLog.warn('capLN', 'cancel failed', e.message || e); }
 }
 
+async function _capTestNotif() {
+  const ln = _getCapLN();
+  if (!ln) { showNotifToast('⚠️ פלאגין התראות לא זמין (PWA בלבד?)'); return; }
+  const fireAt = new Date(Date.now() + 15000);
+  try {
+    await ln.schedule({ notifications: [{
+      id: 9999998,
+      title: '✅ בדיקת התראה',
+      body: 'ההתראות עובדות בעת שהאפליקציה סגורה!',
+      channelId: 'family-task',
+      schedule: { at: fireAt, allowWhileIdle: true },
+    }]});
+    console.log('[capLN] test notification scheduled for', fireAt.toLocaleTimeString());
+    showNotifToast('⏰ נקבעה התראת בדיקה לעוד 15 שניות — צא מהאפליקציה עכשיו!');
+    // Check how many are pending so we can verify it was registered
+    try {
+      const pending = await ln.getPending();
+      console.log('[capLN] pending after test schedule:', pending?.notifications?.length,
+        (pending?.notifications || []).map(n => n.id));
+    } catch (_) {}
+  } catch (e) {
+    console.error('[capLN] testNotif failed:', e.message || e);
+    showNotifToast('שגיאה בהתראת בדיקה: ' + (e.message || e));
+  }
+}
+
 async function _capRescheduleAll() {
   const ln = _getCapLN();
   console.log('[capLN] rescheduleAll — plugin available:', !!ln);
@@ -6318,24 +6418,372 @@ async function _capRescheduleAll() {
 const _DA_MODE_KEY   = 'family-app-da-mode';
 const _DA_FAMILY_KEY = 'family-app-da-family-id';
 const _DA_USER_KEY   = 'family-app-da-user-id';
+const _DA_NAME_KEY   = 'family-app-da-display-name';
 
 const DataAdapter = {
-  mode:     localStorage.getItem(_DA_MODE_KEY)   || 'local',
-  familyId: localStorage.getItem(_DA_FAMILY_KEY) || null,
-  userId:   localStorage.getItem(_DA_USER_KEY)   || null,
+  mode:        localStorage.getItem(_DA_MODE_KEY)   || 'local',
+  familyId:    localStorage.getItem(_DA_FAMILY_KEY) || null,
+  userId:      localStorage.getItem(_DA_USER_KEY)   || null,
+  displayName: localStorage.getItem(_DA_NAME_KEY)   || '',
 
   isFamily() { return this.mode === 'family' && !!this.familyId; },
 
+  setFamily(familyId, userId) {
+    this.familyId = familyId;
+    this.userId   = userId;
+    this.mode     = 'family';
+    localStorage.setItem(_DA_MODE_KEY,   'family');
+    localStorage.setItem(_DA_FAMILY_KEY, familyId);
+    localStorage.setItem(_DA_USER_KEY,   userId);
+  },
+
+  leaveFamily() {
+    this.familyId = null;
+    this.mode     = 'local';
+    localStorage.removeItem(_DA_MODE_KEY);
+    localStorage.removeItem(_DA_FAMILY_KEY);
+    // userId and displayName stay so same device keeps its identity on re-join
+  },
+
+  setDisplayName(name) {
+    this.displayName = name;
+    if (name) localStorage.setItem(_DA_NAME_KEY, name);
+    else      localStorage.removeItem(_DA_NAME_KEY);
+  },
+
   // Firestore stubs — implemented in Phase 3.
-  // Returning null / no-op keeps all existing callers safe.
   async readTasks()    { return null; },
   async writeTasks()   { return; },
-  subscribe(_onChange) { return () => {}; }, // returns unsubscribe fn
+  subscribe(_onChange) { return () => {}; },
 };
 
 console.log('[DA] mode=' + DataAdapter.mode
           + ' family=' + DataAdapter.familyId
           + ' user='   + DataAdapter.userId);
+
+// ─── Firebase / Firestore (Phase 3-1) ────────────────────────────
+// SDK loaded via CDN compat scripts in <head>.
+// _db is null if offline at startup or SDK failed to load — all
+// callers must guard with `if (_db)` so the app stays functional.
+let _db = null;
+(function _fbInit() {
+  try {
+    if (typeof firebase === 'undefined') { console.warn('[FB] SDK not loaded'); return; }
+    firebase.initializeApp({
+      apiKey:            'AIzaSyBEsMvsnPqKKjh_8drdmWOdg1Q8NAhtjoI',
+      authDomain:        'family-app-5f8a5.firebaseapp.com',
+      projectId:         'family-app-5f8a5',
+      storageBucket:     'family-app-5f8a5.firebasestorage.app',
+      messagingSenderId: '965593743334',
+      appId:             '1:965593743334:web:f5dce57a5e2ee6e1062027',
+    });
+    _db = firebase.firestore();
+    console.log('[FB] Firestore ready');
+  } catch (e) { console.warn('[FB] init failed:', e.message || e); }
+}());
+
+// ─── Firestore task write helpers (Phase 4-1A) ───────────────────
+// Write-through: localStorage is always updated first. These functions
+// run async in the background — a failure never breaks the app.
+
+async function _daWriteTask(task, isNew) {
+  if (!_db || !DataAdapter.isFamily()) return;
+  try {
+    const ts  = firebase.firestore.FieldValue.serverTimestamp();
+    const ref = _db.collection('families').doc(DataAdapter.familyId)
+                   .collection('tasks').doc(String(task.id));
+    const data = {
+      taskId:                String(task.id),
+      title:                 task.title,
+      date:                  task.date   || todayDate(),
+      mins:                  task.mins   ?? null,
+      completed:             task.completed  || false,
+      completedBy:           task.completedBy || null,
+      completedAt:           task.completedAt || null,
+      createdBy:             task.createdBy  || DataAdapter.userId,
+      assignedTo:            task.assignedToUserId || task.assignedTo || null,
+      assignedToName:        task.assignedToName   || null,
+      visibleTo:             task.visibleTo || [],
+      notifyTo:              task.notifyTo  || [],
+      recurrence:            task.recurrence || { type: 'none' },
+      reminderOffsetMinutes: task.reminderOffsetMinutes ?? 10,
+      overdueReminderOffsets:task.overdueReminderOffsets || [5, 10, 15],
+      notify:                task.notify !== false,
+      updatedAt:             ts,
+    };
+    if (isNew) data.createdAt = ts;
+    await ref.set(data, { merge: true });
+    console.log('[FB] task written:', task.id, task.title);
+  } catch (e) { AppLog.warn('FB', 'writeTask failed', e.message || e); }
+}
+
+async function _daDeleteTask(taskId) {
+  if (!_db || !DataAdapter.isFamily()) return;
+  try {
+    await _db.collection('families').doc(DataAdapter.familyId)
+             .collection('tasks').doc(String(taskId)).delete();
+    console.log('[FB] task deleted:', taskId);
+  } catch (e) { AppLog.warn('FB', 'deleteTask failed', e.message || e); }
+}
+
+// ─── Family members cache (Phase 3-5) ────────────────────────────
+// Populated once from Firestore; used by renderAssignedSection()
+// so the task drawer can show real family members.
+let _familyMembersCache = [];
+
+async function _loadFamilyMembersCache() {
+  if (!_db || !DataAdapter.isFamily()) return;
+  try {
+    const snap = await _db.collection('families').doc(DataAdapter.familyId)
+                          .collection('members').get();
+    _familyMembersCache = snap.docs.map(d => d.data());
+    console.log('[DA] members cache loaded:', _familyMembersCache.length);
+  } catch (e) {
+    AppLog.warn('DA', 'loadMembersCache failed', e.message || e);
+  }
+}
+
+// ─── Family sheet (Phase 2) ───────────────────────────────────────
+function _genCode(len) {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let out = '';
+  for (let i = 0; i < len; i++) out += chars[Math.floor(Math.random() * chars.length)];
+  return out;
+}
+
+function openFamilySheet() {
+  _renderFamilySheet();
+  document.getElementById('famSheetBg').classList.add('open');
+  // Refresh cache so the task drawer always has up-to-date members
+  _loadFamilyMembersCache();
+}
+
+function closeFamilySheet() {
+  document.getElementById('famSheetBg').classList.remove('open');
+}
+
+function _renderFamilySheet() {
+  const body = document.getElementById('famShBody');
+  if (DataAdapter.isFamily()) {
+    body.innerHTML = `
+      <div class="fam-sh-badge fam-active">● מצב משפחה</div>
+      <div class="fam-sh-code-box">
+        <div class="fam-sh-code-lbl">קוד המשפחה</div>
+        <div class="fam-sh-code">${DataAdapter.familyId}</div>
+        <div class="fam-sh-uid">מזהה מכשיר: ${DataAdapter.userId}</div>
+      </div>
+      <div class="fam-sh-name-box">
+        <div class="fam-sh-name-lbl">השם שלי במשפחה</div>
+        <div class="fam-sh-name-row">
+          <input class="fam-sh-name-inp" id="famNameInp" type="text" maxlength="20"
+                 placeholder="למשל: אבא, אמא, יונתן…"
+                 value="${DataAdapter.displayName || ''}" dir="rtl"/>
+          <button class="fam-sh-name-save" onclick="_daSaveDisplayName()">שמור</button>
+        </div>
+        <div class="fam-sh-name-ok" id="famNameOk"></div>
+      </div>
+      <div class="fam-sh-members-lbl">בני המשפחה</div>
+      <div id="famMembersList" class="fam-sh-members-list">
+        <div class="fam-sh-members-loading">טוען…</div>
+      </div>
+      <div class="fam-sh-hint" style="margin-top:16px;">שתף את הקוד עם בני המשפחה כדי שיצטרפו.</div>
+      <button class="fam-sh-btn fam-sh-btn-danger" onclick="_daLeaveFamily()">עזוב משפחה</button>
+      ${_capNotifTestSection()}
+    `;
+    _loadFamilyMembers();
+  } else {
+    body.innerHTML = `
+      <div class="fam-sh-badge fam-local">○ מצב אישי</div>
+      <div class="fam-sh-hint">צור משפחה חדשה וקבל קוד לשיתוף, או הצטרף למשפחה קיימת עם קוד.</div>
+      <button class="fam-sh-btn fam-sh-btn-primary" onclick="_daCreateFamily()">✦ צור משפחה חדשה</button>
+      <div class="fam-sh-sep">או</div>
+      <input class="fam-sh-join-inp" id="famJoinInp" placeholder="הכנס קוד" maxlength="6" dir="ltr"
+             oninput="this.value=this.value.toUpperCase().replace(/[^A-Z2-9]/g,'')"/>
+      <div class="fam-sh-note">אימות מול ענן יופעל בשלב הבא</div>
+      <button class="fam-sh-btn fam-sh-btn-secondary" onclick="_daJoinFamily()">הצטרף למשפחה</button>
+      ${_capNotifTestSection()}
+    `;
+  }
+}
+
+function _capNotifTestSection() {
+  return `
+    <div style="border-top:1px solid rgba(0,0,0,.08);margin-top:20px;padding-top:16px;">
+      <div style="font-size:12px;font-weight:800;color:#9e8878;text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px;text-align:right;">בדיקת התראות</div>
+      <button class="fam-sh-btn fam-sh-btn-secondary" onclick="_capTestNotif()" style="margin-bottom:10px;">
+        🔔 שלח התראת בדיקה (15 שניות)
+      </button>
+      <div style="font-size:12px;color:#b09888;line-height:1.6;text-align:right;direction:rtl;">
+        לחץ, סגור לגמרי את האפליקציה, ומחכה 15 שניות.<br>
+        <strong>אם ההתראה לא מגיעה:</strong><br>
+        הגדרות ← אפליקציות ← Family ← סוללה ← <strong>ללא הגבלות</strong>
+      </div>
+    </div>`;
+}
+
+async function _daCreateFamily() {
+  const familyId = _genCode(6);
+  const userId   = DataAdapter.userId || _genCode(8);
+  DataAdapter.setFamily(familyId, userId);
+  _renderFamilySheet();
+  console.log('[DA] created family', familyId, 'userId', userId);
+
+  if (!_db) { console.warn('[FB] Firestore not ready — saved locally only'); return; }
+  try {
+    const ts = firebase.firestore.FieldValue.serverTimestamp();
+    await _db.collection('families').doc(familyId).set({
+      joinCode:  familyId,
+      createdAt: ts,
+      createdBy: userId,
+    });
+    await _db.collection('families').doc(familyId)
+             .collection('members').doc(userId).set({
+      userId,
+      role:     'owner',
+      joinedAt: ts,
+    });
+    console.log('[FB] family', familyId, 'written to Firestore');
+  } catch (e) {
+    AppLog.warn('FB', 'createFamily Firestore write failed', e.message || e);
+  }
+}
+
+async function _daJoinFamily() {
+  const inp  = document.getElementById('famJoinInp');
+  const code = inp ? inp.value.trim().toUpperCase() : '';
+  if (code.length < 4) { _famShErr('הכנס קוד בן 4-6 תווים'); return; }
+
+  if (!_db) {
+    // No Firestore connection — save locally and warn
+    const userId = DataAdapter.userId || _genCode(8);
+    DataAdapter.setFamily(code, userId);
+    _renderFamilySheet();
+    return;
+  }
+
+  // Show loading state
+  const joinBtn = document.querySelector('.fam-sh-btn-secondary');
+  if (joinBtn) { joinBtn.disabled = true; joinBtn.textContent = 'בודק…'; }
+
+  try {
+    const familySnap = await _db.collection('families').doc(code).get();
+    if (!familySnap.exists) {
+      _famShErr('לא נמצאה משפחה עם הקוד הזה');
+      if (joinBtn) { joinBtn.disabled = false; joinBtn.textContent = 'הצטרף למשפחה'; }
+      return;
+    }
+
+    const userId     = DataAdapter.userId || _genCode(8);
+    const familyData = familySnap.data();
+    const ts         = firebase.firestore.FieldValue.serverTimestamp();
+    const memberRef  = _db.collection('families').doc(code).collection('members').doc(userId);
+    const memberSnap = await memberRef.get();
+
+    const isOwner = (familyData.createdBy === userId);
+    if (isOwner) {
+      // Creator always gets/restores owner role, even if the document was corrupted
+      await memberRef.set({ userId, role: 'owner', joinedAt: ts }, { merge: true });
+    } else if (memberSnap.exists) {
+      // Existing non-owner member — only update last seen, never touch role
+      await memberRef.update({ lastSeenAt: ts });
+    } else {
+      // New member
+      await memberRef.set({ userId, role: 'member', joinedAt: ts });
+    }
+
+    DataAdapter.setFamily(code, userId);
+    console.log('[DA] joined family', code, 'userId', userId);
+    _renderFamilySheet();
+  } catch (e) {
+    AppLog.warn('FB', 'joinFamily failed', e.message || e);
+    _famShErr('שגיאה בהתחברות לענן — נסה שוב');
+    if (joinBtn) { joinBtn.disabled = false; joinBtn.textContent = 'הצטרף למשפחה'; }
+  }
+}
+
+function _famShErr(msg) {
+  const existing = document.getElementById('famShErr');
+  if (existing) { existing.textContent = msg; return; }
+  const err = document.createElement('div');
+  err.id = 'famShErr';
+  err.style.cssText = 'color:#c03020;font-size:13px;font-weight:700;text-align:center;margin-top:-8px;margin-bottom:12px;direction:rtl;';
+  err.textContent = msg;
+  const inp = document.getElementById('famJoinInp');
+  if (inp) inp.insertAdjacentElement('afterend', err);
+}
+
+function _daLeaveFamily() {
+  DataAdapter.leaveFamily();
+  console.log('[DA] left family, returned to local mode');
+  _renderFamilySheet();
+}
+
+async function _daSaveDisplayName() {
+  const inp  = document.getElementById('famNameInp');
+  const name = inp ? inp.value.trim() : '';
+  if (!name) {
+    const okEl = document.getElementById('famNameOk');
+    if (okEl) okEl.textContent = 'הכנס שם תחילה';
+    return;
+  }
+
+  DataAdapter.setDisplayName(name);
+
+  // Re-render the whole panel so the input and member list both reflect the new name
+  _renderFamilySheet();
+  const okEl = document.getElementById('famNameOk');
+  if (okEl) okEl.textContent = '✓ שומר…';
+
+  if (_db && DataAdapter.familyId && DataAdapter.userId) {
+    try {
+      await _db.collection('families').doc(DataAdapter.familyId)
+               .collection('members').doc(DataAdapter.userId)
+               .update({ displayName: name });
+      if (okEl) okEl.textContent = '✓ נשמר';
+    } catch (e) {
+      AppLog.warn('FB', 'saveDisplayName failed', e.message || e);
+      if (okEl) okEl.textContent = '✓ נשמר מקומית בלבד';
+    }
+  }
+}
+
+async function _loadFamilyMembers() {
+  const listEl = document.getElementById('famMembersList');
+  if (!listEl) return;
+  if (!_db || !DataAdapter.familyId) {
+    listEl.innerHTML = '<div class="fam-sh-members-loading">לא מחובר לענן</div>';
+    return;
+  }
+  try {
+    const snap = await _db.collection('families').doc(DataAdapter.familyId)
+                          .collection('members').get();
+    if (!listEl) return; // sheet may have closed while we waited
+    if (snap.empty) {
+      listEl.innerHTML = '<div class="fam-sh-members-loading">אין בני משפחה עדיין</div>';
+      return;
+    }
+    const roleLabel = { owner: 'בעלים', member: 'חבר' };
+    listEl.innerHTML = snap.docs.map(d => {
+      const m      = d.data();
+      const isMe   = (m.userId === DataAdapter.userId);
+      const letter = (m.displayName || m.userId || '?')[0].toUpperCase();
+      const name   = m.displayName || m.userId;
+      return `
+        <div class="fam-sh-member-row">
+          <div class="fam-sh-member-avatar">${letter}</div>
+          <div class="fam-sh-member-info">
+            <div class="fam-sh-member-name">
+              ${isMe ? '<span class="fam-sh-member-you">אני</span>' : ''}${name}
+            </div>
+            <div class="fam-sh-member-role">${roleLabel[m.role] || m.role}</div>
+          </div>
+        </div>`;
+    }).join('');
+  } catch (e) {
+    AppLog.warn('FB', 'loadMembers failed', e.message || e);
+    if (listEl) listEl.innerHTML = '<div class="fam-sh-members-loading">שגיאה בטעינת בני המשפחה</div>';
+  }
+}
 
 // ─── Init ─────────────────────────────────────────────────────────
 // Version banner — verifies WHICH build is actually running on the
@@ -6353,8 +6801,8 @@ try { checkOverdueReminders(); } catch (e) { console.warn('initial reminders che
 localStorage.setItem(LANG_KEY, 'he');
 AppState.lang = 'he';
 _applyLang();
-_capInit().catch(() => {});
-_capRescheduleAll().catch(() => {});
+_capInit().then(() => _capRescheduleAll()).catch(() => {});
+if (DataAdapter.isFamily()) _loadFamilyMembersCache();
 if (activeTasks().length > 0) {
   renderToday();
   document.getElementById('s-voice').classList.remove('active');
