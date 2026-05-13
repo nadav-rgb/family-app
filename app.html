@@ -6406,6 +6406,92 @@ async function _capRescheduleAll() {
   console.log('[capLN] rescheduleAll done, processed', count, 'task(s)');
 }
 
+// ─── Firestore timestamp → milliseconds ─────────────────────────
+function _toMs(val) {
+  if (!val) return 0;
+  if (typeof val === 'number') return val;
+  if (typeof val === 'string') return new Date(val).getTime() || 0;
+  if (typeof val.toMillis === 'function') return val.toMillis();
+  if (typeof val.seconds === 'number') return val.seconds * 1000;
+  return 0;
+}
+
+// ─── Load tasks from Firestore and merge into localStorage ───────
+// Rules:
+//   1. In cloud, not local  → add to local
+//   2. In local, not cloud  → keep (never delete local-only tasks)
+//   3. In both              → winner is the one with newer updatedAt
+//   4. Local task without updatedAt → keep, never overwrite with older cloud copy
+//   5. Cloud task without updatedAt → fall back to createdAt for comparison
+async function _daLoadTasksFromCloud() {
+  if (!_db || !DataAdapter.isFamily()) return;
+  try {
+    const snap = await Promise.race([
+      _db.collection('families').doc(DataAdapter.familyId).collection('tasks').get(),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000)),
+    ]);
+    if (snap.empty) { console.log('[DA] loadTasksFromCloud — cloud collection empty'); return; }
+
+    const cloudTasks = [];
+    snap.forEach(doc => {
+      const d = doc.data();
+      cloudTasks.push({
+        id:                     d.taskId || doc.id,
+        title:                  d.title  || '',
+        date:                   d.date   || todayDate(),
+        mins:                   typeof d.mins === 'number' ? d.mins : null,
+        completed:              d.completed  || false,
+        completedBy:            d.completedBy  || null,
+        completedAt:            d.completedAt  || null,
+        createdBy:              d.createdBy    || null,
+        assignedTo:             d.assignedTo   || null,
+        assignedToUserId:       d.assignedTo   || null,
+        assignedToName:         d.assignedToName || null,
+        visibleTo:              d.visibleTo  || [],
+        notifyTo:               d.notifyTo   || [],
+        recurrence:             d.recurrence || { type: 'none' },
+        reminderOffsetMinutes:  d.reminderOffsetMinutes  ?? 10,
+        overdueReminderOffsets: d.overdueReminderOffsets || [5, 10, 15],
+        notify:                 d.notify !== false,
+        updatedAt:              _toMs(d.updatedAt) || _toMs(d.createdAt) || 0,
+      });
+    });
+
+    const localById = {};
+    for (const t of AppState.tasks) localById[String(t.id)] = t;
+
+    let changed = false;
+    for (const ct of cloudTasks) {
+      const key   = String(ct.id);
+      const local = localById[key];
+      if (!local) {
+        // Rule 1: cloud-only → add
+        AppState.tasks.push(ct);
+        changed = true;
+      } else {
+        // Rule 3: both exist → newer updatedAt wins
+        const localMs = _toMs(local.updatedAt) || _toMs(local.createdAt) || 0;
+        if (ct.updatedAt > localMs) {
+          Object.assign(local, ct);
+          changed = true;
+        }
+        // else local is newer or equal — leave it untouched (Rule 4)
+      }
+    }
+    // Rule 2: local-only tasks are never touched — loop above only adds/updates
+
+    if (changed) {
+      saveState();
+      renderToday();
+      _capRescheduleAll().catch(() => {});
+    }
+    console.log('[DA] loadTasksFromCloud — cloud:', cloudTasks.length,
+      '| local after merge:', AppState.tasks.length, '| changed:', changed);
+  } catch (e) {
+    AppLog.warn('FB', 'loadTasksFromCloud failed (continuing from localStorage)', e.message || e);
+  }
+}
+
 // ─── DataAdapter — local vs. family-cloud ────────────────────────
 // Phase 1: skeleton only. Nothing in the existing app calls this yet.
 //
@@ -6694,6 +6780,8 @@ async function _daJoinFamily() {
     DataAdapter.setFamily(code, userId);
     console.log('[DA] joined family', code, 'userId', userId);
     _renderFamilySheet();
+    _loadFamilyMembersCache();
+    _daLoadTasksFromCloud();
   } catch (e) {
     AppLog.warn('FB', 'joinFamily failed', e.message || e);
     _famShErr('שגיאה בהתחברות לענן — נסה שוב');
@@ -6802,7 +6890,10 @@ localStorage.setItem(LANG_KEY, 'he');
 AppState.lang = 'he';
 _applyLang();
 _capInit().then(() => _capRescheduleAll()).catch(() => {});
-if (DataAdapter.isFamily()) _loadFamilyMembersCache();
+if (DataAdapter.isFamily()) {
+  _loadFamilyMembersCache();
+  _daLoadTasksFromCloud();
+}
 if (activeTasks().length > 0) {
   renderToday();
   document.getElementById('s-voice').classList.remove('active');
