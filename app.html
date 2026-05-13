@@ -6216,14 +6216,24 @@ async function _capInit() {
   // any schedule() call; Android ignores channel changes after first use.
   try {
     await ln.createChannel({
-      id:          'family-reminders',
-      name:        'תזכורות משפחה',
-      description: 'תזכורות למשימות היומיות',
-      importance:  4,        // HIGH → sound + heads-up banner
+      id:          'family-task',
+      name:        'תזכורת משימה',
+      description: 'לפני ובזמן המשימה',
+      importance:  4,
+      sound:       'alert_task',
       vibration:   true,
-      visibility:  1,        // PUBLIC — show on lock screen
+      visibility:  1,
     });
-    console.log('[capLN] channel created');
+    await ln.createChannel({
+      id:          'family-overdue',
+      name:        'איחור במשימה',
+      description: 'כשעבר הזמן',
+      importance:  4,
+      sound:       'alert_overdue',
+      vibration:   true,
+      visibility:  1,
+    });
+    console.log('[capLN] channels created');
   } catch (e) { AppLog.warn('capLN', 'createChannel failed', e.message || e); }
 }
 
@@ -6243,18 +6253,18 @@ async function _capScheduleTask(task) {
   const notifs     = [];
 
   // id offsets: 0=advance, 1=at-time, 2-4=overdue stages 0-2
+  // id offsets: 0=advance, 1=at-time, 2-4=overdue stages 0-2
   if (initialAt.getTime() > now && offsetMins > 0) {
     notifs.push({ id: _capNotifId(task.id, 0), title: task.title,
                   body: tFmt('time_in_min', { n: offsetMins }),
-                  channelId: 'family-reminders',
+                  channelId: 'family-task',
                   schedule: { at: initialAt, allowWhileIdle: true } });
   }
-  // Notification exactly at task time
   const atTime = new Date(taskAt);
   if (atTime.getTime() > now) {
     notifs.push({ id: _capNotifId(task.id, 1), title: task.title,
                   body: t('notif_starting'),
-                  channelId: 'family-reminders',
+                  channelId: 'family-task',
                   schedule: { at: atTime, allowWhileIdle: true } });
   }
   (task.overdueReminderOffsets || [5, 10, 15]).forEach((stageOffset, idx) => {
@@ -6262,7 +6272,7 @@ async function _capScheduleTask(task) {
     if (fireAt.getTime() > now)
       notifs.push({ id: _capNotifId(task.id, idx + 2), title: task.title,
                     body: tFmt('notif_overdue', { n: stageOffset }),
-                    channelId: 'family-reminders',
+                    channelId: 'family-overdue',
                     schedule: { at: fireAt, allowWhileIdle: true } });
   });
 
