@@ -6242,9 +6242,6 @@ async function _capScheduleTask(task) {
   });
 
   if (!notifs.length) { console.log('[capLN] no future notifications for task', task.id, '(all times past)'); return; }
-  // DEBUG: also schedule a 5-second test notification to verify the channel works.
-  // Remove this block once confirmed working.
-  notifs.push({ id: 9999901, title: '✅ TEST', body: 'notification channel works!', schedule: { at: new Date(Date.now() + 30000), allowWhileIdle: true } });
   try {
     await ln.schedule({ notifications: notifs });
     console.log('[capLN] scheduled', notifs.length, 'notification(s) for task', task.id,
