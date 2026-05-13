@@ -4481,6 +4481,10 @@ function insertNewTasks(newTasks) {
 
   _updateDpMeta();
   closeAddSheet();
+  // Schedule OS notifications for newly inserted tasks (add-mode flow).
+  // btnOk will reschedule again on final commit, this handles the case
+  // where the user adds via the sheet and immediately closes.
+  newTasks.forEach(task => _capScheduleTask(task).catch(() => {}));
 }
 
 let dpActiveStrip = null;
@@ -4715,7 +4719,6 @@ document.getElementById('btnOk').addEventListener('click', function() {
   sub.style.color = '#e07c3a';
   sub.textContent = t('dp_perfect');
   setTimeout(() => {
-    console.log('[capLN] btnOk commit: previewTasks=', AppState.previewTasks.length);
     // Commit preview → main tasks
     const newTasks   = AppState.previewTasks.map(t => ({ ...t, completed: false, date: activeDate }));
     const commitMode = _appendToToday ? 'append' : 'replace';
@@ -4736,7 +4739,7 @@ document.getElementById('btnOk').addEventListener('click', function() {
     AppLog.groupEnd();
     AppState.previewTasks = [];
     saveState();
-    newTasks.forEach(task => _capScheduleTask(task).catch(() => {}));
+    _capRescheduleAll().catch(() => {});
     renderToday();
     goto('s-today', 'txLeaveRise', 'txEnterSettle', () => {
       // Animate bar in from 0
@@ -6212,12 +6215,11 @@ async function _capRequestPermissions() {
 
 async function _capScheduleTask(task) {
   const ln = _getCapLN();
-  console.log('[capLN] scheduleTask id=' + task?.id + ' ln=' + !!ln + ' date=' + (task?.date||'(none)') + ' mins=' + task?.mins + ' completed=' + task?.completed + ' notify=' + task?.notify);
-  if (!ln) { console.log('[capLN] → no plugin'); return; }
+  if (!ln) return;
   const today = todayDate();
-  if ((task.date || today) !== today) { console.log('[capLN] → wrong date: task=' + (task.date||today) + ' today=' + today); return; }
-  if (task.completed || task.notify === false) { console.log('[capLN] → skip: completed/notify=false'); return; }
-  if (typeof task.mins !== 'number') { console.log('[capLN] → skip: mins not a number (' + typeof task.mins + ')'); return; }
+  if ((task.date || today) !== today) return;
+  if (task.completed || task.notify === false) return;
+  if (typeof task.mins !== 'number') return;
 
   const base = new Date(); base.setHours(0, 0, 0, 0);
   const taskAt     = base.getTime() + task.mins * 60 * 1000;
