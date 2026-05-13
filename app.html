@@ -1773,23 +1773,6 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
   <button class="dbg-fab" onclick="_openDebugPanel()" title="Debug">🛠</button>
 </div>
 
-<!-- Debug Panel overlay — outside .phone so it covers full viewport -->
-<div class="dbg-overlay" id="dbgOverlay">
-  <div class="dbg-sheet" id="dbgSheet">
-    <div class="dbg-hdr">
-      <span class="dbg-title">🛠 Debug Panel</span>
-      <button class="dbg-close" onclick="document.getElementById('dbgOverlay').classList.remove('open')">✕</button>
-    </div>
-    <div class="dbg-scroll" id="dbgScroll">
-      <!-- filled by _openDebugPanel() -->
-    </div>
-    <div class="dbg-actions">
-      <button class="dbg-btn" onclick="_dbgCheckFirebase()">🔄 בדוק Firebase</button>
-      <button class="dbg-btn" onclick="_dbgCopyLogs()">📋 העתק הכל</button>
-      <button class="dbg-btn" onclick="_dbgClearLogs()">🗑 נקה לוגים</button>
-    </div>
-  </div>
-</div>
 
 <div class="undo-toast" id="undoToast">
   <span class="undo-msg" id="undoMsg"></span>
