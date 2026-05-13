@@ -6638,47 +6638,79 @@ function _dbgShortUid(uid) {
 }
 
 function _openDebugPanel() {
-  try {
-    var esc = function(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;'); };
-    var yn  = function(b){ return b ? 'YES' : 'NO'; };
-    var uid = _dbgShortUid(DataAdapter.authUid);
+  // Remove any existing panel
+  var prev = document.getElementById('_dbgPanel');
+  if (prev) prev.parentNode.removeChild(prev);
 
-    var status =
-      'Build:       auth-dynamic-debug-2026-05-13\n' +
-      'Mode:        ' + (DataAdapter.mode || '?') + '\n' +
-      'familyId:    ' + (DataAdapter.familyId || '-') + '\n' +
-      'localUserId: ' + (DataAdapter.userId   || '-') + '\n' +
-      'Firebase SDK:' + yn(_dbg.sdkLoaded)      + '\n' +
-      'Firestore:   ' + yn(_dbg.firestoreReady) + '\n' +
-      'Auth SDK:    ' + yn(_dbg.authSdkLoaded)  + '\n' +
-      'Auth status: ' + (_dbg.authStatus || '?') + '\n' +
-      'authUid:     ' + uid + '\n' +
-      'Auth error:  ' + (_dbg.authError       || '-') + '\n' +
-      'FS error:    ' + (_dbg.firestoreError  || '-') + '\n' +
-      'Cloud load:  ' + (_dbg.cloudLoadResult || '-');
+  // Build content lines
+  var lines = [
+    '=== STATUS ===',
+    'Build:        auth-dynamic-debug-2026-05-13',
+    'Mode:         ' + (DataAdapter.mode || '?'),
+    'familyId:     ' + (DataAdapter.familyId || '-'),
+    'localUserId:  ' + (DataAdapter.userId || '-'),
+    'Firebase SDK: ' + (_dbg.sdkLoaded      ? 'YES' : 'NO'),
+    'Firestore:    ' + (_dbg.firestoreReady  ? 'YES' : 'NO'),
+    'Auth SDK:     ' + (_dbg.authSdkLoaded   ? 'YES' : 'NO'),
+    'Auth status:  ' + (_dbg.authStatus || '?'),
+    'authUid:      ' + _dbgShortUid(DataAdapter.authUid),
+    'Auth error:   ' + (_dbg.authError || '-'),
+    'FS error:     ' + (_dbg.firestoreError || '-'),
+    'Cloud load:   ' + (_dbg.cloudLoadResult || '-'),
+    '',
+    '=== LOGS (' + _dbg.logs.length + ') ===',
+  ].concat(_dbg.logs.slice().reverse().map(function(l){ return l.text; }));
 
-    var logLines = _dbg.logs.slice().reverse().map(function(l){
-      return esc(l.text);
-    }).join('\n') || '(no logs)';
+  // Overlay — built entirely in JS with inline styles (no CSS dependency)
+  var overlay = document.createElement('div');
+  overlay.id = '_dbgPanel';
+  overlay.style.cssText = [
+    'position:fixed','inset:0','z-index:99999',
+    'background:rgba(0,0,0,.75)',
+    'display:flex','flex-direction:column','justify-content:flex-end',
+    'font-family:monospace',
+  ].join(';');
+  overlay.addEventListener('click', function(e){
+    if (e.target === overlay) overlay.parentNode.removeChild(overlay);
+  });
 
-    var html =
-      '<pre style="color:#cfc;font-size:11px;font-family:monospace;white-space:pre-wrap;' +
-      'padding:12px 14px;margin:0;background:#1a2a1a;border-bottom:1px solid #333;">' +
-      esc(status) + '</pre>' +
-      '<div style="padding:6px 14px 2px;font-size:10px;font-weight:900;' +
-      'text-transform:uppercase;letter-spacing:.6px;color:#888;">LOGS (' + _dbg.logs.length + ')</div>' +
-      '<pre style="color:#ccc;font-size:10.5px;font-family:monospace;white-space:pre-wrap;' +
-      'padding:4px 14px 20px;margin:0;">' + logLines + '</pre>';
+  // Sheet
+  var sheet = document.createElement('div');
+  sheet.style.cssText = [
+    'background:#111','border-radius:18px 18px 0 0',
+    'max-height:82vh','display:flex','flex-direction:column','overflow:hidden',
+  ].join(';');
 
-    var scroll = document.getElementById('dbgScroll');
-    if (scroll) scroll.innerHTML = html;
-    document.getElementById('dbgOverlay').classList.add('open');
-  } catch(e) {
-    // last resort — show raw error
-    var el = document.getElementById('dbgScroll');
-    if (el) el.innerHTML = '<pre style="color:red;padding:12px;">ERROR: ' + e + '</pre>';
-    document.getElementById('dbgOverlay').classList.add('open');
-  }
+  // Scrollable content
+  var content = document.createElement('pre');
+  content.style.cssText = [
+    'flex:1','overflow-y:auto','min-height:0',
+    'margin:0','padding:14px 16px',
+    'font-size:12px','line-height:1.5',
+    'color:#b8ffb8','white-space:pre-wrap','word-break:break-all',
+    'direction:ltr','text-align:left',
+  ].join(';');
+  content.textContent = lines.join('\n');
+
+  // Buttons bar
+  var bar = document.createElement('div');
+  bar.style.cssText = 'display:flex;gap:8px;padding:10px 14px 14px;background:#1a1a1a;flex-shrink:0;';
+  var mkBtn = function(label, fn) {
+    var b = document.createElement('button');
+    b.textContent = label;
+    b.style.cssText = 'flex:1;padding:10px 4px;background:#2a2a2a;color:#fff;border:1px solid #444;border-radius:10px;font-size:13px;font-family:monospace;cursor:pointer;';
+    b.addEventListener('click', fn);
+    return b;
+  };
+  bar.appendChild(mkBtn('Firebase', function(){ _dbgCheckFirebase(); }));
+  bar.appendChild(mkBtn('העתק', _dbgCopyLogs));
+  bar.appendChild(mkBtn('נקה', function(){ _dbg.logs=[]; _openDebugPanel(); }));
+  bar.appendChild(mkBtn('סגור', function(){ overlay.parentNode.removeChild(overlay); }));
+
+  sheet.appendChild(content);
+  sheet.appendChild(bar);
+  overlay.appendChild(sheet);
+  document.body.appendChild(overlay);
 }
 
 async function _dbgCheckFirebase() {
