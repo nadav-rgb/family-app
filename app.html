@@ -6242,16 +6242,25 @@ async function _capScheduleTask(task) {
   const now        = Date.now();
   const notifs     = [];
 
-  if (initialAt.getTime() > now) {
-    const label = offsetMins === 0 ? t('notif_starting') : tFmt('time_in_min', { n: offsetMins });
-    notifs.push({ id: _capNotifId(task.id, 0), title: task.title, body: label,
+  // id offsets: 0=advance, 1=at-time, 2-4=overdue stages 0-2
+  if (initialAt.getTime() > now && offsetMins > 0) {
+    notifs.push({ id: _capNotifId(task.id, 0), title: task.title,
+                  body: tFmt('time_in_min', { n: offsetMins }),
                   channelId: 'family-reminders',
                   schedule: { at: initialAt, allowWhileIdle: true } });
+  }
+  // Notification exactly at task time
+  const atTime = new Date(taskAt);
+  if (atTime.getTime() > now) {
+    notifs.push({ id: _capNotifId(task.id, 1), title: task.title,
+                  body: t('notif_starting'),
+                  channelId: 'family-reminders',
+                  schedule: { at: atTime, allowWhileIdle: true } });
   }
   (task.overdueReminderOffsets || [5, 10, 15]).forEach((stageOffset, idx) => {
     const fireAt = new Date(taskAt + stageOffset * 60 * 1000);
     if (fireAt.getTime() > now)
-      notifs.push({ id: _capNotifId(task.id, idx + 1), title: task.title,
+      notifs.push({ id: _capNotifId(task.id, idx + 2), title: task.title,
                     body: tFmt('notif_overdue', { n: stageOffset }),
                     channelId: 'family-reminders',
                     schedule: { at: fireAt, allowWhileIdle: true } });
@@ -6268,7 +6277,7 @@ async function _capScheduleTask(task) {
 async function _capCancelTask(taskId) {
   const ln = _getCapLN();
   if (!ln) return;
-  try { await ln.cancel({ notifications: [0, 1, 2, 3].map(o => ({ id: _capNotifId(taskId, o) })) }); }
+  try { await ln.cancel({ notifications: [0, 1, 2, 3, 4].map(o => ({ id: _capNotifId(taskId, o) })) }); }
   catch (e) { AppLog.warn('capLN', 'cancel failed', e.message || e); }
 }
 
