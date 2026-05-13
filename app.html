@@ -1203,6 +1203,7 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 </style>
 <!-- Firebase SDK (compat — Phase 3) -->
 <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js"></script>
 </head>
 <body>
@@ -6511,6 +6512,7 @@ const DataAdapter = {
   familyId:    localStorage.getItem(_DA_FAMILY_KEY) || null,
   userId:      localStorage.getItem(_DA_USER_KEY)   || null,
   displayName: localStorage.getItem(_DA_NAME_KEY)   || '',
+  authUid:     null, // set by _fbInit after signInAnonymously — Auth-1 only, not yet used for writes
 
   isFamily() { return this.mode === 'family' && !!this.familyId; },
 
@@ -6547,11 +6549,13 @@ console.log('[DA] mode=' + DataAdapter.mode
           + ' family=' + DataAdapter.familyId
           + ' user='   + DataAdapter.userId);
 
-// ─── Firebase / Firestore (Phase 3-1) ────────────────────────────
+// ─── Firebase / Firestore / Auth (Phase 3-1 + Auth-1) ───────────
 // SDK loaded via CDN compat scripts in <head>.
 // _db is null if offline at startup or SDK failed to load — all
 // callers must guard with `if (_db)` so the app stays functional.
-let _db = null;
+// Auth-1: Anonymous Auth only — no migration of localUserId yet.
+let _db   = null;
+let _auth = null;
 (function _fbInit() {
   try {
     if (typeof firebase === 'undefined') { console.warn('[FB] SDK not loaded'); return; }
@@ -6563,8 +6567,21 @@ let _db = null;
       messagingSenderId: '965593743334',
       appId:             '1:965593743334:web:f5dce57a5e2ee6e1062027',
     });
-    _db = firebase.firestore();
-    console.log('[FB] Firestore ready');
+    _db   = firebase.firestore();
+    _auth = firebase.auth();
+    console.log('[FB] Firestore + Auth ready');
+    // Auth-1: sign in anonymously so we have a real Firebase UID.
+    // localUserId is preserved; authUid is stored separately.
+    _auth.signInAnonymously()
+      .then(cred => {
+        const authUid = cred.user.uid;
+        DataAdapter.authUid = authUid;
+        console.log('[Auth] Anonymous sign-in OK',
+          '| localUserId:', DataAdapter.userId,
+          '| authUid:', authUid,
+          '| familyId:', DataAdapter.familyId || '(none)');
+      })
+      .catch(e => console.warn('[Auth] signInAnonymously failed:', e.message || e));
   } catch (e) { console.warn('[FB] init failed:', e.message || e); }
 }());
 
