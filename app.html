@@ -6638,41 +6638,47 @@ function _dbgShortUid(uid) {
 }
 
 function _openDebugPanel() {
-  const scroll = document.getElementById('dbgScroll');
-  if (!scroll) return;
+  try {
+    var esc = function(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;'); };
+    var yn  = function(b){ return b ? 'YES' : 'NO'; };
+    var uid = _dbgShortUid(DataAdapter.authUid);
 
-  const rows = [
-    ['Build',         'auth-dynamic-debug-2026-05-13'],
-    ['מצב',           DataAdapter.mode],
-    ['familyId',      DataAdapter.familyId || '—'],
-    ['localUserId',   DataAdapter.userId   || '—'],
-    ['Firebase SDK',  _dbg.sdkLoaded      ? '✅ נטען'  : '❌ לא נטען'],
-    ['Firestore',     _dbg.firestoreReady ? '✅ מוכן'  : '❌ לא מוכן'],
-    ['Auth SDK',      _dbg.authSdkLoaded  ? '✅ נטען'  : '❌ לא נטען'],
-    ['Auth',          _dbg.authStatus],
-    ['authUid',       _dbgShortUid(DataAdapter.authUid)],
-    ['שגיאת Auth',    _dbg.authError       || '—'],
-    ['שגיאת Firestore', _dbg.firestoreError || '—'],
-    ['טעינת ענן',     _dbg.cloudLoadResult || '—'],
-  ];
+    var status =
+      'Build:       auth-dynamic-debug-2026-05-13\n' +
+      'Mode:        ' + (DataAdapter.mode || '?') + '\n' +
+      'familyId:    ' + (DataAdapter.familyId || '-') + '\n' +
+      'localUserId: ' + (DataAdapter.userId   || '-') + '\n' +
+      'Firebase SDK:' + yn(_dbg.sdkLoaded)      + '\n' +
+      'Firestore:   ' + yn(_dbg.firestoreReady) + '\n' +
+      'Auth SDK:    ' + yn(_dbg.authSdkLoaded)  + '\n' +
+      'Auth status: ' + (_dbg.authStatus || '?') + '\n' +
+      'authUid:     ' + uid + '\n' +
+      'Auth error:  ' + (_dbg.authError       || '-') + '\n' +
+      'FS error:    ' + (_dbg.firestoreError  || '-') + '\n' +
+      'Cloud load:  ' + (_dbg.cloudLoadResult || '-');
 
-  const statusHtml = `
-    <div class="dbg-section">סטטוס</div>
-    ${rows.map(([k,v]) => `<div class="dbg-row">
-      <span class="dbg-key">${k}</span>
-      <span class="dbg-val">${String(v).replace(/</g,'&lt;')}</span>
-    </div>`).join('')}`;
+    var logLines = _dbg.logs.slice().reverse().map(function(l){
+      return esc(l.text);
+    }).join('\n') || '(no logs)';
 
-  const logsHtml = `
-    <div class="dbg-section">לוגים (${_dbg.logs.length})</div>
-    <div class="dbg-logs-area">
-      ${[..._dbg.logs].reverse().map(l =>
-        `<div class="dbg-line ${l.level}">${l.text.replace(/</g,'&lt;')}</div>`
-      ).join('') || '<div class="dbg-line" style="opacity:.4">אין לוגים עדיין</div>'}
-    </div>`;
+    var html =
+      '<pre style="color:#cfc;font-size:11px;font-family:monospace;white-space:pre-wrap;' +
+      'padding:12px 14px;margin:0;background:#1a2a1a;border-bottom:1px solid #333;">' +
+      esc(status) + '</pre>' +
+      '<div style="padding:6px 14px 2px;font-size:10px;font-weight:900;' +
+      'text-transform:uppercase;letter-spacing:.6px;color:#888;">LOGS (' + _dbg.logs.length + ')</div>' +
+      '<pre style="color:#ccc;font-size:10.5px;font-family:monospace;white-space:pre-wrap;' +
+      'padding:4px 14px 20px;margin:0;">' + logLines + '</pre>';
 
-  scroll.innerHTML = statusHtml + logsHtml;
-  document.getElementById('dbgOverlay').classList.add('open');
+    var scroll = document.getElementById('dbgScroll');
+    if (scroll) scroll.innerHTML = html;
+    document.getElementById('dbgOverlay').classList.add('open');
+  } catch(e) {
+    // last resort — show raw error
+    var el = document.getElementById('dbgScroll');
+    if (el) el.innerHTML = '<pre style="color:red;padding:12px;">ERROR: ' + e + '</pre>';
+    document.getElementById('dbgOverlay').classList.add('open');
+  }
 }
 
 async function _dbgCheckFirebase() {
