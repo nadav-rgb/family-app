@@ -1,0 +1,17 @@
+{
+  "appId": "com.lavexus.familyapp",
+  "appName": "Family",
+  "webDir": "www",
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 0
+    },
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_icon_config_sample",
+      "iconColor": "#ff5e14"
+    }
+  },
+  "android": {
+    "allowMixedContent": false
+  }
+}
