@@ -6211,11 +6211,12 @@ async function _capRequestPermissions() {
 
 async function _capScheduleTask(task) {
   const ln = _getCapLN();
-  if (!ln) return;
+  console.log('[capLN] scheduleTask id=' + task?.id + ' ln=' + !!ln + ' date=' + (task?.date||'(none)') + ' mins=' + task?.mins + ' completed=' + task?.completed + ' notify=' + task?.notify);
+  if (!ln) { console.log('[capLN] → no plugin'); return; }
   const today = todayDate();
-  if ((task.date || today) !== today) return;
-  if (task.completed || task.notify === false) return;
-  if (typeof task.mins !== 'number') return;
+  if ((task.date || today) !== today) { console.log('[capLN] → wrong date: task=' + (task.date||today) + ' today=' + today); return; }
+  if (task.completed || task.notify === false) { console.log('[capLN] → skip: completed/notify=false'); return; }
+  if (typeof task.mins !== 'number') { console.log('[capLN] → skip: mins not a number (' + typeof task.mins + ')'); return; }
 
   const base = new Date(); base.setHours(0, 0, 0, 0);
   const taskAt     = base.getTime() + task.mins * 60 * 1000;
