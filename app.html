@@ -6203,7 +6203,7 @@ function _capNotifId(taskId, offset) {
   return (Math.abs(Number(taskId)) % 200000000) * 10 + offset;
 }
 
-async function _capRequestPermissions() {
+async function _capInit() {
   const ln = _getCapLN();
   console.log('[capLN] plugin available:', !!ln);
   if (!ln) return;
@@ -6211,6 +6211,21 @@ async function _capRequestPermissions() {
     const result = await ln.requestPermissions();
     console.log('[capLN] permission result:', JSON.stringify(result));
   } catch (e) { AppLog.warn('capLN', 'requestPermissions failed', e.message || e); }
+  // Create a high-importance channel so notifications play sound and
+  // show as heads-up banners (pops on screen). Must be done before
+  // any schedule() call; Android ignores channel changes after first use.
+  try {
+    await ln.createChannel({
+      id:          'family-reminders',
+      name:        'תזכורות משפחה',
+      description: 'תזכורות למשימות היומיות',
+      importance:  4,        // HIGH → sound + heads-up banner
+      sound:       'default',
+      vibration:   true,
+      visibility:  1,        // PUBLIC — show on lock screen
+    });
+    console.log('[capLN] channel created');
+  } catch (e) { AppLog.warn('capLN', 'createChannel failed', e.message || e); }
 }
 
 async function _capScheduleTask(task) {
@@ -6231,6 +6246,7 @@ async function _capScheduleTask(task) {
   if (initialAt.getTime() > now) {
     const label = offsetMins === 0 ? t('notif_starting') : tFmt('time_in_min', { n: offsetMins });
     notifs.push({ id: _capNotifId(task.id, 0), title: task.title, body: label,
+                  channelId: 'family-reminders',
                   schedule: { at: initialAt, allowWhileIdle: true } });
   }
   (task.overdueReminderOffsets || [5, 10, 15]).forEach((stageOffset, idx) => {
@@ -6238,6 +6254,7 @@ async function _capScheduleTask(task) {
     if (fireAt.getTime() > now)
       notifs.push({ id: _capNotifId(task.id, idx + 1), title: task.title,
                     body: tFmt('notif_overdue', { n: stageOffset }),
+                    channelId: 'family-reminders',
                     schedule: { at: fireAt, allowWhileIdle: true } });
   });
 
@@ -6287,7 +6304,7 @@ try { checkOverdueReminders(); } catch (e) { console.warn('initial reminders che
 localStorage.setItem(LANG_KEY, 'he');
 AppState.lang = 'he';
 _applyLang();
-_capRequestPermissions().catch(() => {});
+_capInit().catch(() => {});
 _capRescheduleAll().catch(() => {});
 if (activeTasks().length > 0) {
   renderToday();
