@@ -6306,6 +6306,37 @@ async function _capRescheduleAll() {
   console.log('[capLN] rescheduleAll done, processed', count, 'task(s)');
 }
 
+// ─── DataAdapter — local vs. family-cloud ────────────────────────
+// Phase 1: skeleton only. Nothing in the existing app calls this yet.
+//
+// mode:'local'  → today's behaviour (localStorage, unchanged)
+// mode:'family' → Firestore (Phase 3+, not yet implemented)
+//
+// Invariant: if mode is 'local' or familyId is null, the rest of the
+// app behaves exactly as before. DataAdapter is purely additive here.
+
+const _DA_MODE_KEY   = 'family-app-da-mode';
+const _DA_FAMILY_KEY = 'family-app-da-family-id';
+const _DA_USER_KEY   = 'family-app-da-user-id';
+
+const DataAdapter = {
+  mode:     localStorage.getItem(_DA_MODE_KEY)   || 'local',
+  familyId: localStorage.getItem(_DA_FAMILY_KEY) || null,
+  userId:   localStorage.getItem(_DA_USER_KEY)   || null,
+
+  isFamily() { return this.mode === 'family' && !!this.familyId; },
+
+  // Firestore stubs — implemented in Phase 3.
+  // Returning null / no-op keeps all existing callers safe.
+  async readTasks()    { return null; },
+  async writeTasks()   { return; },
+  subscribe(_onChange) { return () => {}; }, // returns unsubscribe fn
+};
+
+console.log('[DA] mode=' + DataAdapter.mode
+          + ' family=' + DataAdapter.familyId
+          + ' user='   + DataAdapter.userId);
+
 // ─── Init ─────────────────────────────────────────────────────────
 // Version banner — verifies WHICH build is actually running on the
 // device. If you delete a card and the console doesn't show
