@@ -6499,6 +6499,89 @@ async function _daLoadTasksFromCloud() {
   }
 }
 
+// ─── Real-time listener — Phase 4-2A (added/modified only) ──────
+// Replaces the one-shot _daLoadTasksFromCloud() at startup.
+// _daLoadTasksFromCloud() is kept as a fallback but not called while
+// the listener is active.  Deletions are intentionally ignored in
+// this phase — soft-delete / tombstone strategy TBD later.
+function _daStartListener() {
+  if (!_db || !DataAdapter.isFamily()) return;
+  if (_rtUnsubscribe) {
+    _rtUnsubscribe();
+    _rtUnsubscribe = null;
+    console.log('[RT] listener stopped');
+  }
+  const familyId = DataAdapter.familyId;
+  console.log('[RT] listener start family=' + familyId);
+  const ref = _db.collection('families').doc(familyId).collection('tasks');
+  _rtUnsubscribe = ref.onSnapshot(
+    snap => {
+      const fromCache = snap.metadata.fromCache;
+      console.log('[RT] snapshot docs=' + snap.size + ' fromCache=' + fromCache);
+
+      const localById = {};
+      for (const t of AppState.tasks) localById[String(t.id)] = t;
+
+      let mergedCount    = 0;
+      let removedIgnored = 0;
+
+      snap.docChanges().forEach(change => {
+        if (change.type === 'removed') { removedIgnored++; return; }
+
+        const d  = change.doc.data();
+        const ct = {
+          id:                     d.taskId || change.doc.id,
+          title:                  d.title  || '',
+          date:                   d.date   || todayDate(),
+          mins:                   typeof d.mins === 'number' ? d.mins : null,
+          completed:              d.completed      || false,
+          completedBy:            d.completedBy    || null,
+          completedAt:            d.completedAt    || null,
+          createdBy:              d.createdBy      || null,
+          assignedTo:             d.assignedTo     || null,
+          assignedToUserId:       d.assignedTo     || null,
+          assignedToName:         d.assignedToName || null,
+          visibleTo:              d.visibleTo              || [],
+          notifyTo:               d.notifyTo               || [],
+          recurrence:             d.recurrence             || { type: 'none' },
+          reminderOffsetMinutes:  d.reminderOffsetMinutes  ?? 10,
+          overdueReminderOffsets: d.overdueReminderOffsets || [5, 10, 15],
+          notify:                 d.notify !== false,
+          updatedAt:              _toMs(d.updatedAt) || _toMs(d.createdAt) || 0,
+        };
+
+        const key   = String(ct.id);
+        const local = localById[key];
+        if (!local) {
+          AppState.tasks.push(ct);
+          localById[key] = ct;
+          mergedCount++;
+        } else {
+          const localMs = _toMs(local.updatedAt) || _toMs(local.createdAt) || 0;
+          const cloudMs = ct.updatedAt;
+          if (cloudMs === 0 && localMs === 0) {
+            console.log('[RT] task', key, '— no updatedAt on either side, keeping local (conservative)');
+          } else if (cloudMs > localMs) {
+            Object.assign(local, ct);
+            mergedCount++;
+          }
+          // localMs >= cloudMs → local is newer or equal, leave untouched
+        }
+      });
+
+      console.log('[RT] added/modified merged count=' + mergedCount);
+      if (removedIgnored > 0) console.log('[RT] removed ignored count=' + removedIgnored);
+
+      if (mergedCount > 0) {
+        saveState();
+        renderToday();
+        _capRescheduleAll().catch(() => {});
+      }
+    },
+    err => console.warn('[RT] listener error', err.message || err)
+  );
+}
+
 // ─── DataAdapter — local vs. family-cloud ────────────────────────
 // Phase 1: skeleton only. Nothing in the existing app calls this yet.
 //
@@ -6559,8 +6642,9 @@ console.log('[DA] mode=' + DataAdapter.mode
 // firebase-app-compat + firebase-firestore-compat loaded in <head>.
 // firebase-auth-compat is loaded lazily in _fbLoadAuth() to keep
 // initial memory pressure low and avoid WebView OOM on startup.
-let _db   = null;
-let _auth = null;
+let _db            = null;
+let _auth          = null;
+let _rtUnsubscribe = null;
 
 function _fbLoadAuth() {
   return new Promise((resolve, reject) => {
@@ -6850,7 +6934,7 @@ async function _daJoinFamily() {
     console.log('[DA] joined family', code, 'userId', userId);
     _renderFamilySheet();
     _loadFamilyMembersCache();
-    _daLoadTasksFromCloud();
+    _daStartListener();
   } catch (e) {
     AppLog.warn('FB', 'joinFamily failed', e.message || e);
     _famShErr('שגיאה בהתחברות לענן — נסה שוב');
@@ -6947,7 +7031,7 @@ async function _loadFamilyMembers() {
 // device. If you delete a card and the console doesn't show
 // "[delete] surgical refresh…", you're on a stale cached HTML and need
 // to hard-reload (or the SW will catch up on next visit).
-console.log('%c[Family App] build: auth-2-link-member-2026-05-13', 'background:#ff5e14;color:#fff;padding:3px 8px;border-radius:6px;font-weight:bold');
+console.log('%c[Family App] build: phase-4-2a-listener-2026-05-13', 'background:#ff5e14;color:#fff;padding:3px 8px;border-radius:6px;font-weight:bold');
 loadState();
 updateDateBadge();
 // Run the reminder check ONCE immediately after state loads so opening
@@ -6961,7 +7045,7 @@ _applyLang();
 _capInit().then(() => _capRescheduleAll()).catch(() => {});
 if (DataAdapter.isFamily()) {
   _loadFamilyMembersCache();
-  _daLoadTasksFromCloud();
+  _daStartListener();
 }
 if (activeTasks().length > 0) {
   renderToday();
