@@ -6431,7 +6431,7 @@ async function _daLoadTasksFromCloud() {
       _db.collection('families').doc(DataAdapter.familyId).collection('tasks').get(),
       new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000)),
     ]);
-    if (snap.empty) { console.log('[DA] loadTasksFromCloud — cloud collection empty'); return; }
+    if (snap.empty) { console.log('[DA] loadTasksFromCloud — cloud collection empty (0 tasks in Firestore)'); return; }
 
     const cloudTasks = [];
     snap.forEach(doc => {
@@ -6489,7 +6489,13 @@ async function _daLoadTasksFromCloud() {
     console.log('[DA] loadTasksFromCloud — cloud:', cloudTasks.length,
       '| local after merge:', AppState.tasks.length, '| changed:', changed);
   } catch (e) {
-    AppLog.warn('FB', 'loadTasksFromCloud failed (continuing from localStorage)', e.message || e);
+    const msg = e.message || String(e);
+    const isOffline = msg.includes('offline') || msg.includes('network') || msg.includes('unavailable');
+    if (isOffline) {
+      console.log('[DA] loadTasksFromCloud skipped — device offline, continuing from localStorage');
+    } else {
+      AppLog.warn('FB', 'loadTasksFromCloud failed (continuing from localStorage):', msg);
+    }
   }
 }
 
@@ -6603,7 +6609,16 @@ function _fbLoadAuth() {
         console.log('[Auth] authUid:', authUid);
         console.log('[Auth] familyId:', DataAdapter.familyId || '(none)');
       })
-      .catch(e => console.warn('[Auth] failed:', e.message || e));
+      .catch(e => {
+        const code = e.code || '';
+        if (code === 'auth/network-request-failed') {
+          console.warn('[Auth] failed: network-request-failed — device offline or Firebase unreachable');
+        } else if (code === 'auth/operation-not-allowed') {
+          console.warn('[Auth] failed: operation-not-allowed — enable Anonymous Auth in Firebase Console → Authentication → Sign-in providers');
+        } else {
+          console.warn('[Auth] failed:', code, e.message || e);
+        }
+      });
   } catch (e) { console.warn('[FB] init failed:', e.message || e); }
 }());
 
@@ -6917,7 +6932,7 @@ async function _loadFamilyMembers() {
 // device. If you delete a card and the console doesn't show
 // "[delete] surgical refresh…", you're on a stale cached HTML and need
 // to hard-reload (or the SW will catch up on next visit).
-console.log('%c[Family App] build: always-editable-time-2026-05-12', 'background:#ff5e14;color:#fff;padding:3px 8px;border-radius:6px;font-weight:bold');
+console.log('%c[Family App] build: auth-dynamic-debug-2026-05-13', 'background:#ff5e14;color:#fff;padding:3px 8px;border-radius:6px;font-weight:bold');
 loadState();
 updateDateBadge();
 // Run the reminder check ONCE immediately after state loads so opening
