@@ -574,7 +574,7 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 /* ── Undo toast ── */
 @keyframes toastIn{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
 @keyframes toastOut{from{opacity:1;transform:translateY(0);}to{opacity:0;transform:translateY(10px);}}
-.undo-toast{position:absolute;bottom:100px;left:50%;transform:translateX(-50%);background:rgba(45,32,24,.86);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-radius:999px;padding:9px 8px 9px 18px;display:inline-flex;align-items:center;gap:10px;z-index:200;box-shadow:0 8px 28px rgba(0,0,0,.22),0 1px 0 rgba(255,255,255,.04) inset;pointer-events:none;opacity:0;max-width:calc(100% - 36px);white-space:nowrap;}
+.undo-toast{position:absolute;bottom:100px;left:18px;right:18px;margin:0 auto;width:fit-content;max-width:calc(100% - 36px);background:rgba(45,32,24,.86);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-radius:999px;padding:9px 8px 9px 18px;display:inline-flex;align-items:center;gap:10px;z-index:200;box-shadow:0 8px 28px rgba(0,0,0,.22),0 1px 0 rgba(255,255,255,.04) inset;pointer-events:none;opacity:0;white-space:nowrap;}
 .undo-toast.show{pointer-events:auto;animation:toastIn .32s cubic-bezier(.34,1.2,.64,1) both;}
 .undo-toast.hide{animation:toastOut .22s ease both;}
 .undo-msg{font-size:13px;font-weight:700;color:rgba(255,255,255,.86);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:.01em;}
