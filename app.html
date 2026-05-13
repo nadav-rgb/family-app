@@ -6574,6 +6574,20 @@ function _fbLoadAuth() {
   });
 }
 
+async function _fbLinkAuthToMember(authUid) {
+  if (!_db || !DataAdapter.isFamily() || !DataAdapter.userId) return;
+  const ref = _db.collection('families').doc(DataAdapter.familyId)
+                 .collection('members').doc(DataAdapter.userId);
+  console.log('[Auth] linking', DataAdapter.userId, '→ authUid', authUid);
+  const snap = await ref.get();
+  const ts = firebase.firestore.FieldValue.serverTimestamp();
+  const hasLinkedAt = snap.exists && snap.data().authLinkedAt != null;
+  const payload = { authUid, legacyUserId: DataAdapter.userId, lastSeenAt: ts };
+  if (!hasLinkedAt) payload.authLinkedAt = ts;
+  await ref.set(payload, { merge: true });
+  console.log('[Auth] member updated —', hasLinkedAt ? 'lastSeenAt refreshed' : 'authUid linked (first time)');
+}
+
 (function _fbInit() {
   console.log('[FB] checking SDK');
   console.log('[FB] firebase exists:', typeof firebase !== 'undefined');
@@ -6608,6 +6622,7 @@ function _fbLoadAuth() {
         console.log('[Auth] localUserId:', DataAdapter.userId);
         console.log('[Auth] authUid:', authUid);
         console.log('[Auth] familyId:', DataAdapter.familyId || '(none)');
+        _fbLinkAuthToMember(authUid).catch(() => {});
       })
       .catch(e => {
         const code = e.code || '';
@@ -6932,7 +6947,7 @@ async function _loadFamilyMembers() {
 // device. If you delete a card and the console doesn't show
 // "[delete] surgical refresh…", you're on a stale cached HTML and need
 // to hard-reload (or the SW will catch up on next visit).
-console.log('%c[Family App] build: auth-dynamic-debug-2026-05-13', 'background:#ff5e14;color:#fff;padding:3px 8px;border-radius:6px;font-weight:bold');
+console.log('%c[Family App] build: auth-2-link-member-2026-05-13', 'background:#ff5e14;color:#fff;padding:3px 8px;border-radius:6px;font-weight:bold');
 loadState();
 updateDateBadge();
 // Run the reminder check ONCE immediately after state loads so opening
