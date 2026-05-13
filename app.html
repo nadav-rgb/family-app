@@ -6182,9 +6182,14 @@ if ('serviceWorker' in navigator) {
 // Schedules OS-level notifications that fire even when the app is closed.
 // Complements the in-app toast path (checkOverdueReminders) — they cover
 // the app-open and app-closed cases respectively.
-const _CapLN = (() => {
-  try { return window.Capacitor?.Plugins?.LocalNotifications || null; } catch (_) { return null; }
-})();
+//
+// Lazy getter instead of a module-level constant so we always read the
+// plugin AFTER the Capacitor bridge has fully initialised (the bridge
+// injects window.Capacitor synchronously, but accessing it too early in
+// some Capacitor versions can still return undefined for the plugin list).
+function _getCapLN() {
+  try { return window?.Capacitor?.Plugins?.LocalNotifications ?? null; } catch (_) { return null; }
+}
 
 function _capNotifId(taskId, offset) {
   // Map task id to a stable 32-bit Android notification id.
@@ -6193,13 +6198,18 @@ function _capNotifId(taskId, offset) {
 }
 
 async function _capRequestPermissions() {
-  if (!_CapLN) return;
-  try { await _CapLN.requestPermissions(); }
-  catch (e) { AppLog.warn('capLN', 'requestPermissions failed', e.message || e); }
+  const ln = _getCapLN();
+  console.log('[capLN] plugin available:', !!ln);
+  if (!ln) return;
+  try {
+    const result = await ln.requestPermissions();
+    console.log('[capLN] permission result:', JSON.stringify(result));
+  } catch (e) { AppLog.warn('capLN', 'requestPermissions failed', e.message || e); }
 }
 
 async function _capScheduleTask(task) {
-  if (!_CapLN) return;
+  const ln = _getCapLN();
+  if (!ln) return;
   const today = todayDate();
   if ((task.date || today) !== today) return;
   if (task.completed || task.notify === false) return;
@@ -6214,33 +6224,45 @@ async function _capScheduleTask(task) {
 
   if (initialAt.getTime() > now) {
     const label = offsetMins === 0 ? t('notif_starting') : tFmt('time_in_min', { n: offsetMins });
-    notifs.push({ id: _capNotifId(task.id, 0), title: task.title, body: label, schedule: { at: initialAt } });
+    notifs.push({ id: _capNotifId(task.id, 0), title: task.title, body: label,
+                  schedule: { at: initialAt, allowWhileIdle: true } });
   }
   (task.overdueReminderOffsets || [5, 10, 15]).forEach((stageOffset, idx) => {
     const fireAt = new Date(taskAt + stageOffset * 60 * 1000);
     if (fireAt.getTime() > now)
-      notifs.push({ id: _capNotifId(task.id, idx + 1), title: task.title, body: tFmt('notif_overdue', { n: stageOffset }), schedule: { at: fireAt } });
+      notifs.push({ id: _capNotifId(task.id, idx + 1), title: task.title,
+                    body: tFmt('notif_overdue', { n: stageOffset }),
+                    schedule: { at: fireAt, allowWhileIdle: true } });
   });
 
-  if (!notifs.length) return;
-  try { await _CapLN.schedule({ notifications: notifs }); }
-  catch (e) { AppLog.warn('capLN', 'schedule failed', e.message || e); }
+  if (!notifs.length) { console.log('[capLN] no future notifications for task', task.id, '(all times past)'); return; }
+  try {
+    await ln.schedule({ notifications: notifs });
+    console.log('[capLN] scheduled', notifs.length, 'notification(s) for task', task.id,
+                notifs.map(n => new Date(n.schedule.at).toLocaleTimeString()));
+  } catch (e) { AppLog.warn('capLN', 'schedule failed', e.message || e); }
 }
 
 async function _capCancelTask(taskId) {
-  if (!_CapLN) return;
-  try { await _CapLN.cancel({ notifications: [0, 1, 2, 3].map(o => ({ id: _capNotifId(taskId, o) })) }); }
+  const ln = _getCapLN();
+  if (!ln) return;
+  try { await ln.cancel({ notifications: [0, 1, 2, 3].map(o => ({ id: _capNotifId(taskId, o) })) }); }
   catch (e) { AppLog.warn('capLN', 'cancel failed', e.message || e); }
 }
 
 async function _capRescheduleAll() {
-  if (!_CapLN) return;
-  try { await _CapLN.removeAllDeliveredNotifications(); } catch (_) {}
+  const ln = _getCapLN();
+  console.log('[capLN] rescheduleAll — plugin available:', !!ln);
+  if (!ln) return;
+  try { await ln.removeAllDeliveredNotifications(); } catch (_) {}
   const today = todayDate();
+  let count = 0;
   for (const task of AppState.tasks) {
     if ((task.date || today) !== today) continue;
     await _capScheduleTask(task);
+    count++;
   }
+  console.log('[capLN] rescheduleAll done, processed', count, 'task(s)');
 }
 
 // ─── Init ─────────────────────────────────────────────────────────
