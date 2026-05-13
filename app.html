@@ -1203,8 +1203,8 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 </style>
 <!-- Firebase SDK (compat — Phase 3) -->
 <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js"></script>
+<!-- firebase-auth-compat loaded lazily in _fbLoadAuth() to reduce initial memory pressure -->
 </head>
 <body>
 
@@ -6550,15 +6550,33 @@ console.log('[DA] mode=' + DataAdapter.mode
           + ' user='   + DataAdapter.userId);
 
 // ─── Firebase / Firestore / Auth (Phase 3-1 + Auth-1) ───────────
-// SDK loaded via CDN compat scripts in <head>.
-// _db is null if offline at startup or SDK failed to load — all
-// callers must guard with `if (_db)` so the app stays functional.
-// Auth-1: Anonymous Auth only — no migration of localUserId yet.
+// firebase-app-compat + firebase-firestore-compat loaded in <head>.
+// firebase-auth-compat is loaded lazily in _fbLoadAuth() to keep
+// initial memory pressure low and avoid WebView OOM on startup.
 let _db   = null;
 let _auth = null;
+
+function _fbLoadAuth() {
+  return new Promise((resolve, reject) => {
+    if (typeof firebase !== 'undefined' && firebase.auth) { resolve(); return; }
+    console.log('[FB] loading auth SDK…');
+    const s = document.createElement('script');
+    s.src = 'https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js';
+    s.onload  = () => { console.log('[FB] auth SDK loaded'); resolve(); };
+    s.onerror = (e) => { console.warn('[FB] auth SDK load failed'); reject(e); };
+    document.head.appendChild(s);
+  });
+}
+
 (function _fbInit() {
+  console.log('[FB] checking SDK');
+  console.log('[FB] firebase exists:', typeof firebase !== 'undefined');
+  if (typeof firebase === 'undefined') {
+    console.warn('[FB] SDK not loaded — Firebase unavailable');
+    return;
+  }
+  console.log('[FB] firestore exists:', typeof firebase.firestore !== 'undefined');
   try {
-    if (typeof firebase === 'undefined') { console.warn('[FB] SDK not loaded'); return; }
     firebase.initializeApp({
       apiKey:            'AIzaSyBEsMvsnPqKKjh_8drdmWOdg1Q8NAhtjoI',
       authDomain:        'family-app-5f8a5.firebaseapp.com',
@@ -6567,21 +6585,25 @@ let _auth = null;
       messagingSenderId: '965593743334',
       appId:             '1:965593743334:web:f5dce57a5e2ee6e1062027',
     });
-    _db   = firebase.firestore();
-    _auth = firebase.auth();
-    console.log('[FB] Firestore + Auth ready');
-    // Auth-1: sign in anonymously so we have a real Firebase UID.
-    // localUserId is preserved; authUid is stored separately.
-    _auth.signInAnonymously()
+    _db = firebase.firestore();
+    console.log('[FB] Firestore ready');
+    // Load Auth SDK lazily after Firestore is up
+    _fbLoadAuth()
+      .then(() => {
+        _auth = firebase.auth();
+        console.log('[FB] auth exists:', typeof _auth !== 'undefined');
+        console.log('[Auth] start — signInAnonymously');
+        return _auth.signInAnonymously();
+      })
       .then(cred => {
         const authUid = cred.user.uid;
         DataAdapter.authUid = authUid;
-        console.log('[Auth] Anonymous sign-in OK',
-          '| localUserId:', DataAdapter.userId,
-          '| authUid:', authUid,
-          '| familyId:', DataAdapter.familyId || '(none)');
+        console.log('[Auth] success');
+        console.log('[Auth] localUserId:', DataAdapter.userId);
+        console.log('[Auth] authUid:', authUid);
+        console.log('[Auth] familyId:', DataAdapter.familyId || '(none)');
       })
-      .catch(e => console.warn('[Auth] signInAnonymously failed:', e.message || e));
+      .catch(e => console.warn('[Auth] failed:', e.message || e));
   } catch (e) { console.warn('[FB] init failed:', e.message || e); }
 }());
 
