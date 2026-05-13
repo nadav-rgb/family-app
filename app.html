@@ -4715,6 +4715,7 @@ document.getElementById('btnOk').addEventListener('click', function() {
   sub.style.color = '#e07c3a';
   sub.textContent = t('dp_perfect');
   setTimeout(() => {
+    console.log('[capLN] btnOk commit: previewTasks=', AppState.previewTasks.length);
     // Commit preview → main tasks
     const newTasks   = AppState.previewTasks.map(t => ({ ...t, completed: false, date: activeDate }));
     const commitMode = _appendToToday ? 'append' : 'replace';
