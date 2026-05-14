@@ -6755,6 +6755,8 @@ const DataAdapter = {
   displayName: localStorage.getItem(_DA_NAME_KEY)   || '',
   authUid:     null, // set by _fbInit after signInAnonymously — Auth-1 only, not yet used for writes
 
+  get myMemberId() { return localStorage.getItem(MY_MEMBER_ID_KEY) || null; },
+
   isFamily() { return this.mode === 'family' && !!this.familyId; },
 
   setFamily(familyId, userId) {
