@@ -4867,6 +4867,7 @@ function activeTasks() {
   const regular = AppState.tasks.filter(t =>
     (t.date || todayDate()) === activeDate &&
     (!t.recurrence || t.recurrence.type === 'none') &&
+    !t.deleted &&
     isVisible(t)
   );
   // Project recurring TEMPLATES into one virtual instance per matching
@@ -4884,6 +4885,7 @@ function activeTasks() {
   const recurring = AppState.tasks
     .filter(t => {
       if (!t.recurrence) return false;
+      if (t.deleted) return false;
       if ((t.date || todayDate()) > activeDate) return false;   // template created after this date
       if (!isVisible(t)) return false;
       if (t.recurrence.type === 'daily') return true;
@@ -5101,7 +5103,14 @@ function renderToday() {
               ttime.classList.remove('empty');
             }
             if (tampm) tampm.textContent = ampm(realT.mins);
+            realT.updatedAt = Date.now(); // align local timestamp before Firestore write
             saveState();
+            console.log('[capLN] reschedule after time edit');
+            _capRescheduleAll().catch(() => {});
+            console.log('[DA] time edit sync start task=' + realT.id);
+            _daWriteTask(realT, false)
+              .then(() => console.log('[DA] time edit sync success task=' + realT.id))
+              .catch(e  => console.warn('[DA] time edit sync failed task=' + realT.id + ' error=' + (e.message || e)));
           });
         });
       }
@@ -5191,11 +5200,15 @@ function undoDelete() {
     if (idx >= 0 && idx <= AppState.previewTasks.length) AppState.previewTasks.splice(idx, 0, task);
     else AppState.previewTasks.push(task);
     dpRender(false);
-  } else if (type === 'full') {
-    if (idx >= 0 && idx <= AppState.tasks.length) AppState.tasks.splice(idx, 0, task);
-    else AppState.tasks.push(task);
+  } else if (type === 'soft') {
+    task.deleted   = false;
+    task.deletedAt = null;
+    task.deletedBy = null;
+    task.updatedAt = Date.now();
     saveState();
     renderToday();
+    _capRescheduleAll().catch(() => {});
+    _daWriteTask(task, false).catch(() => {});
   } else if (type === 'hide') {
     task.visibleTo = state.prevVisibleTo;
     task.notifyTo  = state.prevNotifyTo;
@@ -5309,17 +5322,19 @@ function doDelete(task, screen) {
     // Just refresh the meta pills — no list rebuild → no flicker / vibration.
     _updateDpMeta();
   } else {
-    const isCreator = !task.createdBy || task.createdBy === currentUser;
+    const isCreator = !task.createdBy || task.createdBy === DataAdapter.userId;
     const isAlone   = !task.visibleTo || task.visibleTo.length <= 1;
     if (isCreator || isAlone) {
-      const idx = AppState.tasks.findIndex(t => t.id === task.id);
-      if (idx >= 0) AppState.tasks.splice(idx, 1);
-      state.idx  = idx;
-      state.type = 'full';
+      // Soft delete: keep task in AppState (needed for undo + listener sync)
+      task.deleted   = true;
+      task.deletedAt = Date.now();
+      task.deletedBy = DataAdapter.userId;
+      task.updatedAt = Date.now();
+      state.type = 'soft';
       if (!isAlone && task.visibleTo && task.visibleTo.length > 1)
         AppLog.info('delete-notify', task.id, 'creator deleted shared task');
     } else {
-      state.type         = 'hide';
+      state.type          = 'hide';
       state.prevVisibleTo = [...(task.visibleTo || [])];
       state.prevNotifyTo  = [...(task.notifyTo  || [])];
       task.visibleTo = task.visibleTo.filter(id => id !== currentUser);
@@ -5327,7 +5342,7 @@ function doDelete(task, screen) {
     }
     saveState();
     _capCancelTask(task.id).catch(() => {});
-    if (state.type === 'full')  _daDeleteTask(task.id).catch(() => {});
+    if (state.type === 'soft') _daSoftDeleteTask(task).catch(() => {});
     else if (state.type === 'hide') _daWriteTask(task).catch(() => {});
     // Surgical: card already removed by swipe animation. Just refresh
     // avatars / hero / progress / next-highlight — DO NOT rerender the
@@ -5643,7 +5658,7 @@ function renderCalGrid() {
   const lng = (I18N[AppState.lang] || I18N.en);
   document.getElementById('calMonthLbl').textContent = `${lng.months[calViewMonth]} ${calViewYear}`;
 
-  const taskDates = new Set(AppState.tasks.map(t => t.date).filter(Boolean));
+  const taskDates = new Set(AppState.tasks.filter(t => !t.deleted).map(t => t.date).filter(Boolean));
   // Add dates covered by recurring tasks (daily + weekly multi-day) in the
   // displayed month. Day-by-day iteration — always advances by 1 day —
   // so there's no way to construct an infinite loop. The previous version
@@ -5990,7 +6005,7 @@ function checkOverdueReminders() {
 
   AppState.tasks.forEach(task => {
     const matchDate = (task.date || today) === today;
-    const notNotify = task.completed || task.notify === false;
+    const notNotify = task.completed || task.notify === false || task.deleted;
     console.log(`  [task] id=${task.id} title="${(task.title||'').slice(0,30)}" date=${task.date||today} mins=${task.mins} notify=${task.notify!==false} done=${!!task.completed} sentInit=${!!task.sentInitialReminder} reminderOff=${task.reminderOffsetMinutes ?? '(default 10)'}`);
     if (!matchDate) { console.log('    → skipped: wrong date'); return; }
     if (notNotify)  { console.log('    → skipped: completed or notify=false'); return; }
@@ -6012,7 +6027,12 @@ function checkOverdueReminders() {
     if (!task.sentInitialReminder && inWindow) {
       task.sentInitialReminder = true;
       task.lastReminderSentAt  = now.toISOString();
-      const label = offset === 0 ? t('notif_starting') : tFmt('time_in_min',{n:offset});
+      // Use actual remaining minutes, not stored offset — avoids stale
+      // "בעוד 10 דקות" when the app opens mid-window.
+      let label;
+      if (nowMins >= task.mins)           label = t('notif_starting');
+      else if (task.mins - nowMins <= 1)  label = t('notif_starting');
+      else                                label = tFmt('time_in_min', {n: task.mins - nowMins});
       console.log(`    → FIRING initial: "${task.title}" — ${label}`);
       _fireRealNotification(task.title, label, `task-${task.id}-initial`);
       changed = true;
@@ -6126,7 +6146,7 @@ function _buildScheduledPushList() {
   const today = todayDate();
   AppState.tasks.forEach(task => {
     if ((task.date || today) !== today) return;
-    if (task.completed || task.notify === false) return;
+    if (task.completed || task.notify === false || task.deleted) return;
     if (typeof task.mins !== 'number') return;
 
     // Anchor fire times to TODAY's local midnight + task.mins
@@ -6316,11 +6336,16 @@ async function _capScheduleTask(task) {
   const ln = _getCapLN();
   if (!ln) return;
   const today = todayDate();
-  if ((task.date || today) !== today) return;
-  if (task.completed || task.notify === false) return;
+  if (task.completed || task.notify === false || task.deleted) return;
   if (typeof task.mins !== 'number') return;
 
-  const base = new Date(); base.setHours(0, 0, 0, 0);
+  // Use task.date (not "today") so tasks created today for tomorrow
+  // are scheduled correctly. Skip only past-dated tasks.
+  const taskDate = task.date || today;
+  const [yr, mo, dy] = taskDate.split('-').map(Number);
+  const base = new Date(yr, mo - 1, dy, 0, 0, 0, 0);
+  const todayMidnight = new Date(); todayMidnight.setHours(0, 0, 0, 0);
+  if (base.getTime() < todayMidnight.getTime()) return; // past date — skip
   const taskAt     = base.getTime() + task.mins * 60 * 1000;
   const offsetMins = task.reminderOffsetMinutes ?? 10;
   const initialAt  = new Date(taskAt - offsetMins * 60 * 1000);
@@ -6400,11 +6425,16 @@ async function _capRescheduleAll() {
   const today = todayDate();
   let count = 0;
   for (const task of AppState.tasks) {
-    if ((task.date || today) !== today) continue;
+    if ((task.date || today) < today) continue; // skip past-dated; allow today + future
     await _capScheduleTask(task);
     count++;
   }
   console.log('[capLN] rescheduleAll done, processed', count, 'task(s)');
+  try {
+    const pending = await ln.getPending();
+    console.log('[capLN] pending after reschedule:', (pending?.notifications || []).length,
+      (pending?.notifications || []).map(n => ({ id: n.id, at: n.schedule?.at })));
+  } catch (_) {}
 }
 
 // ─── Firestore timestamp → milliseconds ─────────────────────────
@@ -6499,6 +6529,89 @@ async function _daLoadTasksFromCloud() {
   }
 }
 
+// ─── Real-time listener — Phase 4-2A (added/modified only) ──────
+// Replaces the one-shot _daLoadTasksFromCloud() at startup.
+// _daLoadTasksFromCloud() is kept as a fallback but not called while
+// the listener is active.  Deletions are intentionally ignored in
+// this phase — soft-delete / tombstone strategy TBD later.
+function _daStartListener() {
+  if (!_db || !DataAdapter.isFamily()) return;
+  if (_rtUnsubscribe) {
+    _rtUnsubscribe();
+    _rtUnsubscribe = null;
+    console.log('[RT] listener stopped');
+  }
+  const familyId = DataAdapter.familyId;
+  console.log('[RT] listener start family=' + familyId);
+  const ref = _db.collection('families').doc(familyId).collection('tasks');
+  _rtUnsubscribe = ref.onSnapshot(
+    snap => {
+      const fromCache = snap.metadata.fromCache;
+      console.log('[RT] snapshot docs=' + snap.size + ' fromCache=' + fromCache);
+
+      const localById = {};
+      for (const t of AppState.tasks) localById[String(t.id)] = t;
+
+      let mergedCount    = 0;
+      let removedIgnored = 0;
+
+      snap.docChanges().forEach(change => {
+        if (change.type === 'removed') { removedIgnored++; return; }
+
+        const d  = change.doc.data();
+        const ct = {
+          id:                     d.taskId || change.doc.id,
+          title:                  d.title  || '',
+          date:                   d.date   || todayDate(),
+          mins:                   typeof d.mins === 'number' ? d.mins : null,
+          completed:              d.completed      || false,
+          completedBy:            d.completedBy    || null,
+          completedAt:            d.completedAt    || null,
+          createdBy:              d.createdBy      || null,
+          assignedTo:             d.assignedTo     || null,
+          assignedToUserId:       d.assignedTo     || null,
+          assignedToName:         d.assignedToName || null,
+          visibleTo:              d.visibleTo              || [],
+          notifyTo:               d.notifyTo               || [],
+          recurrence:             d.recurrence             || { type: 'none' },
+          reminderOffsetMinutes:  d.reminderOffsetMinutes  ?? 10,
+          overdueReminderOffsets: d.overdueReminderOffsets || [5, 10, 15],
+          notify:                 d.notify !== false,
+          updatedAt:              _toMs(d.updatedAt) || _toMs(d.createdAt) || 0,
+        };
+
+        const key   = String(ct.id);
+        const local = localById[key];
+        if (!local) {
+          AppState.tasks.push(ct);
+          localById[key] = ct;
+          mergedCount++;
+        } else {
+          const localMs = _toMs(local.updatedAt) || _toMs(local.createdAt) || 0;
+          const cloudMs = ct.updatedAt;
+          if (cloudMs === 0 && localMs === 0) {
+            console.log('[RT] task', key, '— no updatedAt on either side, keeping local (conservative)');
+          } else if (cloudMs > localMs) {
+            Object.assign(local, ct);
+            mergedCount++;
+          }
+          // localMs >= cloudMs → local is newer or equal, leave untouched
+        }
+      });
+
+      console.log('[RT] added/modified merged count=' + mergedCount);
+      if (removedIgnored > 0) console.log('[RT] removed ignored count=' + removedIgnored);
+
+      if (mergedCount > 0) {
+        saveState();
+        renderToday();
+        _capRescheduleAll().catch(() => {});
+      }
+    },
+    err => console.warn('[RT] listener error', err.message || err)
+  );
+}
+
 // ─── DataAdapter — local vs. family-cloud ────────────────────────
 // Phase 1: skeleton only. Nothing in the existing app calls this yet.
 //
@@ -6559,8 +6672,9 @@ console.log('[DA] mode=' + DataAdapter.mode
 // firebase-app-compat + firebase-firestore-compat loaded in <head>.
 // firebase-auth-compat is loaded lazily in _fbLoadAuth() to keep
 // initial memory pressure low and avoid WebView OOM on startup.
-let _db   = null;
-let _auth = null;
+let _db            = null;
+let _auth          = null;
+let _rtUnsubscribe = null;
 
 function _fbLoadAuth() {
   return new Promise((resolve, reject) => {
@@ -6572,6 +6686,20 @@ function _fbLoadAuth() {
     s.onerror = (e) => { console.warn('[FB] auth SDK load failed'); reject(e); };
     document.head.appendChild(s);
   });
+}
+
+async function _fbLinkAuthToMember(authUid) {
+  if (!_db || !DataAdapter.isFamily() || !DataAdapter.userId) return;
+  const ref = _db.collection('families').doc(DataAdapter.familyId)
+                 .collection('members').doc(DataAdapter.userId);
+  console.log('[Auth] linking', DataAdapter.userId, '→ authUid', authUid);
+  const snap = await ref.get();
+  const ts = firebase.firestore.FieldValue.serverTimestamp();
+  const hasLinkedAt = snap.exists && snap.data().authLinkedAt != null;
+  const payload = { authUid, legacyUserId: DataAdapter.userId, lastSeenAt: ts };
+  if (!hasLinkedAt) payload.authLinkedAt = ts;
+  await ref.set(payload, { merge: true });
+  console.log('[Auth] member updated —', hasLinkedAt ? 'lastSeenAt refreshed' : 'authUid linked (first time)');
 }
 
 (function _fbInit() {
@@ -6608,6 +6736,7 @@ function _fbLoadAuth() {
         console.log('[Auth] localUserId:', DataAdapter.userId);
         console.log('[Auth] authUid:', authUid);
         console.log('[Auth] familyId:', DataAdapter.familyId || '(none)');
+        _fbLinkAuthToMember(authUid).catch(() => {});
       })
       .catch(e => {
         const code = e.code || '';
@@ -6657,13 +6786,19 @@ async function _daWriteTask(task, isNew) {
   } catch (e) { AppLog.warn('FB', 'writeTask failed', e.message || e); }
 }
 
-async function _daDeleteTask(taskId) {
+async function _daSoftDeleteTask(task) {
   if (!_db || !DataAdapter.isFamily()) return;
+  console.log('[DA] soft delete start task=' + task.id);
   try {
-    await _db.collection('families').doc(DataAdapter.familyId)
-             .collection('tasks').doc(String(taskId)).delete();
-    console.log('[FB] task deleted:', taskId);
-  } catch (e) { AppLog.warn('FB', 'deleteTask failed', e.message || e); }
+    const ts  = firebase.firestore.FieldValue.serverTimestamp();
+    const ref = _db.collection('families').doc(DataAdapter.familyId)
+                   .collection('tasks').doc(String(task.id));
+    await ref.set({ deleted: true, deletedAt: ts, deletedBy: DataAdapter.userId, updatedAt: ts },
+                  { merge: true });
+    console.log('[DA] soft delete success task=' + task.id);
+  } catch (e) {
+    console.warn('[DA] soft delete failed task=' + task.id + ' error=' + (e.message || e));
+  }
 }
 
 // ─── Family members cache (Phase 3-5) ────────────────────────────
@@ -6835,7 +6970,7 @@ async function _daJoinFamily() {
     console.log('[DA] joined family', code, 'userId', userId);
     _renderFamilySheet();
     _loadFamilyMembersCache();
-    _daLoadTasksFromCloud();
+    _daStartListener();
   } catch (e) {
     AppLog.warn('FB', 'joinFamily failed', e.message || e);
     _famShErr('שגיאה בהתחברות לענן — נסה שוב');
@@ -6932,7 +7067,7 @@ async function _loadFamilyMembers() {
 // device. If you delete a card and the console doesn't show
 // "[delete] surgical refresh…", you're on a stale cached HTML and need
 // to hard-reload (or the SW will catch up on next visit).
-console.log('%c[Family App] build: auth-dynamic-debug-2026-05-13', 'background:#ff5e14;color:#fff;padding:3px 8px;border-radius:6px;font-weight:bold');
+console.log('%c[Family App] build: soft-delete-2026-05-14', 'background:#ff5e14;color:#fff;padding:3px 8px;border-radius:6px;font-weight:bold');
 loadState();
 updateDateBadge();
 // Run the reminder check ONCE immediately after state loads so opening
@@ -6946,7 +7081,7 @@ _applyLang();
 _capInit().then(() => _capRescheduleAll()).catch(() => {});
 if (DataAdapter.isFamily()) {
   _loadFamilyMembersCache();
-  _daLoadTasksFromCloud();
+  _daStartListener();
 }
 if (activeTasks().length > 0) {
   renderToday();

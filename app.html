@@ -5322,7 +5322,7 @@ function doDelete(task, screen) {
     // Just refresh the meta pills — no list rebuild → no flicker / vibration.
     _updateDpMeta();
   } else {
-    const isCreator = !task.createdBy || task.createdBy === currentUser;
+    const isCreator = !task.createdBy || task.createdBy === DataAdapter.userId;
     const isAlone   = !task.visibleTo || task.visibleTo.length <= 1;
     if (isCreator || isAlone) {
       // Soft delete: keep task in AppState (needed for undo + listener sync)
