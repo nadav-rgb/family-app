@@ -6518,6 +6518,10 @@ async function _capRescheduleAll() {
   const today = todayDate();
   let count = 0;
   for (const task of AppState.tasks) {
+    if (task.deleted || task.completed) {
+      _capCancelTask(task.id).catch(() => {});
+      continue;
+    }
     if ((task.date || today) < today) continue; // skip past-dated; allow today + future
     await _capScheduleTask(task);
     count++;
