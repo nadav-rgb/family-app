@@ -629,7 +629,10 @@
     const date = now.toISOString().split('T')[0];  // YYYY-MM-DD
     const time = now.toTimeString().slice(0, 5);   // HH:MM
 
-    const res = await fetch('/api/parse-tasks', {
+    const base = (typeof window !== 'undefined' && window.Capacitor)
+      ? 'https://family-app-roan.vercel.app'
+      : '';
+    const res = await fetch(base + '/api/parse-tasks', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({ transcript: text, lang, date, time }),
