@@ -6048,6 +6048,8 @@ document.getElementById('notifClose').addEventListener('click', hideNotifToast);
 
 // ─── Overdue reminder logic ────────────────────────────────────────
 function checkOverdueReminders() {
+  // Capacitor handles scheduling natively — skip in-app polling on Android.
+  if (_getCapLN()) return;
   const now     = new Date();
   const nowMins = now.getHours() * 60 + now.getMinutes();
   let changed   = false;
@@ -6114,7 +6116,8 @@ function checkOverdueReminders() {
 // Reminders: tick every 30s (instead of 60s) so a reminder can't be
 // delayed by up to a full minute. Also run once immediately so opening
 // the app inside a firing window doesn't miss it.
-setInterval(checkOverdueReminders, 30 * 1000);
+// Register polling only when Capacitor is not available (browser/PWA fallback).
+if (!_getCapLN()) setInterval(checkOverdueReminders, 30 * 1000);
 
 // ─── Server-side Web Push: subscription + per-task scheduling ──────
 // When the user grants notification permission, we subscribe to push
@@ -7121,13 +7124,13 @@ async function _loadFamilyMembers() {
 // device. If you delete a card and the console doesn't show
 // "[delete] surgical refresh…", you're on a stale cached HTML and need
 // to hard-reload (or the SW will catch up on next visit).
-console.log('%c[Family App] build: soft-delete-2026-05-14', 'background:#ff5e14;color:#fff;padding:3px 8px;border-radius:6px;font-weight:bold');
+console.log('%c[Family App] build: notif-polling-disabled-2026-05-14', 'background:#ff5e14;color:#fff;padding:3px 8px;border-radius:6px;font-weight:bold');
 loadState();
 updateDateBadge();
 // Run the reminder check ONCE immediately after state loads so opening
 // the app inside an active reminder window fires right away (instead of
 // waiting up to 30s for the first interval tick).
-try { checkOverdueReminders(); } catch (e) { console.warn('initial reminders check failed', e); }
+if (!_getCapLN()) try { checkOverdueReminders(); } catch (e) { console.warn('initial reminders check failed', e); }
 
 localStorage.setItem(LANG_KEY, 'he');
 AppState.lang = 'he';
