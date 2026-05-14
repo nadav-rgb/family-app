@@ -4661,8 +4661,9 @@ function openTimeStrip(taskId, cardEl) {
 
   phone.appendChild(strip);
 
-  // Scroll selected slot to center
-  const selIdx = task.mins / 15;
+  // Scroll selected slot to center; default to 08:00 when no time is set
+  const scrollMins = task.mins != null ? task.mins : 480;
+  const selIdx = scrollMins / 15;
   strip.scrollTop = selIdx * 40 - (stripH / 2 - 20);
 
   dpActiveStrip = {el:strip, taskId};
