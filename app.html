@@ -6974,6 +6974,38 @@ async function _loadFamilyMembersCache() {
   }
 }
 
+// ─── Bootstrap family members (Identity System) ──────────────────
+// Runs once per device. Creates the 4 fixed member documents if they
+// don't exist yet. Additive only — never overwrites existing documents.
+const _FAMILY_MEMBERS_SEED = [
+  { memberId: 'member_dad',    name: 'אבא',      role: 'parent', avatar: { type: 'emoji', value: '👨' } },
+  { memberId: 'member_mom',    name: 'אמא',      role: 'parent', avatar: { type: 'emoji', value: '👩' } },
+  { memberId: 'member_laali',  name: 'לאלי',     role: 'child',  avatar: { type: 'emoji', value: '👧' } },
+  { memberId: 'member_aharon', name: 'אהרן צבי', role: 'child',  avatar: { type: 'emoji', value: '👦' } },
+];
+
+async function _bootstrapFamilyMembers() {
+  if (!_db || !DataAdapter.isFamily()) return;
+  try {
+    const ref = _db.collection('families').doc(DataAdapter.familyId)
+                   .collection('members').doc('member_dad');
+    const existing = await ref.get();
+    if (existing.exists && existing.data().memberId) {
+      console.log('[Bootstrap] members already seeded — skipping');
+      return;
+    }
+    const batch = _db.batch();
+    const colRef = _db.collection('families').doc(DataAdapter.familyId).collection('members');
+    for (const m of _FAMILY_MEMBERS_SEED) {
+      batch.set(colRef.doc(m.memberId), m);
+    }
+    await batch.commit();
+    console.log('[Bootstrap] seeded 4 family members');
+  } catch (e) {
+    AppLog.warn('Bootstrap', 'bootstrapFamilyMembers failed', e.message || e);
+  }
+}
+
 // ─── Family sheet (Phase 2) ───────────────────────────────────────
 function _genCode(len) {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -7238,6 +7270,7 @@ _capInit().then(() => _capRescheduleAll()).catch(() => {});
 if (DataAdapter.isFamily()) {
   _loadFamilyMembersCache();
   _daStartListener();
+  _bootstrapFamilyMembers();
 }
 if (activeTasks().length > 0) {
   renderToday();
