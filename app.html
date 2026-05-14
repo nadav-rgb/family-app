@@ -2142,7 +2142,6 @@ function avImg(id) {
 }
 function updateHeroPortrait(id) {
   const img = document.getElementById('heroPortraitImg');
-  console.log('[diag-portrait] id=', id, '| avSrc(id)=', avSrc(id), '| avSrc(currentUser)=', avSrc(currentUser), '| currentUser=', currentUser);
   if (img) img.src = avSrc(id || currentUser);
 }
 function taskAvImg(task) {
@@ -5009,7 +5008,7 @@ function renderToday() {
       document.getElementById('tHeyebrow').textContent = isHe ? 'הייתה אמורה להתחיל ב-' + m2t(nextTask.mins) : 'Was due at ' + m2t(nextTask.mins);
       document.querySelector('.t-htime').textContent = '';
       document.querySelector('.t-htask').textContent = nextTask.title;
-      updateHeroPortrait(nextTask.assignedTo);
+      updateHeroPortrait(nextTask.assignedTo || PERSON_TO_ID[nextTask.person]);
       document.querySelector('.t-hname').textContent = personLabel(nextTask.person);
       document.querySelector('.t-hpill').textContent = isHe ? '⚠ טרם הושלמה' : '⚠ Overdue';
     } else {
@@ -5019,7 +5018,7 @@ function renderToday() {
       const pill = diff <= 0 ? t('time_now') : diff < 60 ? tFmt('time_in_min',{n:diff}) : tFmt('time_in_hr',{n:Math.round(diff/60)});
       document.querySelector('.t-htime').textContent = m2t(nextTask.mins);
       document.querySelector('.t-htask').textContent = nextTask.title;
-      updateHeroPortrait(nextTask.assignedTo);
+      updateHeroPortrait(nextTask.assignedTo || PERSON_TO_ID[nextTask.person]);
       document.querySelector('.t-hname').textContent = personLabel(nextTask.person);
       document.querySelector('.t-hpill').textContent = pill;
     }
@@ -5323,7 +5322,7 @@ function _refreshTodayMetadata() {
       document.getElementById('tHeyebrow').textContent = isHe ? 'הייתה אמורה להתחיל ב-' + m2t(nextTask.mins) : 'Was due at ' + m2t(nextTask.mins);
       if (htime) htime.textContent = '';
       if (htask) htask.textContent = nextTask.title;
-      updateHeroPortrait(nextTask.assignedTo);
+      updateHeroPortrait(nextTask.assignedTo || PERSON_TO_ID[nextTask.person]);
       if (hname) hname.textContent = personLabel(nextTask.person);
       if (hpill) hpill.textContent = isHe ? '⚠ טרם הושלמה' : '⚠ Overdue';
     } else {
@@ -5335,7 +5334,7 @@ function _refreshTodayMetadata() {
                  :              tFmt('time_in_hr',  { n: Math.round(diff/60) });
       if (htime) htime.textContent = m2t(nextTask.mins);
       if (htask) htask.textContent = nextTask.title;
-      updateHeroPortrait(nextTask.assignedTo);
+      updateHeroPortrait(nextTask.assignedTo || PERSON_TO_ID[nextTask.person]);
       if (hname) hname.textContent = personLabel(nextTask.person);
       if (hpill) hpill.textContent = pill;
     }
@@ -5600,7 +5599,7 @@ document.getElementById('tTasks').addEventListener('click', e => {
         heroCard.classList.remove('refreshing'); void heroCard.offsetWidth; heroCard.classList.add('refreshing');
         document.querySelector('.t-htime').textContent = m2t(nextTask.mins);
         document.querySelector('.t-htask').textContent = nextTask.title;
-        updateHeroPortrait(nextTask.assignedTo);
+        updateHeroPortrait(nextTask.assignedTo || PERSON_TO_ID[nextTask.person]);
         document.querySelector('.t-hname').textContent = personLabel(nextTask.person);
         document.querySelector('.t-hpill').textContent = diff<=0?t('time_now'):diff<60?tFmt('time_in_min',{n:diff}):tFmt('time_in_hr',{n:Math.round(diff/60)});
       }
@@ -5680,7 +5679,7 @@ document.getElementById('tTasks').addEventListener('click', e => {
       heroCard.classList.remove('refreshing'); void heroCard.offsetWidth; heroCard.classList.add('refreshing');
       document.querySelector('.t-htime').textContent  = m2t(nextTask.mins);
       document.querySelector('.t-htask').textContent  = nextTask.title;
-      updateHeroPortrait(nextTask.assignedTo);
+      updateHeroPortrait(nextTask.assignedTo || PERSON_TO_ID[nextTask.person]);
       document.querySelector('.t-hname').textContent  = personLabel(nextTask.person);
       document.querySelector('.t-hpill').textContent  = diff<=0?t('time_now'):diff<60?tFmt('time_in_min',{n:diff}):tFmt('time_in_hr',{n:Math.round(diff/60)});
     } else {
