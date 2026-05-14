@@ -3636,23 +3636,17 @@ function renderAssignedSection() {
   const cont = document.getElementById('shareAssignedRows');
   cont.innerHTML = '';
 
-  // In family mode with cached cloud members, show them instead of hardcoded FAMILY
-  if (DataAdapter.isFamily() && _familyMembersCache.length > 0) {
-    _familyMembersCache.forEach(m => {
+  // Always use IDENTITY seed in family mode — no dependency on async cache
+  if (DataAdapter.isFamily()) {
+    _FAMILY_MEMBERS_SEED.forEach(m => {
       const row      = document.createElement('div');
       row.className  = 'share-member';
-      const dispName = m.name || m.displayName || m.memberId || '?';
-      const mId      = m.memberId || m.userId;
-      const sel      = task.assignedToMemberId === mId || task.assignedToUserId === mId;
-      const emHtml   = m.avatar?.type === 'emoji'
-        ? `<span class="share-em" style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#ffd0a8,#f0a870);display:inline-flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">${m.avatar.value}</span>`
-        : `<span class="share-em" style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#ffd0a8,#f0a870);display:inline-flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:#c06030;flex-shrink:0;">${dispName[0].toUpperCase()}</span>`;
-      row.innerHTML = `${emHtml}
-        <span class="share-lbl" style="flex:1;">${dispName}</span>
-        <span class="share-radio${sel ? ' on' : ''}"></span>`;
+      const sel      = task.assignedToMemberId === m.memberId;
+      const emHtml   = `<span class="share-em" style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#ffd0a8,#f0a870);display:inline-flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">${m.avatar.value}</span>`;
+      row.innerHTML  = `${emHtml}<span class="share-lbl" style="flex:1;">${m.name}</span><span class="share-radio${sel ? ' on' : ''}"></span>`;
       row.addEventListener('click', () => {
-        task.assignedToMemberId = mId;
-        task.assignedToName     = dispName;
+        task.assignedToMemberId = m.memberId;
+        task.assignedToName     = m.name;
         renderAssignedSection();
         renderShareRows();
       });
@@ -3661,7 +3655,7 @@ function renderAssignedSection() {
     return;
   }
 
-  // Fallback: hardcoded family list
+  // Fallback for local mode only
   FAMILY.forEach(f => {
     const row = document.createElement('div');
     row.className = 'share-member';
@@ -3803,15 +3797,13 @@ function renderRepeatSection() {
 function renderShareRows() {
   const task       = shareTask;
   const notifyOff  = task.notify === false;
-  const useDynamic = DataAdapter.isFamily() && _familyMembersCache.length > 0;
-
-  // Build a unified member list: dynamic (real) or static (fallback)
-  const members = useDynamic
-    ? _familyMembersCache.map(m => ({
-        id:    m.memberId || m.userId,
-        label: m.name || m.displayName || m.memberId || m.userId || '?',
-        emoji: m.avatar?.type === 'emoji' ? m.avatar.value : null,
-        ltr:   (m.name || m.displayName || m.memberId || m.userId || '?')[0].toUpperCase(),
+  // Always use IDENTITY seed in family mode — no dependency on async cache
+  const members = DataAdapter.isFamily()
+    ? _FAMILY_MEMBERS_SEED.map(m => ({
+        id:    m.memberId,
+        label: m.name,
+        emoji: m.avatar.value,
+        ltr:   null,
       }))
     : FAMILY.map(f => ({
         id:    f.id,
