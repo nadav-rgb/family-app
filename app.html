@@ -2302,11 +2302,14 @@ function setLang(lang) {
 
 // Convert a HebrewParser result → app task shape
 function parsedToTask(p, idx) {
-  const assignedTo = p.assignedTo || currentUser;
-  const person     = ID_TO_PERSON[assignedTo] || 'Dad';
-  const dateStr    = p.date && p.date.date
+  const assignedTo   = p.assignedTo || currentUser;
+  const person       = ID_TO_PERSON[assignedTo] || 'Dad';
+  const dateStr      = p.date && p.date.date
     ? dateToYMD(p.date.date)
     : todayDate();
+  const defaultVisibleTo = (_familyMembersCache.length > 0)
+    ? _familyMembersCache.map(m => m.userId)
+    : ALL_MEMBER_IDS;
   return {
     id:                    DataAdapter.isFamily() ? _genCode(16) : Date.now() + idx,
     title:                 p.title,
@@ -2316,7 +2319,7 @@ function parsedToTask(p, idx) {
     mins:                  p.mins,
     completed:             false,
     notify:                true,
-    visibleTo:             ALL_MEMBER_IDS,
+    visibleTo:             defaultVisibleTo,
     notifyTo:              [assignedTo],
     reminderOffsetMinutes: 10,
     overdueReminderOffsets:[5, 10, 15],
@@ -2346,6 +2349,9 @@ function aiParsedToTask(t, idx) {
     mins = h * 60 + m;
   }
 
+  const defaultVisibleTo = (_familyMembersCache.length > 0)
+    ? _familyMembersCache.map(m => m.userId)
+    : ALL_MEMBER_IDS;
   return {
     id:                    DataAdapter.isFamily() ? _genCode(16) : Date.now() + idx,
     title:                 t.title,
@@ -2355,7 +2361,7 @@ function aiParsedToTask(t, idx) {
     mins,
     completed:             false,
     notify:                true,
-    visibleTo:             ALL_MEMBER_IDS,
+    visibleTo:             defaultVisibleTo,
     notifyTo:              [assignedTo],
     reminderOffsetMinutes: 10,
     overdueReminderOffsets:[5, 10, 15],
@@ -3769,40 +3775,58 @@ function renderRepeatSection() {
 }
 
 function renderShareRows() {
-  const task = shareTask;
-  const notifyOff = task.notify === false;
+  const task       = shareTask;
+  const notifyOff  = task.notify === false;
+  const useDynamic = DataAdapter.isFamily() && _familyMembersCache.length > 0;
+
+  // Build a unified member list: dynamic (real) or static (fallback)
+  const members = useDynamic
+    ? _familyMembersCache.map(m => ({
+        id:    m.userId,
+        label: m.displayName || m.userId,
+        ltr:   (m.displayName || m.userId)[0].toUpperCase(),
+      }))
+    : FAMILY.map(f => ({
+        id:    f.id,
+        label: t('family_' + f.id),
+        ltr:   null,  // use avImg instead
+      }));
 
   ['Vis', 'Not'].forEach(which => {
     const cont = document.getElementById(which === 'Vis' ? 'shareVisRows' : 'shareNotRows');
     cont.innerHTML = '';
-    FAMILY.forEach(f => {
-      const inVis = task.visibleTo.includes(f.id);
-      const inNot = task.notifyTo.includes(f.id);
+    members.forEach(m => {
+      const inVis = task.visibleTo.includes(m.id);
+      const inNot = task.notifyTo.includes(m.id);
       const row   = document.createElement('div');
       row.className  = 'share-member';
-      row.dataset.id = f.id;
+      row.dataset.id = m.id;
+
+      const emHtml = m.ltr !== null
+        ? `<span class="share-em" style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#ffd0a8,#f0a870);display:inline-flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:#c06030;flex-shrink:0;">${m.ltr}</span>`
+        : `<span class="share-em">${avImg(m.id)}</span>`;
 
       if (which === 'Vis') {
-        row.innerHTML = `<span class="share-em">${avImg(f.id)}</span><span class="share-lbl">${t('family_' + f.id)}</span><span class="share-cb${inVis?' on':''}"></span>`;
+        row.innerHTML = `${emHtml}<span class="share-lbl">${m.label}</span><span class="share-cb${inVis?' on':''}"></span>`;
         row.addEventListener('click', () => {
-          if (task.visibleTo.includes(f.id)) {
-            task.visibleTo = task.visibleTo.filter(id => id !== f.id);
-            task.notifyTo  = task.notifyTo.filter(id => id !== f.id);
+          if (task.visibleTo.includes(m.id)) {
+            task.visibleTo = task.visibleTo.filter(id => id !== m.id);
+            task.notifyTo  = task.notifyTo.filter(id => id !== m.id);
           } else {
-            task.visibleTo.push(f.id);
+            task.visibleTo.push(m.id);
           }
           renderShareRows();
         });
       } else {
         const disabled = !inVis || notifyOff;
-        row.innerHTML = `<span class="share-em">${avImg(f.id)}</span><span class="share-lbl">${t('family_' + f.id)}</span><span class="share-ntog${!inNot?' off':''}${disabled?' dim':''}">${inNot?'🔔':'🔕'}</span>`;
+        row.innerHTML = `${emHtml}<span class="share-lbl">${m.label}</span><span class="share-ntog${!inNot?' off':''}${disabled?' dim':''}">${inNot?'🔔':'🔕'}</span>`;
         if (!disabled) {
           row.querySelector('.share-ntog').addEventListener('click', e => {
             e.stopPropagation();
-            if (task.notifyTo.includes(f.id)) {
-              task.notifyTo = task.notifyTo.filter(id => id !== f.id);
+            if (task.notifyTo.includes(m.id)) {
+              task.notifyTo = task.notifyTo.filter(id => id !== m.id);
             } else {
-              task.notifyTo.push(f.id);
+              task.notifyTo.push(m.id);
             }
             renderShareRows();
           });
@@ -4874,7 +4898,14 @@ document.getElementById('btnOk').addEventListener('click', function() {
 function activeTasks() {
   const dt  = new Date(activeDate + 'T00:00:00');
   const dow = dt.getDay();
-  const isVisible = t => t.createdBy === currentUser || (t.visibleTo && t.visibleTo.includes(currentUser));
+  const myDynId   = DataAdapter.userId;
+  const isVisible = t =>
+    (myDynId && t.createdBy === myDynId)
+    || t.createdBy === currentUser
+    || (t.visibleTo && (
+         (myDynId && t.visibleTo.includes(myDynId))
+      || t.visibleTo.includes(currentUser)
+    ));
   const regular = AppState.tasks.filter(t =>
     (t.date || todayDate()) === activeDate &&
     (!t.recurrence || t.recurrence.type === 'none') &&
