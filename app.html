@@ -787,6 +787,9 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
       when the browser permission is still 'default' and the user has
       tasks with notify=true. Self-dismissing on Enable or "Not now". */
 .notif-perm-banner{display:none;align-items:center;gap:10px;margin:0 20px 12px;padding:10px 14px;background:#fff;border:1.5px solid rgba(255,112,51,.18);border-radius:14px;box-shadow:0 4px 18px rgba(100,60,20,.08);animation:notifIn .32s cubic-bezier(.34,1.2,.64,1) both;}
+#otherDayBanner{margin:0 20px 14px;padding:11px 16px;background:linear-gradient(135deg,#fff8f0,#ffeedd);border-radius:16px;border:1.5px solid rgba(224,124,58,.22);text-align:center;animation:fadeUp .28s ease both;}
+#otherDayBanner .odb-main{font-family:'Heebo',sans-serif;font-size:13.5px;font-weight:700;color:#c8622a;}
+#otherDayBanner .odb-today{font-family:'Heebo',sans-serif;font-size:11px;font-weight:500;color:#a08070;margin-top:3px;}
 .notif-perm-banner.on{display:flex;}
 .notif-perm-banner.hide{animation:notifOut .22s ease both;}
 .npb-text{flex:1;min-width:0;font-size:12.5px;font-weight:700;color:#2d2018;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -1708,6 +1711,7 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
       <button class="npb-enable"  id="npbEnable">Enable</button>
       <button class="npb-dismiss" id="npbDismiss">Not now</button>
     </div>
+    <div id="otherDayBanner" style="display:none"></div>
     <div class="t-tasks" id="tTasks"></div>
   </div>
 
@@ -4928,9 +4932,29 @@ function updateProgress() {
   document.querySelector('.t-pcnt').textContent = label;
 }
 
+function updateOtherDayBanner() {
+  const banner = document.getElementById('otherDayBanner');
+  if (!banner) return;
+  const today = todayDate();
+  if (activeDate === today) { banner.style.display = 'none'; return; }
+  const lng   = (I18N[AppState.lang] || I18N.he);
+  const isHe  = AppState.lang === 'he';
+  const ad    = new Date(activeDate + 'T00:00:00');
+  const adDay = lng.days[ad.getDay()];
+  const adStr = `${String(ad.getDate()).padStart(2,'0')}.${String(ad.getMonth()+1).padStart(2,'0')}.${ad.getFullYear()}`;
+  const td    = new Date(today + 'T00:00:00');
+  const tdDay = lng.days[td.getDay()];
+  const tdStr = `${String(td.getDate()).padStart(2,'0')}.${String(td.getMonth()+1).padStart(2,'0')}.${td.getFullYear()}`;
+  const mainText = isHe ? `📅 משימות ליום ${adDay}, ${adStr}` : `📅 Tasks for ${adDay}, ${adStr}`;
+  const subText  = isHe ? `היום: יום ${tdDay}, ${tdStr}`       : `Today: ${tdDay}, ${tdStr}`;
+  banner.innerHTML = `<div class="odb-main">${mainText}</div><div class="odb-today">${subText}</div>`;
+  banner.style.display = 'block';
+}
+
 function renderToday() {
   updateTodayTitle();
   updateDateBadge();
+  updateOtherDayBanner();
   const tasks     = activeTasks();
   const container = document.getElementById('tTasks');
   container.innerHTML = '';
