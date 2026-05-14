@@ -4867,6 +4867,7 @@ function activeTasks() {
   const regular = AppState.tasks.filter(t =>
     (t.date || todayDate()) === activeDate &&
     (!t.recurrence || t.recurrence.type === 'none') &&
+    !t.deleted &&
     isVisible(t)
   );
   // Project recurring TEMPLATES into one virtual instance per matching
@@ -4884,6 +4885,7 @@ function activeTasks() {
   const recurring = AppState.tasks
     .filter(t => {
       if (!t.recurrence) return false;
+      if (t.deleted) return false;
       if ((t.date || todayDate()) > activeDate) return false;   // template created after this date
       if (!isVisible(t)) return false;
       if (t.recurrence.type === 'daily') return true;
@@ -5198,11 +5200,15 @@ function undoDelete() {
     if (idx >= 0 && idx <= AppState.previewTasks.length) AppState.previewTasks.splice(idx, 0, task);
     else AppState.previewTasks.push(task);
     dpRender(false);
-  } else if (type === 'full') {
-    if (idx >= 0 && idx <= AppState.tasks.length) AppState.tasks.splice(idx, 0, task);
-    else AppState.tasks.push(task);
+  } else if (type === 'soft') {
+    task.deleted   = false;
+    task.deletedAt = null;
+    task.deletedBy = null;
+    task.updatedAt = Date.now();
     saveState();
     renderToday();
+    _capRescheduleAll().catch(() => {});
+    _daWriteTask(task, false).catch(() => {});
   } else if (type === 'hide') {
     task.visibleTo = state.prevVisibleTo;
     task.notifyTo  = state.prevNotifyTo;
@@ -5319,14 +5325,16 @@ function doDelete(task, screen) {
     const isCreator = !task.createdBy || task.createdBy === currentUser;
     const isAlone   = !task.visibleTo || task.visibleTo.length <= 1;
     if (isCreator || isAlone) {
-      const idx = AppState.tasks.findIndex(t => t.id === task.id);
-      if (idx >= 0) AppState.tasks.splice(idx, 1);
-      state.idx  = idx;
-      state.type = 'full';
+      // Soft delete: keep task in AppState (needed for undo + listener sync)
+      task.deleted   = true;
+      task.deletedAt = Date.now();
+      task.deletedBy = DataAdapter.userId;
+      task.updatedAt = Date.now();
+      state.type = 'soft';
       if (!isAlone && task.visibleTo && task.visibleTo.length > 1)
         AppLog.info('delete-notify', task.id, 'creator deleted shared task');
     } else {
-      state.type         = 'hide';
+      state.type          = 'hide';
       state.prevVisibleTo = [...(task.visibleTo || [])];
       state.prevNotifyTo  = [...(task.notifyTo  || [])];
       task.visibleTo = task.visibleTo.filter(id => id !== currentUser);
@@ -5334,7 +5342,7 @@ function doDelete(task, screen) {
     }
     saveState();
     _capCancelTask(task.id).catch(() => {});
-    if (state.type === 'full')  _daDeleteTask(task.id).catch(() => {});
+    if (state.type === 'soft') _daSoftDeleteTask(task).catch(() => {});
     else if (state.type === 'hide') _daWriteTask(task).catch(() => {});
     // Surgical: card already removed by swipe animation. Just refresh
     // avatars / hero / progress / next-highlight — DO NOT rerender the
@@ -5650,7 +5658,7 @@ function renderCalGrid() {
   const lng = (I18N[AppState.lang] || I18N.en);
   document.getElementById('calMonthLbl').textContent = `${lng.months[calViewMonth]} ${calViewYear}`;
 
-  const taskDates = new Set(AppState.tasks.map(t => t.date).filter(Boolean));
+  const taskDates = new Set(AppState.tasks.filter(t => !t.deleted).map(t => t.date).filter(Boolean));
   // Add dates covered by recurring tasks (daily + weekly multi-day) in the
   // displayed month. Day-by-day iteration — always advances by 1 day —
   // so there's no way to construct an infinite loop. The previous version
@@ -5997,7 +6005,7 @@ function checkOverdueReminders() {
 
   AppState.tasks.forEach(task => {
     const matchDate = (task.date || today) === today;
-    const notNotify = task.completed || task.notify === false;
+    const notNotify = task.completed || task.notify === false || task.deleted;
     console.log(`  [task] id=${task.id} title="${(task.title||'').slice(0,30)}" date=${task.date||today} mins=${task.mins} notify=${task.notify!==false} done=${!!task.completed} sentInit=${!!task.sentInitialReminder} reminderOff=${task.reminderOffsetMinutes ?? '(default 10)'}`);
     if (!matchDate) { console.log('    → skipped: wrong date'); return; }
     if (notNotify)  { console.log('    → skipped: completed or notify=false'); return; }
@@ -6138,7 +6146,7 @@ function _buildScheduledPushList() {
   const today = todayDate();
   AppState.tasks.forEach(task => {
     if ((task.date || today) !== today) return;
-    if (task.completed || task.notify === false) return;
+    if (task.completed || task.notify === false || task.deleted) return;
     if (typeof task.mins !== 'number') return;
 
     // Anchor fire times to TODAY's local midnight + task.mins
@@ -6328,7 +6336,7 @@ async function _capScheduleTask(task) {
   const ln = _getCapLN();
   if (!ln) return;
   const today = todayDate();
-  if (task.completed || task.notify === false) return;
+  if (task.completed || task.notify === false || task.deleted) return;
   if (typeof task.mins !== 'number') return;
 
   // Use task.date (not "today") so tasks created today for tomorrow
@@ -6778,13 +6786,19 @@ async function _daWriteTask(task, isNew) {
   } catch (e) { AppLog.warn('FB', 'writeTask failed', e.message || e); }
 }
 
-async function _daDeleteTask(taskId) {
+async function _daSoftDeleteTask(task) {
   if (!_db || !DataAdapter.isFamily()) return;
+  console.log('[DA] soft delete start task=' + task.id);
   try {
-    await _db.collection('families').doc(DataAdapter.familyId)
-             .collection('tasks').doc(String(taskId)).delete();
-    console.log('[FB] task deleted:', taskId);
-  } catch (e) { AppLog.warn('FB', 'deleteTask failed', e.message || e); }
+    const ts  = firebase.firestore.FieldValue.serverTimestamp();
+    const ref = _db.collection('families').doc(DataAdapter.familyId)
+                   .collection('tasks').doc(String(task.id));
+    await ref.set({ deleted: true, deletedAt: ts, deletedBy: DataAdapter.userId, updatedAt: ts },
+                  { merge: true });
+    console.log('[DA] soft delete success task=' + task.id);
+  } catch (e) {
+    console.warn('[DA] soft delete failed task=' + task.id + ' error=' + (e.message || e));
+  }
 }
 
 // ─── Family members cache (Phase 3-5) ────────────────────────────
@@ -7053,7 +7067,7 @@ async function _loadFamilyMembers() {
 // device. If you delete a card and the console doesn't show
 // "[delete] surgical refresh…", you're on a stale cached HTML and need
 // to hard-reload (or the SW will catch up on next visit).
-console.log('%c[Family App] build: time-edit-sync-2026-05-14', 'background:#ff5e14;color:#fff;padding:3px 8px;border-radius:6px;font-weight:bold');
+console.log('%c[Family App] build: soft-delete-2026-05-14', 'background:#ff5e14;color:#fff;padding:3px 8px;border-radius:6px;font-weight:bold');
 loadState();
 updateDateBadge();
 // Run the reminder check ONCE immediately after state loads so opening
