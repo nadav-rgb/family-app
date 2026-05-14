@@ -1048,6 +1048,9 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 }
 #s-today .t-hero-card:hover{animation:none;transform:translateY(-2px);}
 #s-today .t-hero-card:active{animation:none;transform:scale(.97);}
+#s-today .t-hero-card.overdue{background:linear-gradient(138deg,#fff5f0 0%,#fde0d4 40%,#f9c0a4 75%,#f4a07e 100%);box-shadow:0 20px 50px -16px rgba(200,60,40,.22),0 6px 18px -8px rgba(200,60,40,.14),inset 0 1px 0 rgba(255,255,255,.85);animation:fadeUp .42s ease .18s both;}
+#s-today .t-hero-card.overdue .t-hbadge{background:rgba(200,50,30,.12);color:#c0392b;}
+#s-today .t-hero-card.overdue .t-hpill{background:rgba(200,50,30,.14);color:#c0392b;border-color:rgba(200,50,30,.25);}
 
 /* Accent ribbon at top — stronger on left where text starts */
 #s-today .t-hero-card::before{
@@ -4993,20 +4996,34 @@ function renderToday() {
 
   // Update hero card with first incomplete task
   const nextTask = tasks.find(t => !t.completed);
+  const heroCard = document.querySelector('#s-today .t-hero-card');
   if (nextTask) {
-    const p = taskPerson(nextTask);
     const now = new Date();
     const nowMins = now.getHours()*60 + now.getMinutes();
-    const diff = nextTask.mins - nowMins;
-    const pill = diff <= 0 ? t('time_now') : diff < 60 ? tFmt('time_in_min',{n:diff}) : tFmt('time_in_hr',{n:Math.round(diff/60)});
-    document.querySelector('.t-htime').textContent  = m2t(nextTask.mins);
-    document.querySelector('.t-htask').textContent  = nextTask.title;
-    updateHeroPortrait();
-    document.querySelector('.t-hname').textContent  = personLabel(nextTask.person);
-    document.querySelector('.t-hpill').textContent  = pill;
+    const isHe = AppState.lang === 'he';
+    const isOverdue = activeDate === todayDate() && nextTask.mins != null && nextTask.mins < nowMins;
+    if (isOverdue) {
+      heroCard.classList.add('overdue');
+      document.getElementById('tHeyebrow').textContent = isHe ? 'הייתה אמורה להתחיל ב-' + m2t(nextTask.mins) : 'Was due at ' + m2t(nextTask.mins);
+      document.querySelector('.t-htime').textContent = '';
+      document.querySelector('.t-htask').textContent = nextTask.title;
+      updateHeroPortrait();
+      document.querySelector('.t-hname').textContent = personLabel(nextTask.person);
+      document.querySelector('.t-hpill').textContent = isHe ? '⚠ טרם הושלמה' : '⚠ Overdue';
+    } else {
+      heroCard.classList.remove('overdue');
+      document.getElementById('tHeyebrow').textContent = t('today_coming_at');
+      const diff = nextTask.mins - nowMins;
+      const pill = diff <= 0 ? t('time_now') : diff < 60 ? tFmt('time_in_min',{n:diff}) : tFmt('time_in_hr',{n:Math.round(diff/60)});
+      document.querySelector('.t-htime').textContent = m2t(nextTask.mins);
+      document.querySelector('.t-htask').textContent = nextTask.title;
+      updateHeroPortrait();
+      document.querySelector('.t-hname').textContent = personLabel(nextTask.person);
+      document.querySelector('.t-hpill').textContent = pill;
+    }
   } else {
-    // All done — hide hero
-    document.querySelector('#s-today .t-hero-card').style.display = 'none';
+    heroCard.classList.remove('overdue');
+    heroCard.style.display = 'none';
   }
 
   // Render task list
@@ -5291,23 +5308,35 @@ function _refreshTodayMetadata() {
   const nextTask = tasks.find(task => !task.completed);
   const hero = document.querySelector('#s-today .t-hero-card');
   if (nextTask && hero) {
-    const p = taskPerson(nextTask);
     const now = new Date();
     const nowMins = now.getHours() * 60 + now.getMinutes();
-    const diff = nextTask.mins - nowMins;
-    const pill = diff <= 0 ? t('time_now')
-               : diff < 60  ? tFmt('time_in_min', { n: diff })
-               :              tFmt('time_in_hr',  { n: Math.round(diff/60) });
-    const htime  = document.querySelector('.t-htime');
-    const htask  = document.querySelector('.t-htask');
-    const hav    = document.querySelector('.t-hav');
-    const hname  = document.querySelector('.t-hname');
-    const hpill  = document.querySelector('.t-hpill');
-    if (htime) htime.textContent = m2t(nextTask.mins);
-    if (htask) htask.textContent = nextTask.title;
-    updateHeroPortrait();
-    if (hname) hname.textContent = personLabel(nextTask.person);
-    if (hpill) hpill.textContent = pill;
+    const isHe = AppState.lang === 'he';
+    const isOverdue = activeDate === todayDate() && nextTask.mins != null && nextTask.mins < nowMins;
+    const htime = document.querySelector('.t-htime');
+    const htask = document.querySelector('.t-htask');
+    const hname = document.querySelector('.t-hname');
+    const hpill = document.querySelector('.t-hpill');
+    if (isOverdue) {
+      hero.classList.add('overdue');
+      document.getElementById('tHeyebrow').textContent = isHe ? 'הייתה אמורה להתחיל ב-' + m2t(nextTask.mins) : 'Was due at ' + m2t(nextTask.mins);
+      if (htime) htime.textContent = '';
+      if (htask) htask.textContent = nextTask.title;
+      updateHeroPortrait();
+      if (hname) hname.textContent = personLabel(nextTask.person);
+      if (hpill) hpill.textContent = isHe ? '⚠ טרם הושלמה' : '⚠ Overdue';
+    } else {
+      hero.classList.remove('overdue');
+      document.getElementById('tHeyebrow').textContent = t('today_coming_at');
+      const diff = nextTask.mins - nowMins;
+      const pill = diff <= 0 ? t('time_now')
+                 : diff < 60  ? tFmt('time_in_min', { n: diff })
+                 :              tFmt('time_in_hr',  { n: Math.round(diff/60) });
+      if (htime) htime.textContent = m2t(nextTask.mins);
+      if (htask) htask.textContent = nextTask.title;
+      updateHeroPortrait();
+      if (hname) hname.textContent = personLabel(nextTask.person);
+      if (hpill) hpill.textContent = pill;
+    }
     hero.style.display = '';
     const sl0 = document.querySelectorAll('#s-today .t-slabel')[0];
     if (sl0) sl0.style.display = '';
