@@ -22,7 +22,7 @@
 // Bump this version on every meaningful release. The activate handler
 // drops any cache whose name doesn't match, so users on a stale cache
 // will get fresh HTML/assets on next visit.
-const CACHE_NAME = 'family-app-v16-rt-dynamic-family-visibility-2026-05-14';
+const CACHE_NAME = 'family-app-v17-rt-delete-hide-reschedule-fix-2026-05-14';
 const SHELL_FILES = [
   '/app.html',
   '/manifest.json',

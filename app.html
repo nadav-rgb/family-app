@@ -4901,7 +4901,7 @@ function activeTasks() {
   const myDynId   = DataAdapter.userId;
   const isVisible = t =>
     (myDynId && t.createdBy === myDynId)
-    || t.createdBy === currentUser
+    || (!DataAdapter.isFamily() && t.createdBy === currentUser)
     || (t.visibleTo && (
          (myDynId && t.visibleTo.includes(myDynId))
       || t.visibleTo.includes(currentUser)
@@ -5422,11 +5422,13 @@ function doDelete(task, screen) {
       state.type          = 'hide';
       state.prevVisibleTo = [...(task.visibleTo || [])];
       state.prevNotifyTo  = [...(task.notifyTo  || [])];
-      task.visibleTo = task.visibleTo.filter(id => id !== currentUser);
-      task.notifyTo  = (task.notifyTo || []).filter(id => id !== currentUser);
+      const _myId = DataAdapter.userId;
+      task.visibleTo = task.visibleTo.filter(id => id !== currentUser && id !== _myId);
+      task.notifyTo  = (task.notifyTo || []).filter(id => id !== currentUser && id !== _myId);
     }
     saveState();
     _capCancelTask(task.id).catch(() => {});
+    _capRescheduleAll().catch(() => {});
     if (state.type === 'soft') _daSoftDeleteTask(task).catch(() => {});
     else if (state.type === 'hide') _daWriteTask(task).catch(() => {});
     // Surgical: card already removed by swipe animation. Just refresh
