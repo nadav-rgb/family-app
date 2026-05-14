@@ -2164,6 +2164,11 @@ function updateHeroPortrait(id) {
   if (img) img.src = avSrc(id || currentUser);
 }
 function taskAvImg(task) {
+  const m = resolveMember(task);
+  if (m.avatar && m.avatar.type === 'emoji')
+    return `<span style="font-size:20px;line-height:1;">${m.avatar.value}</span>`;
+  if (m.avatar && m.avatar.type === 'image')
+    return `<img src="${m.avatar.value}" style="width:100%;height:100%;object-fit:cover;display:block;" alt="">`;
   return avImg(task.assignedTo || PERSON_TO_ID[task.person] || 'mom');
 }
 
@@ -2219,11 +2224,7 @@ function sharedWithEmojis(visibleTo) {
 }
 
 function assignedLabel(task) {
-  if (task.assignedToName) return task.assignedToName;
-  const assignedId = task.assignedTo;
-  const name = (assignedId && ID_TO_PERSON[assignedId]) || task.person || 'Mom';
-  const id = PERSON_TO_ID[name] || assignedId || 'mom';
-  return t('family_' + id) || name;
+  return resolveMember(task).name;
 }
 
 // ─── Language ─────────────────────────────────────────────────────
