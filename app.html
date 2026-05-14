@@ -5093,8 +5093,6 @@ function renderToday() {
             t.sentInitialReminder = false;
             t.sentReminderStages  = [];
             t.lastReminderSentAt  = null;
-            // NOTE: _daWriteTask(realT) is intentionally absent here — time edits
-            // do not yet sync to Firestore. Tracked as debt before Phase 4-3.
             const ttime = el.querySelector('.t-ttime');
             const tampm = el.querySelector('.t-tampm');
             if (ttime) {
@@ -5103,9 +5101,14 @@ function renderToday() {
               ttime.classList.remove('empty');
             }
             if (tampm) tampm.textContent = ampm(realT.mins);
+            realT.updatedAt = Date.now(); // align local timestamp before Firestore write
             saveState();
             console.log('[capLN] reschedule after time edit');
             _capRescheduleAll().catch(() => {});
+            console.log('[DA] time edit sync start task=' + realT.id);
+            _daWriteTask(realT, false)
+              .then(() => console.log('[DA] time edit sync success task=' + realT.id))
+              .catch(e  => console.warn('[DA] time edit sync failed task=' + realT.id + ' error=' + (e.message || e)));
           });
         });
       }
@@ -7050,7 +7053,7 @@ async function _loadFamilyMembers() {
 // device. If you delete a card and the console doesn't show
 // "[delete] surgical refresh…", you're on a stale cached HTML and need
 // to hard-reload (or the SW will catch up on next visit).
-console.log('%c[Family App] build: notif-fix-2026-05-14', 'background:#ff5e14;color:#fff;padding:3px 8px;border-radius:6px;font-weight:bold');
+console.log('%c[Family App] build: time-edit-sync-2026-05-14', 'background:#ff5e14;color:#fff;padding:3px 8px;border-radius:6px;font-weight:bold');
 loadState();
 updateDateBadge();
 // Run the reminder check ONCE immediately after state loads so opening
