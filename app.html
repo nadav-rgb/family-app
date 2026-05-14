@@ -2142,6 +2142,7 @@ function avImg(id) {
 }
 function updateHeroPortrait(id) {
   const img = document.getElementById('heroPortraitImg');
+  console.log('[diag-portrait] id=', id, '| avSrc(id)=', avSrc(id), '| avSrc(currentUser)=', avSrc(currentUser), '| currentUser=', currentUser);
   if (img) img.src = avSrc(id || currentUser);
 }
 function taskAvImg(task) {
@@ -7131,7 +7132,7 @@ async function _loadFamilyMembers() {
 // device. If you delete a card and the console doesn't show
 // "[delete] surgical refresh…", you're on a stale cached HTML and need
 // to hard-reload (or the SW will catch up on next visit).
-console.log('%c[Family App] build: rt-hero-portrait-assigned-user-2026-05-14', 'background:#ff5e14;color:#fff;padding:3px 8px;border-radius:6px;font-weight:bold');
+console.log('%c[Family App] build: rt-hero-portrait-diag-2026-05-14', 'background:#ff5e14;color:#fff;padding:3px 8px;border-radius:6px;font-weight:bold');
 loadState();
 updateDateBadge();
 // Run the reminder check ONCE immediately after state loads so opening
