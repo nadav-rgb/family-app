@@ -2335,6 +2335,8 @@ function parsedToTask(p, idx) {
     person,
     assignedTo,
     createdBy:             DataAdapter.isFamily() ? DataAdapter.userId : currentUser,
+    createdByMemberId:     (() => { const id = DataAdapter.myMemberId; if (!id) console.warn('[Identity] myMemberId not set — createdByMemberId null'); return id; })(),
+    assignedToMemberId:    _ASSIGNEE_TO_MEMBER_ID[assignedTo] || null,
     mins:                  p.mins,
     completed:             false,
     notify:                true,
@@ -2377,6 +2379,8 @@ function aiParsedToTask(t, idx) {
     person,
     assignedTo,
     createdBy:             DataAdapter.isFamily() ? DataAdapter.userId : currentUser,
+    createdByMemberId:     (() => { const id = DataAdapter.myMemberId; if (!id) console.warn('[Identity] myMemberId not set — createdByMemberId null'); return id; })(),
+    assignedToMemberId:    _ASSIGNEE_TO_MEMBER_ID[assignedTo] || null,
     mins,
     completed:             false,
     notify:                true,
@@ -7031,6 +7035,14 @@ const _FAMILY_MEMBERS_SEED = [
   { memberId: 'member_laali',  name: 'לאלי',     role: 'child',  avatar: { type: 'emoji', value: '👧' } },
   { memberId: 'member_aharon', name: 'אהרן צבי', role: 'child',  avatar: { type: 'emoji', value: '👦' } },
 ];
+
+// Maps legacy assignedTo IDs → stable memberIds
+const _ASSIGNEE_TO_MEMBER_ID = {
+  dad:     'member_dad',
+  mom:     'member_mom',
+  dudi:    'member_laali',
+  yonatan: 'member_aharon',
+};
 
 async function _bootstrapFamilyMembers() {
   if (!_db || !DataAdapter.isFamily()) return;
