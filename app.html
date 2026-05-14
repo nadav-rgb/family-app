@@ -6999,6 +6999,22 @@ async function _loadFamilyMembersCache() {
   }
 }
 
+// ─── Central member resolver (Identity System) ───────────────────
+// Single source of truth for UI display of any task's assignee.
+// Returns { name, avatar: { type, value }, memberId } — always the same shape.
+// Priority: assignedToMemberId (new) → assignedTo legacy → safe default.
+function resolveMember(task) {
+  if (task.assignedToMemberId) {
+    const fromCache = _familyMembersCache.find(m => m.memberId === task.assignedToMemberId);
+    if (fromCache) return { name: fromCache.name, avatar: fromCache.avatar, memberId: fromCache.memberId };
+    const fromSeed = _FAMILY_MEMBERS_SEED.find(s => s.memberId === task.assignedToMemberId);
+    if (fromSeed) return { name: fromSeed.name, avatar: fromSeed.avatar, memberId: fromSeed.memberId };
+  }
+  const legacy = FAMILY.find(f => f.id === (task.assignedTo || ''));
+  if (legacy) return { name: legacy.label, avatar: { type: 'emoji', value: legacy.emoji }, memberId: null };
+  return { name: task.person || task.assignedTo || '?', avatar: { type: 'emoji', value: '👤' }, memberId: null };
+}
+
 // ─── Device Setup Flow (Identity System) ─────────────────────────
 const MY_MEMBER_ID_KEY = 'family-app-my-member-id';
 
