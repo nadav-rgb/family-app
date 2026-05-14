@@ -1635,7 +1635,7 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
           <button class="cal-btn" id="calBtn">📅</button>
         </div>
       </div>
-      <div class="t-title" id="tTitle">Good morning,<br>Cohen Family 🏠</div>
+      <div class="t-title" id="tTitle">בוקר טוב,<br>משפחת כהן 🏠</div>
       <div class="t-date-badge" id="tDateBadge">Today</div>
     </div>
 
@@ -1661,7 +1661,7 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 
     <!-- Progress card -->
     <div class="t-prog">
-      <div class="t-prow"><span class="t-plbl" id="tPlbl">Today's tasks</span><span class="t-pcnt">1 of 5 done ✨</span></div>
+      <div class="t-prow"><span class="t-plbl" id="tPlbl">Today's tasks</span><span class="t-pcnt">1 מתוך 5 הושלמו ✨</span></div>
       <div class="t-pbg"><div class="t-pfill" id="tPfill"></div></div>
     </div>
 
@@ -2281,6 +2281,7 @@ function _applyLang() {
     if (f) el.textContent = t('family_' + f.id);
   });
   // tDateBadge & date-related are updated in updateDateBadge()
+  if (typeof updateTodayTitle === 'function') updateTodayTitle();
 }
 
 function setLang(lang) {
@@ -7130,7 +7131,7 @@ async function _loadFamilyMembers() {
 // device. If you delete a card and the console doesn't show
 // "[delete] surgical refresh…", you're on a stale cached HTML and need
 // to hard-reload (or the SW will catch up on next visit).
-console.log('%c[Family App] build: rt-sw-cache-bust-lang-he-2026-05-14', 'background:#ff5e14;color:#fff;padding:3px 8px;border-radius:6px;font-weight:bold');
+console.log('%c[Family App] build: rt-static-he-placeholders-2026-05-14', 'background:#ff5e14;color:#fff;padding:3px 8px;border-radius:6px;font-weight:bold');
 loadState();
 updateDateBadge();
 // Run the reminder check ONCE immediately after state loads so opening
