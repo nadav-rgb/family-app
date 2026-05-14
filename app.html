@@ -3639,18 +3639,20 @@ function renderAssignedSection() {
   // In family mode with cached cloud members, show them instead of hardcoded FAMILY
   if (DataAdapter.isFamily() && _familyMembersCache.length > 0) {
     _familyMembersCache.forEach(m => {
-      const row = document.createElement('div');
-      row.className = 'share-member';
-      const sel  = task.assignedToUserId === m.userId;
-      const ltr  = (m.displayName || m.userId)[0].toUpperCase();
-      const role = m.role === 'owner' ? 'בעלים' : 'חבר';
-      row.innerHTML = `
-        <span class="share-em" style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#ffd0a8,#f0a870);display:inline-flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:#c06030;flex-shrink:0;">${ltr}</span>
-        <span class="share-lbl" style="flex:1;">${m.displayName || m.userId}<small style="color:#c4ae9f;font-size:11px;margin-inline-start:6px;">${role}</small></span>
+      const row      = document.createElement('div');
+      row.className  = 'share-member';
+      const dispName = m.name || m.displayName || m.memberId || '?';
+      const mId      = m.memberId || m.userId;
+      const sel      = task.assignedToMemberId === mId || task.assignedToUserId === mId;
+      const emHtml   = m.avatar?.type === 'emoji'
+        ? `<span class="share-em" style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#ffd0a8,#f0a870);display:inline-flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">${m.avatar.value}</span>`
+        : `<span class="share-em" style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#ffd0a8,#f0a870);display:inline-flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:#c06030;flex-shrink:0;">${dispName[0].toUpperCase()}</span>`;
+      row.innerHTML = `${emHtml}
+        <span class="share-lbl" style="flex:1;">${dispName}</span>
         <span class="share-radio${sel ? ' on' : ''}"></span>`;
       row.addEventListener('click', () => {
-        task.assignedToUserId = m.userId;
-        task.assignedToName   = m.displayName || m.userId;
+        task.assignedToMemberId = mId;
+        task.assignedToName     = dispName;
         renderAssignedSection();
         renderShareRows();
       });
@@ -3806,14 +3808,16 @@ function renderShareRows() {
   // Build a unified member list: dynamic (real) or static (fallback)
   const members = useDynamic
     ? _familyMembersCache.map(m => ({
-        id:    m.userId,
-        label: m.displayName || m.userId,
-        ltr:   (m.displayName || m.userId)[0].toUpperCase(),
+        id:    m.memberId || m.userId,
+        label: m.name || m.displayName || m.memberId || m.userId || '?',
+        emoji: m.avatar?.type === 'emoji' ? m.avatar.value : null,
+        ltr:   (m.name || m.displayName || m.memberId || m.userId || '?')[0].toUpperCase(),
       }))
     : FAMILY.map(f => ({
         id:    f.id,
         label: t('family_' + f.id),
-        ltr:   null,  // use avImg instead
+        emoji: f.emoji || null,
+        ltr:   null,
       }));
 
   ['Vis', 'Not'].forEach(which => {
@@ -3826,9 +3830,11 @@ function renderShareRows() {
       row.className  = 'share-member';
       row.dataset.id = m.id;
 
-      const emHtml = m.ltr !== null
-        ? `<span class="share-em" style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#ffd0a8,#f0a870);display:inline-flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:#c06030;flex-shrink:0;">${m.ltr}</span>`
-        : `<span class="share-em">${avImg(m.id)}</span>`;
+      const emHtml = m.emoji
+        ? `<span class="share-em" style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#ffd0a8,#f0a870);display:inline-flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">${m.emoji}</span>`
+        : m.ltr !== null
+          ? `<span class="share-em" style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#ffd0a8,#f0a870);display:inline-flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:#c06030;flex-shrink:0;">${m.ltr}</span>`
+          : `<span class="share-em">${avImg(m.id)}</span>`;
 
       if (which === 'Vis') {
         row.innerHTML = `${emHtml}<span class="share-lbl">${m.label}</span><span class="share-cb${inVis?' on':''}"></span>`;
@@ -6986,6 +6992,8 @@ async function _daSoftDeleteTask(task) {
 // ─── Family members cache (Phase 3-5) ────────────────────────────
 // Populated once from Firestore; used by renderAssignedSection()
 // so the task drawer can show real family members.
+const IDENTITY_MEMBER_IDS = ['member_dad', 'member_mom', 'member_laali', 'member_aharon'];
+
 let _familyMembersCache = [];
 
 async function _loadFamilyMembersCache() {
@@ -6993,7 +7001,8 @@ async function _loadFamilyMembersCache() {
   try {
     const snap = await _db.collection('families').doc(DataAdapter.familyId)
                           .collection('members').get();
-    _familyMembersCache = snap.docs.map(d => d.data());
+    _familyMembersCache = snap.docs.map(d => d.data())
+      .filter(m => IDENTITY_MEMBER_IDS.includes(m.memberId));
     console.log('[DA] members cache loaded:', _familyMembersCache.length);
   } catch (e) {
     AppLog.warn('DA', 'loadMembersCache failed', e.message || e);
