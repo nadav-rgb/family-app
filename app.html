@@ -5093,6 +5093,8 @@ function renderToday() {
             t.sentInitialReminder = false;
             t.sentReminderStages  = [];
             t.lastReminderSentAt  = null;
+            // NOTE: _daWriteTask(realT) is intentionally absent here — time edits
+            // do not yet sync to Firestore. Tracked as debt before Phase 4-3.
             const ttime = el.querySelector('.t-ttime');
             const tampm = el.querySelector('.t-tampm');
             if (ttime) {
@@ -5102,6 +5104,8 @@ function renderToday() {
             }
             if (tampm) tampm.textContent = ampm(realT.mins);
             saveState();
+            console.log('[capLN] reschedule after time edit');
+            _capRescheduleAll().catch(() => {});
           });
         });
       }
@@ -6012,7 +6016,12 @@ function checkOverdueReminders() {
     if (!task.sentInitialReminder && inWindow) {
       task.sentInitialReminder = true;
       task.lastReminderSentAt  = now.toISOString();
-      const label = offset === 0 ? t('notif_starting') : tFmt('time_in_min',{n:offset});
+      // Use actual remaining minutes, not stored offset — avoids stale
+      // "בעוד 10 דקות" when the app opens mid-window.
+      let label;
+      if (nowMins >= task.mins)           label = t('notif_starting');
+      else if (task.mins - nowMins <= 1)  label = t('notif_starting');
+      else                                label = tFmt('time_in_min', {n: task.mins - nowMins});
       console.log(`    → FIRING initial: "${task.title}" — ${label}`);
       _fireRealNotification(task.title, label, `task-${task.id}-initial`);
       changed = true;
@@ -6316,11 +6325,16 @@ async function _capScheduleTask(task) {
   const ln = _getCapLN();
   if (!ln) return;
   const today = todayDate();
-  if ((task.date || today) !== today) return;
   if (task.completed || task.notify === false) return;
   if (typeof task.mins !== 'number') return;
 
-  const base = new Date(); base.setHours(0, 0, 0, 0);
+  // Use task.date (not "today") so tasks created today for tomorrow
+  // are scheduled correctly. Skip only past-dated tasks.
+  const taskDate = task.date || today;
+  const [yr, mo, dy] = taskDate.split('-').map(Number);
+  const base = new Date(yr, mo - 1, dy, 0, 0, 0, 0);
+  const todayMidnight = new Date(); todayMidnight.setHours(0, 0, 0, 0);
+  if (base.getTime() < todayMidnight.getTime()) return; // past date — skip
   const taskAt     = base.getTime() + task.mins * 60 * 1000;
   const offsetMins = task.reminderOffsetMinutes ?? 10;
   const initialAt  = new Date(taskAt - offsetMins * 60 * 1000);
@@ -6400,11 +6414,16 @@ async function _capRescheduleAll() {
   const today = todayDate();
   let count = 0;
   for (const task of AppState.tasks) {
-    if ((task.date || today) !== today) continue;
+    if ((task.date || today) < today) continue; // skip past-dated; allow today + future
     await _capScheduleTask(task);
     count++;
   }
   console.log('[capLN] rescheduleAll done, processed', count, 'task(s)');
+  try {
+    const pending = await ln.getPending();
+    console.log('[capLN] pending after reschedule:', (pending?.notifications || []).length,
+      (pending?.notifications || []).map(n => ({ id: n.id, at: n.schedule?.at })));
+  } catch (_) {}
 }
 
 // ─── Firestore timestamp → milliseconds ─────────────────────────
@@ -7031,7 +7050,7 @@ async function _loadFamilyMembers() {
 // device. If you delete a card and the console doesn't show
 // "[delete] surgical refresh…", you're on a stale cached HTML and need
 // to hard-reload (or the SW will catch up on next visit).
-console.log('%c[Family App] build: phase-4-2a-listener-2026-05-13', 'background:#ff5e14;color:#fff;padding:3px 8px;border-radius:6px;font-weight:bold');
+console.log('%c[Family App] build: notif-fix-2026-05-14', 'background:#ff5e14;color:#fff;padding:3px 8px;border-radius:6px;font-weight:bold');
 loadState();
 updateDateBadge();
 // Run the reminder check ONCE immediately after state loads so opening
