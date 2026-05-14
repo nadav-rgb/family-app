@@ -5804,6 +5804,7 @@ function updateTodayTitle() {
 }
 
 document.getElementById('calBtn').addEventListener('click', openCalDrawer);
+document.getElementById('tDateBadge').addEventListener('click', () => { _diagTapCount++; clearTimeout(_diagTapTimer); _diagTapTimer = setTimeout(() => { _diagTapCount = 0; }, 2000); if (_diagTapCount >= 5) { _diagTapCount = 0; _showSyncDiag(); } });
 updateHeroPortrait();
 document.getElementById('uswBg').addEventListener('click', e => { if (e.target === document.getElementById('uswBg')) closeUserSwitcher(); });
 document.getElementById('calBg').addEventListener('click', e => { if (e.target === document.getElementById('calBg')) closeCalDrawer(); });
@@ -6740,6 +6741,51 @@ let _db            = null;
 let _auth          = null;
 let _rtUnsubscribe = null;
 
+// ─── Sync diagnostics (rt-sync-diagnostics-2026-05-14) ───────────
+let _diagLastWrite = { status: 'none', id: null, path: null, time: null, err: null };
+function _showSyncDiag() {
+  if (document.getElementById('syncDiagOverlay')) { document.getElementById('syncDiagOverlay').remove(); return; }
+  const fid   = DataAdapter.familyId || '(none)';
+  const d     = _diagLastWrite;
+  const rows  = [
+    ['isFamily',        DataAdapter.isFamily()],
+    ['da-mode',         localStorage.getItem('family-app-da-mode') || '(null)'],
+    ['familyId',        fid],
+    ['userId (DA)',     DataAdapter.userId   || '(none)'],
+    ['currentUser',     typeof currentUser !== 'undefined' ? currentUser : '(undef)'],
+    ['dbReady',         !!window._db],
+    ['—',               ''],
+    ['writePath',       fid !== '(none)' ? `families/${fid}/tasks/…` : '(no family)'],
+    ['listenPath',      fid !== '(none)' ? `families/${fid}/tasks`   : '(no family)'],
+    ['—',               ''],
+    ['lastWrite.status',d.status],
+    ['lastWrite.id',    d.id   || '—'],
+    ['lastWrite.path',  d.path || '—'],
+    ['lastWrite.time',  d.time || '—'],
+    ['lastWrite.err',   d.err  || '—'],
+    ['—',               ''],
+    ['da-family-id (LS)', localStorage.getItem('family-app-da-family-id') || '(null)'],
+    ['da-user-id (LS)',   localStorage.getItem('family-app-da-user-id')   || '(null)'],
+    ['app-user (LS)',     localStorage.getItem('family-app-user')         || '(null)'],
+  ];
+  const html = rows.map(([k,v]) => {
+    if (k === '—') return '<hr style="border:none;border-top:1px solid #2a2a2a;margin:6px 0">';
+    const col = (k === 'lastWrite.status' && v === 'ok') ? '#7fff7f'
+              : (k === 'lastWrite.status' && v === 'fail') ? '#ff6b6b'
+              : (k === 'lastWrite.err'    && v !== '—')    ? '#ff6b6b'
+              : (v === false || v === '(none)' || v === '(null)' || v === 'local') ? '#ff9966'
+              : '#e8ffd0';
+    return `<div style="display:flex;gap:8px"><span style="color:#888;min-width:140px">${k}</span><span style="color:${col};word-break:break-all">${v}</span></div>`;
+  }).join('');
+  const el = document.createElement('div');
+  el.id = 'syncDiagOverlay';
+  el.style.cssText = 'position:fixed;inset:0;z-index:9999;background:#0d0d0d;color:#e8ffd0;font:12px/1.7 monospace;padding:18px 16px 32px;overflow:auto;direction:ltr;';
+  el.innerHTML = `<div style="font-size:15px;font-weight:bold;margin-bottom:12px;color:#7fff7f">🔍 Sync Diagnostics</div>${html}<br><button onclick="document.getElementById('syncDiagOverlay').remove()" style="padding:10px 28px;background:#222;color:#fff;border:1px solid #444;border-radius:8px;font-size:14px;cursor:pointer">✕ סגור</button>`;
+  document.body.appendChild(el);
+}
+let _diagTapCount = 0, _diagTapTimer = null;
+// ─────────────────────────────────────────────────────────────────
+
 function _fbLoadAuth() {
   return new Promise((resolve, reject) => {
     if (typeof firebase !== 'undefined' && firebase.auth) { resolve(); return; }
@@ -6820,7 +6866,11 @@ async function _fbLinkAuthToMember(authUid) {
 // run async in the background — a failure never breaks the app.
 
 async function _daWriteTask(task, isNew) {
-  if (!_db || !DataAdapter.isFamily()) return;
+  if (!_db || !DataAdapter.isFamily()) {
+    _diagLastWrite = { status: 'fail', id: String(task.id), path: '(isFamily=false or _db=null)', time: new Date().toLocaleTimeString(), err: `isFamily=${DataAdapter.isFamily()} _db=${!!_db}` };
+    return;
+  }
+  const path = `families/${DataAdapter.familyId}/tasks/${String(task.id)}`;
   try {
     const ts  = firebase.firestore.FieldValue.serverTimestamp();
     const ref = _db.collection('families').doc(DataAdapter.familyId)
@@ -6846,8 +6896,12 @@ async function _daWriteTask(task, isNew) {
     };
     if (isNew) data.createdAt = ts;
     await ref.set(data, { merge: true });
+    _diagLastWrite = { status: 'ok', id: String(task.id), path, time: new Date().toLocaleTimeString(), err: null };
     console.log('[FB] task written:', task.id, task.title);
-  } catch (e) { AppLog.warn('FB', 'writeTask failed', e.message || e); }
+  } catch (e) {
+    _diagLastWrite = { status: 'fail', id: String(task.id), path, time: new Date().toLocaleTimeString(), err: e.message || String(e) };
+    AppLog.warn('FB', 'writeTask failed', e.message || e);
+  }
 }
 
 async function _daSoftDeleteTask(task) {
