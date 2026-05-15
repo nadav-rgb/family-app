@@ -7065,6 +7065,30 @@ function _qaShow() {
     '',
     '=== resolveMember(target) ===',
     resolved ? JSON.stringify(resolved, null, 2) : '(none)',
+    '',
+    '=== activeTasks DIAGNOSIS ===',
+    (() => {
+      const active = activeTasks();
+      const myDynId   = DataAdapter.userId;
+      const lines = ['activeTasks count: ' + active.length];
+      const allNonDeleted = AppState.tasks.filter(t => !t.deleted && t.date === activeDate);
+      lines.push('non-deleted today tasks: ' + allNonDeleted.length);
+      allNonDeleted.forEach(t => {
+        const inActive = active.some(a => String(a.id) === String(t.id));
+        if (!inActive) {
+          const r1 = myDynId && t.createdBy === myDynId;
+          const r2 = !DataAdapter.isFamily() && t.createdBy === (typeof currentUser !== 'undefined' ? currentUser : '?');
+          const r3a = t.visibleTo && myDynId && t.visibleTo.includes(myDynId);
+          const r3b = t.visibleTo && t.visibleTo.includes(typeof currentUser !== 'undefined' ? currentUser : '?');
+          lines.push('HIDDEN: "' + t.title + '"');
+          lines.push('  createdBy=' + t.createdBy + ' myDynId=' + myDynId);
+          lines.push('  visibleTo=' + JSON.stringify(t.visibleTo));
+          lines.push('  reason: createdBy?' + r1 + ' localCreator?' + r2 + ' visUID?' + r3a + ' visLocal?' + r3b);
+        }
+      });
+      if (active.length === allNonDeleted.length) lines.push('all today tasks visible — no hidden tasks');
+      return lines.join('\n');
+    })(),
   ].join('\n');
   document.getElementById('qaContent').textContent = out;
   document.getElementById('qaPanel').classList.add('open');
