@@ -4939,13 +4939,15 @@ document.getElementById('btnOk').addEventListener('click', function() {
 function activeTasks() {
   const dt  = new Date(activeDate + 'T00:00:00');
   const dow = dt.getDay();
-  const myDynId   = DataAdapter.userId;
+  const myDynId      = DataAdapter.userId;
+  const myMemberId   = DataAdapter.myMemberId;
   const isVisible = t =>
     (myDynId && t.createdBy === myDynId)
     || (!DataAdapter.isFamily() && t.createdBy === currentUser)
     || (t.visibleTo && (
-         (myDynId && t.visibleTo.includes(myDynId))
+         (myDynId    && t.visibleTo.includes(myDynId))
       || t.visibleTo.includes(currentUser)
+      || (myMemberId && t.visibleTo.includes(myMemberId))
     ));
   const regular = AppState.tasks.filter(t =>
     (t.date || todayDate()) === activeDate &&
