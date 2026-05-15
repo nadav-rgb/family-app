@@ -3660,6 +3660,9 @@ function renderAssignedSection() {
       row.addEventListener('click', () => {
         task.assignedToMemberId = m.memberId;
         task.assignedToName     = m.name;
+        const legacyId  = m.memberId.replace('member_', '');
+        task.assignedTo = legacyId;
+        task.person     = ID_TO_PERSON[legacyId] || (legacyId.charAt(0).toUpperCase() + legacyId.slice(1));
         renderAssignedSection();
         renderShareRows();
       });
