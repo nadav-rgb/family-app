@@ -3662,6 +3662,7 @@ function renderAssignedSection() {
         console.warn('[ASSIGN-CLICK] before:', JSON.stringify({assignedTo:task.assignedTo,assignedToMemberId:task.assignedToMemberId}));
         task.assignedToMemberId = m.memberId;
         task.assignedToName     = m.name;
+        task.assignedToUserId   = null;
         task.assignedTo = legacyId;
         task.person     = ID_TO_PERSON[legacyId] || (legacyId.charAt(0).toUpperCase() + legacyId.slice(1));
         console.warn('[ASSIGN-CLICK] after:', JSON.stringify({assignedTo:task.assignedTo,person:task.person,assignedToMemberId:task.assignedToMemberId}));
@@ -6964,7 +6965,7 @@ async function _daWriteTask(task, isNew) {
       completedBy:           task.completedBy || null,
       completedAt:           task.completedAt || null,
       createdBy:             task.createdBy  || DataAdapter.userId,
-      assignedTo:            task.assignedToUserId || task.assignedTo || null,
+      assignedTo:            task.assignedTo || null,
       assignedToName:        task.assignedToName   || null,
       visibleTo:             task.visibleTo || [],
       notifyTo:              task.notifyTo  || [],
