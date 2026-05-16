@@ -5658,7 +5658,13 @@ document.getElementById('undoBtn').addEventListener('click', () => {
     delete AppState.recurringCompletions[`${parts[1]}_${parts[2]}`];
   } else {
     const task = AppState.tasks.find(t => String(t.id) === id);
-    if (task) task.completed = false;
+    if (task) {
+      task.completed = false;
+      task.completedAt = null;
+      task.completedBy = null;
+      _daWriteTask(task, false).catch(() => {});
+      _capRescheduleAll().catch(() => {});
+    }
   }
   saveState();
   renderToday();
@@ -5756,14 +5762,23 @@ document.getElementById('tTasks').addEventListener('click', e => {
   const id          = el.dataset.id;
   const isRecurring = el.dataset.recurring === 'true';
   const recId       = el.dataset.recurrenceid;
+  let task;
 
   if (isRecurring) {
     delete AppState.recurringCompletions[`${recId}_${activeDate}`];
   } else {
-    const task = AppState.tasks.find(t => String(t.id) === id);
-    if (task) task.completed = false;
+    task = AppState.tasks.find(t => String(t.id) === id);
+    if (task) {
+      task.completed = false;
+      task.completedAt = null;
+      task.completedBy = null;
+    }
   }
   saveState();
+  if (task) {
+    _daWriteTask(task, false).catch(() => {});
+    _capRescheduleAll().catch(() => {});
+  }
   clearUndoToast(false);
 
   // Animate card back to life
