@@ -2230,6 +2230,14 @@ function _currentDeviceLegacyId() {
   if (DataAdapter.isFamily()) return _legacyIdForMemberId(DataAdapter.myMemberId) || currentUser;
   return currentUser;
 }
+function currentDeviceDisplayName() {
+  const legacyId = _currentDeviceLegacyId();
+  if (legacyId) return t('family_' + legacyId) || ID_TO_PERSON[legacyId] || legacyId;
+  const seed = DataAdapter.isFamily()
+    ? _FAMILY_MEMBERS_SEED.find(m => m.memberId === DataAdapter.myMemberId)
+    : null;
+  return seed?.name || 'Family';
+}
 function _defaultVisibleToIds() {
   return (DataAdapter.isFamily() ? _FAMILY_MEMBERS_SEED.map(m => m.memberId) : ALL_MEMBER_IDS)
     .filter(v => v !== undefined && v !== null && v !== '');
@@ -5989,8 +5997,7 @@ function updateDateBadge() {
 function updateTodayTitle() {
   const h = new Date().getHours();
   const greet = h < 5 ? t('greet_night') : h < 12 ? t('greet_morning') : h < 17 ? t('greet_afternoon') : h < 21 ? t('greet_evening') : t('greet_night');
-  const f = FAMILY.find(x => x.id === currentUser) || { id:'', label: 'Family', emoji: '🏠' };
-  document.getElementById('tTitle').innerHTML = `${greet},<br>${t('family_' + f.id) || f.label}`;
+  document.getElementById('tTitle').innerHTML = `${greet},<br>${currentDeviceDisplayName()}`;
 }
 
 document.getElementById('calBtn').addEventListener('click', openCalDrawer);
