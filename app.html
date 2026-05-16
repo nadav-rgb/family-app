@@ -2340,9 +2340,10 @@ function parsedToTask(p, idx) {
   const dateStr      = p.date && p.date.date
     ? dateToYMD(p.date.date)
     : todayDate();
-  const defaultVisibleTo = (_familyMembersCache.length > 0)
-    ? _familyMembersCache.map(m => m.userId)
-    : ALL_MEMBER_IDS;
+  const defaultVisibleTo = (DataAdapter.isFamily()
+    ? _FAMILY_MEMBERS_SEED.map(m => m.memberId)
+    : ALL_MEMBER_IDS
+  ).filter(v => v !== undefined && v !== null && v !== '');
   return {
     id:                    DataAdapter.isFamily() ? _genCode(16) : Date.now() + idx,
     title:                 p.title,
@@ -2384,9 +2385,10 @@ function aiParsedToTask(t, idx) {
     mins = h * 60 + m;
   }
 
-  const defaultVisibleTo = (_familyMembersCache.length > 0)
-    ? _familyMembersCache.map(m => m.userId)
-    : ALL_MEMBER_IDS;
+  const defaultVisibleTo = (DataAdapter.isFamily()
+    ? _FAMILY_MEMBERS_SEED.map(m => m.memberId)
+    : ALL_MEMBER_IDS
+  ).filter(v => v !== undefined && v !== null && v !== '');
   return {
     id:                    DataAdapter.isFamily() ? _genCode(16) : Date.now() + idx,
     title:                 t.title,
@@ -6618,10 +6620,12 @@ async function _daLoadTasksFromCloud() {
         deletedAt:              d.deletedAt    || null,
         deletedBy:              d.deletedBy    || null,
         createdBy:              d.createdBy    || null,
+        createdByMemberId:      d.createdByMemberId  || null,
         assignedTo:             d.assignedTo   || null,
+        assignedToMemberId:     d.assignedToMemberId || null,
         assignedToUserId:       d.assignedTo   || null,
         assignedToName:         d.assignedToName || null,
-        visibleTo:              d.visibleTo  || [],
+        visibleTo:              (d.visibleTo || []).filter(v => v !== undefined && v !== null && v !== ''),
         notifyTo:               d.notifyTo   || [],
         recurrence:             d.recurrence || { type: 'none' },
         reminderOffsetMinutes:  d.reminderOffsetMinutes  ?? 10,
@@ -6714,10 +6718,12 @@ function _daStartListener() {
           deletedAt:              d.deletedAt      || null,
           deletedBy:              d.deletedBy      || null,
           createdBy:              d.createdBy      || null,
+          createdByMemberId:      d.createdByMemberId  || null,
           assignedTo:             d.assignedTo     || null,
+          assignedToMemberId:     d.assignedToMemberId || null,
           assignedToUserId:       d.assignedTo     || null,
           assignedToName:         d.assignedToName || null,
-          visibleTo:              d.visibleTo              || [],
+          visibleTo:              (d.visibleTo || []).filter(v => v !== undefined && v !== null && v !== ''),
           notifyTo:               d.notifyTo               || [],
           recurrence:             d.recurrence             || { type: 'none' },
           reminderOffsetMinutes:  d.reminderOffsetMinutes  ?? 10,
@@ -6967,9 +6973,11 @@ async function _daWriteTask(task, isNew) {
       completedBy:           task.completedBy || null,
       completedAt:           task.completedAt || null,
       createdBy:             task.createdBy  || DataAdapter.userId,
+      createdByMemberId:     task.createdByMemberId  || null,
       assignedTo:            task.assignedTo || null,
+      assignedToMemberId:    task.assignedToMemberId || null,
       assignedToName:        task.assignedToName   || null,
-      visibleTo:             task.visibleTo || [],
+      visibleTo:             (task.visibleTo || []).filter(v => v !== undefined && v !== null && v !== ''),
       notifyTo:              task.notifyTo  || [],
       recurrence:            task.recurrence || { type: 'none' },
       reminderOffsetMinutes: task.reminderOffsetMinutes ?? 10,
@@ -7040,59 +7048,134 @@ function resolveMember(task) {
 
 // ─── QA Panel (temp diagnostic) ──────────────────────────────────
 function _qaShow() {
-  const active = shareTask || null;
-  const last   = AppState.tasks.filter(t => !t.deleted).slice(-1)[0] || null;
-  const target = active || last;
-  const resolved = target ? resolveMember(target) : null;
-  const taskFields = t => t ? JSON.stringify({
-    title:              t.title,
-    assignedTo:         t.assignedTo,
-    person:             t.person,
-    createdBy:          t.createdBy,
-    createdByMemberId:  t.createdByMemberId,
-    assignedToMemberId: t.assignedToMemberId,
-    assignedToName:     t.assignedToName,
-  }, null, 2) : '(none)';
+  const drawerTask  = shareTask || null;
+  const lastTask    = AppState.tasks.filter(t => !t.deleted).slice(-1)[0] || null;
+  const target      = drawerTask || lastTask;
+  const myMemberId  = DataAdapter.myMemberId;
+  const myDynId     = DataAdapter.userId;
+  const cu          = typeof currentUser !== 'undefined' ? currentUser : null;
+
+  // Simulate isVisible logic for any memberId (as if that device were reading)
+  function simVisible(task, membId) {
+    if (!task) return { visible: false, r1: false, r2: false, r3a: false, r3b: false, r3c: false };
+    const r1  = !!(myDynId && task.createdBy === myDynId);
+    const r2  = !!(!DataAdapter.isFamily() && task.createdBy === cu);
+    const r3a = !!(task.visibleTo && myDynId && task.visibleTo.includes(myDynId));
+    const r3b = !!(task.visibleTo && cu && task.visibleTo.includes(cu));
+    const r3c = !!(task.visibleTo && membId && task.visibleTo.includes(membId));
+    return { visible: r1||r2||r3a||r3b||r3c, r1, r2, r3a, r3b, r3c };
+  }
+
+  // Check notifyTo both by memberId and legacy id
+  function simNotify(task, membId, legId) {
+    if (!task || !task.notifyTo) return { byMemberId: false, byLegacy: false };
+    return {
+      byMemberId: task.notifyTo.includes(membId),
+      byLegacy:   task.notifyTo.includes(legId),
+    };
+  }
+
+  const cacheUserIds   = _familyMembersCache.map(m => m.userId);
+  const cacheMemberIds = _familyMembersCache.map(m => m.memberId);
+  const wouldDefaultVisibleTo = _familyMembersCache.length > 0
+    ? cacheUserIds
+    : ['mom','dad','dudi','yonatan'];
+
   const out = [
-    '=== IDENTITY ===',
-    'localStorage key    : ' + localStorage.getItem('family-app-my-member-id'),
-    'DataAdapter.myMemberId : ' + DataAdapter.myMemberId,
+    '=== IDENTITY (this device) ===',
+    'myMemberId (localStorage) : ' + localStorage.getItem('family-app-my-member-id'),
+    'DataAdapter.myMemberId    : ' + myMemberId,
+    'DataAdapter.userId        : ' + myDynId,
+    'isFamily()                : ' + DataAdapter.isFamily(),
+    '',
+    '=== _familyMembersCache (' + _familyMembersCache.length + ' entries) ===',
+    '.map(m=>m.userId)   = ' + JSON.stringify(cacheUserIds),
+    '.map(m=>m.memberId) = ' + JSON.stringify(cacheMemberIds),
+    '→ parsedToTask defaultVisibleTo = ' + JSON.stringify(wouldDefaultVisibleTo),
     '',
     '=== TASKS ===',
-    'total : ' + AppState.tasks.length + '  non-deleted : ' + AppState.tasks.filter(t=>!t.deleted).length,
+    'total: ' + AppState.tasks.length + '  non-deleted: ' + AppState.tasks.filter(t=>!t.deleted).length,
     '',
-    '=== DRAWER TASK (shareTask) ===',
-    active ? '(drawer is open)' : '(drawer closed — showing last task)',
-    taskFields(target),
-    '',
-    '=== resolveMember(target) ===',
-    resolved ? JSON.stringify(resolved, null, 2) : '(none)',
-    '',
-    '=== activeTasks DIAGNOSIS ===',
-    (() => {
-      const active = activeTasks();
-      const myDynId   = DataAdapter.userId;
-      const lines = ['activeTasks count: ' + active.length];
-      const allNonDeleted = AppState.tasks.filter(t => !t.deleted && t.date === activeDate);
-      lines.push('non-deleted today tasks: ' + allNonDeleted.length);
-      allNonDeleted.forEach(t => {
-        const inActive = active.some(a => String(a.id) === String(t.id));
-        if (!inActive) {
-          const r1 = myDynId && t.createdBy === myDynId;
-          const r2 = !DataAdapter.isFamily() && t.createdBy === (typeof currentUser !== 'undefined' ? currentUser : '?');
-          const r3a = t.visibleTo && myDynId && t.visibleTo.includes(myDynId);
-          const r3b = t.visibleTo && t.visibleTo.includes(typeof currentUser !== 'undefined' ? currentUser : '?');
-          lines.push('HIDDEN: "' + t.title + '"');
-          lines.push('  createdBy=' + t.createdBy + ' myDynId=' + myDynId);
-          lines.push('  visibleTo=' + JSON.stringify(t.visibleTo));
-          lines.push('  reason: createdBy?' + r1 + ' localCreator?' + r2 + ' visUID?' + r3a + ' visLocal?' + r3b);
-        }
-      });
-      if (active.length === allNonDeleted.length) lines.push('all today tasks visible — no hidden tasks');
-      return lines.join('\n');
-    })(),
-  ].join('\n');
-  document.getElementById('qaContent').textContent = out;
+    '=== LAST/ACTIVE TASK — ALL FIELDS ===',
+    drawerTask ? '(drawer open — showing shareTask)' : '(drawer closed — showing last non-deleted task)',
+  ];
+
+  if (target) {
+    out.push('id                 : ' + target.id);
+    out.push('title              : ' + target.title);
+    out.push('date               : ' + target.date);
+    out.push('person             : ' + JSON.stringify(target.person)
+      + '  → personLabel: "' + personLabel(target.person) + '"');
+    out.push('assignedTo         : ' + JSON.stringify(target.assignedTo));
+    out.push('assignedToName     : ' + JSON.stringify(target.assignedToName));
+    out.push('assignedToMemberId : ' + JSON.stringify(target.assignedToMemberId));
+    out.push('assignedToUserId   : ' + JSON.stringify(target.assignedToUserId));
+    out.push('createdBy          : ' + JSON.stringify(target.createdBy));
+    out.push('createdByMemberId  : ' + JSON.stringify(target.createdByMemberId));
+    out.push('visibleTo          : ' + JSON.stringify(target.visibleTo));
+    out.push('notifyTo           : ' + JSON.stringify(target.notifyTo));
+    out.push('notify             : ' + target.notify);
+    out.push('completed          : ' + target.completed);
+    out.push('deleted            : ' + target.deleted);
+    out.push('');
+
+    out.push('=== resolveMember(task) ===');
+    const resolved = resolveMember(target);
+    const resReason = target.assignedToMemberId
+      ? (_familyMembersCache.find(m => m.memberId === target.assignedToMemberId)
+          ? 'cache-hit' : 'seed-hit')
+      : (FAMILY.find(f => f.id === (target.assignedTo||'')) ? 'legacy-FAMILY' : 'fallback');
+    out.push(JSON.stringify(resolved, null, 2));
+    out.push('reason: ' + resReason);
+    out.push('');
+
+    out.push('=== VISIBILITY — would task be visible? ===');
+    out.push('(r1=createdByMe  r2=localCreator  r3a=visUID  r3b=visLocal  r3c=visMemberId)');
+    ['dad','mom'].forEach(who => {
+      const membId = 'member_' + who;
+      const v = simVisible(target, membId);
+      out.push(who + ' (' + membId + '): visible=' + v.visible
+        + '  r1=' + v.r1 + ' r2=' + v.r2 + ' r3a=' + v.r3a + ' r3b=' + v.r3b + ' r3c=' + v.r3c);
+    });
+    out.push('NOTE: r1/r3a use THIS device\'s Firebase UID — same on both phones if same account');
+    out.push('NOTE: r3c checks memberId against visibleTo — only true if visibleTo has member_dad/member_mom');
+    out.push('');
+
+    out.push('=== NOTIFICATION TARGET ===');
+    out.push('(actual push fires for all VISIBLE+notify tasks — notifyTo drives UI bells only)');
+    ['dad','mom'].forEach(who => {
+      const n = simNotify(target, 'member_' + who, who);
+      out.push(who + ': byMemberId=' + n.byMemberId + '  byLegacy=' + n.byLegacy
+        + (n.byMemberId || n.byLegacy ? '  → bell ON' : '  → bell OFF'));
+    });
+    out.push('');
+  } else {
+    out.push('(no task found)');
+    out.push('');
+  }
+
+  out.push('=== activeTasks DIAGNOSIS ===');
+  const atList = activeTasks();
+  out.push('activeTasks count: ' + atList.length);
+  const todayNonDel = AppState.tasks.filter(t => !t.deleted && t.date === activeDate);
+  out.push('non-deleted today tasks: ' + todayNonDel.length);
+  todayNonDel.forEach(t => {
+    const inActive = atList.some(a => String(a.id) === String(t.id));
+    if (!inActive) {
+      const r1  = !!(myDynId && t.createdBy === myDynId);
+      const r2  = !!(!DataAdapter.isFamily() && t.createdBy === cu);
+      const r3a = !!(t.visibleTo && myDynId && t.visibleTo.includes(myDynId));
+      const r3b = !!(t.visibleTo && cu && t.visibleTo.includes(cu));
+      const r3c = !!(t.visibleTo && myMemberId && t.visibleTo.includes(myMemberId));
+      out.push('HIDDEN: "' + t.title + '"');
+      out.push('  createdBy=' + t.createdBy + ' myDynId=' + myDynId);
+      out.push('  visibleTo=' + JSON.stringify(t.visibleTo));
+      out.push('  r1=' + r1 + ' r2=' + r2 + ' r3a=' + r3a + ' r3b=' + r3b + ' r3c=' + r3c);
+    }
+  });
+  if (atList.length === todayNonDel.length) out.push('all today tasks visible — no hidden tasks');
+
+  document.getElementById('qaContent').textContent = out.join('\n');
   document.getElementById('qaPanel').classList.add('open');
 }
 function _qaHide() {
