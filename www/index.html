@@ -3888,7 +3888,8 @@ function closeShareDrawer() {
   if (shareSaveCb) { shareSaveCb(); shareSaveCb = null; }
   const savedTask = shareTask;
   shareTask = null;
-  if (savedTask) _daWriteTask(savedTask).catch(() => {});
+  const isPreviewTask = savedTask && AppState.previewTasks.some(t => t === savedTask || String(t.id) === String(savedTask.id));
+  if (savedTask && !isPreviewTask) _daWriteTask(savedTask).catch(() => {});
 }
 
 document.getElementById('shareMoreToggle').addEventListener('click', () => {
