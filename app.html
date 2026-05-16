@@ -2172,6 +2172,15 @@ const FAMILY = [
 const ALL_MEMBER_IDS = FAMILY.map(f => f.id);
 const PERSON_TO_ID   = Object.fromEntries(FAMILY.map(f => [f.label, f.id]));
 const ID_TO_PERSON   = Object.fromEntries(FAMILY.map(f => [f.id,    f.label]));
+const MEMBER_ID_TO_LEGACY_ID = {
+  member_dad:    'dad',
+  member_mom:    'mom',
+  member_laali:  'dudi',
+  member_aharon: 'yonatan',
+};
+const LEGACY_ID_TO_MEMBER_ID = Object.fromEntries(
+  Object.entries(MEMBER_ID_TO_LEGACY_ID).map(([memberId, legacyId]) => [legacyId, memberId])
+);
 
 function avSrc(id) {
   const cls = {mom:'av-mom',dad:'av-dad',dudi:'av-dudi',yonatan:'av-yona'}[id];
@@ -2191,7 +2200,7 @@ function taskAvImg(task) {
     return `<span style="font-size:20px;line-height:1;">${m.avatar.value}</span>`;
   if (m.avatar && m.avatar.type === 'image')
     return `<img src="${m.avatar.value}" style="width:100%;height:100%;object-fit:cover;display:block;" alt="">`;
-  return avImg(task.assignedTo || PERSON_TO_ID[task.person] || 'mom');
+  return avImg(_taskLegacyAssigneeId(task));
 }
 
 // Single source of truth for the parser — built from FAMILY + I18N.
@@ -2211,6 +2220,38 @@ const USER_KEY = 'family-app-user';
 let currentUser = localStorage.getItem(USER_KEY) || 'dad';
 
 function saveCurrentUser() { localStorage.setItem(USER_KEY, currentUser); }
+function _legacyIdForMemberId(memberId) {
+  return MEMBER_ID_TO_LEGACY_ID[memberId] || (memberId ? String(memberId).replace(/^member_/, '') : null);
+}
+function _memberIdForLegacyId(legacyId) {
+  return LEGACY_ID_TO_MEMBER_ID[legacyId] || null;
+}
+function _currentDeviceLegacyId() {
+  if (DataAdapter.isFamily()) return _legacyIdForMemberId(DataAdapter.myMemberId) || currentUser;
+  return currentUser;
+}
+function _defaultVisibleToIds() {
+  return (DataAdapter.isFamily() ? _FAMILY_MEMBERS_SEED.map(m => m.memberId) : ALL_MEMBER_IDS)
+    .filter(v => v !== undefined && v !== null && v !== '');
+}
+function _requireDeviceMemberForTaskCreation() {
+  if (!DataAdapter.isFamily() || DataAdapter.myMemberId) return true;
+  console.warn('[Identity] Cannot create task before selecting this device member');
+  if (typeof _showDeviceSetupScreen === 'function') _showDeviceSetupScreen();
+  if (typeof showNotifToast === 'function') showNotifToast('בחר מי משתמש במכשיר לפני יצירת משימה');
+  return false;
+}
+function _taskLegacyAssigneeId(task) {
+  return _legacyIdForMemberId(task?.assignedToMemberId)
+    || task?.assignedTo
+    || PERSON_TO_ID[task?.person]
+    || _currentDeviceLegacyId()
+    || 'dad';
+}
+function _taskDisplayName(task) {
+  const resolved = resolveMember(task);
+  return resolved.name || personLabel(task.person);
+}
 
 function openUserSwitcher() {
   const bg = document.getElementById('uswBg');
@@ -2237,7 +2278,7 @@ function closeUserSwitcher() {
 }
 
 function taskPerson(t) {
-  const key = (t.assignedTo && ID_TO_PERSON[t.assignedTo]) || t.person;
+  const key = ID_TO_PERSON[_taskLegacyAssigneeId(t)] || t.person;
   return PEOPLE[key] || PEOPLE.Mom;
 }
 
@@ -2344,16 +2385,15 @@ function setLang(lang) {
 
 // Convert a HebrewParser result → app task shape
 function parsedToTask(p, idx) {
-  const assignedTo   = p.assignedTo || currentUser;
-  const assignedToMemberId = _ASSIGNEE_TO_MEMBER_ID[assignedTo] || null;
+  const assignedTo = p.assignedTo || _currentDeviceLegacyId();
+  const assignedToMemberId = DataAdapter.isFamily()
+    ? (_memberIdForLegacyId(assignedTo) || DataAdapter.myMemberId)
+    : null;
   const person       = ID_TO_PERSON[assignedTo] || 'Dad';
   const dateStr      = p.date && p.date.date
     ? dateToYMD(p.date.date)
     : todayDate();
-  const defaultVisibleTo = (DataAdapter.isFamily()
-    ? _FAMILY_MEMBERS_SEED.map(m => m.memberId)
-    : ALL_MEMBER_IDS
-  ).filter(v => v !== undefined && v !== null && v !== '');
+  const defaultVisibleTo = _defaultVisibleToIds();
   return {
     id:                    DataAdapter.isFamily() ? _genCode(16) : Date.now() + idx,
     title:                 p.title,
@@ -2380,8 +2420,10 @@ function parsedToTask(p, idx) {
 
 // Convert AI canonical schema → app task shape
 function aiParsedToTask(t, idx) {
-  const assignedTo = t.assignee || currentUser;
-  const assignedToMemberId = _ASSIGNEE_TO_MEMBER_ID[assignedTo] || null;
+  const assignedTo = t.assignee || _currentDeviceLegacyId();
+  const assignedToMemberId = DataAdapter.isFamily()
+    ? (_memberIdForLegacyId(assignedTo) || DataAdapter.myMemberId)
+    : null;
   const person     = ID_TO_PERSON[assignedTo] || 'Dad';
 
   let dateStr = todayDate();
@@ -2396,10 +2438,7 @@ function aiParsedToTask(t, idx) {
     mins = h * 60 + m;
   }
 
-  const defaultVisibleTo = (DataAdapter.isFamily()
-    ? _FAMILY_MEMBERS_SEED.map(m => m.memberId)
-    : ALL_MEMBER_IDS
-  ).filter(v => v !== undefined && v !== null && v !== '');
+  const defaultVisibleTo = _defaultVisibleToIds();
   return {
     id:                    DataAdapter.isFamily() ? _genCode(16) : Date.now() + idx,
     title:                 t.title,
@@ -3646,7 +3685,12 @@ function openShareDrawer(task, onSave) {
   shareSaveCb = onSave;
   if (task.reminderOffsetMinutes === undefined) task.reminderOffsetMinutes = 10;
   if (!task.recurrence) task.recurrence = { type: 'none' };
-  if (!task.assignedTo) task.assignedTo = PERSON_TO_ID[task.person] || 'dad';
+  if (!task.assignedTo) task.assignedTo = _taskLegacyAssigneeId(task);
+  if (DataAdapter.isFamily() && !task.assignedToMemberId) {
+    task.assignedToMemberId = _memberIdForLegacyId(task.assignedTo) || null;
+  }
+  if (!task.visibleTo) task.visibleTo = _defaultVisibleToIds();
+  if (!task.notifyTo)  task.notifyTo  = [DataAdapter.isFamily() && task.assignedToMemberId ? task.assignedToMemberId : _taskLegacyAssigneeId(task)];
   document.getElementById('shareDrawerTitle').textContent = task.title;
   renderAssignedSection();
   renderShareRows();
@@ -4074,6 +4118,11 @@ async function vOrganize() {
   vListening = false;
   wdots.classList.remove('on');
   const spokenText = vTranscript.trim();
+
+  if (!_requireDeviceMemberForTaskCreation()) {
+    vTypeBtnThinkingOff();
+    return;
+  }
 
   // Processing lock: drop concurrent calls (e.g. double-tap on mic button)
   if (_vOrganizerBusy) {
@@ -4536,7 +4585,7 @@ function attachSplitGesture(cardEl, task) {
 
 function _updateDpMeta() {
   const tasks = AppState.previewTasks;
-  const people = [...new Set(tasks.map(task => personLabel(task.person)))];
+  const people = [...new Set(tasks.map(task => _taskDisplayName(task)))];
   document.querySelector('.dp-meta').innerHTML =
     `<span class="dp-pill">📋 ${tasks.length} ${t('dp_tasks_lbl')}</span><span class="dp-pill">${people.join(' · ')}</span>`;
 }
@@ -4546,8 +4595,8 @@ function _buildCardEl(task) {
   const c = document.createElement('div');
   c.className  = 'task-card';
   c.dataset.id = task.id;
-  if (!task.visibleTo)   task.visibleTo  = [...ALL_MEMBER_IDS];
-  if (!task.notifyTo)    task.notifyTo   = [PERSON_TO_ID[task.person] || 'mom'];
+  if (!task.visibleTo)   task.visibleTo  = _defaultVisibleToIds();
+  if (!task.notifyTo)    task.notifyTo   = [DataAdapter.isFamily() && task.assignedToMemberId ? task.assignedToMemberId : _taskLegacyAssigneeId(task)];
   if (task.reminderOffsetMinutes === undefined) task.reminderOffsetMinutes = 10;
   if (!task.timeSource)  task.timeSource = 'suggested';
   const tsLabel = { explicit:t('dp_time_explicit'), suggested:t('dp_time_suggested'), manual:t('dp_time_manual') };
@@ -4559,7 +4608,7 @@ function _buildCardEl(task) {
         <div class="card-accent" style="background:${p.color}"></div>
         <div class="card-time-col"><span class="card-time${task.mins==null?' empty':''}">${m2t(task.mins) || '__:__'}</span><span class="card-ampm">${ampm(task.mins)}</span><span class="card-ts ${task.timeSource}">${task.mins==null?'':tsLabel[task.timeSource]}</span></div>
         <div class="card-vline"></div>
-        <div class="card-body"><div class="card-title">${task.subItems?.mainTitle || task.title}</div><div class="card-chip"><span class="chip-dot" style="background:${p.color}"></span>${personLabel(task.person)}</div>${canSplit?'<button class="t-split-btn">פצל</button>':''}</div>
+        <div class="card-body"><div class="card-title">${task.subItems?.mainTitle || task.title}</div><div class="card-chip"><span class="chip-dot" style="background:${p.color}"></span>${_taskDisplayName(task)}</div>${canSplit?'<button class="t-split-btn">פצל</button>':''}</div>
         <div class="card-av" style="background:${p.bg}">${taskAvImg(task)}</div>
         <div class="card-bell${_taskShowsActiveBell(task)?'':' off'}">${_taskShowsActiveBell(task)?'🔔':'🔕'}</div>
       </div>
@@ -4911,6 +4960,7 @@ document.getElementById('dpBack').addEventListener('click', () => {
 });
 
 document.getElementById('btnOk').addEventListener('click', function() {
+  if (!_requireDeviceMemberForTaskCreation()) return;
   this.textContent = t('dp_ok_done');
   this.classList.add('success');
   document.querySelectorAll('#dpList .task-card').forEach((c,i) => {
@@ -5073,7 +5123,7 @@ function renderToday() {
   const avMap = { mom:'av-mom', dad:'av-dad', dudi:'av-dudi', yonatan:'av-yona' };
   const taskCounts = {};
   tasks.forEach(t => {
-    const id = t.assignedTo || PERSON_TO_ID[t.person];
+    const id = _taskLegacyAssigneeId(t);
     if (id) taskCounts[id] = (taskCounts[id] || 0) + 1;
   });
   FAMILY.forEach(f => {
@@ -5115,8 +5165,8 @@ function renderToday() {
       document.getElementById('tHeyebrow').textContent = isHe ? 'הייתה אמורה להתחיל ב-' + m2t(nextTask.mins) : 'Was due at ' + m2t(nextTask.mins);
       document.querySelector('.t-htime').textContent = '';
       document.querySelector('.t-htask').textContent = nextTask.title;
-      updateHeroPortrait(nextTask.assignedTo || PERSON_TO_ID[nextTask.person]);
-      document.querySelector('.t-hname').textContent = personLabel(nextTask.person);
+      updateHeroPortrait(_taskLegacyAssigneeId(nextTask));
+      document.querySelector('.t-hname').textContent = _taskDisplayName(nextTask);
       document.querySelector('.t-hpill').textContent = isHe ? '⚠ טרם הושלמה' : '⚠ Overdue';
     } else {
       heroCard.classList.remove('overdue');
@@ -5125,8 +5175,8 @@ function renderToday() {
       const pill = diff <= 0 ? t('time_now') : diff < 60 ? tFmt('time_in_min',{n:diff}) : tFmt('time_in_hr',{n:Math.round(diff/60)});
       document.querySelector('.t-htime').textContent = m2t(nextTask.mins);
       document.querySelector('.t-htask').textContent = nextTask.title;
-      updateHeroPortrait(nextTask.assignedTo || PERSON_TO_ID[nextTask.person]);
-      document.querySelector('.t-hname').textContent = personLabel(nextTask.person);
+      updateHeroPortrait(_taskLegacyAssigneeId(nextTask));
+      document.querySelector('.t-hname').textContent = _taskDisplayName(nextTask);
       document.querySelector('.t-hpill').textContent = pill;
     }
   } else {
@@ -5144,8 +5194,8 @@ function renderToday() {
     el.dataset.id          = t.id;
     el.dataset.recurring   = t.isRecurring ? 'true' : 'false';
     el.dataset.recurrenceid = t.recurrenceId || '';
-    if (!t.visibleTo) t.visibleTo = [...ALL_MEMBER_IDS];
-    if (!t.notifyTo)  t.notifyTo  = [PERSON_TO_ID[t.person] || 'mom'];
+    if (!t.visibleTo) t.visibleTo = _defaultVisibleToIds();
+    if (!t.notifyTo)  t.notifyTo  = [DataAdapter.isFamily() && t.assignedToMemberId ? t.assignedToMemberId : _taskLegacyAssigneeId(t)];
     if (t.reminderOffsetMinutes === undefined) t.reminderOffsetMinutes = 10;
     const realTForEdit = t.isRecurring ? (AppState.tasks.find(rt => rt.id === t.recurrenceId) || t) : t;
     const canEditCommitted = _canEditCommittedTask(realTForEdit);
@@ -5157,7 +5207,7 @@ function renderToday() {
           <div class="t-ck ${t.completed?'ck-done':isNx?'ck-nxt':'ck-open'}">${t.completed?'<span style="color:white;font-size:14px;font-weight:900;">✓</span>':''}</div>
           <div class="t-tcol"><div class="t-ttime${isNx&&!t.completed?' ora':''}${t.mins==null?' empty':''}">${m2t(t.mins) || '__:__'}</div><div class="t-tampm">${ampm(t.mins)}</div></div>
           <div class="t-tvline"></div>
-          <div class="t-tbody"><div class="t-ttitle">${t.subItems?.mainTitle || t.title}</div><div class="t-tchip"><span class="t-dot" style="background:${p.color}"></span>${personLabel(t.person)}</div></div>
+          <div class="t-tbody"><div class="t-ttitle">${t.subItems?.mainTitle || t.title}</div><div class="t-tchip"><span class="t-dot" style="background:${p.color}"></span>${_taskDisplayName(t)}</div></div>
           <div class="t-miniav" style="background:${p.bg}">${taskAvImg(t)}</div>
           <div class="t-bell${_taskShowsActiveBell(t)?'':' off'}">${_taskShowsActiveBell(t)?'🔔':'🔕'}</div>
         </div>
@@ -5410,7 +5460,7 @@ function _refreshTodayMetadata() {
   const avMap = { mom:'av-mom', dad:'av-dad', dudi:'av-dudi', yonatan:'av-yona' };
   const taskCounts = {};
   tasks.forEach(task => {
-    const id = task.assignedTo || PERSON_TO_ID[task.person];
+    const id = _taskLegacyAssigneeId(task);
     if (id) taskCounts[id] = (taskCounts[id] || 0) + 1;
   });
   FAMILY.forEach(f => {
@@ -5442,8 +5492,8 @@ function _refreshTodayMetadata() {
       document.getElementById('tHeyebrow').textContent = isHe ? 'הייתה אמורה להתחיל ב-' + m2t(nextTask.mins) : 'Was due at ' + m2t(nextTask.mins);
       if (htime) htime.textContent = '';
       if (htask) htask.textContent = nextTask.title;
-      updateHeroPortrait(nextTask.assignedTo || PERSON_TO_ID[nextTask.person]);
-      if (hname) hname.textContent = personLabel(nextTask.person);
+      updateHeroPortrait(_taskLegacyAssigneeId(nextTask));
+      if (hname) hname.textContent = _taskDisplayName(nextTask);
       if (hpill) hpill.textContent = isHe ? '⚠ טרם הושלמה' : '⚠ Overdue';
     } else {
       hero.classList.remove('overdue');
@@ -5454,8 +5504,8 @@ function _refreshTodayMetadata() {
                  :              tFmt('time_in_hr',  { n: Math.round(diff/60) });
       if (htime) htime.textContent = m2t(nextTask.mins);
       if (htask) htask.textContent = nextTask.title;
-      updateHeroPortrait(nextTask.assignedTo || PERSON_TO_ID[nextTask.person]);
-      if (hname) hname.textContent = personLabel(nextTask.person);
+      updateHeroPortrait(_taskLegacyAssigneeId(nextTask));
+      if (hname) hname.textContent = _taskDisplayName(nextTask);
       if (hpill) hpill.textContent = pill;
     }
     hero.style.display = '';
@@ -5725,15 +5775,14 @@ document.getElementById('tTasks').addEventListener('click', e => {
       const nextId   = nextEl.dataset.id;
       const nextTask = activeTasks().find(t => String(t.id) === nextId);
       if (nextTask) {
-        const p = taskPerson(nextTask);
         const now = new Date();
         const diff = nextTask.mins - (now.getHours()*60+now.getMinutes());
         const heroCard = document.querySelector('#s-today .t-hero-card');
         heroCard.classList.remove('refreshing'); void heroCard.offsetWidth; heroCard.classList.add('refreshing');
         document.querySelector('.t-htime').textContent = m2t(nextTask.mins);
         document.querySelector('.t-htask').textContent = nextTask.title;
-        updateHeroPortrait(nextTask.assignedTo || PERSON_TO_ID[nextTask.person]);
-        document.querySelector('.t-hname').textContent = personLabel(nextTask.person);
+        updateHeroPortrait(_taskLegacyAssigneeId(nextTask));
+        document.querySelector('.t-hname').textContent = _taskDisplayName(nextTask);
         document.querySelector('.t-hpill').textContent = diff<=0?t('time_now'):diff<60?tFmt('time_in_min',{n:diff}):tFmt('time_in_hr',{n:Math.round(diff/60)});
       }
     } else {
@@ -5813,7 +5862,6 @@ document.getElementById('tTasks').addEventListener('click', e => {
       ckEl.className = `t-ck ${undoneTask && nextTask.id === undoneTask.id ? 'ck-nxt' : 'ck-open'}`;
 
       // Refresh hero card
-      const p    = taskPerson(nextTask);
       const now  = new Date();
       const diff = nextTask.mins - (now.getHours()*60 + now.getMinutes());
       const heroCard = document.querySelector('#s-today .t-hero-card');
@@ -5821,8 +5869,8 @@ document.getElementById('tTasks').addEventListener('click', e => {
       heroCard.classList.remove('refreshing'); void heroCard.offsetWidth; heroCard.classList.add('refreshing');
       document.querySelector('.t-htime').textContent  = m2t(nextTask.mins);
       document.querySelector('.t-htask').textContent  = nextTask.title;
-      updateHeroPortrait(nextTask.assignedTo || PERSON_TO_ID[nextTask.person]);
-      document.querySelector('.t-hname').textContent  = personLabel(nextTask.person);
+      updateHeroPortrait(_taskLegacyAssigneeId(nextTask));
+      document.querySelector('.t-hname').textContent  = _taskDisplayName(nextTask);
       document.querySelector('.t-hpill').textContent  = diff<=0?t('time_now'):diff<60?tFmt('time_in_min',{n:diff}):tFmt('time_in_hr',{n:Math.round(diff/60)});
     } else {
       ckEl.className = 't-ck ck-open';
@@ -6192,11 +6240,6 @@ function hideNotifToast() {
 document.getElementById('notifClose').addEventListener('click', hideNotifToast);
 
 // ─── Overdue reminder logic ────────────────────────────────────────
-function _legacyIdForMemberId(memberId) {
-  if (!memberId) return null;
-  return String(memberId).replace(/^member_/, '');
-}
-
 function _taskHasNotificationRecipients(task) {
   return Array.isArray(task?.notifyTo)
     && task.notifyTo.some(v => v !== undefined && v !== null && v !== '');
@@ -6730,9 +6773,9 @@ async function _daLoadTasksFromCloud() {
         createdByMemberId:      d.createdByMemberId  || null,
         assignedTo:             d.assignedTo   || null,
         assignedToMemberId:     d.assignedToMemberId || null,
-        assignedToUserId:       d.assignedTo   || null,
+        assignedToUserId:       d.assignedToUserId || null,
         assignedToName:         d.assignedToName || null,
-        visibleTo:              (d.visibleTo || []).filter(v => v !== undefined && v !== null && v !== ''),
+        visibleTo:              (Array.isArray(d.visibleTo) ? d.visibleTo : _defaultVisibleToIds()).filter(v => v !== undefined && v !== null && v !== ''),
         notifyTo:               d.notifyTo   || [],
         recurrence:             d.recurrence || { type: 'none' },
         reminderOffsetMinutes:  d.reminderOffsetMinutes  ?? 10,
@@ -6828,9 +6871,9 @@ function _daStartListener() {
           createdByMemberId:      d.createdByMemberId  || null,
           assignedTo:             d.assignedTo     || null,
           assignedToMemberId:     d.assignedToMemberId || null,
-          assignedToUserId:       d.assignedTo     || null,
+          assignedToUserId:       d.assignedToUserId || null,
           assignedToName:         d.assignedToName || null,
-          visibleTo:              (d.visibleTo || []).filter(v => v !== undefined && v !== null && v !== ''),
+          visibleTo:              (Array.isArray(d.visibleTo) ? d.visibleTo : _defaultVisibleToIds()).filter(v => v !== undefined && v !== null && v !== ''),
           notifyTo:               d.notifyTo               || [],
           recurrence:             d.recurrence             || { type: 'none' },
           reminderOffsetMinutes:  d.reminderOffsetMinutes  ?? 10,
@@ -7093,7 +7136,7 @@ async function _daWriteTask(task, isNew) {
       assignedTo:            task.assignedTo || null,
       assignedToMemberId:    task.assignedToMemberId || null,
       assignedToName:        task.assignedToName   || null,
-      visibleTo:             (task.visibleTo || []).filter(v => v !== undefined && v !== null && v !== ''),
+      visibleTo:             (task.visibleTo || _defaultVisibleToIds()).filter(v => v !== undefined && v !== null && v !== ''),
       notifyTo:              task.notifyTo  || [],
       recurrence:            task.recurrence || { type: 'none' },
       reminderOffsetMinutes: task.reminderOffsetMinutes ?? 10,
