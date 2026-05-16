@@ -3889,7 +3889,10 @@ function closeShareDrawer() {
   const savedTask = shareTask;
   shareTask = null;
   const isPreviewTask = savedTask && AppState.previewTasks.some(t => t === savedTask || String(t.id) === String(savedTask.id));
-  if (savedTask && !isPreviewTask) _daWriteTask(savedTask).catch(() => {});
+  if (savedTask && !isPreviewTask) {
+    _capRescheduleAll().catch(() => {});
+    _daWriteTask(savedTask, false).catch(() => {});
+  }
 }
 
 document.getElementById('shareMoreToggle').addEventListener('click', () => {
@@ -4995,6 +4998,14 @@ function activeTasks() {
   return [...regular, ...recurring].sort((a, b) => a.mins - b.mins);
 }
 
+function _canEditCommittedTask(task) {
+  if (!task) return false;
+  if (!DataAdapter.isFamily()) return true;
+  if (task.createdByMemberId) return task.createdByMemberId === DataAdapter.myMemberId;
+  if (task.createdBy) return task.createdBy === DataAdapter.userId;
+  return true;
+}
+
 function updateProgress() {
   const tasks = activeTasks();
   const total = tasks.length;
@@ -5117,6 +5128,8 @@ function renderToday() {
     if (!t.visibleTo) t.visibleTo = [...ALL_MEMBER_IDS];
     if (!t.notifyTo)  t.notifyTo  = [PERSON_TO_ID[t.person] || 'mom'];
     if (t.reminderOffsetMinutes === undefined) t.reminderOffsetMinutes = 10;
+    const realTForEdit = t.isRecurring ? (AppState.tasks.find(rt => rt.id === t.recurrenceId) || t) : t;
+    const canEditCommitted = _canEditCommittedTask(realTForEdit);
     const tCanSplit = sanitizeSegments(mockSplit(t.subItems?.mainTitle || t.title)).length >= 2;
     el.innerHTML = `
       <div class="t-swipe-bg"><svg class="swipe-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></div>
@@ -5147,42 +5160,46 @@ function renderToday() {
       expBtn.addEventListener('click', e => { e.stopPropagation(); showTitleTip(t, expBtn); });
       ttitle.after(expBtn);
     }
-    el.querySelector('.t-bell').addEventListener('click', e => {
-      e.stopPropagation();
-      const realT = t.isRecurring ? (AppState.tasks.find(rt => rt.id === t.recurrenceId) || t) : t;
-      const goingOn = realT.notify === false;          // about to turn ON
-      realT.notify = goingOn ? true : false;
-      t.notify = realT.notify;
-      const bell = el.querySelector('.t-bell');
-      bell.textContent = realT.notify ? '🔔' : '🔕';
-      bell.classList.toggle('off', !realT.notify);
-      saveState();
-      // Gentle permission gate: only ask when the user actually expressed
-      // intent to be notified (i.e. turned bell ON) AND we haven't asked yet.
-      // NB: inside this forEach `t` is the task — the i18n function `t` is
-      // shadowed, so we read the string directly from the I18N table.
-      if (goingOn) {
-        if (_notifSupported() && Notification.permission === 'default') {
-          _requestNotifPermission().then(r => {
-            if (r === 'granted') _ensurePushSubscription().catch(()=>{});
-          });
-        } else if (_notifSupported() && Notification.permission === 'denied') {
-          const i18n = I18N[AppState.lang] || I18N.en;
-          showNotifToast(i18n.notif_perm_blocked);
-        } else if (_notifSupported() && Notification.permission === 'granted') {
-          // Already granted but maybe no subscription yet — ensure one.
-          _ensurePushSubscription().catch(()=>{});
-        }
-      }
-    });
-    el.querySelector('.t-share').addEventListener('click', e => {
-      e.stopPropagation();
-      const realT = t.isRecurring ? (AppState.tasks.find(rt => rt.id === t.recurrenceId) || t) : t;
-      openShareDrawer(realT, () => {
-        el.querySelector('.t-share-name').textContent = assignedLabel(realT);
+    if (canEditCommitted) {
+      el.querySelector('.t-bell').addEventListener('click', e => {
+        e.stopPropagation();
+        const realT = realTForEdit;
+        const goingOn = realT.notify === false;          // about to turn ON
+        realT.notify = goingOn ? true : false;
+        t.notify = realT.notify;
+        const bell = el.querySelector('.t-bell');
+        bell.textContent = realT.notify ? '🔔' : '🔕';
+        bell.classList.toggle('off', !realT.notify);
         saveState();
+        _daWriteTask(realT, false).catch(() => {});
+        _capRescheduleAll().catch(() => {});
+        // Gentle permission gate: only ask when the user actually expressed
+        // intent to be notified (i.e. turned bell ON) AND we haven't asked yet.
+        // NB: inside this forEach `t` is the task — the i18n function `t` is
+        // shadowed, so we read the string directly from the I18N table.
+        if (goingOn) {
+          if (_notifSupported() && Notification.permission === 'default') {
+            _requestNotifPermission().then(r => {
+              if (r === 'granted') _ensurePushSubscription().catch(()=>{});
+            });
+          } else if (_notifSupported() && Notification.permission === 'denied') {
+            const i18n = I18N[AppState.lang] || I18N.en;
+            showNotifToast(i18n.notif_perm_blocked);
+          } else if (_notifSupported() && Notification.permission === 'granted') {
+            // Already granted but maybe no subscription yet — ensure one.
+            _ensurePushSubscription().catch(()=>{});
+          }
+        }
       });
-    });
+      el.querySelector('.t-share').addEventListener('click', e => {
+        e.stopPropagation();
+        const realT = realTForEdit;
+        openShareDrawer(realT, () => {
+          el.querySelector('.t-share-name').textContent = assignedLabel(realT);
+          saveState();
+        });
+      });
+    }
     el.querySelector('.t-split-btn')?.addEventListener('click', e => { e.stopPropagation(); openSplitSheet(t, el); });
 
     // ── Edit-in-place: title (contenteditable) + time (tap-to-keypad) ──
@@ -5190,7 +5207,7 @@ function renderToday() {
     // shouldn't surprise the user with stealth edits. Recurring tasks edit
     // their template task in AppState.tasks (same pattern as the bell + share
     // handlers above) so changes persist across days.
-    if (!t.completed) {
+    if (!t.completed && canEditCommitted) {
 
       const tcol = el.querySelector('.t-tcol');
       if (tcol) {
@@ -5237,7 +5254,7 @@ function renderToday() {
 
     el.style.animationDelay = `${i * 68}ms`;
     el.classList.add('entering');
-    attachSwipeDelete(el, t, 'today');
+    if (canEditCommitted) attachSwipeDelete(el, t, 'today');
     categorizeShoppingTitle(t);
     summarizeAgendaTitle(t);
     container.appendChild(el);
@@ -5453,7 +5470,12 @@ function doDelete(task, screen) {
     // Just refresh the meta pills — no list rebuild → no flicker / vibration.
     _updateDpMeta();
   } else {
-    const isCreator = !task.createdBy || task.createdBy === DataAdapter.userId;
+    const isCreator = _canEditCommittedTask(task);
+    if (!isCreator) {
+      renderToday();
+      showNotifToast('רק יוצר המשימה יכול לערוך');
+      return;
+    }
     const isAlone   = !task.visibleTo || task.visibleTo.length <= 1;
     if (isCreator || isAlone) {
       // Soft delete: keep task in AppState (needed for undo + listener sync)
