@@ -2336,6 +2336,7 @@ function setLang(lang) {
 // Convert a HebrewParser result → app task shape
 function parsedToTask(p, idx) {
   const assignedTo   = p.assignedTo || currentUser;
+  const assignedToMemberId = _ASSIGNEE_TO_MEMBER_ID[assignedTo] || null;
   const person       = ID_TO_PERSON[assignedTo] || 'Dad';
   const dateStr      = p.date && p.date.date
     ? dateToYMD(p.date.date)
@@ -2351,12 +2352,12 @@ function parsedToTask(p, idx) {
     assignedTo,
     createdBy:             DataAdapter.isFamily() ? DataAdapter.userId : currentUser,
     createdByMemberId:     (() => { const id = DataAdapter.myMemberId; if (!id) console.warn('[Identity] myMemberId not set — createdByMemberId null'); return id; })(),
-    assignedToMemberId:    _ASSIGNEE_TO_MEMBER_ID[assignedTo] || null,
+    assignedToMemberId,
     mins:                  p.mins,
     completed:             false,
     notify:                true,
     visibleTo:             defaultVisibleTo,
-    notifyTo:              [assignedTo],
+    notifyTo:              [DataAdapter.isFamily() && assignedToMemberId ? assignedToMemberId : assignedTo],
     reminderOffsetMinutes: 10,
     overdueReminderOffsets:[5, 10, 15],
     sentInitialReminder:   false,
@@ -2371,6 +2372,7 @@ function parsedToTask(p, idx) {
 // Convert AI canonical schema → app task shape
 function aiParsedToTask(t, idx) {
   const assignedTo = t.assignee || currentUser;
+  const assignedToMemberId = _ASSIGNEE_TO_MEMBER_ID[assignedTo] || null;
   const person     = ID_TO_PERSON[assignedTo] || 'Dad';
 
   let dateStr = todayDate();
@@ -2396,12 +2398,12 @@ function aiParsedToTask(t, idx) {
     assignedTo,
     createdBy:             DataAdapter.isFamily() ? DataAdapter.userId : currentUser,
     createdByMemberId:     (() => { const id = DataAdapter.myMemberId; if (!id) console.warn('[Identity] myMemberId not set — createdByMemberId null'); return id; })(),
-    assignedToMemberId:    _ASSIGNEE_TO_MEMBER_ID[assignedTo] || null,
+    assignedToMemberId,
     mins,
     completed:             false,
     notify:                true,
     visibleTo:             defaultVisibleTo,
-    notifyTo:              [assignedTo],
+    notifyTo:              [DataAdapter.isFamily() && assignedToMemberId ? assignedToMemberId : assignedTo],
     reminderOffsetMinutes: 10,
     overdueReminderOffsets:[5, 10, 15],
     sentInitialReminder:   false,
@@ -3818,6 +3820,7 @@ function renderRepeatSection() {
 function renderShareRows() {
   const task       = shareTask;
   const notifyOff  = task.notify === false;
+  const notifyInactive = notifyOff || !_taskHasNotificationRecipients(task);
   // Always use IDENTITY seed in family mode — no dependency on async cache
   const members = DataAdapter.isFamily()
     ? _FAMILY_MEMBERS_SEED.map(m => ({
@@ -3879,8 +3882,8 @@ function renderShareRows() {
     });
   });
 
-  document.getElementById('shareNotifySec').style.opacity = notifyOff ? '.38' : '1';
-  document.getElementById('shareReminderBlock').classList.toggle('dim', notifyOff);
+  document.getElementById('shareNotifySec').style.opacity = notifyInactive ? '.38' : '1';
+  document.getElementById('shareReminderBlock').classList.toggle('dim', notifyInactive);
 }
 
 function closeShareDrawer() {
@@ -4549,7 +4552,7 @@ function _buildCardEl(task) {
         <div class="card-vline"></div>
         <div class="card-body"><div class="card-title">${task.subItems?.mainTitle || task.title}</div><div class="card-chip"><span class="chip-dot" style="background:${p.color}"></span>${personLabel(task.person)}</div>${canSplit?'<button class="t-split-btn">פצל</button>':''}</div>
         <div class="card-av" style="background:${p.bg}">${taskAvImg(task)}</div>
-        <div class="card-bell${task.notify===false?' off':''}">${task.notify===false?'🔕':'🔔'}</div>
+        <div class="card-bell${_taskShowsActiveBell(task)?'':' off'}">${_taskShowsActiveBell(task)?'🔔':'🔕'}</div>
       </div>
     </div>`;
   // Show the "···" expander when either the title is long OR an agenda
@@ -4572,6 +4575,12 @@ function _buildCardEl(task) {
     e.stopPropagation();
     openShareDrawer(task, () => {
       shareFooter.querySelector('.card-share-name').textContent = assignedLabel(task);
+      const bell = c.querySelector('.card-bell');
+      if (bell) {
+        const active = _taskShowsActiveBell(task);
+        bell.textContent = active ? '🔔' : '🔕';
+        bell.classList.toggle('off', !active);
+      }
     });
   });
   c.querySelector('.card-swipe-track').appendChild(shareFooter);
@@ -4586,8 +4595,9 @@ function _buildCardEl(task) {
     const goingOn = task.notify === false;
     task.notify = goingOn ? true : false;
     const bell = c.querySelector('.card-bell');
-    bell.textContent = task.notify ? '🔔' : '🔕';
-    bell.classList.toggle('off', !task.notify);
+    const active = _taskShowsActiveBell(task);
+    bell.textContent = active ? '🔔' : '🔕';
+    bell.classList.toggle('off', !active);
     // Same gentle permission gate as the Today bell — ask on first turn-on.
     if (goingOn) {
       if (_notifSupported() && Notification.permission === 'default') {
@@ -5140,7 +5150,7 @@ function renderToday() {
           <div class="t-tvline"></div>
           <div class="t-tbody"><div class="t-ttitle">${t.subItems?.mainTitle || t.title}</div><div class="t-tchip"><span class="t-dot" style="background:${p.color}"></span>${personLabel(t.person)}</div></div>
           <div class="t-miniav" style="background:${p.bg}">${taskAvImg(t)}</div>
-          <div class="t-bell${t.notify===false?' off':''}">${t.notify===false?'🔕':'🔔'}</div>
+          <div class="t-bell${_taskShowsActiveBell(t)?'':' off'}">${_taskShowsActiveBell(t)?'🔔':'🔕'}</div>
         </div>
         <div class="t-share">
           <span class="t-share-lbl">${(I18N[AppState.lang]||I18N.en).assigned_to}</span>
@@ -5168,8 +5178,9 @@ function renderToday() {
         realT.notify = goingOn ? true : false;
         t.notify = realT.notify;
         const bell = el.querySelector('.t-bell');
-        bell.textContent = realT.notify ? '🔔' : '🔕';
-        bell.classList.toggle('off', !realT.notify);
+        const active = _taskShowsActiveBell(realT);
+        bell.textContent = active ? '🔔' : '🔕';
+        bell.classList.toggle('off', !active);
         saveState();
         _daWriteTask(realT, false).catch(() => {});
         _capRescheduleAll().catch(() => {});
@@ -5196,6 +5207,12 @@ function renderToday() {
         const realT = realTForEdit;
         openShareDrawer(realT, () => {
           el.querySelector('.t-share-name').textContent = assignedLabel(realT);
+          const bell = el.querySelector('.t-bell');
+          if (bell) {
+            const active = _taskShowsActiveBell(realT);
+            bell.textContent = active ? '🔔' : '🔕';
+            bell.classList.toggle('off', !active);
+          }
           saveState();
         });
       });
@@ -6151,6 +6168,46 @@ function hideNotifToast() {
 document.getElementById('notifClose').addEventListener('click', hideNotifToast);
 
 // ─── Overdue reminder logic ────────────────────────────────────────
+function _legacyIdForMemberId(memberId) {
+  if (!memberId) return null;
+  return String(memberId).replace(/^member_/, '');
+}
+
+function _taskHasNotificationRecipients(task) {
+  return Array.isArray(task?.notifyTo)
+    && task.notifyTo.some(v => v !== undefined && v !== null && v !== '');
+}
+
+function _taskShowsActiveBell(task) {
+  return !!(task && task.notify !== false && _taskHasNotificationRecipients(task));
+}
+
+function _taskNotifiesThisDevice(task) {
+  if (!task || task.notify === false || task.deleted) return false;
+  const notifyTo = Array.isArray(task.notifyTo)
+    ? task.notifyTo.filter(v => v !== undefined && v !== null && v !== '')
+    : [];
+
+  if (DataAdapter.isFamily()) {
+    const myMemberId = DataAdapter.myMemberId;
+    const myLegacyId = _legacyIdForMemberId(myMemberId) || currentUser;
+    if (notifyTo.length) {
+      return !!(
+        (myMemberId && notifyTo.includes(myMemberId)) ||
+        (myLegacyId && notifyTo.includes(myLegacyId))
+      );
+    }
+    if (task.assignedToMemberId) return !!(myMemberId && task.assignedToMemberId === myMemberId);
+    if (task.assignedTo) return !!(myLegacyId && task.assignedTo === myLegacyId);
+    return false;
+  }
+
+  if (notifyTo.length) {
+    return notifyTo.includes(currentUser) || (DataAdapter.userId && notifyTo.includes(DataAdapter.userId));
+  }
+  return true;
+}
+
 function checkOverdueReminders() {
   // Capacitor handles scheduling natively — skip in-app polling on Android.
   if (_getCapLN()) return;
@@ -6169,6 +6226,7 @@ function checkOverdueReminders() {
     console.log(`  [task] id=${task.id} title="${(task.title||'').slice(0,30)}" date=${task.date||today} mins=${task.mins} notify=${task.notify!==false} done=${!!task.completed} sentInit=${!!task.sentInitialReminder} reminderOff=${task.reminderOffsetMinutes ?? '(default 10)'}`);
     if (!matchDate) { console.log('    → skipped: wrong date'); return; }
     if (notNotify)  { console.log('    → skipped: completed or notify=false'); return; }
+    if (!_taskNotifiesThisDevice(task)) { console.log('    → skipped: this device is not in notifyTo'); return; }
 
     // Apply defaults for older tasks
     if (!task.overdueReminderOffsets) task.overdueReminderOffsets = [5, 10, 15];
@@ -6308,6 +6366,7 @@ function _buildScheduledPushList() {
   AppState.tasks.forEach(task => {
     if ((task.date || today) !== today) return;
     if (task.completed || task.notify === false || task.deleted) return;
+    if (!_taskNotifiesThisDevice(task)) return;
     if (typeof task.mins !== 'number') return;
 
     // Anchor fire times to TODAY's local midnight + task.mins
@@ -6498,6 +6557,7 @@ async function _capScheduleTask(task) {
   if (!ln) return;
   const today = todayDate();
   if (task.completed || task.notify === false || task.deleted) return;
+  if (!_taskNotifiesThisDevice(task)) return;
   if (typeof task.mins !== 'number') return;
 
   // Use task.date (not "today") so tasks created today for tomorrow
@@ -6586,7 +6646,7 @@ async function _capRescheduleAll() {
   const today = todayDate();
   let count = 0;
   for (const task of AppState.tasks) {
-    if (task.deleted || task.completed) {
+    if (task.deleted || task.completed || !_taskNotifiesThisDevice(task)) {
       _capCancelTask(task.id).catch(() => {});
       continue;
     }
