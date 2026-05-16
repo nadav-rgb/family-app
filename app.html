@@ -6759,6 +6759,12 @@ function _daStartListener() {
         saveState();
         renderToday();
         _capRescheduleAll().catch(() => {});
+        const activeScreen = document.querySelector('.app-screen.active');
+        if (activeTasks().length > 0
+            && activeScreen && activeScreen.id === 's-voice'
+            && AppState.previewTasks.length === 0) {
+          goto('s-today', 'txLeaveBloom', 'txEnterFocus');
+        }
       }
     },
     err => console.warn('[RT] listener error', err.message || err)
