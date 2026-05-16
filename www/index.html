@@ -7465,16 +7465,19 @@ async function _loadFamilyMembers() {
     const snap = await _db.collection('families').doc(DataAdapter.familyId)
                           .collection('members').get();
     if (!listEl) return; // sheet may have closed while we waited
-    if (snap.empty) {
-      listEl.innerHTML = '<div class="fam-sh-members-loading">אין בני משפחה עדיין</div>';
-      return;
-    }
-    const roleLabel = { owner: 'בעלים', member: 'חבר' };
-    listEl.innerHTML = snap.docs.map(d => {
-      const m      = d.data();
-      const isMe   = (m.userId === DataAdapter.userId);
-      const letter = (m.displayName || m.userId || '?')[0].toUpperCase();
-      const name   = m.displayName || m.userId;
+    const identityDocs = new Map();
+    snap.docs.forEach(d => {
+      const m = d.data() || {};
+      const memberId = m.memberId || d.id;
+      if (IDENTITY_MEMBER_IDS.includes(memberId)) identityDocs.set(memberId, m);
+    });
+    const roleLabel = { parent: 'הורה', child: 'ילד', owner: 'בעלים', member: 'חבר' };
+    listEl.innerHTML = _FAMILY_MEMBERS_SEED.map(seed => {
+      const m      = identityDocs.get(seed.memberId) || {};
+      const isMe   = (DataAdapter.myMemberId === seed.memberId);
+      const letter = seed.avatar && seed.avatar.type === 'emoji' ? seed.avatar.value : seed.name[0];
+      const name   = seed.name;
+      const role   = m.role || seed.role;
       return `
         <div class="fam-sh-member-row">
           <div class="fam-sh-member-avatar">${letter}</div>
@@ -7482,7 +7485,7 @@ async function _loadFamilyMembers() {
             <div class="fam-sh-member-name">
               ${isMe ? '<span class="fam-sh-member-you">אני</span>' : ''}${name}
             </div>
-            <div class="fam-sh-member-role">${roleLabel[m.role] || m.role}</div>
+            <div class="fam-sh-member-role">${roleLabel[role] || role}</div>
           </div>
         </div>`;
     }).join('');
