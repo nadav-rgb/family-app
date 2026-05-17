@@ -944,6 +944,22 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 .fam-sh-member-name{font-size:14px;font-weight:700;color:#1c110a;}
 .fam-sh-member-role{font-size:11px;color:#b8a090;margin-top:1px;}
 .fam-sh-member-you{font-size:10px;font-weight:700;color:#ff7033;background:rgba(255,112,51,.12);border-radius:6px;padding:2px 6px;margin-right:6px;}
+.fam-sh-device-box{background:rgba(255,240,230,.5);border-radius:16px;padding:14px 16px;margin-bottom:16px;}
+.fam-sh-device-lbl{font-size:11px;font-weight:700;color:#c4ae9f;letter-spacing:.6px;text-transform:uppercase;margin-bottom:10px;}
+.fam-sh-device-current{display:flex;align-items:center;gap:12px;background:#fff9f5;border:2px solid rgba(224,180,140,.28);border-radius:14px;padding:12px 14px;}
+.fam-sh-device-avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#ffd0a8,#f0a870);display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0;}
+.fam-sh-device-info{flex:1;direction:rtl;}
+.fam-sh-device-name{font-size:14px;font-weight:800;color:#1c110a;}
+.fam-sh-device-note{font-size:12px;color:#9e8878;margin-top:2px;line-height:1.35;}
+.fam-sh-future-box{background:rgba(255,240,230,.38);border-radius:16px;padding:14px 16px;margin-bottom:16px;border:1px solid rgba(224,180,140,.18);}
+.fam-sh-future-lbl{font-size:11px;font-weight:700;color:#c4ae9f;letter-spacing:.6px;text-transform:uppercase;margin-bottom:10px;}
+.fam-sh-future-row{display:flex;align-items:center;gap:12px;background:#fff9f5;border-radius:14px;padding:12px 14px;}
+.fam-sh-future-icon{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#ffd0a8,#f0a870);display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0;color:#c06030;}
+.fam-sh-future-info{flex:1;direction:rtl;min-width:0;}
+.fam-sh-future-main{font-size:14px;font-weight:800;color:#1c110a;}
+.fam-sh-future-note{font-size:12px;color:#9e8878;margin-top:2px;line-height:1.35;}
+.fam-sh-future-modes{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.fam-sh-future-mode{background:#fff9f5;border:2px solid rgba(224,180,140,.22);border-radius:13px;padding:10px 8px;font-size:13px;font-weight:800;color:#8f7666;text-align:center;opacity:.72;}
 .fam-sh-name-box{background:rgba(255,240,230,.5);border-radius:16px;padding:14px 16px;margin-bottom:16px;}
 .fam-sh-name-lbl{font-size:11px;font-weight:700;color:#c4ae9f;letter-spacing:.6px;text-transform:uppercase;margin-bottom:8px;}
 .fam-sh-name-row{display:flex;gap:8px;align-items:center;}
@@ -7371,7 +7387,9 @@ function _showDeviceSetupScreen() {
 
 function _selectDeviceMember(memberId) {
   localStorage.setItem(MY_MEMBER_ID_KEY, memberId);
-  document.getElementById('deviceSetupScreen').classList.add('hidden');
+  const setupScreen = document.getElementById('deviceSetupScreen');
+  if (setupScreen) setupScreen.classList.add('hidden');
+  if (typeof updateTodayTitle === 'function') updateTodayTitle();
   console.log('[Setup] MY_MEMBER_ID set:', memberId);
 }
 
@@ -7436,12 +7454,63 @@ function closeFamilySheet() {
 function _renderFamilySheet() {
   const body = document.getElementById('famShBody');
   if (DataAdapter.isFamily()) {
+    const deviceMember = _FAMILY_MEMBERS_SEED.find(m => m.memberId === DataAdapter.myMemberId);
+    const deviceName   = deviceMember ? deviceMember.name : 'לא הוגדר';
+    const deviceAvatar = deviceMember?.avatar?.value || '👤';
     body.innerHTML = `
       <div class="fam-sh-badge fam-active">● מצב משפחה</div>
       <div class="fam-sh-code-box">
         <div class="fam-sh-code-lbl">קוד המשפחה</div>
         <div class="fam-sh-code">${DataAdapter.familyId}</div>
         ${_devUiEnabled() ? `<div class="fam-sh-uid">מזהה מכשיר: ${DataAdapter.userId}</div>` : ''}
+      </div>
+      <div class="fam-sh-device-box">
+        <div class="fam-sh-device-lbl">This device is</div>
+        <div class="fam-sh-device-current">
+          <span class="fam-sh-device-avatar">${deviceAvatar}</span>
+          <div class="fam-sh-device-info">
+            <div class="fam-sh-device-name">${deviceName}</div>
+            <div class="fam-sh-device-note">המכשיר הזה מוגדר כ${deviceName}</div>
+          </div>
+        </div>
+      </div>
+      <div class="fam-sh-future-box">
+        <div class="fam-sh-future-lbl">תמונת בן משפחה</div>
+        <div class="fam-sh-future-row">
+          <span class="fam-sh-future-icon">${deviceAvatar}</span>
+          <div class="fam-sh-future-info">
+            <div class="fam-sh-future-main">${deviceName}</div>
+            <div class="fam-sh-future-note">בקרוב: העלאת תמונה או בחירת אווטאר</div>
+          </div>
+        </div>
+      </div>
+      <div class="fam-sh-future-box">
+        <div class="fam-sh-future-lbl">צליל התראה</div>
+        <div class="fam-sh-future-row">
+          <span class="fam-sh-future-icon">♪</span>
+          <div class="fam-sh-future-info">
+            <div class="fam-sh-future-main">ברירת מחדל</div>
+            <div class="fam-sh-future-note">בקרוב: בחירת צליל</div>
+          </div>
+        </div>
+      </div>
+      <div class="fam-sh-future-box">
+        <div class="fam-sh-future-lbl">מצב דיבור</div>
+        <div class="fam-sh-future-modes">
+          <div class="fam-sh-future-mode">מהיר ונעים</div>
+          <div class="fam-sh-future-mode">מדויק עם תמלול</div>
+        </div>
+        <div class="fam-sh-future-note" style="margin-top:8px;">תצוגה בלבד כרגע</div>
+      </div>
+      <div class="fam-sh-future-box">
+        <div class="fam-sh-future-lbl">הצגת תמלול בזמן דיבור</div>
+        <div class="fam-sh-future-row">
+          <span class="fam-sh-future-icon">Aa</span>
+          <div class="fam-sh-future-info">
+            <div class="fam-sh-future-main">כבוי כרגע</div>
+            <div class="fam-sh-future-note">בקרוב</div>
+          </div>
+        </div>
       </div>
       <div class="fam-sh-name-box">
         <div class="fam-sh-name-lbl">השם שלי במשפחה</div>
