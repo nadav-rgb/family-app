@@ -1649,6 +1649,79 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 #s-privacy .nav-item.active{color:var(--purple);}
 #s-privacy .nav-item .underline{width:14px;height:2px;border-radius:99px;background:var(--purple);margin-top:2px;opacity:0;}
 #s-privacy .nav-item.active .underline{opacity:1;}
+
+/* ════════════════════════════════════════════════════════════════════
+   SCREEN — VISIBILITY  (Claude Design merge, step 6)
+   Source: Visibility & Notifications.html
+   Palette: orange + green (#34C759)
+   All classes prefixed vis- to avoid collisions
+════════════════════════════════════════════════════════════════════ */
+#s-visibility{--orange:#FF7A3D;--orange-light:#FFB36B;--orange-deep:#E5621A;--orange-soft:#FFE9D2;--green:#34C759;--ink:#1A0F08;--muted:#9E8878;--card-bg:rgba(255,255,255,0.94);--card-shadow:0 4px 16px rgba(160,90,30,0.08);background:radial-gradient(circle at top right,rgba(255,244,232,0.9),transparent 35%),linear-gradient(180deg,#FBF8F5 0%,#F7F2ED 45%,#F4EEE8 100%);}
+#s-visibility .scroll{flex:1 1 auto;overflow-y:auto;padding:6px 16px 28px;scrollbar-width:none;}
+#s-visibility .scroll::-webkit-scrollbar{display:none}
+#s-visibility .header{display:flex;align-items:flex-start;justify-content:space-between;margin-top:11px;gap:10px;}
+#s-visibility .back{width:34px;height:34px;border-radius:11px;background:#fff;box-shadow:var(--card-shadow);display:flex;align-items:center;justify-content:center;color:var(--ink);border:1px solid rgba(255,255,255,0.6);cursor:pointer;flex:0 0 auto;background:none;}
+#s-visibility .back svg{width:14px;height:14px}
+#s-visibility .head-text{flex:1 1 auto;text-align:right;display:flex;flex-direction:column;align-items:flex-start;gap:7px;}
+#s-visibility .step-pill{background:transparent;color:var(--orange-deep);font-size:11px;font-weight:800;padding:0;display:inline-flex;align-items:center;gap:5px;}
+#s-visibility .step-pill .spark{font-size:10px}
+#s-visibility .title{margin:0;font-size:21px;font-weight:900;line-height:1.15;letter-spacing:-0.02em;color:var(--ink);text-align:right;display:flex;align-items:center;justify-content:flex-start;gap:6px;flex-wrap:wrap;}
+#s-visibility .subtitle{margin:0;font-size:11px;font-weight:500;line-height:1.4;color:var(--muted);text-align:right;}
+#s-visibility .vis-task-summary{margin-top:14px;background:var(--card-bg);border-radius:18px;padding:11px 12px;box-shadow:var(--card-shadow);border:1px solid rgba(255,255,255,0.7);display:flex;align-items:center;gap:10px;}
+#s-visibility .vis-clipboard{width:40px;height:40px;border-radius:13px;background:linear-gradient(135deg,#FFE9D2 0%,#FDD9B6 100%);color:var(--orange-deep);display:flex;align-items:center;justify-content:center;flex:0 0 auto;box-shadow:inset 0 1px 0 rgba(255,255,255,0.6);}
+#s-visibility .vis-clipboard svg{width:18px;height:18px}
+#s-visibility .vis-ts-text{flex:1 1 auto;text-align:center;display:flex;flex-direction:column;gap:3px;}
+#s-visibility .vis-ts-title{font-size:15px;font-weight:900;color:var(--ink);display:flex;align-items:center;justify-content:center;gap:5px;}
+#s-visibility .vis-ts-meta{font-size:10px;font-weight:600;color:var(--muted);display:flex;align-items:center;justify-content:center;gap:5px;}
+#s-visibility .vis-gd{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 0 1.5px rgba(255,255,255,0.6);}
+#s-visibility .vis-section-card{margin-top:14px;background:var(--card-bg);border-radius:20px;padding:14px 12px 12px;box-shadow:var(--card-shadow);border:1px solid rgba(255,255,255,0.7);}
+#s-visibility .vis-sec-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:0 2px 12px;}
+#s-visibility .vis-sec-icon{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:0 0 auto;box-shadow:inset 0 1px 0 rgba(255,255,255,0.5);}
+#s-visibility .vis-sec-icon.green{background:#EBF3FF;color:#3F7CFF}
+#s-visibility .vis-sec-icon.orange{background:var(--orange-soft);color:var(--orange-deep)}
+#s-visibility .vis-sec-icon svg{width:18px;height:18px}
+#s-visibility .vis-sec-text{flex:1 1 auto;text-align:right;display:flex;flex-direction:column;gap:3px;}
+#s-visibility .vis-sec-title-row{display:flex;align-items:center;justify-content:flex-start;gap:7px;}
+#s-visibility .vis-sec-title{font-size:15px;font-weight:900;color:var(--ink);}
+#s-visibility .vis-recommended{background:var(--orange-soft);color:var(--orange-deep);font-size:9px;font-weight:800;padding:3px 8px;border-radius:99px;}
+#s-visibility .vis-sec-sub{font-size:11px;font-weight:500;color:var(--muted);}
+#s-visibility .vis-avatars-row{display:flex;gap:7px;justify-content:space-between;}
+#s-visibility .vis-ava-frame{flex:1 1 0;min-width:0;border:1.5px solid rgba(160,90,30,0.10);border-radius:14px;padding:7px 6px 8px;background:transparent;display:flex;flex-direction:column;align-items:center;gap:5px;position:relative;cursor:pointer;transition:border-color .2s ease,background .2s ease;font-family:'Rubik',sans-serif;font-size:inherit;}
+#s-visibility .vis-ava-frame.active.green{border-color:var(--green);background:rgba(52,199,89,0.04);}
+#s-visibility .vis-ava-frame.active.orange{border-color:var(--orange);background:rgba(255,122,61,0.04);}
+#s-visibility .vis-ava-circle{width:48px;height:48px;border-radius:50%;box-shadow:0 3px 8px rgba(160,90,30,0.10),0 1px 2px rgba(160,90,30,0.06),inset 0 1px 2px rgba(255,255,255,0.9);border:1px solid rgba(255,255,255,0.7);}
+.av-aharon{background:radial-gradient(120% 120% at 30% 25%,#ffffff 0%,#F1FAF3 55%,#DDF1E3 100%);}
+#s-visibility .vis-badge{position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;box-shadow:0 2px 4px rgba(0,0,0,0.10),0 0 0 1.5px #fff;z-index:2;}
+#s-visibility .vis-badge.green{background:var(--green)}
+#s-visibility .vis-badge.orange{background:var(--orange)}
+#s-visibility .vis-badge.empty{background:transparent;border:1.5px solid rgba(158,136,120,0.4);box-shadow:0 0 0 1.5px transparent;}
+#s-visibility .vis-badge svg{width:10px;height:10px}
+#s-visibility .vis-ava-name{font-size:11px;font-weight:700;color:var(--ink);line-height:1.1;text-align:center;}
+#s-visibility .vis-filter-row{margin-top:11px;display:flex;gap:7px;justify-content:space-between;}
+#s-visibility .vis-filter-pill{flex:1 1 0;min-width:0;background:#fff;color:var(--muted);border:1.5px solid rgba(160,90,30,0.10);border-radius:99px;padding:8px;font-family:'Rubik',sans-serif;font-size:11px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;gap:5px;cursor:pointer;transition:border-color .2s ease,color .2s ease,background .2s ease;}
+#s-visibility .vis-filter-pill svg{width:12px;height:12px;flex:0 0 auto}
+#s-visibility .vis-filter-pill.on{color:var(--orange);border-color:var(--orange);background:rgba(255,122,61,0.05);}
+#s-visibility .vis-tip{margin-top:11px;background:var(--orange-soft);border-radius:12px;padding:8px 10px;display:flex;align-items:center;gap:7px;font-size:10px;font-weight:600;color:#7A5430;text-align:right;}
+#s-visibility .vis-tip .bulb{font-size:13px;flex:0 0 auto}
+#s-visibility .vis-tip u{text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:2px}
+#s-visibility .vis-options-card{margin-top:14px;background:var(--card-bg);border-radius:18px;padding:4px 12px;box-shadow:var(--card-shadow);border:1px solid rgba(255,255,255,0.7);}
+#s-visibility .vis-opt-row{display:flex;align-items:center;gap:11px;padding:11px 0;}
+#s-visibility .vis-opt-icon{width:34px;height:34px;border-radius:11px;background:#F4ECE2;color:var(--muted);display:flex;align-items:center;justify-content:center;flex:0 0 auto;}
+#s-visibility .vis-opt-icon svg{width:16px;height:16px}
+#s-visibility .vis-opt-text{flex:1 1 auto;text-align:right;display:flex;flex-direction:column;gap:2px;min-width:0;}
+#s-visibility .vis-opt-title{font-size:12px;font-weight:800;color:var(--ink);line-height:1.2}
+#s-visibility .vis-opt-sub{font-size:10px;font-weight:500;color:var(--muted);line-height:1.2}
+#s-visibility .vis-divider{height:1px;background:rgba(160,90,30,0.08);}
+#s-visibility .vis-toggle{position:relative;display:inline-block;width:28px;height:16px;flex:0 0 auto;}
+#s-visibility .vis-toggle input{display:none}
+#s-visibility .vis-toggle .slider{position:absolute;inset:0;background:#E2D9CC;border-radius:99px;cursor:pointer;transition:background .2s ease;}
+#s-visibility .vis-toggle .slider::before{content:"";position:absolute;top:2px;left:2px;width:12px;height:12px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,0.15);transition:transform .2s ease;}
+#s-visibility .vis-toggle input:checked + .slider{background:var(--orange)}
+#s-visibility .vis-toggle input:checked + .slider::before{transform:translateX(12px)}
+#s-visibility .vis-cta{margin-top:18px;width:100%;height:50px;border:none;border-radius:16px;background:linear-gradient(135deg,var(--orange-light) 0%,var(--orange) 50%,var(--orange-deep) 100%);color:#fff;font-family:'Rubik',sans-serif;font-size:16px;font-weight:900;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;box-shadow:0 10px 22px rgba(255,122,61,0.35),0 2px 6px rgba(229,98,26,0.25),inset 0 1px 1px rgba(255,255,255,0.4);transition:transform .15s ease;}
+#s-visibility .vis-cta:hover{transform:translateY(-1px)}
+#s-visibility .vis-check-circle{width:22px;height:22px;border-radius:50%;background:#fff;color:var(--orange);display:flex;align-items:center;justify-content:center;flex:0 0 auto;}
+#s-visibility .vis-check-circle svg{width:13px;height:13px}
 </style>
 <!-- Firebase SDK (compat — Phase 3) -->
 <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
@@ -2982,6 +3055,174 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
         <span class="underline"></span>
       </button>
     </div>
+  </div>
+</div>
+
+<!-- ════════════════ #s-visibility — מי רואה ומי מקבל התראה ════════════════
+     Access for testing: app.html#s-visibility
+════════════════════════════════════════════════════════════════════════ -->
+<div class="app-screen" id="s-visibility">
+  <div class="status">
+    <span class="time">10:30</span>
+    <span class="icons" aria-hidden="true">
+      <svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="0.8"/><rect x="4.5" y="5" width="3" height="6" rx="0.8"/><rect x="9" y="2.5" width="3" height="8.5" rx="0.8"/><rect x="13.5" y="0" width="3" height="11" rx="0.8"/></svg>
+      <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor"><path d="M8 12a1.4 1.4 0 1 0 0-2.8A1.4 1.4 0 0 0 8 12Zm3.6-3.4-.06.06.06-.06Zm-7.2 0a4.6 4.6 0 0 1 7.2 0l1.2-1.2a6.4 6.4 0 0 0-9.6 0l1.2 1.2Zm-2.4-2.4a8.4 8.4 0 0 1 12 0l1.2-1.2a10.2 10.2 0 0 0-14.4 0l1.2 1.2Z"/></svg>
+      <svg width="26" height="12" viewBox="0 0 26 12" fill="none"><rect x="0.5" y="0.5" width="22" height="11" rx="2.6" stroke="currentColor" opacity=".5"/><rect x="2" y="2" width="19" height="8" rx="1.6" fill="currentColor"/><rect x="23.5" y="4" width="2" height="4" rx="0.8" fill="currentColor" opacity=".5"/></svg>
+    </span>
+  </div>
+
+  <div class="scroll">
+
+    <!-- Header -->
+    <div class="header">
+      <button class="back" type="button" aria-label="חזרה" onclick="goto('s-confirmation','txLeaveFade','txEnterFade')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+      </button>
+      <div class="head-text">
+        <div class="step-pill"><span class="spark" aria-hidden="true">✨</span><span>שלב 3 מתוך 3</span></div>
+        <h1 class="title"><span>מי רואה ומי מקבל התראה?</span> <span aria-hidden="true">👥</span></h1>
+        <p class="subtitle">בחר למי המשימה תופיע ולמי תשלח התראה.</p>
+      </div>
+    </div>
+
+    <!-- Task summary mini-card -->
+    <div class="vis-task-summary">
+      <div class="vis-clipboard" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="12" height="17" rx="2"/><rect x="9" y="2" width="6" height="3" rx="1"/><path d="M9 11l1.5 1.5L14 9"/><path d="M9 16h5"/></svg>
+      </div>
+      <div class="vis-ts-text">
+        <div class="vis-ts-title" id="visSummaryTitle"><span>—</span></div>
+        <div class="vis-ts-meta"><span class="vis-gd"></span><span id="visSummaryMeta">—</span></div>
+      </div>
+    </div>
+
+    <!-- Section 1: מי רואה -->
+    <div class="vis-section-card">
+      <div class="vis-sec-head">
+        <div class="vis-sec-icon green" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12Z"/><circle cx="12" cy="12" r="3.2"/></svg>
+        </div>
+        <div class="vis-sec-text">
+          <div class="vis-sec-title">מי רואה את המשימה</div>
+          <div class="vis-sec-sub">המשימה תופיע ברשימת המשימות שלהם</div>
+        </div>
+      </div>
+
+      <div class="vis-avatars-row" id="visSeeRow">
+        <button class="vis-ava-frame green active" data-id="aba" type="button">
+          <div class="vis-ava-circle av-aba"></div>
+          <span class="vis-badge green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg></span>
+          <div class="vis-ava-name">אבא</div>
+        </button>
+        <button class="vis-ava-frame green active" data-id="ima" type="button">
+          <div class="vis-ava-circle av-ima"></div>
+          <span class="vis-badge green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg></span>
+          <div class="vis-ava-name">אמא</div>
+        </button>
+        <button class="vis-ava-frame green active" data-id="leali" type="button">
+          <div class="vis-ava-circle av-leali"></div>
+          <span class="vis-badge green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg></span>
+          <div class="vis-ava-name">ליאלי</div>
+        </button>
+        <button class="vis-ava-frame green active" data-id="aharon" type="button">
+          <div class="vis-ava-circle av-aharon"></div>
+          <span class="vis-badge green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg></span>
+          <div class="vis-ava-name">אהרן</div>
+        </button>
+      </div>
+
+      <div class="vis-filter-row" id="visSeeFilters">
+        <button class="vis-filter-pill" type="button" data-id="custom">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h6M15 7h6"/><circle cx="12" cy="7" r="2.4"/><path d="M3 17h2M11 17h10"/><circle cx="8" cy="17" r="2.4"/></svg>
+          <span>מותאם אישית</span>
+        </button>
+        <button class="vis-filter-pill" type="button" data-id="performer">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M5 20c0-4 3.4-6 7-6s7 2 7 6"/></svg>
+          <span>רק המבצע</span>
+        </button>
+        <button class="vis-filter-pill on" type="button" data-id="all">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M2 20c0-3 2.5-5 7-5s7 2 7 5"/><path d="M14 20c.4-2 2-3 4-3s3 1 3 3"/></svg>
+          <span>כולם</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Section 2: מי יקבל התראה -->
+    <div class="vis-section-card">
+      <div class="vis-sec-head">
+        <div class="vis-sec-icon orange" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+        </div>
+        <div class="vis-sec-text">
+          <div class="vis-sec-title-row">
+            <span class="vis-sec-title">מי יקבל התראה</span>
+            <span class="vis-recommended">מומלץ</span>
+          </div>
+          <div class="vis-sec-sub">ההתראה תישלח לנייד או לתזכורות</div>
+        </div>
+      </div>
+
+      <div class="vis-avatars-row" id="visNotifyRow">
+        <button class="vis-ava-frame orange active" data-id="aba" type="button">
+          <div class="vis-ava-circle av-aba"></div>
+          <span class="vis-badge orange"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg></span>
+          <div class="vis-ava-name">אבא</div>
+        </button>
+        <button class="vis-ava-frame orange" data-id="ima" type="button">
+          <div class="vis-ava-circle av-ima"></div>
+          <span class="vis-badge empty"></span>
+          <div class="vis-ava-name">אמא</div>
+        </button>
+        <button class="vis-ava-frame orange" data-id="leali" type="button">
+          <div class="vis-ava-circle av-leali"></div>
+          <span class="vis-badge empty"></span>
+          <div class="vis-ava-name">ליאלי</div>
+        </button>
+        <button class="vis-ava-frame orange" data-id="aharon" type="button">
+          <div class="vis-ava-circle av-aharon"></div>
+          <span class="vis-badge empty"></span>
+          <div class="vis-ava-name">אהרן</div>
+        </button>
+      </div>
+
+      <div class="vis-tip">
+        <span class="bulb" aria-hidden="true">💡</span>
+        <span id="visNotifyTip">רק <u>אבא</u> יקבל התראה, כדי לא להפריע לאחרים.</span>
+      </div>
+    </div>
+
+    <!-- Options -->
+    <div class="vis-options-card">
+      <div class="vis-opt-row">
+        <div class="vis-opt-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2"/><path d="M5 4 2 7"/><path d="m19 4 3 3"/></svg>
+        </div>
+        <div class="vis-opt-text">
+          <div class="vis-opt-title">שלח תזכורת נוספת אם לא בוצעה</div>
+          <div class="vis-opt-sub">20 דקות אחרי הזמן המתוכנן</div>
+        </div>
+        <label class="vis-toggle"><input type="checkbox" checked/><span class="slider"></span></label>
+      </div>
+      <div class="vis-divider"></div>
+      <div class="vis-opt-row">
+        <div class="vis-opt-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.13 4.21a6 6 0 0 1 8.87 5.79c0 5 3 7 3 7H8"/><path d="M6 8a6 6 0 0 1 .58-2.58"/><path d="M3 11H1l3-3"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
+        </div>
+        <div class="vis-opt-text">
+          <div class="vis-opt-title">אל תשלח התראה שוב לאחר סימון בוצעה</div>
+        </div>
+        <label class="vis-toggle"><input type="checkbox"/><span class="slider"></span></label>
+      </div>
+    </div>
+
+    <!-- CTA -->
+    <button class="vis-cta" type="button" id="visSaveCta">
+      <span class="vis-check-circle">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg>
+      </span>
+      <span>שמור והוסף למשימות</span>
+    </button>
+
   </div>
 </div>
 
@@ -5366,7 +5607,7 @@ function renderConfirmationTasks() {
   listEl.innerHTML = tasks.map(function(task) {
     const avClass  = LEGACY_TO_AVATAR[task.assignedTo] || 'av-aba';
     const name     = t('family_' + task.assignedTo) || task.person || task.assignedTo || '—';
-    return '<div class="task">' +
+    return '<div class="task" data-taskid="' + task.id + '">' +
       '<button class="menu" aria-label="אפשרויות" data-todo="task-menu">' + MENU_SVG + '</button>' +
       '<div class="col-left">' +
         '<div class="time-row">' + CLOCK_SVG + '<span>' + fmtTime(task.mins) + '</span></div>' +
@@ -5379,6 +5620,7 @@ function renderConfirmationTasks() {
       '</div>' +
     '</div>';
   }).join('');
+
 }
 
 async function vOrganize() {
@@ -6009,20 +6251,29 @@ let dpActiveStrip = null;
 function updateCardTime(taskId) {
   const task = AppState.previewTasks.find(t => t.id === taskId);
   if (!task) return;
-  const card = document.querySelector(`#dpList .task-card[data-id="${taskId}"]`);
-  if (!card) return;
   task.timeSource = 'manual';
-  const timeEl = card.querySelector('.card-time');
-  if (timeEl) {
-    timeEl.textContent = m2t(task.mins);
-    // Drop the placeholder class once a real time replaces __:__.
-    timeEl.classList.remove('empty');
+
+  // Update in #dpList (classic day-planner cards)
+  const card = document.querySelector(`#dpList .task-card[data-id="${taskId}"]`);
+  if (card) {
+    const timeEl = card.querySelector('.card-time');
+    if (timeEl) { timeEl.textContent = m2t(task.mins); timeEl.classList.remove('empty'); }
+    card.querySelector('.card-ampm').textContent = ampm(task.mins);
+    const badge = card.querySelector('.card-ts');
+    if (badge) { badge.className = 'card-ts manual'; badge.textContent = t('dp_time_manual'); }
+    const col = card.querySelector('.card-time-col');
+    col.classList.remove('accepted'); void col.offsetWidth; col.classList.add('accepted');
   }
-  card.querySelector('.card-ampm').textContent = ampm(task.mins);
-  const badge = card.querySelector('.card-ts');
-  if (badge) { badge.className = 'card-ts manual'; badge.textContent = t('dp_time_manual'); }
-  const col = card.querySelector('.card-time-col');
-  col.classList.remove('accepted'); void col.offsetWidth; col.classList.add('accepted');
+
+  // Update in #s-confirmation task rows
+  const confirmRow = document.querySelector(`#confirmTasksList .task[data-taskid="${taskId}"]`);
+  if (confirmRow) {
+    const span = confirmRow.querySelector('.time-row span');
+    if (span) {
+      const h = Math.floor(task.mins / 60), m = task.mins % 60;
+      span.textContent = String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0');
+    }
+  }
 }
 
 function closeTimeStrip() {
@@ -9222,6 +9473,7 @@ document.getElementById('btnAddMore').addEventListener('click', () => {
     { hashes: ['#s-privacy',        '#privacy'         ], screen: 's-privacy'        },
     { hashes: ['#s-sync',           '#sync'            ], screen: 's-sync'           },
     { hashes: ['#s-confirmation',   '#confirmation'    ], screen: 's-confirmation'   },
+    { hashes: ['#s-visibility',     '#visibility'      ], screen: 's-visibility'     },
   ];
 
   function navTo(screenId){
@@ -9253,6 +9505,82 @@ document.getElementById('btnAddMore').addEventListener('click', () => {
       m.classList.add('active');
     });
   });
+
+  // #s-confirmation: click on time-row → open time strip picker (single delegation on list container)
+  var confirmList = document.getElementById('confirmTasksList');
+  if (confirmList) {
+    confirmList.addEventListener('click', function(e) {
+      var timeRow = e.target.closest('.time-row');
+      if (!timeRow) return;
+      var taskRow = timeRow.closest('.task[data-taskid]');
+      if (!taskRow) return;
+      if (typeof openTimeStrip === 'function') openTimeStrip(taskRow.dataset.taskid, taskRow);
+    });
+  }
+
+  // #s-confirmation: edit-pill + who-card → goto s-visibility
+  var editPill = document.querySelector('#s-confirmation .edit-pill');
+  if (editPill) {
+    editPill.addEventListener('click', function() {
+      if (typeof goto === 'function') goto('s-visibility', 'txLeaveFade', 'txEnterFade');
+    });
+  }
+  var whoCard = document.querySelector('#s-confirmation .who-card');
+  if (whoCard) {
+    whoCard.addEventListener('click', function() {
+      if (typeof goto === 'function') goto('s-visibility', 'txLeaveFade', 'txEnterFade');
+    });
+  }
+
+  // #s-visibility: "מי רואה" avatars — each toggles on/off independently
+  document.querySelectorAll('#visSeeRow .vis-ava-frame').forEach(function(b) {
+    b.addEventListener('click', function() {
+      var badge = b.querySelector('.vis-badge');
+      var isOn  = b.classList.contains('active');
+      if (isOn) {
+        b.classList.remove('active');
+        badge.className = 'vis-badge empty';
+        badge.innerHTML = '';
+      } else {
+        b.classList.add('active');
+        badge.className = 'vis-badge green';
+        badge.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg>';
+      }
+    });
+  });
+
+  // #s-visibility: filter pills — single-select
+  document.querySelectorAll('#visSeeFilters .vis-filter-pill').forEach(function(p) {
+    p.addEventListener('click', function() {
+      document.querySelectorAll('#visSeeFilters .vis-filter-pill').forEach(function(x){ x.classList.remove('on'); });
+      p.classList.add('on');
+    });
+  });
+
+  // #s-visibility: "מי יקבל התראה" avatars — toggle on/off
+  document.querySelectorAll('#visNotifyRow .vis-ava-frame').forEach(function(b) {
+    b.addEventListener('click', function() {
+      var badge = b.querySelector('.vis-badge');
+      var isOn  = b.classList.contains('active');
+      if (isOn) {
+        b.classList.remove('active');
+        badge.className = 'vis-badge empty';
+        badge.innerHTML = '';
+      } else {
+        b.classList.add('active');
+        badge.className = 'vis-badge orange';
+        badge.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg>';
+      }
+    });
+  });
+
+  // #s-visibility: CTA → s-today
+  var visCta = document.getElementById('visSaveCta');
+  if (visCta) {
+    visCta.addEventListener('click', function() {
+      if (typeof goto === 'function') goto('s-today', 'txLeaveFade', 'txEnterFade');
+    });
+  }
 })();
 </script>
 </body>
