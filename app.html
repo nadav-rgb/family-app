@@ -478,6 +478,7 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 
 #s-today .t-tasks{padding:0 20px;display:flex;flex-direction:column;gap:10px;animation:fadeUp .4s ease .22s both;}
 /* ── Home progress card (Claude Design merge — Home.html) ─────────────── */
+#s-today .t-prog{display:none !important;} /* replaced by hm-progress-card */
 #s-today .hm-progress-card{margin:0 20px 14px;border-radius:19px;background:linear-gradient(135deg,#FEF3E6 0%,#F5DFCA 100%);padding:11px 14px;display:flex;align-items:stretch;gap:11px;position:relative;box-shadow:0 10px 30px rgba(229,98,26,0.10),0 2px 8px rgba(160,90,30,0.06);overflow:hidden;animation:fadeUp .4s ease .14s both;}
 #s-today .hm-progress-card::after{content:"";position:absolute;inset:0;border-radius:19px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.6);pointer-events:none;}
 #s-today .hm-spark{position:absolute;border-radius:50%;background:radial-gradient(circle,#fff 0%,rgba(255,255,255,0) 70%);box-shadow:0 0 8px rgba(255,255,255,0.9);}
@@ -9902,10 +9903,12 @@ function updateHomProgress() {
   var fill   = document.getElementById('hmProgFill');
   var label  = document.getElementById('hmProgLabel');
   var card   = document.getElementById('hmProgressCard');
-  if (card)  card.style.display = total > 0 ? '' : 'none';
+  if (card)  card.style.display = '';  /* always visible */
   if (fill)  fill.style.width   = pct + '%';
-  if (label) label.innerHTML    = done + ' מתוך ' + total + ' הושלמו' +
-    (pct > 0 ? ' · <span class="hm-pct">' + pct + '%</span>' : '');
+  if (label) label.innerHTML    = total === 0
+    ? 'אין משימות להיום עדיין'
+    : done + ' מתוך ' + total + ' הושלמו' +
+      (pct > 0 ? ' · <span class="hm-pct">' + pct + '%</span>' : '');
 }
 
 // React to task list changes without touching existing render functions
