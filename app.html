@@ -1394,6 +1394,77 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 #s-family-members .nav-item.active .underline{opacity:1;}
 
 /* ════════════════════════════════════════════════════════════════════
+   SCREEN — CONFIRMATION  (Claude Design merge, step 5)
+   All rules scoped under #s-confirmation.
+   No bottom nav — this is a flow screen in the task-creation journey.
+═══════════════════════════════════════════════════════════════════════ */
+#s-confirmation{
+  --orange:#FF7A3D;--orange-light:#FFB36B;--orange-deep:#E5621A;
+  --ink:#1A0F08;--muted:#9E8878;
+  --card-bg:rgba(255,255,255,0.94);--card-shadow:0 4px 16px rgba(160,90,30,0.08);
+  --turquoise:#5EBFB5;--purple:#B89BE0;--peach:#FFB991;
+  font-family:'Rubik',sans-serif;color:var(--ink);
+  background:radial-gradient(circle at top right,rgba(255,244,232,0.9),transparent 35%),linear-gradient(180deg,#FBF8F5 0%,#F7F2ED 45%,#F4EEE8 100%);
+}
+#s-confirmation .status{flex:0 0 auto;padding:14px 22px 0;display:flex;align-items:center;justify-content:space-between;font-weight:700;font-size:15px;color:var(--ink);direction:ltr;}
+#s-confirmation .status .icons{display:flex;align-items:center;gap:6px;}
+#s-confirmation .scroll{flex:1 1 auto;overflow-y:auto;padding:6px 16px 28px;scrollbar-width:none;}
+#s-confirmation .scroll::-webkit-scrollbar{display:none;}
+#s-confirmation .header{display:flex;align-items:flex-start;justify-content:space-between;margin-top:11px;gap:10px;}
+#s-confirmation .back{width:34px;height:34px;border-radius:11px;background:#fff;box-shadow:var(--card-shadow);display:flex;align-items:center;justify-content:center;color:var(--ink);border:1px solid rgba(255,255,255,0.6);cursor:pointer;flex:0 0 auto;font-family:inherit;}
+#s-confirmation .back svg{width:14px;height:14px;}
+#s-confirmation .head-text{text-align:right;display:flex;flex-direction:column;align-items:flex-start;gap:8px;flex:1 1 auto;}
+#s-confirmation .step-pill{background:transparent;color:var(--orange-deep);font-size:11px;font-weight:800;padding:0;display:inline-flex;align-items:center;gap:5px;}
+#s-confirmation .title{margin:0;font-size:26px;font-weight:900;line-height:1.1;letter-spacing:-0.02em;color:var(--ink);text-align:right;}
+#s-confirmation .subtitle{margin:0;font-size:11px;font-weight:500;line-height:1.5;color:var(--muted);text-align:right;}
+#s-confirmation .tasks-card{margin-top:18px;background:var(--card-bg);border-radius:22px;padding:12px;box-shadow:var(--card-shadow);border:1px solid rgba(255,255,255,0.7);}
+#s-confirmation .tasks-head{display:flex;align-items:center;justify-content:space-between;padding:4px 4px 10px;}
+#s-confirmation .tasks-count{font-size:12px;font-weight:800;color:var(--ink);display:inline-flex;align-items:center;gap:5px;}
+#s-confirmation .tasks-count .spark{color:var(--orange);font-size:11px;}
+#s-confirmation .edit-pill{background:linear-gradient(135deg,#FFE9D2 0%,#FDD9B6 100%);color:var(--orange-deep);border:none;border-radius:99px;padding:5px 12px;font-family:inherit;font-size:11px;font-weight:800;display:inline-flex;align-items:center;gap:5px;cursor:pointer;box-shadow:inset 0 1px 0 rgba(255,255,255,0.5);}
+#s-confirmation .edit-pill svg{width:11px;height:11px;}
+#s-confirmation .task{display:flex;align-items:flex-start;gap:8px;padding:11px 6px;}
+#s-confirmation .task+.task{border-top:1px solid rgba(160,90,30,0.08);}
+#s-confirmation .menu{background:transparent;border:none;cursor:pointer;color:var(--muted);padding:4px 2px;flex:0 0 auto;align-self:center;font-family:inherit;}
+#s-confirmation .menu svg{width:14px;height:14px;display:block;}
+#s-confirmation .col-left{flex:0 0 auto;display:flex;flex-direction:column;align-items:flex-end;gap:4px;min-width:70px;}
+#s-confirmation .time-row{display:flex;align-items:center;gap:4px;font-size:14px;font-weight:900;color:var(--ink);line-height:1;}
+#s-confirmation .time-row svg{color:var(--orange);width:12px;height:12px;}
+#s-confirmation .date{font-size:9px;font-weight:600;color:var(--muted);line-height:1;}
+#s-confirmation .category{font-size:9px;font-weight:700;color:var(--muted);display:inline-flex;align-items:center;gap:5px;line-height:1;margin-top:2px;}
+#s-confirmation .cdot{width:8px;height:8px;border-radius:50%;box-shadow:0 0 0 1.5px rgba(255,255,255,0.6);}
+#s-confirmation .dot-turquoise{background:var(--turquoise);}
+#s-confirmation .dot-purple{background:var(--purple);}
+#s-confirmation .dot-peach{background:var(--peach);}
+#s-confirmation .col-mid{flex:1 1 auto;text-align:right;display:flex;flex-direction:column;gap:3px;min-width:0;padding:0 4px;}
+#s-confirmation .t-title{font-size:14px;font-weight:800;color:var(--ink);display:flex;align-items:center;justify-content:flex-start;gap:5px;line-height:1.1;}
+#s-confirmation .t-desc{font-size:10px;font-weight:500;color:var(--muted);line-height:1.3;}
+#s-confirmation .col-right{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:4px;width:44px;}
+#s-confirmation .avatar{width:40px;height:40px;border-radius:50%;box-shadow:0 3px 8px rgba(160,90,30,0.10),0 1px 2px rgba(160,90,30,0.06),inset 0 1px 2px rgba(255,255,255,0.9);border:1px solid rgba(255,255,255,0.7);}
+#s-confirmation .av-aba{background:radial-gradient(120% 120% at 30% 25%,#ffffff 0%,#FFF4EA 55%,#FBE5D2 100%);}
+#s-confirmation .av-ima{background:radial-gradient(120% 120% at 30% 25%,#ffffff 0%,#FFF4F0 55%,#FCE5DC 100%);}
+#s-confirmation .av-leali{background:radial-gradient(120% 120% at 30% 25%,#ffffff 0%,#FBF1FA 55%,#F2E1F2 100%);}
+#s-confirmation .av-uri{background:radial-gradient(120% 120% at 30% 25%,#ffffff 0%,#F1FAF3 55%,#DDF1E3 100%);}
+#s-confirmation .ava-name{font-size:10px;font-weight:700;color:var(--ink);text-align:center;line-height:1;}
+#s-confirmation .lock-hint{margin-top:14px;text-align:center;font-size:10px;font-weight:600;color:var(--muted);display:flex;align-items:center;justify-content:center;gap:5px;}
+#s-confirmation .lock-hint svg{width:10px;height:10px;color:var(--muted);}
+#s-confirmation .lock-hint u{text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:2px;}
+#s-confirmation .who-card{margin-top:14px;width:100%;background:var(--card-bg);border:1px solid rgba(255,255,255,0.7);border-radius:18px;padding:11px 12px;box-shadow:var(--card-shadow);display:flex;align-items:center;gap:10px;cursor:pointer;font-family:inherit;text-align:right;}
+#s-confirmation .who-icon{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#FFE9D2 0%,#FDD9B6 100%);display:flex;align-items:center;justify-content:center;color:var(--orange-deep);flex:0 0 auto;}
+#s-confirmation .who-icon svg{width:16px;height:16px;}
+#s-confirmation .who-text{flex:1 1 auto;display:flex;flex-direction:column;gap:2px;}
+#s-confirmation .who-title{font-size:13px;font-weight:800;color:var(--ink);}
+#s-confirmation .who-sub{font-size:10px;font-weight:500;color:var(--muted);}
+#s-confirmation .who-chev{color:var(--muted);flex:0 0 auto;}
+#s-confirmation .who-chev svg{width:14px;height:14px;display:block;}
+#s-confirmation .cta{margin-top:18px;width:100%;height:50px;border:none;border-radius:16px;background:linear-gradient(135deg,var(--orange-light) 0%,var(--orange) 50%,var(--orange-deep) 100%);color:#fff;font-family:inherit;font-size:16px;font-weight:900;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;box-shadow:0 10px 22px rgba(255,122,61,0.35),0 2px 6px rgba(229,98,26,0.25),inset 0 1px 1px rgba(255,255,255,0.4);transition:transform .15s ease;}
+#s-confirmation .cta:hover{transform:translateY(-1px);}
+#s-confirmation .cta svg{width:18px;height:18px;}
+#s-confirmation .redo{margin-top:10px;width:100%;height:44px;border:1px solid rgba(255,122,61,0.25);border-radius:14px;background:#fff;color:var(--orange);font-family:inherit;font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;box-shadow:0 2px 8px rgba(160,90,30,0.06);transition:transform .15s ease;}
+#s-confirmation .redo:hover{transform:translateY(-1px);}
+#s-confirmation .redo svg{width:18px;height:14px;color:var(--orange);}
+
+/* ════════════════════════════════════════════════════════════════════
    SCREEN — SYNC & BACKUP  (Claude Design merge, step 4)
    All rules scoped under #s-sync.
    Animation renamed sync-ring-rotate to avoid conflicts.
@@ -2627,6 +2698,159 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
         <span class="underline"></span>
       </button>
     </div>
+  </div>
+</div>
+
+<!-- ════ SCREEN: CONFIRMATION (Claude Design merge, step 5) ════
+     Access for testing: app.html#s-confirmation
+     This is step 2 of the task-creation flow (after voice input).
+     Back → s-voice. Save → s-today. Redo → s-voice.
+     Edit pill, who-card, and task menus carry data-todo markers. -->
+<div class="app-screen" id="s-confirmation">
+  <div class="status">
+    <span class="time">10:30</span>
+    <span class="icons" aria-hidden="true">
+      <svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="0.8"/><rect x="4.5" y="5" width="3" height="6" rx="0.8"/><rect x="9" y="2.5" width="3" height="8.5" rx="0.8"/><rect x="13.5" y="0" width="3" height="11" rx="0.8"/></svg>
+      <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor"><path d="M8 12a1.4 1.4 0 1 0 0-2.8A1.4 1.4 0 0 0 8 12Zm3.6-3.4-.06.06.06-.06Zm-7.2 0a4.6 4.6 0 0 1 7.2 0l1.2-1.2a6.4 6.4 0 0 0-9.6 0l1.2 1.2Zm-2.4-2.4a8.4 8.4 0 0 1 12 0l1.2-1.2a10.2 10.2 0 0 0-14.4 0l1.2 1.2Z"/></svg>
+      <svg width="26" height="12" viewBox="0 0 26 12" fill="none"><rect x="0.5" y="0.5" width="22" height="11" rx="2.6" stroke="currentColor" opacity=".5"/><rect x="2" y="2" width="19" height="8" rx="1.6" fill="currentColor"/><rect x="23.5" y="4" width="2" height="4" rx="0.8" fill="currentColor" opacity=".5"/></svg>
+    </span>
+  </div>
+
+  <div class="scroll">
+
+    <!-- Header -->
+    <div class="header">
+      <button class="back" type="button" aria-label="חזרה" onclick="goto('s-voice','txLeaveFade','txEnterFade')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+      </button>
+      <div class="head-text">
+        <div class="step-pill"><span aria-hidden="true">✨</span><span>שלב 2 מתוך 2</span></div>
+        <h1 class="title">הנה מה שהבנתי</h1>
+        <p class="subtitle">בדקתי והכנתי בשבילך את המשימות האלה.<br/>אפשר לשנות כל דבר לפני ששומרים.</p>
+      </div>
+    </div>
+
+    <!-- Tasks card -->
+    <div class="tasks-card">
+      <div class="tasks-head">
+        <div class="tasks-count"><span class="spark" aria-hidden="true">✨</span><span>4 משימות נמצאו</span></div>
+        <button class="edit-pill" type="button" data-todo="confirmation-edit">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4Z"/></svg>
+          <span>עריכה</span>
+        </button>
+      </div>
+
+      <!-- Task 1 -->
+      <div class="task">
+        <button class="menu" aria-label="אפשרויות" data-todo="task-menu"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg></button>
+        <div class="col-left">
+          <div class="time-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>08:00</span></div>
+          <div class="date">מחר, 18 במאי</div>
+          <div class="category"><span class="cdot dot-turquoise"></span>משימה אישית</div>
+        </div>
+        <div class="col-mid">
+          <div class="t-title"><span>לקנות חלב</span> <span aria-hidden="true">🥛</span></div>
+          <div class="t-desc">חלב, לחם, ביצים ובננות</div>
+        </div>
+        <div class="col-right">
+          <div class="avatar av-aba"></div>
+          <div class="ava-name">אבא</div>
+        </div>
+      </div>
+
+      <!-- Task 2 -->
+      <div class="task">
+        <button class="menu" aria-label="אפשרויות" data-todo="task-menu"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg></button>
+        <div class="col-left">
+          <div class="time-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>10:30</span></div>
+          <div class="date">מחר, 18 במאי</div>
+          <div class="category"><span class="cdot dot-purple"></span>משימה אישית</div>
+        </div>
+        <div class="col-mid">
+          <div class="t-title"><span>להתקשר לסבתא</span> <span aria-hidden="true">📞</span></div>
+          <div class="t-desc">לשאול מה שלומה</div>
+        </div>
+        <div class="col-right">
+          <div class="avatar av-ima"></div>
+          <div class="ava-name">אמא</div>
+        </div>
+      </div>
+
+      <!-- Task 3 -->
+      <div class="task">
+        <button class="menu" aria-label="אפשרויות" data-todo="task-menu"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg></button>
+        <div class="col-left">
+          <div class="time-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>15:30</span></div>
+          <div class="date">מחר, 18 במאי</div>
+          <div class="category"><span class="cdot dot-peach"></span>משימה לילדים</div>
+        </div>
+        <div class="col-mid">
+          <div class="t-title"><span>לאסוף את הילדים</span> <span aria-hidden="true">🚗</span></div>
+          <div class="t-desc">מבי"ס בשכונה</div>
+        </div>
+        <div class="col-right">
+          <div class="avatar av-leali"></div>
+          <div class="ava-name">ליאלי</div>
+        </div>
+      </div>
+
+      <!-- Task 4 -->
+      <div class="task">
+        <button class="menu" aria-label="אפשרויות" data-todo="task-menu"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg></button>
+        <div class="col-left">
+          <div class="time-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>20:00</span></div>
+          <div class="date">מחר, 18 במאי</div>
+          <div class="category"><span class="cdot dot-turquoise"></span>משימה אישית</div>
+        </div>
+        <div class="col-mid">
+          <div class="t-title"><span>להכין מצגת לעבודה</span> <span aria-hidden="true">💻</span></div>
+          <div class="t-desc">להגיש עד מחר בבוקר</div>
+        </div>
+        <div class="col-right">
+          <div class="avatar av-uri"></div>
+          <div class="ava-name">אורי</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Lock hint -->
+    <div class="lock-hint">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+      <span>הזמנים והפרטים <u>ניתנים</u> לעריכה</span>
+    </div>
+
+    <!-- Who sees -->
+    <button class="who-card" type="button" data-todo="confirmation-who">
+      <div class="who-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><circle cx="17" cy="9" r="2.5"/><path d="M3 19c0-3 2.7-5 6-5s6 2 6 5"/><path d="M14.5 19c.3-2 2-3.4 4.5-3.4 1.8 0 3 .8 3 2.4"/></svg>
+      </div>
+      <div class="who-text">
+        <div class="who-title">מי יראה את המשימות האלה?</div>
+        <div class="who-sub">בני המשפחה שלך</div>
+      </div>
+      <span class="who-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></span>
+    </button>
+
+    <!-- Save CTA -->
+    <button class="cta" type="button" onclick="goto('s-today','txLeaveFade','txEnterFade')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg>
+      <span>נראה טוב, שמור הכל</span>
+    </button>
+
+    <!-- Redo -->
+    <button class="redo" type="button" onclick="goto('s-voice','txLeaveFade','txEnterFade')">
+      <svg viewBox="0 0 24 12" fill="currentColor" aria-hidden="true">
+        <rect x="1"  y="4" width="2" height="4"  rx="1"/>
+        <rect x="4"  y="2" width="2" height="8"  rx="1"/>
+        <rect x="7"  y="3" width="2" height="6"  rx="1"/>
+        <rect x="10" y="1" width="2" height="10" rx="1"/>
+        <rect x="13" y="4" width="2" height="4"  rx="1"/>
+        <rect x="16" y="2" width="2" height="8"  rx="1"/>
+        <rect x="19" y="5" width="2" height="2"  rx="1"/>
+      </svg>
+      <span>חזור וערוך את הדיבור</span>
+    </button>
+
   </div>
 </div>
 
@@ -9019,6 +9243,7 @@ document.getElementById('btnAddMore').addEventListener('click', () => {
     { hashes: ['#s-family-members', '#family-members'  ], screen: 's-family-members' },
     { hashes: ['#s-privacy',        '#privacy'         ], screen: 's-privacy'        },
     { hashes: ['#s-sync',           '#sync'            ], screen: 's-sync'           },
+    { hashes: ['#s-confirmation',   '#confirmation'    ], screen: 's-confirmation'   },
   ];
 
   function navTo(screenId){
