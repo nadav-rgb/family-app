@@ -1394,6 +1394,120 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 #s-family-members .nav-item.active .underline{opacity:1;}
 
 /* ════════════════════════════════════════════════════════════════════
+   SCREEN — SYNC & BACKUP  (Claude Design merge, step 4)
+   All rules scoped under #s-sync.
+   Animation renamed sync-ring-rotate to avoid conflicts.
+═══════════════════════════════════════════════════════════════════════ */
+#s-sync{
+  --orange:#FF7A3D;--orange-light:#FFB36B;--orange-deep:#E5621A;--orange-soft:#FFE9D2;
+  --green:#2EAE63;--green-soft:#E6F4EC;
+  --blue:#3E8FE5;--blue-soft:#E7F1FC;
+  --purple:#7C5FCF;--purple-soft:#EEE9F8;
+  --ink:#1A0F08;--muted:#9E8878;
+  --card-bg:rgba(255,255,255,0.94);
+  --card-shadow:0 4px 16px rgba(160,90,30,0.08);
+  font-family:'Rubik',sans-serif;color:var(--ink);
+  background:radial-gradient(circle at top right,rgba(255,244,232,0.9),transparent 35%),linear-gradient(180deg,#FBF8F5 0%,#F7F2ED 45%,#F4EEE8 100%);
+}
+#s-sync .status{flex:0 0 auto;padding:14px 22px 0;display:flex;align-items:center;justify-content:space-between;font-weight:700;font-size:15px;color:var(--ink);direction:ltr;}
+#s-sync .status .icons{display:flex;align-items:center;gap:6px;}
+#s-sync .scroll{flex:1 1 auto;overflow-y:auto;padding:6px 14px 96px;scrollbar-width:none;}
+#s-sync .scroll::-webkit-scrollbar{display:none;}
+#s-sync .header{display:flex;align-items:center;justify-content:space-between;margin-top:11px;gap:10px;}
+#s-sync .back{width:34px;height:34px;border-radius:11px;background:#fff;box-shadow:var(--card-shadow);display:flex;align-items:center;justify-content:center;color:var(--orange);border:1px solid rgba(255,255,255,0.6);cursor:pointer;flex:0 0 auto;font-family:inherit;}
+#s-sync .back svg{width:14px;height:14px;}
+#s-sync .head-title{flex:1 1 auto;text-align:center;display:flex;flex-direction:column;align-items:center;gap:5px;}
+#s-sync .title{margin:0;font-size:24px;font-weight:800;line-height:1;letter-spacing:-0.02em;color:var(--ink);}
+#s-sync .subtitle{margin:0;font-size:11px;font-weight:500;line-height:1.4;color:var(--muted);text-align:center;max-width:240px;}
+#s-sync .head-icon{width:38px;height:38px;border-radius:50%;background:var(--blue-soft);color:var(--blue);display:flex;align-items:center;justify-content:center;flex:0 0 auto;box-shadow:inset 0 1px 0 rgba(255,255,255,0.5);}
+#s-sync .head-icon svg{width:18px;height:18px;}
+#s-sync .card{margin-top:12px;background:var(--card-bg);border-radius:18px;padding:13px 14px;box-shadow:var(--card-shadow);border:1px solid rgba(255,255,255,0.7);}
+#s-sync .status-card{display:flex;align-items:center;gap:14px;}
+#s-sync .status-text{flex:1 1 auto;text-align:right;display:flex;flex-direction:column;gap:5px;}
+#s-sync .status-title{font-size:18px;font-weight:800;color:var(--ink);line-height:1;}
+#s-sync .status-state{display:flex;align-items:center;justify-content:flex-start;gap:6px;font-size:14px;font-weight:700;color:var(--green);}
+#s-sync .dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 0 2px rgba(46,174,99,0.20);flex:0 0 auto;}
+#s-sync .status-desc{font-size:11px;font-weight:500;color:var(--muted);line-height:1.45;}
+#s-sync .status-orb{flex:0 0 auto;width:118px;height:118px;border-radius:50%;position:relative;display:flex;align-items:center;justify-content:center;}
+#s-sync .status-orb .ring{position:absolute;inset:0;border-radius:50%;border:1.5px dashed rgba(46,174,99,0.55);animation:sync-ring-rotate 12s linear infinite;}
+#s-sync .status-orb .ring::before,#s-sync .status-orb .ring::after{content:"";position:absolute;width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 0 2px rgba(46,174,99,0.20);}
+#s-sync .status-orb .ring::before{top:-4px;left:50%;transform:translateX(-50%);}
+#s-sync .status-orb .ring::after{bottom:-4px;left:50%;transform:translateX(-50%);}
+#s-sync .status-orb .glow{position:absolute;width:80px;height:80px;border-radius:50%;background:radial-gradient(circle,rgba(46,174,99,0.18) 0%,rgba(46,174,99,0) 70%);}
+#s-sync .status-orb .cloud{width:60px;height:60px;border-radius:50%;background:var(--green-soft);color:var(--green);display:flex;align-items:center;justify-content:center;z-index:2;box-shadow:0 4px 12px rgba(46,174,99,0.15);}
+#s-sync .status-orb .cloud svg{width:32px;height:32px;}
+@keyframes sync-ring-rotate{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+#s-sync .sec-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding-bottom:11px;}
+#s-sync .sec-icon{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:0 0 auto;box-shadow:inset 0 1px 0 rgba(255,255,255,0.5);}
+#s-sync .sec-icon svg{width:18px;height:18px;}
+#s-sync .sec-icon.purple{background:var(--purple-soft);color:var(--purple);}
+#s-sync .sec-icon.blue{background:var(--blue-soft);color:var(--blue);}
+#s-sync .sec-icon.green{background:var(--green-soft);color:var(--green);}
+#s-sync .sec-text{flex:1 1 auto;text-align:right;display:flex;flex-direction:column;gap:3px;}
+#s-sync .sec-title{font-size:16px;font-weight:800;color:var(--ink);line-height:1.1;}
+#s-sync .sec-sub{font-size:11px;font-weight:500;color:var(--muted);line-height:1.35;}
+#s-sync .device-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid rgba(160,90,30,0.06);}
+#s-sync .device-row:first-of-type{border-top:none;}
+#s-sync .dev-icon{width:30px;height:30px;border-radius:9px;background:#F4ECE2;color:var(--ink);display:flex;align-items:center;justify-content:center;flex:0 0 auto;}
+#s-sync .dev-icon svg{width:14px;height:14px;}
+#s-sync .dev-body{flex:1 1 auto;text-align:right;display:flex;flex-direction:column;gap:1px;min-width:0;}
+#s-sync .dev-top{display:flex;align-items:center;justify-content:flex-start;gap:7px;line-height:1.15;}
+#s-sync .dev-name{font-size:14px;font-weight:700;color:var(--ink);}
+#s-sync .me-pill{background:var(--purple-soft);color:var(--purple);font-size:9px;font-weight:700;padding:3px 7px;border-radius:99px;}
+#s-sync .dev-model{font-size:11px;font-weight:500;color:var(--muted);}
+#s-sync .dev-avatar{width:40px;height:40px;border-radius:50%;position:relative;box-shadow:0 3px 8px rgba(160,90,30,0.10),0 1px 2px rgba(160,90,30,0.06),inset 0 1px 2px rgba(255,255,255,0.9);border:1px solid rgba(255,255,255,0.7);flex:0 0 auto;}
+#s-sync .dev-avatar.av-aba{background:radial-gradient(120% 120% at 30% 25%,#ffffff 0%,#F4FAFE 55%,#E6F2FB 100%);}
+#s-sync .dev-avatar.av-ima{background:radial-gradient(120% 120% at 30% 25%,#ffffff 0%,#FFF4F0 55%,#FCE5DC 100%);}
+#s-sync .dev-avatar .online{position:absolute;bottom:1px;left:1px;width:10px;height:10px;border-radius:50%;background:var(--green);box-shadow:0 0 0 2px #fff;}
+#s-sync .link-row{margin-top:8px;padding-top:11px;border-top:1px solid rgba(160,90,30,0.06);text-align:center;}
+#s-sync .link-purple{background:transparent;border:none;cursor:pointer;color:var(--purple);font-family:inherit;font-size:13px;font-weight:700;display:inline-flex;align-items:center;gap:7px;}
+#s-sync .link-purple svg{width:14px;height:14px;}
+#s-sync .cloud-head{display:flex;align-items:center;gap:14px;}
+#s-sync .cloud-text{flex:1 1 auto;text-align:right;display:flex;flex-direction:column;gap:4px;}
+#s-sync .cloud-state{display:flex;align-items:center;justify-content:flex-start;gap:6px;font-size:13px;font-weight:700;color:var(--green);}
+#s-sync .cloud-icon{width:62px;height:62px;border-radius:50%;background:var(--blue-soft);color:var(--blue);display:flex;align-items:center;justify-content:center;flex:0 0 auto;order:-1;box-shadow:inset 0 1px 0 rgba(255,255,255,0.5);}
+#s-sync .cloud-icon svg{width:28px;height:28px;}
+#s-sync .secure-row{margin-top:11px;background:#ECF1FA;border-radius:12px;padding:9px 10px;display:flex;align-items:center;gap:9px;color:var(--ink);border:1px solid rgba(63,107,209,0.12);}
+#s-sync .secure-row .shield{width:38px;height:38px;border-radius:10px;background:transparent;color:var(--blue);display:flex;align-items:center;justify-content:center;flex:0 0 auto;}
+#s-sync .secure-row .shield svg{width:28px;height:28px;}
+#s-sync .secure-row .sbody{flex:1 1 auto;text-align:right;display:flex;flex-direction:column;gap:1px;}
+#s-sync .secure-row .st{font-size:12px;font-weight:700;color:var(--ink);line-height:1.15;}
+#s-sync .secure-row .ss{font-size:10px;font-weight:500;color:var(--muted);line-height:1.3;}
+#s-sync .secure-row .chev{color:var(--muted);}
+#s-sync .secure-row .chev svg{width:12px;height:12px;display:block;}
+#s-sync .lastsync{display:flex;align-items:center;gap:14px;}
+#s-sync .ls-text{flex:1 1 auto;text-align:right;display:flex;flex-direction:column;gap:3px;}
+#s-sync .ls-icon{width:62px;height:62px;border-radius:50%;background:var(--green-soft);color:var(--green);display:flex;align-items:center;justify-content:center;flex:0 0 auto;box-shadow:inset 0 1px 0 rgba(255,255,255,0.5);}
+#s-sync .ls-icon svg{width:33px;height:33px;}
+#s-sync .ls-state{display:flex;align-items:center;justify-content:flex-start;gap:6px;font-size:13px;font-weight:700;color:var(--green);}
+#s-sync .ls-when{font-size:11px;font-weight:500;color:var(--muted);}
+#s-sync .actions{margin-top:12px;display:flex;gap:10px;}
+#s-sync .act{flex:1 1 0;min-width:0;background:var(--card-bg);border-radius:14px;padding:11px 12px;box-shadow:var(--card-shadow);border:1px solid rgba(255,255,255,0.7);display:flex;align-items:center;gap:10px;cursor:pointer;transition:transform .15s ease;}
+#s-sync .act:hover{transform:translateY(-1px);}
+#s-sync .act .ic{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:0 0 auto;box-shadow:inset 0 1px 0 rgba(255,255,255,0.5);}
+#s-sync .act .ic.green{background:var(--green-soft);color:var(--green);order:2;}
+#s-sync .act .ic.orange{background:var(--orange-soft);color:var(--orange);order:2;}
+#s-sync .act .ic svg{width:16px;height:16px;}
+#s-sync .act .abody{flex:1 1 auto;text-align:right;display:flex;flex-direction:column;gap:2px;min-width:0;}
+#s-sync .act .at{font-size:12px;font-weight:800;line-height:1.15;}
+#s-sync .act .at.green{color:var(--green);}
+#s-sync .act .at.orange{color:var(--orange);}
+#s-sync .act .as{font-size:9px;font-weight:500;color:var(--muted);line-height:1.3;}
+#s-sync .privacy-banner{margin-top:12px;background:#FAF1DD;border-radius:14px;padding:9px 11px;display:flex;align-items:center;gap:9px;border:1px solid rgba(180,133,39,0.15);}
+#s-sync .privacy-banner .sh{width:38px;height:38px;border-radius:10px;background:transparent;color:#D4A53A;display:flex;align-items:center;justify-content:center;flex:0 0 auto;}
+#s-sync .privacy-banner .sh svg{width:26px;height:26px;}
+#s-sync .privacy-banner p{margin:0;flex:1 1 auto;text-align:right;font-size:11px;font-weight:600;color:#7A5430;line-height:1.35;}
+#s-sync .fab{position:absolute;left:50%;bottom:90px;transform:translateX(-50%);width:63px;height:63px;border-radius:50%;background:radial-gradient(120% 120% at 30% 20%,#FFB36B 0%,#FF7A3D 50%,#E5621A 100%);display:flex;align-items:center;justify-content:center;color:#fff;box-shadow:0 10px 24px rgba(255,122,61,0.45),0 2px 6px rgba(229,98,26,0.35),inset 0 1px 1px rgba(255,255,255,0.5);cursor:pointer;border:none;transition:transform .15s ease;z-index:5;}
+#s-sync .fab:hover{transform:translateX(-50%) scale(1.04);}
+#s-sync .fab svg{width:29px;height:29px;}
+#s-sync .bottom-wrap{position:absolute;left:0;right:0;bottom:0;pointer-events:none;}
+#s-sync .bottom-nav{pointer-events:auto;background:rgba(255,255,255,0.78);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);border-top:1px solid rgba(255,255,255,0.8);box-shadow:0 -6px 20px rgba(160,90,30,0.06);padding:11px 19px 21px;display:flex;align-items:flex-end;justify-content:space-between;}
+#s-sync .nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--muted);font-size:10px;font-weight:600;cursor:pointer;width:58px;text-decoration:none;transition:color .15s ease;background:none;border:none;font-family:'Rubik',sans-serif;}
+#s-sync .nav-item.active{color:var(--orange);}
+#s-sync .nav-item .underline{width:14px;height:2px;border-radius:99px;background:var(--orange);margin-top:2px;opacity:0;}
+#s-sync .nav-item.active .underline{opacity:1;}
+
+/* ════════════════════════════════════════════════════════════════════
    SCREEN — PRIVACY & SECURITY  (Claude Design merge, step 3)
    All rules scoped under #s-privacy so they cannot affect other screens.
    Variables redeclared on #s-privacy to keep var() lookups local.
@@ -2111,7 +2225,7 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
         <div class="body"><div class="t">מראה האפליקציה</div><div class="s">ערכות נושא, צבעים וטקסט</div></div>
         <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></span>
       </div>
-      <div class="row">
+      <div class="row" onclick="goto('s-sync','txLeaveFade','txEnterFade')">
         <div class="icn ic-cloud" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18a5 5 0 0 1-1-9.9A6 6 0 0 1 17.5 9 4.5 4.5 0 0 1 17 18Z"/></svg></div>
         <div class="body"><div class="t">סנכרון וגיבוי</div><div class="s">גיבוי בענן וסנכרון בין מכשירים</div></div>
         <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></span>
@@ -2320,6 +2434,194 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
         <span class="underline"></span>
       </button>
       <button class="nav-item active" type="button">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><circle cx="17" cy="9" r="2.5"/><path d="M3 19c0-3 2.7-5 6-5s6 2 6 5"/><path d="M14.5 19c.3-2 2-3.4 4.5-3.4 1.8 0 3 .8 3 2.4"/></svg>
+        <span>המשפחה</span>
+        <span class="underline"></span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ════ SCREEN: SYNC & BACKUP (Claude Design merge, step 4) ════
+     Access for testing: app.html#s-sync
+     Back → s-settings. All action buttons carry data-todo markers.
+     The spinning animation on "בדוק סנכרון" is visual-only. -->
+<div class="app-screen" id="s-sync">
+  <div class="status">
+    <span class="time">10:30</span>
+    <span class="icons" aria-hidden="true">
+      <svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="0.8"/><rect x="4.5" y="5" width="3" height="6" rx="0.8"/><rect x="9" y="2.5" width="3" height="8.5" rx="0.8"/><rect x="13.5" y="0" width="3" height="11" rx="0.8"/></svg>
+      <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor"><path d="M8 12a1.4 1.4 0 1 0 0-2.8A1.4 1.4 0 0 0 8 12Zm3.6-3.4-.06.06.06-.06Zm-7.2 0a4.6 4.6 0 0 1 7.2 0l1.2-1.2a6.4 6.4 0 0 0-9.6 0l1.2 1.2Zm-2.4-2.4a8.4 8.4 0 0 1 12 0l1.2-1.2a10.2 10.2 0 0 0-14.4 0l1.2 1.2Z"/></svg>
+      <svg width="26" height="12" viewBox="0 0 26 12" fill="none"><rect x="0.5" y="0.5" width="22" height="11" rx="2.6" stroke="currentColor" opacity=".5"/><rect x="2" y="2" width="19" height="8" rx="1.6" fill="currentColor"/><rect x="23.5" y="4" width="2" height="4" rx="0.8" fill="currentColor" opacity=".5"/></svg>
+    </span>
+  </div>
+
+  <div class="scroll">
+
+    <!-- Header -->
+    <div class="header">
+      <button class="back" type="button" aria-label="חזרה" onclick="goto('s-settings','txLeaveFade','txEnterFade')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+      </button>
+      <div class="head-title">
+        <h1 class="title">סנכרון וגיבוי</h1>
+        <p class="subtitle">כך המשימות שלכם נשמרות ומעודכנות בכל המכשירים של המשפחה</p>
+      </div>
+      <div class="head-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18a5 5 0 0 1-1-9.9A6 6 0 0 1 17.5 9 4.5 4.5 0 0 1 17 18"/><path d="M9 14h6"/><path d="m11 12 2 2-2 2"/><path d="M13 16l-2-2 2-2"/></svg>
+      </div>
+    </div>
+
+    <!-- Sync status hero -->
+    <div class="card status-card">
+      <div class="status-text">
+        <div class="status-title">סטטוס סנכרון</div>
+        <div class="status-state"><span class="dot"></span><span>מחובר ועובד מעולה</span></div>
+        <div class="status-desc">כל השינויים מסתנכרנים בזמן אמת<br/>בין כל מכשירי בני המשפחה</div>
+      </div>
+      <div class="status-orb" aria-hidden="true">
+        <span class="ring"></span>
+        <span class="glow"></span>
+        <span class="cloud">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18a5 5 0 0 1-1-9.9A6 6 0 0 1 17.5 9 4.5 4.5 0 0 1 17 18"/><path d="m9 13 2 2 4-4"/></svg>
+        </span>
+      </div>
+    </div>
+
+    <!-- Connected devices -->
+    <div class="card">
+      <div class="sec-head">
+        <div class="sec-icon purple" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="10" height="14" rx="2"/><rect x="13" y="3" width="8" height="17" rx="2"/></svg>
+        </div>
+        <div class="sec-text">
+          <div class="sec-title">מכשירים מחוברים</div>
+          <div class="sec-sub">המשימות נסנכרנות בכל המכשירים הבאים</div>
+        </div>
+      </div>
+
+      <div class="device-row">
+        <div class="dev-avatar av-aba"><span class="online"></span></div>
+        <div class="dev-body">
+          <div class="dev-top">
+            <span class="dev-name">הטלפון של אבא</span>
+            <span class="me-pill">מכשיר זה</span>
+          </div>
+          <div class="dev-model">iPhone 15 Pro</div>
+        </div>
+        <div class="dev-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+        </div>
+      </div>
+
+      <div class="device-row">
+        <div class="dev-avatar av-ima"><span class="online"></span></div>
+        <div class="dev-body">
+          <div class="dev-top">
+            <span class="dev-name">הטלפון של אמא</span>
+          </div>
+          <div class="dev-model">iPhone 14</div>
+        </div>
+        <div class="dev-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+        </div>
+      </div>
+
+      <div class="link-row">
+        <button class="link-purple" type="button" data-todo="sync-add-device">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>
+          <span>חבר מכשיר נוסף</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Cloud backup -->
+    <div class="card">
+      <div class="cloud-head">
+        <div class="cloud-text">
+          <div class="status-title">גיבוי בענן</div>
+          <div class="cloud-state"><span class="dot"></span><span>פעיל</span></div>
+          <div class="status-desc">המידע שלכם מגובה בצורה מאובטחת בענן</div>
+        </div>
+        <div class="cloud-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18a5 5 0 0 1-1-9.9A6 6 0 0 1 17.5 9 4.5 4.5 0 0 1 17 18"/><path d="M12 17V6"/><path d="m9 9 3-3 3 3"/></svg>
+        </div>
+      </div>
+      <div class="secure-row">
+        <span class="chev" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></span>
+        <div class="sbody">
+          <div class="st">הגיבוי מאובטח</div>
+          <div class="ss">המידע מוצפן ואישי שלכם נשמר בסודיות</div>
+        </div>
+        <div class="shield" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><rect x="10" y="11" width="4" height="5" rx="1"/><path d="M11 11V9.5a1 1 0 1 1 2 0V11"/></svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Last sync -->
+    <div class="card lastsync">
+      <div class="ls-text">
+        <div class="status-title">סנכרון אחרון</div>
+        <div class="ls-state"><span class="dot"></span><span>לפני דקה</span></div>
+        <div class="ls-when">היום, 10:29</div>
+      </div>
+      <div class="ls-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+      </div>
+    </div>
+
+    <!-- Two actions -->
+    <div class="actions">
+      <button class="act" type="button" data-todo="sync-check-now" onclick="(function(b){var s=b.querySelector('svg');s.style.transition='transform 0.8s ease';s.style.transform='rotate(360deg)';setTimeout(function(){s.style.transition='none';s.style.transform='rotate(0deg)';},900);})(this)">
+        <div class="ic green" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4v16"/><path d="m4 8 4-4 4 4"/><path d="M16 4v16"/><path d="m12 16 4 4 4-4"/></svg>
+        </div>
+        <div class="abody">
+          <div class="at green">בדוק סנכרון עכשיו</div>
+          <div class="as">עדכן מיד את כל השינויים בין המכשירים</div>
+        </div>
+      </button>
+      <button class="act" type="button" data-todo="sync-invite-device">
+        <div class="ic orange" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-4 3-6 6.5-6s6.5 2 6.5 6"/><path d="M19 8v6M16 11h6"/></svg>
+        </div>
+        <div class="abody">
+          <div class="at orange">הזמן מכשיר נוסף</div>
+          <div class="as">שתף את האפליקציה עם בן משפחה</div>
+        </div>
+      </button>
+    </div>
+
+    <!-- Privacy banner -->
+    <div class="privacy-banner">
+      <div class="sh" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><rect x="10" y="11" width="4" height="5" rx="1"/><path d="M11 11V9.5a1 1 0 1 1 2 0V11"/></svg>
+      </div>
+      <p>כל המידע שלכם נשאר פרטי וגלוי רק לבני המשפחה</p>
+    </div>
+
+  </div>
+
+  <!-- FAB -->
+  <button class="fab" aria-label="הוספה" type="button" onclick="goto('s-voice','txLeaveFade','txEnterFade')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+  </button>
+
+  <!-- Bottom nav -->
+  <div class="bottom-wrap">
+    <div class="bottom-nav">
+      <button class="nav-item active" type="button" onclick="goto('s-settings','txLeaveFade','txEnterFade')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9 1.65 1.65 0 0 0 4.27 7.18l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09A1.65 1.65 0 0 0 15 4.6a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9c.14.34.22.7.22 1.06"/></svg>
+        <span>הגדרות</span>
+        <span class="underline"></span>
+      </button>
+      <button class="nav-item" type="button" onclick="goto('s-today','txLeaveFade','txEnterFade')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v10h14V10"/></svg>
+        <span>היום</span>
+        <span class="underline"></span>
+      </button>
+      <button class="nav-item" type="button" onclick="goto('s-today','txLeaveFade','txEnterFade')">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><circle cx="17" cy="9" r="2.5"/><path d="M3 19c0-3 2.7-5 6-5s6 2 6 5"/><path d="M14.5 19c.3-2 2-3.4 4.5-3.4 1.8 0 3 .8 3 2.4"/></svg>
         <span>המשפחה</span>
         <span class="underline"></span>
@@ -8716,6 +9018,7 @@ document.getElementById('btnAddMore').addEventListener('click', () => {
     { hashes: ['#s-settings',       '#settings'       ], screen: 's-settings'       },
     { hashes: ['#s-family-members', '#family-members'  ], screen: 's-family-members' },
     { hashes: ['#s-privacy',        '#privacy'         ], screen: 's-privacy'        },
+    { hashes: ['#s-sync',           '#sync'            ], screen: 's-sync'           },
   ];
 
   function navTo(screenId){
