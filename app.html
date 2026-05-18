@@ -493,6 +493,32 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 #s-today .hm-prog-label .hm-pct{color:#FF7A3D;font-weight:900;}
 #s-today .hm-prog-track{height:5px;border-radius:99px;background:#F1E4D3;overflow:hidden;direction:rtl;}
 #s-today .hm-prog-fill{height:100%;width:0%;background:linear-gradient(90deg,#FFB36B 0%,#FF7A3D 60%,#E5621A 100%);border-radius:99px;box-shadow:0 0 8px rgba(255,122,61,0.4);transition:width .35s ease;}
+
+/* ═══ HOME SCREEN REDESIGN — Home.html full merge ═══════════════════════ */
+/* Hide old elements replaced by new design */
+#s-today .t-header{display:none !important;}
+#s-today .t-hero-card{display:none !important;}
+#s-today .t-slabel{display:none !important;}
+#s-today .install-banner{display:none !important;}
+/* New header */
+#s-today .hm-header{display:flex;align-items:flex-start;justify-content:space-between;padding:14px 20px 0;gap:10px;}
+#s-today .hm-title{font-size:22px;font-weight:900;color:#1A0F08;line-height:1.2;letter-spacing:-0.02em;}
+#s-today .hm-subtitle{margin-top:4px;font-size:10px;font-weight:600;color:#9E8878;}
+#s-today .hm-subtitle .hm-sub-count{color:#FF7A3D;font-weight:900;font-size:11px;}
+#s-today .hm-bell{width:34px;height:34px;border-radius:11px;background:#fff;box-shadow:0 4px 16px rgba(160,90,30,0.08);border:1px solid rgba(255,255,255,0.6);display:flex;align-items:center;justify-content:center;flex:0 0 auto;cursor:pointer;position:relative;}
+#s-today .hm-bell-dot{position:absolute;top:7px;right:8px;width:6px;height:6px;border-radius:50%;background:#FF3B30;box-shadow:0 0 0 2px #fff;}
+/* Section label */
+#s-today .hm-section-lbl{margin:18px 20px 10px;display:flex;align-items:center;gap:6px;font-size:11px;font-weight:800;color:#B85F23;}
+#s-today .hm-section-lbl .hm-star{color:#FF7A3D;font-size:10px;}
+/* Task icon boxes */
+#s-today .hm-icon-box{width:38px;height:38px;border-radius:12px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 1px 0 rgba(255,255,255,0.6),0 2px 6px rgba(160,90,30,0.06);}
+#s-today .hm-ib-peach{background:linear-gradient(135deg,#FFE3CB 0%,#FFCFA8 100%);color:#C2541A;}
+#s-today .hm-ib-pink{background:linear-gradient(135deg,#FFD8DC 0%,#FFC0C7 100%);color:#C24555;}
+#s-today .hm-ib-purple{background:linear-gradient(135deg,#E2D4FB 0%,#C9B6F5 100%);color:#6E47C9;}
+#s-today .hm-ib-green{background:linear-gradient(135deg,#D4F1DC 0%,#B7E4C5 100%);color:#2E8C53;}
+#s-today .hm-ib-grey{background:linear-gradient(135deg,#F0EAE4 0%,#E4DED8 100%);color:#7A6354;}
+/* Hide mini-avatar (replaced by icon box) */
+#s-today .t-task-main .t-miniav{display:none !important;}
 /* .t-task base is defined below in the bell/share section */
 .t-task:hover{transform:translateY(-1px);}
 .t-task:active{transform:scale(.97);}
@@ -2308,7 +2334,20 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 <!-- ════ SCREEN 3: TODAY ════ -->
 <div class="app-screen" id="s-today">
   <div class="t-scroll">
-    <!-- Header -->
+
+    <!-- ═══ NEW HOME HEADER (Home.html redesign) ═══ -->
+    <div class="hm-header">
+      <div>
+        <div class="hm-title" id="hmTitle">בוקר טוב ☀️</div>
+        <div class="hm-subtitle"><span id="hmSubDay">היום</span> · <span class="hm-sub-count" id="hmSubCount">0</span> משימות להיום</div>
+      </div>
+      <button class="hm-bell" aria-label="התראות" onclick="goto('s-settings','txLeaveFade','txEnterFade')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+        <span class="hm-bell-dot"></span>
+      </button>
+    </div>
+
+    <!-- Header (old — hidden via CSS, kept for JS hooks) -->
     <div class="t-header">
       <div class="t-header-top">
         <div class="t-greeting" id="tGreeting">Tuesday, May 6 ☀️</div>
@@ -2415,6 +2454,12 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
       <button class="npb-enable"  id="npbEnable">Enable</button>
       <button class="npb-dismiss" id="npbDismiss">Not now</button>
     </div>
+    <!-- ═══ SECTION LABEL (Home.html redesign) ═══ -->
+    <div class="hm-section-lbl">
+      <span>המשימות להיום</span>
+      <span class="hm-star" aria-hidden="true">✦</span>
+    </div>
+
     <div class="t-tasks" id="tTasks"></div>
   </div>
 
@@ -9895,6 +9940,43 @@ document.getElementById('btnAddMore').addEventListener('click', () => {
 
 <!-- ════ HOME PROGRESS CARD — helper (Home.html merge) ════ -->
 <script>
+/* ─── icon picker for task cards ─────────────────────────────────────── */
+var _HM_ICONS = {
+  cart:   '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.4"/><circle cx="17" cy="20" r="1.4"/><path d="M3 4h2l2.4 11.2a2 2 0 0 0 2 1.6h7.6a2 2 0 0 0 2-1.5L21 8H6"/></svg>',
+  phone:  '<svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><path d="M6.6 10.8a15 15 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1 11.4 11.4 0 0 0 .57 3.6 1 1 0 0 1-.25 1L6.6 10.8Z"/></svg>',
+  car:    '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 14 7 8.5A2 2 0 0 1 8.9 7h6.2A2 2 0 0 1 17 8.5L19 14"/><path d="M3 14h18v4a1 1 0 0 1-1 1h-2v-2H6v2H4a1 1 0 0 1-1-1v-4Z"/><circle cx="7.5" cy="16.5" r="1.2" fill="currentColor"/><circle cx="16.5" cy="16.5" r="1.2" fill="currentColor"/></svg>',
+  receipt:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-2.5-1.5L13 21l-2.5-1.5L8 21l-2-1.5V3Z"/><path d="M9 8h6"/><path d="M9 12h6"/><path d="M9 16h4"/></svg>',
+  check:  '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 11 3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>'
+};
+
+function _hmTaskIcon(title) {
+  var t = (title || '').toLowerCase();
+  if (/קנ|סופר|מכולת|אוכל|ירק|פרי|לחם|חלב|ביצ|שוק/.test(t))
+    return { cls:'hm-ib-peach', svg:_HM_ICONS.cart };
+  if (/טלפ|התקשר|לצלצל|שיחה|סבת|סבא|קשר/.test(t))
+    return { cls:'hm-ib-pink',  svg:_HM_ICONS.phone };
+  if (/לאסוף|לקחת|להביא|נסיע|נהיג|רכב|גן|בית.?ספר|ילד|חינוך/.test(t))
+    return { cls:'hm-ib-purple',svg:_HM_ICONS.car };
+  if (/לשלם|חשבון|כסף|בנק|תשלום|העבר|ארנק/.test(t))
+    return { cls:'hm-ib-green', svg:_HM_ICONS.receipt };
+  return { cls:'hm-ib-grey', svg:_HM_ICONS.check };
+}
+
+function _hmInjectIconBoxes() {
+  document.querySelectorAll('#tTasks .t-task').forEach(function(el) {
+    if (el.querySelector('.hm-icon-box')) return;
+    var ttitle = el.querySelector('.t-ttitle');
+    var icon = _hmTaskIcon(ttitle ? ttitle.textContent : '');
+    var box = document.createElement('div');
+    box.className = 'hm-icon-box ' + icon.cls;
+    box.innerHTML = icon.svg;
+    var main = el.querySelector('.t-task-main');
+    if (main) main.appendChild(box);
+  });
+}
+
+var _HM_DAYS_HE = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
+
 function updateHomProgress() {
   var tasks  = (typeof activeTasks === 'function') ? activeTasks() : [];
   var total  = tasks.length;
@@ -9909,6 +9991,26 @@ function updateHomProgress() {
     ? 'אין משימות להיום עדיין'
     : done + ' מתוך ' + total + ' הושלמו' +
       (pct > 0 ? ' · <span class="hm-pct">' + pct + '%</span>' : '');
+
+  /* subtitle task count */
+  var subCount = document.getElementById('hmSubCount');
+  if (subCount) subCount.textContent = String(total > 0 ? total - done : 0);
+
+  /* subtitle day name */
+  var subDay = document.getElementById('hmSubDay');
+  if (subDay) subDay.textContent = 'יום ' + _HM_DAYS_HE[new Date().getDay()];
+
+  /* personalized greeting */
+  var hmTitle = document.getElementById('hmTitle');
+  if (hmTitle && typeof currentDeviceDisplayName === 'function') {
+    var _h = new Date().getHours();
+    var _greet = _h < 5 ? 'לילה טוב' : _h < 12 ? 'בוקר טוב' : _h < 17 ? 'צהריים טובים' : _h < 21 ? 'ערב טוב' : 'לילה טוב';
+    var _name = currentDeviceDisplayName();
+    hmTitle.textContent = _greet + (_name ? ', ' + _name : '') + ' ☀️';
+  }
+
+  /* inject icon boxes into rendered task cards */
+  _hmInjectIconBoxes();
 }
 
 // React to task list changes without touching existing render functions
