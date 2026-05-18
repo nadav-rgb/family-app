@@ -8703,22 +8703,36 @@ document.getElementById('btnAddMore').addEventListener('click', () => {
 </script>
 
 <!-- ════════════════════════════════════════════════════════════════════
-     SCREEN: SETTINGS — hash-based access for testing (Claude Design merge)
-     Visit app.html#s-settings to navigate to the new screen.
-     Does not change any existing button behaviour.
+     DESIGN SCREEN ROUTER — unified hash-based navigation for all screens
+     added as part of the Claude Design merge.
+     To add a new screen: append one entry to ROUTES below.
+     Visit app.html#<hash> to jump directly to any screen for testing.
 ═══════════════════════════════════════════════════════════════════════ -->
 <script>
-(function settingsScreenHashRouter(){
-  function navTo(){
-    if (typeof goto !== 'function') { setTimeout(navTo, 100); return; }
-    if (!document.querySelector('.app-screen.active')) { setTimeout(navTo, 100); return; }
-    if (document.querySelector('.app-screen.active').id === 's-settings') return;
-    try { goto('s-settings','txLeaveFade','txEnterFade'); } catch(e) { console.warn('settings nav failed', e); }
+(function designScreenRouter(){
+  // Each entry maps one or more URL hashes to a screen ID.
+  // Extend this array as new screens are integrated.
+  var ROUTES = [
+    { hashes: ['#s-settings',       '#settings'       ], screen: 's-settings'       },
+    { hashes: ['#s-family-members', '#family-members'  ], screen: 's-family-members' },
+    { hashes: ['#s-privacy',        '#privacy'         ], screen: 's-privacy'        },
+  ];
+
+  function navTo(screenId){
+    if (typeof goto !== 'function') { setTimeout(function(){ navTo(screenId); }, 100); return; }
+    var active = document.querySelector('.app-screen.active');
+    if (!active) { setTimeout(function(){ navTo(screenId); }, 100); return; }
+    if (active.id === screenId) return;
+    try { goto(screenId, 'txLeaveFade', 'txEnterFade'); } catch(e) { console.warn('designScreenRouter: nav to ' + screenId + ' failed', e); }
   }
+
   function check(){
     var h = (window.location.hash || '').toLowerCase();
-    if (h === '#s-settings' || h === '#settings') navTo();
+    for (var i = 0; i < ROUTES.length; i++){
+      if (ROUTES[i].hashes.indexOf(h) !== -1) { navTo(ROUTES[i].screen); return; }
+    }
   }
+
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', function(){ setTimeout(check, 250); });
   } else {
@@ -8726,65 +8740,13 @@ document.getElementById('btnAddMore').addEventListener('click', () => {
   }
   window.addEventListener('hashchange', check);
 
-  // Avatar selector — purely visual toggle inside #s-settings. No
-  // side effects on the rest of the app.
+  // Avatar selector — visual-only toggle inside #s-settings, no app-state side effects.
   document.querySelectorAll('#settingsMembers .member').forEach(function(m){
     m.addEventListener('click', function(){
       document.querySelectorAll('#settingsMembers .member').forEach(function(x){ x.classList.remove('active'); });
       m.classList.add('active');
     });
   });
-})();
-
-// ────────────────────────────────────────────────────────────────────
-// Family Members screen (Claude Design merge, step 2) — hash router
-// Visit app.html#s-family-members to test the new screen.
-// "Edit" and "+ add member" buttons carry data-todo markers and have no
-// destination yet; they are intentionally inert until matching screens
-// are built. Nothing else in the app is touched.
-// ────────────────────────────────────────────────────────────────────
-(function familyMembersHashRouter(){
-  function navTo(){
-    if (typeof goto !== 'function') { setTimeout(navTo, 100); return; }
-    if (!document.querySelector('.app-screen.active')) { setTimeout(navTo, 100); return; }
-    if (document.querySelector('.app-screen.active').id === 's-family-members') return;
-    try { goto('s-family-members','txLeaveFade','txEnterFade'); } catch(e) { console.warn('family-members nav failed', e); }
-  }
-  function check(){
-    var h = (window.location.hash || '').toLowerCase();
-    if (h === '#s-family-members' || h === '#family-members') navTo();
-  }
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function(){ setTimeout(check, 250); });
-  } else {
-    setTimeout(check, 250);
-  }
-  window.addEventListener('hashchange', check);
-})();
-
-// ────────────────────────────────────────────────────────────────────
-// Privacy & Security screen (Claude Design merge, step 3) — hash router
-// Visit app.html#s-privacy to test the new screen.
-// All data-todo rows are intentionally inert until sub-screens are built.
-// Nothing else in the app is touched.
-// ────────────────────────────────────────────────────────────────────
-(function privacyHashRouter(){
-  function navTo(){
-    if (typeof goto !== 'function') { setTimeout(navTo, 100); return; }
-    if (!document.querySelector('.app-screen.active')) { setTimeout(navTo, 100); return; }
-    if (document.querySelector('.app-screen.active').id === 's-privacy') return;
-    try { goto('s-privacy','txLeaveFade','txEnterFade'); } catch(e) { console.warn('privacy nav failed', e); }
-  }
-  function check(){
-    var h = (window.location.hash || '').toLowerCase();
-    if (h === '#s-privacy' || h === '#privacy') navTo();
-  }
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function(){ setTimeout(check, 250); });
-  } else {
-    setTimeout(check, 250);
-  }
-  window.addEventListener('hashchange', check);
 })();
 </script>
 </body>
