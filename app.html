@@ -5575,7 +5575,7 @@ async function vOrganize() {
     dpRender(true);
     const sh = document.querySelector('#s-dp .list-shimmer');
     if (sh) { sh.style.animation = 'none'; void sh.offsetWidth; sh.style.animation = ''; }
-    goto('s-dp', 'txLeaveBloom', 'txEnterFocus');
+    goto('s-confirmation', 'txLeaveBloom', 'txEnterFocus');
   }, 980);
 }
 
