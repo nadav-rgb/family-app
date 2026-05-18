@@ -477,6 +477,21 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 .t-hpill{background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.25);border-radius:20px;padding:6px 14px;font-size:12px;font-weight:800;color:white;}
 
 #s-today .t-tasks{padding:0 20px;display:flex;flex-direction:column;gap:10px;animation:fadeUp .4s ease .22s both;}
+/* ── Home progress card (Claude Design merge — Home.html) ─────────────── */
+#s-today .hm-progress-card{margin:0 20px 14px;border-radius:19px;background:linear-gradient(135deg,#FEF3E6 0%,#F5DFCA 100%);padding:11px 14px;display:flex;align-items:stretch;gap:11px;position:relative;box-shadow:0 10px 30px rgba(229,98,26,0.10),0 2px 8px rgba(160,90,30,0.06);overflow:hidden;animation:fadeUp .4s ease .14s both;}
+#s-today .hm-progress-card::after{content:"";position:absolute;inset:0;border-radius:19px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.6);pointer-events:none;}
+#s-today .hm-spark{position:absolute;border-radius:50%;background:radial-gradient(circle,#fff 0%,rgba(255,255,255,0) 70%);box-shadow:0 0 8px rgba(255,255,255,0.9);}
+#s-today .hm-spark.s1{width:5px;height:5px;top:30px;right:38%;opacity:.9}
+#s-today .hm-spark.s2{width:3px;height:3px;top:14px;right:52%;opacity:.8}
+#s-today .hm-placeholder{flex:0 0 28%;border-radius:13px;background:linear-gradient(160deg,#FBE5D2 0%,#F1D2B7 100%);box-shadow:inset 0 1px 0 rgba(255,255,255,0.5);}
+#s-today .hm-text{flex:1 1 auto;text-align:right;display:flex;flex-direction:column;gap:5px;}
+#s-today .hm-text h2{margin:0;font-size:15px;font-weight:900;line-height:1.2;letter-spacing:-0.01em;color:#1A0F08;display:flex;align-items:center;justify-content:flex-start;gap:5px;flex-wrap:wrap;}
+#s-today .hm-lead{color:#7A6354;font-size:10px;font-weight:500;line-height:1.4;}
+#s-today .hm-progress-box{margin-top:auto;background:#fff;border-radius:10px;padding:6px 8px 8px;box-shadow:0 2px 8px rgba(160,90,30,0.06);}
+#s-today .hm-prog-label{font-size:9px;font-weight:700;color:#1A0F08;text-align:right;margin-bottom:5px;}
+#s-today .hm-prog-label .hm-pct{color:#FF7A3D;font-weight:900;}
+#s-today .hm-prog-track{height:5px;border-radius:99px;background:#F1E4D3;overflow:hidden;direction:rtl;}
+#s-today .hm-prog-fill{height:100%;width:0%;background:linear-gradient(90deg,#FFB36B 0%,#FF7A3D 60%,#E5621A 100%);border-radius:99px;box-shadow:0 0 8px rgba(255,122,61,0.4);transition:width .35s ease;}
 /* .t-task base is defined below in the bell/share section */
 .t-task:hover{transform:translateY(-1px);}
 .t-task:active{transform:scale(.97);}
@@ -2334,6 +2349,22 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
     <div class="t-slabel" id="tComingLbl">✨ Coming up</div>
 
     <div id="otherDayCtx" style="display:none"></div>
+
+    <!-- Progress card — Claude Design merge (Home.html) -->
+    <div class="hm-progress-card" id="hmProgressCard">
+      <span class="hm-spark s1"></span>
+      <span class="hm-spark s2"></span>
+      <div class="hm-text">
+        <h2><span>סידרנו לך את היום</span> <span aria-hidden="true">💕</span></h2>
+        <div class="hm-lead">יש לך יום מלא ומיוחד,<br/>אנחנו כאן כדי לעזור</div>
+        <div class="hm-progress-box">
+          <div class="hm-prog-label" id="hmProgLabel">0 מתוך 0 הושלמו</div>
+          <div class="hm-prog-track"><div class="hm-prog-fill" id="hmProgFill"></div></div>
+        </div>
+      </div>
+      <div class="hm-placeholder" aria-hidden="true"></div>
+    </div>
+
     <!-- Hero card — premium design with portrait -->
     <div class="t-hero-card">
       <!-- Backdrop city scene -->
@@ -9858,6 +9889,39 @@ document.getElementById('btnAddMore').addEventListener('click', () => {
   window.addEventListener('orientationchange', function () { setTimeout(function(){ clear(); apply(); }, 400); });
   if (mq.addEventListener) mq.addEventListener('change', function(){ if (!mq.matches) clear(); else apply(); });
   apply();
+})();
+</script>
+
+<!-- ════ HOME PROGRESS CARD — helper (Home.html merge) ════ -->
+<script>
+function updateHomProgress() {
+  var tasks  = (typeof activeTasks === 'function') ? activeTasks() : [];
+  var total  = tasks.length;
+  var done   = tasks.filter(function(t) { return t.completed; }).length;
+  var pct    = total > 0 ? Math.round((done / total) * 100) : 0;
+  var fill   = document.getElementById('hmProgFill');
+  var label  = document.getElementById('hmProgLabel');
+  var card   = document.getElementById('hmProgressCard');
+  if (card)  card.style.display = total > 0 ? '' : 'none';
+  if (fill)  fill.style.width   = pct + '%';
+  if (label) label.innerHTML    = done + ' מתוך ' + total + ' הושלמו' +
+    (pct > 0 ? ' · <span class="hm-pct">' + pct + '%</span>' : '');
+}
+
+// React to task list changes without touching existing render functions
+(function() {
+  function _hmSetup() {
+    var tTasks = document.getElementById('tTasks');
+    if (!tTasks) return;
+    new MutationObserver(function() { updateHomProgress(); })
+      .observe(tTasks, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
+    updateHomProgress();
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', _hmSetup);
+  } else {
+    _hmSetup();
+  }
 })();
 </script>
 
