@@ -1463,6 +1463,9 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 #s-confirmation .redo{margin-top:10px;width:100%;height:44px;border:1px solid rgba(255,122,61,0.25);border-radius:14px;background:#fff;color:var(--orange);font-family:inherit;font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;box-shadow:0 2px 8px rgba(160,90,30,0.06);transition:transform .15s ease;}
 #s-confirmation .redo:hover{transform:translateY(-1px);}
 #s-confirmation .redo svg{width:18px;height:14px;color:var(--orange);}
+#s-confirmation .conf-split-btn{display:inline-flex;align-items:center;gap:4px;margin-top:6px;background:#FFF3EE;border:1.5px solid rgba(224,112,64,0.35);color:#C05020;font-family:'Rubik',sans-serif;font-size:10px;font-weight:800;border-radius:8px;padding:3px 9px;cursor:pointer;line-height:1.4;transition:transform .12s ease;}
+#s-confirmation .conf-split-btn svg{width:10px;height:10px;flex:0 0 auto;}
+#s-confirmation .conf-split-btn:active{background:#FFE0D0;transform:scale(.93);}
 
 /* ════════════════════════════════════════════════════════════════════
    SCREEN — SYNC & BACKUP  (Claude Design merge, step 4)
@@ -5795,7 +5798,12 @@ function renderConfirmationTasks() {
         '<div class="time-row">' + CLOCK_SVG + '<span>' + fmtTime(task.mins) + '</span></div>' +
         '<div class="date">' + fmtDate(task.date) + '</div>' +
       '</div>' +
-      '<div class="col-mid"><div class="t-title"><span>' + esc(task.title) + '</span></div></div>' +
+      '<div class="col-mid"><div class="t-title"><span>' + esc(task.title) + '</span></div>' +
+        '<button class="conf-split-btn" data-splitid="' + task.id + '">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5"/><path d="M8 3H3v5"/><path d="M12 22v-8.3a4 4 0 0 0-1.172-2.872L3 3"/><path d="m15 9 6-6"/></svg>' +
+          ' פצל' +
+        '</button>' +
+      '</div>' +
       '<div class="col-right">' +
         '<div class="avatar ' + avClass + '"></div>' +
         '<div class="ava-name">' + esc(name) + '</div>' +
@@ -9653,6 +9661,8 @@ document.getElementById('btnAddMore').addEventListener('click', () => {
 <script>
 // Tracks which option (1 or 2) the user selected in #s-split
 var _splChosen = null;
+// When coming from a confirmation card "פצל" button — the id of the task being split
+var _splitTargetId = null;
 
 // Populates #s-split with data from AppState. Call before goto('s-split', ...).
 function renderSplitScreen() {
@@ -9677,14 +9687,30 @@ function renderSplitScreen() {
 
 // Applies the chosen split option to AppState.previewTasks, then navigates to #s-confirmation.
 function splitSave() {
-  // Default: if user didn't tap an option, use the AI's split (option 2)
   var useOption = _splChosen !== null ? _splChosen : 2;
-  if (useOption === 2 && AppState.splitSuggestions && AppState.splitSuggestions.length >= 2) {
-    var now = Date.now();
-    AppState.previewTasks = AppState.splitSuggestions.map(function(s, i) {
-      return Object.assign({}, s, { id: s.id || (now + i) });
-    });
+  var now = Date.now();
+
+  if (_splitTargetId !== null) {
+    // Came from a confirmation card "פצל" button — replace only that task
+    if (useOption === 2 && AppState.splitSuggestions && AppState.splitSuggestions.length >= 2) {
+      var idx = AppState.previewTasks.findIndex(function(t) { return String(t.id) === String(_splitTargetId); });
+      if (idx >= 0) {
+        var newTasks = AppState.splitSuggestions.map(function(s, i) {
+          return Object.assign({}, s, { id: s.id || (now + i) });
+        });
+        AppState.previewTasks.splice(idx, 1, newTasks[0], newTasks[1]);
+      }
+    }
+    _splitTargetId = null;
+  } else {
+    // Came from voice flow — replace the whole previewTasks
+    if (useOption === 2 && AppState.splitSuggestions && AppState.splitSuggestions.length >= 2) {
+      AppState.previewTasks = AppState.splitSuggestions.map(function(s, i) {
+        return Object.assign({}, s, { id: s.id || (now + i) });
+      });
+    }
   }
+
   if (typeof renderConfirmationTasks === 'function') renderConfirmationTasks();
   if (typeof goto === 'function') goto('s-confirmation', 'txLeaveFade', 'txEnterFade');
 }
@@ -9749,6 +9775,30 @@ function splitSave() {
       var taskRow = timeRow.closest('.task[data-taskid]');
       if (!taskRow) return;
       if (typeof openTimeStrip === 'function') openTimeStrip(taskRow.dataset.taskid, taskRow);
+    });
+  }
+
+  // #s-confirmation: "פצל" button on task card → split screen
+  if (confirmList) {
+    confirmList.addEventListener('click', function(e) {
+      var btn = e.target.closest('.conf-split-btn');
+      if (!btn) return;
+      e.stopPropagation();
+      var taskRow = btn.closest('.task[data-taskid]');
+      if (!taskRow) return;
+      var taskId = taskRow.dataset.taskid;
+      var task = (AppState.previewTasks || []).find(function(t) { return String(t.id) === String(taskId); });
+      if (!task) return;
+      var segs = (typeof mockSplit === 'function') ? mockSplit(task.title) : [];
+      if (segs.length < 2) return; // can't split — do nothing
+      var now = Date.now();
+      AppState.voiceText = task.title;
+      AppState.splitSuggestions = segs.map(function(s, i) {
+        return { id: now + i, title: s, mins: task.mins || null, date: task.date || null, assignedTo: task.assignedTo || null };
+      });
+      _splitTargetId = taskId;
+      if (typeof renderSplitScreen === 'function') renderSplitScreen();
+      if (typeof goto === 'function') goto('s-split', 'txLeaveFade', 'txEnterFade');
     });
   }
 
