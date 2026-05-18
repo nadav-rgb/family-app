@@ -1802,6 +1802,78 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 #s-split .spl-primary-btn:hover{transform:translateY(-1px)}
 #s-split .spl-ck-pill{width:22px;height:22px;border-radius:50%;background:#fff;color:var(--orange);display:inline-flex;align-items:center;justify-content:center;}
 #s-split .spl-ck-pill svg{width:12px;height:12px}
+
+/* ════════════════════════════════════════════════════════════════════
+   SCREEN — TIME & DATE  (Claude Design merge)
+   Source: Time & Date.html
+   Palette: orange + ink
+   All classes prefixed td- to avoid collisions
+════════════════════════════════════════════════════════════════════ */
+#s-time-date{--orange:#FF7A3D;--orange-light:#FFB36B;--orange-deep:#E5621A;--orange-soft:#FFE9D2;--ink:#1A0F08;--muted:#9E8878;--card-bg:rgba(255,255,255,0.94);--card-shadow:0 4px 16px rgba(160,90,30,0.08);background:radial-gradient(circle at top right,rgba(255,244,232,0.9),transparent 35%),linear-gradient(180deg,#FBF8F5 0%,#F7F2ED 45%,#F4EEE8 100%);}
+#s-time-date .td-status{flex:0 0 auto;padding:14px 22px 0;display:flex;align-items:center;justify-content:space-between;font-weight:700;font-size:15px;color:var(--ink);direction:ltr;}
+#s-time-date .td-status .icons{display:flex;align-items:center;gap:6px}
+#s-time-date .td-scroll{flex:1 1 auto;overflow-y:auto;padding:6px 16px 18px;scrollbar-width:none;}
+#s-time-date .td-scroll::-webkit-scrollbar{display:none}
+#s-time-date .td-header{display:flex;align-items:flex-start;justify-content:space-between;margin-top:11px;gap:10px;}
+#s-time-date .td-back{width:34px;height:34px;border-radius:11px;background:#fff;box-shadow:var(--card-shadow);display:flex;align-items:center;justify-content:center;color:var(--ink);border:1px solid rgba(255,255,255,0.6);cursor:pointer;flex:0 0 auto;font-family:inherit;}
+#s-time-date .td-back svg{width:14px;height:14px}
+#s-time-date .td-head-text{flex:1 1 auto;text-align:right;display:flex;flex-direction:column;align-items:flex-start;gap:6px;}
+#s-time-date .td-step-pill{background:transparent;color:var(--orange-deep);font-size:11px;font-weight:800;padding:0;display:inline-flex;align-items:center;gap:5px;}
+#s-time-date .td-title{margin:0;font-size:24px;font-weight:900;line-height:1.1;letter-spacing:-0.02em;color:var(--ink);text-align:right;}
+#s-time-date .td-subtitle{margin:0;font-size:11px;font-weight:500;line-height:1.35;color:var(--muted);text-align:right;}
+#s-time-date .td-reminder{margin-top:14px;border-radius:18px;background:linear-gradient(to left,#FFFCF6 0%,#FCEDDC 60%,#F5DFCA 100%);padding:14px;position:relative;overflow:hidden;box-shadow:0 6px 20px rgba(229,98,26,0.10),0 2px 6px rgba(160,90,30,0.06);display:flex;align-items:center;gap:10px;min-height:110px;}
+#s-time-date .td-reminder::before{content:"";position:absolute;inset:0;border-radius:18px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.6);pointer-events:none;}
+#s-time-date .td-placeholder-circle{flex:0 0 auto;width:84px;height:84px;border-radius:50%;background:radial-gradient(120% 120% at 30% 25%,#ffffff 0%,#FFFDF8 60%,#FAEAD2 100%);box-shadow:0 4px 14px rgba(180,110,60,0.10),inset 0 1px 2px rgba(255,255,255,0.9);border:1px solid rgba(255,255,255,0.7);}
+#s-time-date .td-r-text{flex:1 1 auto;text-align:right;display:flex;flex-direction:column;gap:6px;align-items:flex-start;position:relative;z-index:2;}
+#s-time-date .td-r-title-row{display:flex;align-items:center;gap:8px;}
+#s-time-date .td-r-icon{width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,#FFE3CB 0%,#FFCFA8 100%);color:var(--orange-deep);display:flex;align-items:center;justify-content:center;box-shadow:inset 0 1px 0 rgba(255,255,255,0.6),0 2px 5px rgba(160,90,30,0.08);flex:0 0 auto;}
+#s-time-date .td-r-icon svg{width:18px;height:18px}
+#s-time-date .td-r-title{font-size:18px;font-weight:900;color:var(--ink);line-height:1.1}
+#s-time-date .td-r-owner{font-size:13px;font-weight:700;color:var(--muted);text-align:right;width:100%;}
+#s-time-date .td-r-desc{font-size:11px;font-weight:500;color:#7A6354;line-height:1.4;}
+#s-time-date .td-sec-label{margin:14px 2px 8px;display:flex;align-items:center;justify-content:flex-start;gap:6px;font-size:13px;font-weight:800;color:var(--ink);}
+#s-time-date .td-sec-label svg{width:14px;height:14px;color:var(--ink)}
+#s-time-date .td-card{background:var(--card-bg);border-radius:18px;padding:11px;box-shadow:var(--card-shadow);border:1px solid rgba(255,255,255,0.7);}
+#s-time-date .td-date-strip{display:flex;gap:4px;justify-content:space-between;direction:rtl;}
+#s-time-date .td-day{flex:1 1 0;display:flex;flex-direction:column;align-items:center;gap:5px;padding:4px 0;cursor:pointer;position:relative;}
+#s-time-date .td-day .td-dow{font-size:11px;font-weight:700;color:var(--muted);line-height:1;}
+#s-time-date .td-day .td-num{font-size:14px;font-weight:800;color:var(--ink);width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;line-height:1;transition:all .2s ease;}
+#s-time-date .td-day.on .td-num{background:linear-gradient(135deg,var(--orange-light) 0%,var(--orange) 60%,var(--orange-deep) 100%);color:#fff;box-shadow:0 4px 10px rgba(229,98,26,0.32),inset 0 1px 0 rgba(255,255,255,0.4);}
+#s-time-date .td-day.on .td-dow{color:var(--ink)}
+#s-time-date .td-time-card{padding:11px 12px 10px;}
+#s-time-date .td-time-picker{display:flex;align-items:center;justify-content:center;gap:8px;padding:4px 0 8px;direction:ltr;}
+#s-time-date .td-time-picker.td-no-time{opacity:.35;pointer-events:none;}
+#s-time-date .td-time-slot{background:#fff;border-radius:14px;width:78px;height:82px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:5px 0;box-shadow:0 2px 8px rgba(160,90,30,0.08),inset 0 1px 0 rgba(255,255,255,0.7);border:1px solid rgba(160,90,30,0.06);flex:0 0 auto;}
+#s-time-date .td-chev{background:transparent;border:none;cursor:pointer;color:var(--orange);padding:2px 6px;line-height:0;}
+#s-time-date .td-chev svg{width:14px;height:14px;display:block}
+#s-time-date .td-digit{font-size:40px;font-weight:500;line-height:1;letter-spacing:-0.02em;font-variant-numeric:tabular-nums;}
+#s-time-date .td-digit.td-hour{color:var(--orange)}
+#s-time-date .td-digit.td-min{color:var(--ink)}
+#s-time-date .td-colon{font-size:30px;font-weight:900;color:var(--ink);line-height:1;padding-bottom:4px;}
+#s-time-date .td-period-card{padding:5px;margin-top:10px;}
+#s-time-date .td-pill-row{display:flex;gap:6px;}
+#s-time-date .td-pill{flex:1 1 0;min-width:0;background:#fff;color:var(--ink);border:1px solid rgba(255,122,61,0.18);border-radius:99px;padding:5px 6px;font-family:inherit;font-size:10px;font-weight:500;display:inline-flex;align-items:center;justify-content:center;gap:5px;cursor:pointer;transition:all .2s ease;}
+#s-time-date .td-pill svg{width:11px;height:11px;flex:0 0 auto}
+#s-time-date .td-pill.on{background:linear-gradient(135deg,var(--orange-light) 0%,var(--orange) 60%,var(--orange-deep) 100%);color:#fff;border-color:transparent;box-shadow:0 4px 10px rgba(229,98,26,0.22),inset 0 1px 0 rgba(255,255,255,0.4);}
+#s-time-date .td-options-row{display:flex;gap:8px;margin-top:8px;}
+#s-time-date .td-opt-card{flex:1 1 0;min-width:0;background:var(--card-bg);border-radius:16px;padding:5px 10px;box-shadow:var(--card-shadow);border:1px solid rgba(255,255,255,0.7);display:flex;align-items:center;gap:8px;}
+#s-time-date .td-icn{width:22px;height:22px;border-radius:7px;background:#F4ECE2;color:var(--muted);display:flex;align-items:center;justify-content:center;flex:0 0 auto;}
+#s-time-date .td-icn svg{width:11px;height:11px}
+#s-time-date .td-opt-body{flex:1 1 auto;text-align:right;min-width:0;display:flex;flex-direction:column;}
+#s-time-date .td-opt-t{font-size:10px;font-weight:800;color:var(--ink);line-height:1.15}
+#s-time-date .td-opt-s{font-size:8px;font-weight:500;color:var(--muted);line-height:1.2}
+#s-time-date .td-toggle{position:relative;display:inline-block;width:28px;height:16px;flex:0 0 auto;}
+#s-time-date .td-toggle input{display:none}
+#s-time-date .td-toggle .slider{position:absolute;inset:0;background:#E2D9CC;border-radius:99px;cursor:pointer;transition:background .2s ease;}
+#s-time-date .td-toggle .slider::before{content:"";position:absolute;top:2px;left:2px;width:12px;height:12px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,0.15);transition:transform .2s ease;}
+#s-time-date .td-toggle input:checked + .slider{background:var(--orange)}
+#s-time-date .td-toggle input:checked + .slider::before{transform:translateX(12px)}
+#s-time-date .td-cta-row{margin-top:14px;display:flex;gap:8px;}
+#s-time-date .td-cancel{flex:0 0 40%;height:48px;border-radius:14px;background:#fff;color:var(--orange);border:1.5px solid rgba(255,122,61,0.35);font-family:inherit;font-size:14px;font-weight:800;cursor:pointer;box-shadow:0 2px 6px rgba(160,90,30,0.05);transition:transform .15s ease;}
+#s-time-date .td-cancel:hover{transform:translateY(-1px)}
+#s-time-date .td-cta{flex:1 1 auto;height:48px;border-radius:14px;border:none;background:linear-gradient(135deg,var(--orange-light) 0%,var(--orange) 50%,var(--orange-deep) 100%);color:#fff;font-family:inherit;font-size:15px;font-weight:900;display:flex;align-items:center;justify-content:center;gap:7px;cursor:pointer;box-shadow:0 8px 18px rgba(255,122,61,0.32),0 2px 5px rgba(229,98,26,0.22),inset 0 1px 1px rgba(255,255,255,0.4);transition:transform .15s ease;}
+#s-time-date .td-cta:hover{transform:translateY(-1px)}
+#s-time-date .td-cta svg{width:16px;height:16px}
 </style>
 <!-- Firebase SDK (compat — Phase 3) -->
 <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
@@ -3302,6 +3374,138 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
       </span>
       <span>שמור והוסף למשימות</span>
     </button>
+
+  </div>
+</div>
+
+<!-- ════ SCREEN: TIME & DATE (Claude Design merge) ════
+     Access for testing: app.html#s-time-date
+     Source: Time & Date.html
+════════════════════════════════════════════════════════════════════════ -->
+<div class="app-screen" id="s-time-date">
+  <div class="td-status">
+    <span class="time">10:30</span>
+    <span class="icons" aria-hidden="true">
+      <svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="0.8"/><rect x="4.5" y="5" width="3" height="6" rx="0.8"/><rect x="9" y="2.5" width="3" height="8.5" rx="0.8"/><rect x="13.5" y="0" width="3" height="11" rx="0.8"/></svg>
+      <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor"><path d="M8 12a1.4 1.4 0 1 0 0-2.8A1.4 1.4 0 0 0 8 12Zm3.6-3.4-.06.06.06-.06Zm-7.2 0a4.6 4.6 0 0 1 7.2 0l1.2-1.2a6.4 6.4 0 0 0-9.6 0l1.2 1.2Zm-2.4-2.4a8.4 8.4 0 0 1 12 0l1.2-1.2a10.2 10.2 0 0 0-14.4 0l1.2 1.2Z"/></svg>
+      <svg width="26" height="12" viewBox="0 0 26 12" fill="none"><rect x="0.5" y="0.5" width="22" height="11" rx="2.6" stroke="currentColor" opacity=".5"/><rect x="2" y="2" width="19" height="8" rx="1.6" fill="currentColor"/><rect x="23.5" y="4" width="2" height="4" rx="0.8" fill="currentColor" opacity=".5"/></svg>
+    </span>
+  </div>
+
+  <div class="td-scroll">
+
+    <div class="td-header">
+      <button class="td-back" type="button" aria-label="חזרה" onclick="goto('s-confirmation','txLeaveFade','txEnterFade')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+      </button>
+      <div class="td-head-text">
+        <div class="td-step-pill"><span aria-hidden="true">✨</span><span>קובעים מתי</span></div>
+        <h1 class="td-title">זמן ותאריך</h1>
+        <p class="td-subtitle">בחר זמן מדויק או השאר ללא שעה</p>
+      </div>
+    </div>
+
+    <!-- Reminder card — dynamic -->
+    <div class="td-reminder">
+      <div class="td-r-text">
+        <div class="td-r-title-row">
+          <div class="td-r-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+          </div>
+          <div class="td-r-title" id="tdTaskTitle">—</div>
+        </div>
+        <div class="td-r-owner" id="tdTaskOwner"></div>
+        <div class="td-r-desc">עכשיו בוחרים מתי המשימה תקודם</div>
+      </div>
+      <div class="td-placeholder-circle"></div>
+    </div>
+
+    <!-- Date -->
+    <div class="td-sec-label">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg>
+      <span>בחר תאריך</span>
+    </div>
+    <div class="td-card">
+      <div class="td-date-strip" id="tdDateStrip"></div>
+    </div>
+
+    <!-- Time -->
+    <div class="td-sec-label">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+      <span>בחר שעה</span>
+    </div>
+    <div class="td-card td-time-card">
+      <div class="td-time-picker" id="tdTimePicker">
+        <div class="td-time-slot">
+          <button class="td-chev" id="tdHourUp" aria-label="שעה למעלה"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m6 15 6-6 6 6"/></svg></button>
+          <div class="td-digit td-hour" id="tdHourDigit">08</div>
+          <button class="td-chev" id="tdHourDown" aria-label="שעה למטה"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button>
+        </div>
+        <div class="td-colon">:</div>
+        <div class="td-time-slot">
+          <button class="td-chev" id="tdMinUp" aria-label="דקות למעלה"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m6 15 6-6 6 6"/></svg></button>
+          <div class="td-digit td-min" id="tdMinDigit">00</div>
+          <button class="td-chev" id="tdMinDown" aria-label="דקות למטה"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="td-card td-period-card">
+      <div class="td-pill-row" id="tdPeriodPills">
+        <button class="td-pill" type="button" data-hour="8">
+          <span>בוקר</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 19h18"/><path d="M6.5 16h11"/><path d="M7 16a5 5 0 0 1 10 0"/><path d="M12 4v3"/><path d="M5.6 7.6l1.4 1.4"/><path d="M18.4 7.6l-1.4 1.4"/><path d="M3 12h2"/><path d="M19 12h2"/></svg>
+        </button>
+        <button class="td-pill" type="button" data-hour="12">
+          <span>צהריים</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+        </button>
+        <button class="td-pill" type="button" data-hour="18">
+          <span>ערב</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"/></svg>
+        </button>
+        <button class="td-pill" type="button" data-hour="-1">
+          <span>ללא שעה</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M5 5l14 14"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Options -->
+    <div class="td-sec-label">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9 1.65 1.65 0 0 0 4.27 7.18l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09A1.65 1.65 0 0 0 15 4.6a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9"/></svg>
+      <span>אפשרויות נוספות</span>
+    </div>
+    <div class="td-options-row">
+      <div class="td-opt-card">
+        <div class="td-icn" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+        </div>
+        <div class="td-opt-body">
+          <div class="td-opt-t">התראה בזמן</div>
+          <div class="td-opt-s">נזכיר בזמן שהמשימה קרובה</div>
+        </div>
+        <label class="td-toggle"><input type="checkbox" id="tdNotifyToggle" checked/><span class="slider"></span></label>
+      </div>
+      <div class="td-opt-card">
+        <div class="td-icn" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/></svg>
+        </div>
+        <div class="td-opt-body">
+          <div class="td-opt-t">חזרה שבועית</div>
+          <div class="td-opt-s">חזור על המשימה מדי שבוע</div>
+        </div>
+        <label class="td-toggle"><input type="checkbox" id="tdRepeatToggle"/><span class="slider"></span></label>
+      </div>
+    </div>
+
+    <div class="td-cta-row">
+      <button class="td-cta" type="button" id="tdSaveBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg>
+        <span>שמור זמן</span>
+      </button>
+      <button class="td-cancel" type="button" id="tdCancelBtn">ביטול</button>
+    </div>
 
   </div>
 </div>
@@ -9657,6 +9861,91 @@ document.getElementById('btnAddMore').addEventListener('click', () => {
 })();
 </script>
 
+<!-- ════ TIME & DATE — helper functions ════ -->
+<script>
+var _tdTargetId = null;
+var _tdNoTime   = false;
+
+var _TD_DOW_HE = ['א\'','ב\'','ג\'','ד\'','ה\'','ו\'','ש\''];
+
+function _tdBuildDateStrip(selectedDate) {
+  var strip = document.getElementById('tdDateStrip');
+  if (!strip) return;
+  var today = (typeof todayDate === 'function') ? todayDate() : new Date().toISOString().slice(0,10);
+  var html = '';
+  for (var i = 0; i < 7; i++) {
+    var d = new Date(today + 'T00:00:00');
+    d.setDate(d.getDate() + i);
+    var iso = d.toISOString().slice(0,10);
+    var dow = _TD_DOW_HE[d.getDay()];
+    var num = d.getDate();
+    var on  = iso === (selectedDate || today) ? ' on' : '';
+    html += '<div class="td-day' + on + '" data-date="' + iso + '">' +
+              '<span class="td-dow">' + dow + '</span>' +
+              '<span class="td-num">' + num + '</span>' +
+            '</div>';
+  }
+  strip.innerHTML = html;
+}
+
+function _tdSetPeriodPill(mins) {
+  var pills = document.querySelectorAll('#tdPeriodPills .td-pill');
+  pills.forEach(function(p) { p.classList.remove('on'); });
+  if (mins == null) {
+    pills.forEach(function(p) { if (p.dataset.hour === '-1') p.classList.add('on'); });
+    return;
+  }
+  var h = Math.floor(mins / 60);
+  var active = null;
+  if (h < 12)      active = '8';
+  else if (h < 15) active = '12';
+  else             active = '18';
+  pills.forEach(function(p) { if (p.dataset.hour === active) p.classList.add('on'); });
+}
+
+function renderTimeDateScreen(taskId) {
+  _tdTargetId = taskId;
+  var task = (AppState.previewTasks || []).find(function(t) { return String(t.id) === String(taskId); }) || {};
+
+  var titleEl = document.getElementById('tdTaskTitle');
+  var ownerEl = document.getElementById('tdTaskOwner');
+  if (titleEl) titleEl.textContent = task.title || '—';
+  if (ownerEl) ownerEl.textContent = (typeof t === 'function' ? t('family_' + task.assignedTo) : '') || task.assignedTo || '';
+
+  _tdBuildDateStrip(task.date || null);
+
+  var mins = task.mins != null ? task.mins : null;
+  _tdNoTime = (mins == null);
+  var hVal = mins != null ? Math.floor(mins / 60) : 8;
+  var mVal = mins != null ? mins % 60 : 0;
+  var hourEl = document.getElementById('tdHourDigit');
+  var minEl  = document.getElementById('tdMinDigit');
+  if (hourEl) hourEl.textContent = String(hVal).padStart(2,'0');
+  if (minEl)  minEl.textContent  = String(mVal).padStart(2,'0');
+
+  _tdSetPeriodPill(mins);
+  var picker = document.getElementById('tdTimePicker');
+  if (picker) picker.classList.toggle('td-no-time', _tdNoTime);
+}
+
+function tdSave() {
+  var task = (AppState.previewTasks || []).find(function(t) { return String(t.id) === String(_tdTargetId); });
+  if (task) {
+    var selDay = document.querySelector('#tdDateStrip .td-day.on');
+    if (selDay) task.date = selDay.dataset.date;
+    if (_tdNoTime) {
+      task.mins = null;
+    } else {
+      var h = parseInt(document.getElementById('tdHourDigit').textContent, 10) || 0;
+      var m = parseInt(document.getElementById('tdMinDigit').textContent, 10) || 0;
+      task.mins = h * 60 + m;
+    }
+  }
+  if (typeof renderConfirmationTasks === 'function') renderConfirmationTasks();
+  if (typeof goto === 'function') goto('s-confirmation', 'txLeaveFade', 'txEnterFade');
+}
+</script>
+
 <!-- ════ SPLIT TASK — helper functions ════ -->
 <script>
 // Tracks which option (1 or 2) the user selected in #s-split
@@ -9734,6 +10023,7 @@ function splitSave() {
     { hashes: ['#s-confirmation',   '#confirmation'    ], screen: 's-confirmation'   },
     { hashes: ['#s-visibility',     '#visibility'      ], screen: 's-visibility'     },
     { hashes: ['#s-split',          '#split'           ], screen: 's-split'          },
+    { hashes: ['#s-time-date',     '#time-date'       ], screen: 's-time-date'      },
   ];
 
   function navTo(screenId){
@@ -9766,7 +10056,7 @@ function splitSave() {
     });
   });
 
-  // #s-confirmation: click on time-row → open time strip picker (single delegation on list container)
+  // #s-confirmation: click on time-row → open #s-time-date
   var confirmList = document.getElementById('confirmTasksList');
   if (confirmList) {
     confirmList.addEventListener('click', function(e) {
@@ -9774,9 +10064,72 @@ function splitSave() {
       if (!timeRow) return;
       var taskRow = timeRow.closest('.task[data-taskid]');
       if (!taskRow) return;
-      if (typeof openTimeStrip === 'function') openTimeStrip(taskRow.dataset.taskid, taskRow);
+      if (typeof renderTimeDateScreen === 'function') renderTimeDateScreen(taskRow.dataset.taskid);
+      if (typeof goto === 'function') goto('s-time-date', 'txLeaveFade', 'txEnterFade');
     });
   }
+
+  // #s-time-date: date strip — single-select
+  document.addEventListener('click', function(e) {
+    var day = e.target.closest('#tdDateStrip .td-day');
+    if (!day) return;
+    document.querySelectorAll('#tdDateStrip .td-day').forEach(function(d) { d.classList.remove('on'); });
+    day.classList.add('on');
+  });
+
+  // #s-time-date: period pills — single-select + update time picker
+  var periodPills = document.getElementById('tdPeriodPills');
+  if (periodPills) {
+    periodPills.addEventListener('click', function(e) {
+      var pill = e.target.closest('.td-pill');
+      if (!pill) return;
+      document.querySelectorAll('#tdPeriodPills .td-pill').forEach(function(p) { p.classList.remove('on'); });
+      pill.classList.add('on');
+      var hour = parseInt(pill.dataset.hour, 10);
+      var picker = document.getElementById('tdTimePicker');
+      if (hour === -1) {
+        _tdNoTime = true;
+        if (picker) picker.classList.add('td-no-time');
+      } else {
+        _tdNoTime = false;
+        if (picker) picker.classList.remove('td-no-time');
+        var hEl = document.getElementById('tdHourDigit');
+        var mEl = document.getElementById('tdMinDigit');
+        if (hEl) hEl.textContent = String(hour).padStart(2,'0');
+        if (mEl) mEl.textContent = '00';
+      }
+    });
+  }
+
+  // #s-time-date: hour/minute chevrons
+  function _tdChev(elId, delta, isHour) {
+    var el = document.getElementById(elId);
+    if (!el) return;
+    var val = parseInt(el.textContent, 10);
+    if (isHour) {
+      el.textContent = String(((val + delta) + 24) % 24).padStart(2,'0');
+    } else {
+      el.textContent = String(((val + delta) + 60) % 60).padStart(2,'0');
+    }
+    _tdNoTime = false;
+    var picker = document.getElementById('tdTimePicker');
+    if (picker) picker.classList.remove('td-no-time');
+    document.querySelectorAll('#tdPeriodPills .td-pill').forEach(function(p) { p.classList.remove('on'); });
+  }
+  var tdHU = document.getElementById('tdHourUp');
+  var tdHD = document.getElementById('tdHourDown');
+  var tdMU = document.getElementById('tdMinUp');
+  var tdMD = document.getElementById('tdMinDown');
+  if (tdHU) tdHU.addEventListener('click', function() { _tdChev('tdHourDigit', +1, true); });
+  if (tdHD) tdHD.addEventListener('click', function() { _tdChev('tdHourDigit', -1, true); });
+  if (tdMU) tdMU.addEventListener('click', function() { _tdChev('tdMinDigit',  +15, false); });
+  if (tdMD) tdMD.addEventListener('click', function() { _tdChev('tdMinDigit',  -15, false); });
+
+  // #s-time-date: save + cancel
+  var tdSaveBtn   = document.getElementById('tdSaveBtn');
+  var tdCancelBtn = document.getElementById('tdCancelBtn');
+  if (tdSaveBtn)   tdSaveBtn.addEventListener('click',   function() { if (typeof tdSave === 'function') tdSave(); });
+  if (tdCancelBtn) tdCancelBtn.addEventListener('click', function() { if (typeof goto === 'function') goto('s-confirmation','txLeaveFade','txEnterFade'); });
 
   // #s-confirmation: "פצל" button on task card → split screen
   if (confirmList) {
