@@ -1483,8 +1483,8 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 #s-confirmation .edit-pill svg{width:11px;height:11px;}
 #s-confirmation .task{display:flex;align-items:flex-start;gap:8px;padding:11px 6px;}
 #s-confirmation .task+.task{border-top:1px solid rgba(160,90,30,0.08);}
-#s-confirmation .menu{background:transparent;border:none;cursor:pointer;color:var(--muted);padding:4px 2px;flex:0 0 auto;align-self:center;font-family:inherit;}
-#s-confirmation .menu svg{width:14px;height:14px;display:block;}
+#s-confirmation .menu{background:transparent;border:none;cursor:pointer;color:var(--ink);padding:4px 2px;flex:0 0 auto;align-self:center;font-family:inherit;opacity:0.7;}
+#s-confirmation .menu svg{width:22px;height:22px;display:block;}
 #s-confirmation .col-left{flex:0 0 auto;display:flex;flex-direction:column;align-items:flex-end;gap:4px;min-width:70px;}
 #s-confirmation .time-row{display:flex;align-items:center;gap:4px;font-size:14px;font-weight:900;color:var(--ink);line-height:1;}
 #s-confirmation .time-row svg{color:var(--orange);width:12px;height:12px;}
@@ -3116,7 +3116,6 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
       <div class="head-text">
         <div class="step-pill"><span aria-hidden="true">✨</span><span>שלב 2 מתוך 2</span></div>
         <h1 class="title">הנה מה שהבנתי</h1>
-        <p class="subtitle">בדקתי והכנתי בשבילך את המשימות האלה.<br/>אפשר לשנות כל דבר לפני ששומרים.</p>
       </div>
     </div>
 
@@ -3124,10 +3123,6 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
     <div class="tasks-card">
       <div class="tasks-head">
         <div class="tasks-count"><span class="spark" aria-hidden="true">✨</span><span id="confirmTaskCount">0 משימות נמצאו</span></div>
-        <button class="edit-pill" type="button" data-todo="confirmation-edit">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4Z"/></svg>
-          <span>עריכה</span>
-        </button>
       </div>
       <div id="confirmTasksList"></div>
     </div>
@@ -3138,17 +3133,6 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
       <span>הזמנים והפרטים <u>ניתנים</u> לעריכה</span>
     </div>
 
-    <!-- Who sees -->
-    <button class="who-card" type="button" data-todo="confirmation-who">
-      <div class="who-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><circle cx="17" cy="9" r="2.5"/><path d="M3 19c0-3 2.7-5 6-5s6 2 6 5"/><path d="M14.5 19c.3-2 2-3.4 4.5-3.4 1.8 0 3 .8 3 2.4"/></svg>
-      </div>
-      <div class="who-text">
-        <div class="who-title">מי יראה את המשימות האלה?</div>
-        <div class="who-sub">בני המשפחה שלך</div>
-      </div>
-      <span class="who-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></span>
-    </button>
 
     <!-- Save CTA -->
     <button class="cta" type="button" onclick="_confirmSaveAll()">
@@ -6232,13 +6216,13 @@ function renderConfirmationTasks() {
   }
 
   const CLOCK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>';
-  const MENU_SVG  = '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg>';
+  const MENU_SVG  = '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2.2"/><circle cx="12" cy="12" r="2.2"/><circle cx="12" cy="19" r="2.2"/></svg>';
 
   listEl.innerHTML = tasks.map(function(task) {
     const avClass  = LEGACY_TO_AVATAR[task.assignedTo] || 'av-aba';
     const name     = t('family_' + task.assignedTo) || task.person || task.assignedTo || '—';
     return '<div class="task" data-taskid="' + task.id + '">' +
-      '<button class="menu" aria-label="אפשרויות" data-todo="task-menu">' + MENU_SVG + '</button>' +
+      '<button class="menu" aria-label="אפשרויות" onclick="goto(\'s-visibility\',\'txLeaveBloom\',\'txEnterFocus\')">' + MENU_SVG + '</button>' +
       '<div class="col-left">' +
         '<div class="time-row">' + CLOCK_SVG + '<span>' + fmtTime(task.mins) + '</span></div>' +
         '<div class="date">' + fmtDate(task.date) + '</div>' +
