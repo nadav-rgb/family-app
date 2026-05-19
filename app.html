@@ -7272,17 +7272,8 @@ function renderToday() {
       });
       el.querySelector('.t-share').addEventListener('click', e => {
         e.stopPropagation();
-        const realT = realTForEdit;
-        openShareDrawer(realT, () => {
-          el.querySelector('.t-share-name').textContent = assignedLabel(realT);
-          const bell = el.querySelector('.t-bell');
-          if (bell) {
-            const active = _taskShowsActiveBell(realT);
-            bell.textContent = active ? '🔔' : '🔕';
-            bell.classList.toggle('off', !active);
-          }
-          saveState();
-        });
+        AppState._editingTask = realTForEdit;
+        if (typeof goto === 'function') goto('s-visibility', 'txLeaveFade', 'txEnterFade');
       });
     }
     el.querySelector('.t-split-btn')?.addEventListener('click', e => { e.stopPropagation(); openSplitSheet(t, el); });
