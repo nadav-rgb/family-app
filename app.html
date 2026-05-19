@@ -1976,6 +1976,9 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 #s-time-date .td-recur-popup{overflow:hidden;max-height:0;transition:max-height .3s ease,opacity .3s ease;opacity:0;}
 #s-time-date .td-recur-popup.open{max-height:80px;opacity:1;}
 #s-time-date .td-recur-popup-inner{background:var(--orange-soft);border-radius:12px;padding:8px 12px;font-size:11px;font-weight:600;color:var(--orange-deep);text-align:right;direction:rtl;margin-top:6px;}
+/* reminder section — disabled when no-time */
+#s-time-date #tdReminderSection{transition:opacity .25s ease;}
+#s-time-date #tdReminderSection.td-rem-disabled{opacity:.3;pointer-events:none;}
 /* custom reminder panel */
 #s-time-date .td-custom-rem-wrap{overflow:hidden;max-height:0;transition:max-height .3s ease,opacity .3s ease;opacity:0;margin-top:4px;}
 #s-time-date .td-custom-rem-wrap.open{max-height:72px;opacity:1;}
@@ -3630,7 +3633,7 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
     </div>
     <div class="td-optfull-card">
       <!-- Reminder -->
-      <div class="td-optfull-section">
+      <div class="td-optfull-section" id="tdReminderSection">
         <div class="td-optfull-label">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
           <span>תזכורת</span>
@@ -10237,6 +10240,8 @@ function renderTimeDateScreen(taskId) {
   if (picker) picker.classList.toggle('td-no-time', _tdNoTime);
   var noTimeBtnEl = document.getElementById('tdNoTimeBtn');
   if (noTimeBtnEl) noTimeBtnEl.classList.toggle('no-time-on', _tdNoTime);
+  var remSec = document.getElementById('tdReminderSection');
+  if (remSec) remSec.classList.remove('td-rem-disabled');
   if (typeof _tdInitCalAndOptions === 'function') _tdInitCalAndOptions(task);
 }
 
@@ -10352,6 +10357,11 @@ document.addEventListener('DOMContentLoaded', function() {
   });
   document.addEventListener('mouseup', function() { _tdDrag.active = false; });
 
+  function _tdSetReminderSectionDisabled(disabled) {
+    var sec = document.getElementById('tdReminderSection');
+    if (sec) sec.classList.toggle('td-rem-disabled', disabled);
+  }
+
   function _tdActivateTimeIfNeeded() {
     if (!_tdNoTime) return;
     _tdNoTime = false;
@@ -10362,6 +10372,7 @@ document.addEventListener('DOMContentLoaded', function() {
     var hh = parseInt((document.getElementById('tdHourDigit')||{}).textContent||'8',10)||8;
     var mm = parseInt((document.getElementById('tdMinDigit') ||{}).textContent||'0',10)||0;
     _tdSetPeriodPill(hh * 60 + mm);
+    _tdSetReminderSectionDisabled(false);
   }
 
   var hourDigit = document.getElementById('tdHourDigit');
@@ -10496,7 +10507,7 @@ function _tdInitCalAndOptions(task) {
   if (calToggle) calToggle.classList.remove('on');
 
   // תזכורות — multi-select
-  var remOffsets = task.reminderOffsets || (task.reminderOffsetMinutes != null ? [task.reminderOffsetMinutes] : [0]);
+  var remOffsets = (task.reminderOffsets && task.reminderOffsets.length > 0) ? task.reminderOffsets : [0];
   var rc = document.getElementById('tdReminderChips');
   if (rc) rc.querySelectorAll('.td-optfull-chip').forEach(function(c) {
     c.classList.toggle('on', remOffsets.indexOf(parseInt(c.dataset.mins, 10)) !== -1);
@@ -10704,6 +10715,7 @@ function splitSave() {
         var mm = parseInt((document.getElementById('tdMinDigit')  || {}).textContent || '0', 10) || 0;
         _tdSetPeriodPill(hh * 60 + mm);
       }
+      _tdSetReminderSectionDisabled(_tdNoTime);
     });
   }
 
