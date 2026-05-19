@@ -5412,32 +5412,37 @@ function isShoppingListTitle(title) {
 
 // Async-categorize a task title via /api/categorize-shopping. Idempotent + dedupe.
 // On success, sets task.shoppingList = { action, categories } and persists state.
-async function categorizeShoppingTitle(task) {
-  // Entry guards — restored from the original implementation (they were
-  // collateral damage in an earlier shop-debug log cleanup that used too
-  // broad a regex). Without these, the function reruns on every render,
-  // wastes API calls, and can overwrite an existing shoppingList.
-  if (!task || task.shoppingList || task._categorizing) return;
-  if (!isShoppingListTitle(task.title)) return;
+function categorizeShoppingTitle(task) {
+  if (!task) return Promise.resolve();
+  if (task.shoppingList || task._shopError) return Promise.resolve();
+  if (!isShoppingListTitle(task.title)) return Promise.resolve();
+  // Share one in-flight promise across callers (dpRender + renderConfirmationTasks
+  // both call this for the same task — without sharing, the second call returns
+  // immediately and its .then() runs before shoppingList is populated, so the
+  // confirmation screen never learns categorization succeeded).
+  if (task._categorizingPromise) return task._categorizingPromise;
   task._categorizing = true;
-  try {
-    const res = await fetch('/api/categorize-shopping', {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ title: task.title }),
-    });
-    if (!res.ok) throw new Error('categorize HTTP ' + res.status);
-    const data = await res.json();
-    if (data && data.action && data.categories && Object.keys(data.categories).length > 0) {
-      task.shoppingList = { action: data.action, categories: data.categories };
-      try { saveState(); } catch(_) {}
+  task._categorizingPromise = (async () => {
+    try {
+      const res = await fetch('/api/categorize-shopping', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ title: task.title }),
+      });
+      if (!res.ok) throw new Error('categorize HTTP ' + res.status);
+      const data = await res.json();
+      if (data && data.action && data.categories && Object.keys(data.categories).length > 0) {
+        task.shoppingList = { action: data.action, categories: data.categories };
+        try { saveState(); } catch(_) {}
+      }
+    } catch (err) {
+      console.error('[categorize-shopping] failed for:', task.title, err?.message || err);
+      task._shopError = true;
+    } finally {
+      delete task._categorizing;
     }
-  } catch (err) {
-    console.error('[categorize-shopping] failed for:', task.title, err?.message || err);
-    task._shopError = true;
-  } finally {
-    delete task._categorizing;
-  }
+  })();
+  return task._categorizingPromise;
 }
 
 // Is this title a candidate for the agenda-style summarization?
@@ -6287,7 +6292,10 @@ function renderConfirmationTasks() {
       });
     }
 
-    // Shopping categorization — show 🛒 button when AI returns grouped list
+    // Shopping categorization — show 🛒 button when AI returns grouped list.
+    // Note: dpRender may have already kicked off categorization for the same task.
+    // categorizeShoppingTitle now returns a shared promise, so awaiting it here
+    // correctly resolves after categorization completes (whoever started it).
     if (task.shoppingList) {
       _attachConfShoppingBtn(task, taskEl);
     } else if (task._shopError) {
@@ -6296,7 +6304,7 @@ function renderConfirmationTasks() {
       errSpan.textContent = '⚠️ לא הצלחנו לסדר את רשימת הקניות';
       var colMidErr = taskEl.querySelector('.col-mid');
       if (colMidErr) colMidErr.appendChild(errSpan);
-    } else if (isShoppingListTitle(task.title) && !task._categorizing) {
+    } else if (isShoppingListTitle(task.title)) {
       var spinner = document.createElement('span');
       spinner.className = 'shop-spinner';
       spinner.textContent = '⏳';
