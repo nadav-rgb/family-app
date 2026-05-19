@@ -932,6 +932,18 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 /* ─── Split bottom sheet ─── */
 .split-sheet-bg{position:fixed;inset:0;z-index:9000;background:rgba(28,17,10,.42);display:flex;align-items:flex-end;pointer-events:none;opacity:0;transition:opacity .25s ease;}
 .split-sheet-bg.open{opacity:1;pointer-events:auto;}
+.opts-bg{position:fixed;inset:0;z-index:9100;background:rgba(28,17,10,.42);display:flex;align-items:flex-end;pointer-events:none;opacity:0;transition:opacity .22s ease;}
+.opts-bg.open{opacity:1;pointer-events:auto;}
+.opts-sheet{width:100%;background:#fffaf5;border-radius:26px 26px 0 0;padding:10px 0 36px;box-shadow:0 -8px 40px rgba(100,60,20,.16);transform:translateY(100%);transition:transform .28s cubic-bezier(.34,1.1,.64,1);padding-bottom:max(36px,env(safe-area-inset-bottom,36px));}
+.opts-bg.open .opts-sheet{transform:translateY(0);}
+.opts-pill{width:36px;height:4px;border-radius:99px;background:#e0d4cc;margin:0 auto 18px;}
+.opts-row{display:flex;align-items:center;gap:14px;width:100%;padding:14px 22px;border:none;background:none;font-family:'Nunito',sans-serif;cursor:pointer;direction:rtl;text-align:right;}
+.opts-row:active{background:rgba(0,0,0,.04);}
+.opts-row-icon{width:44px;height:44px;border-radius:14px;background:rgba(255,112,51,.1);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;}
+.opts-row-body{flex:1;display:flex;flex-direction:column;align-items:flex-start;gap:2px;}
+.opts-row-title{font-size:16px;font-weight:800;color:#1c110a;}
+.opts-row-sub{font-size:12px;font-weight:600;color:#9e8878;}
+.opts-row-chev{color:#c4ae9f;flex-shrink:0;}
 .split-sheet{width:100%;max-width:420px;margin:0 auto;background:#fffaf5;border-radius:26px 26px 0 0;box-shadow:0 -8px 40px rgba(100,60,20,.22);transform:translateY(100%);transition:transform .34s cubic-bezier(.34,1.1,.64,1);max-height:85dvh;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;padding-bottom:env(safe-area-inset-bottom,0);direction:rtl;}
 .split-sheet-bg.open .split-sheet{transform:translateY(0);}
 .split-sh-handle{width:36px;height:4px;background:rgba(100,60,20,.15);border-radius:2px;margin:12px auto 0;flex-shrink:0;}
@@ -4243,6 +4255,30 @@ body.text-large .phone{font-size:17px}
     </div>
   </div>
 </div>
+
+<!-- ════ OPTIONS MINI-SHEET — "אפשרויות נוספות" ════ -->
+<div class="opts-bg" id="optsBg">
+  <div class="opts-sheet">
+    <div class="opts-pill"></div>
+    <button class="opts-row" id="optsTimeDate" type="button">
+      <div class="opts-row-icon">🕒</div>
+      <div class="opts-row-body">
+        <span class="opts-row-title">זמן ותאריך</span>
+        <span class="opts-row-sub">מתי לבצע את המשימה</span>
+      </div>
+      <svg class="opts-row-chev" width="10" height="16" viewBox="0 0 10 16" fill="none"><path d="M7 1L1 8l6 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <button class="opts-row" id="optsShareVis" type="button">
+      <div class="opts-row-icon">👀</div>
+      <div class="opts-row-body">
+        <span class="opts-row-title">שיתוף והתראות</span>
+        <span class="opts-row-sub">מי רואה ומי יקבל התראה</span>
+      </div>
+      <svg class="opts-row-chev" width="10" height="16" viewBox="0 0 10 16" fill="none"><path d="M7 1L1 8l6 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+  </div>
+</div>
+
 <script src="parser.js"></script>
 <script>
 // ─── State ────────────────────────────────────────────────────────
@@ -6165,6 +6201,33 @@ function openShareDrawer(task, onSave) {
   document.getElementById('shareBg').classList.add('open');
 }
 
+// ── Options mini-sheet ("אפשרויות נוספות") ──────────────────────────
+var _optsTask = null, _optsCb = null;
+function openOptionsSheet(task, onShareSaved) {
+  _optsTask = task;
+  _optsCb   = onShareSaved || null;
+  document.getElementById('optsBg').classList.add('open');
+}
+function closeOptionsSheet() {
+  document.getElementById('optsBg').classList.remove('open');
+}
+(function() {
+  var bg = document.getElementById('optsBg');
+  if (!bg) return;
+  bg.addEventListener('click', function(e) { if (e.target === bg) closeOptionsSheet(); });
+  document.getElementById('optsTimeDate').addEventListener('click', function() {
+    var task = _optsTask;
+    closeOptionsSheet();
+    if (task && typeof renderTimeDateScreen === 'function') renderTimeDateScreen(task.id);
+    if (typeof goto === 'function') goto('s-time-date', 'txLeaveFade', 'txEnterFade');
+  });
+  document.getElementById('optsShareVis').addEventListener('click', function() {
+    var task = _optsTask, cb = _optsCb;
+    closeOptionsSheet();
+    if (task) openShareDrawer(task, cb);
+  });
+})();
+
 function renderAssignedSection() {
   const task = shareTask;
   const cont = document.getElementById('shareAssignedRows');
@@ -7249,7 +7312,7 @@ function _buildCardEl(task) {
   shareFooter.innerHTML = `<span style="font-size:11px;font-weight:700;color:#a8917f;">${t('assigned_to')}</span><span class="card-share-name" style="font-size:13px;font-weight:800;color:#5a3e2b;flex:1;margin-inline-start:6px;">${assignedLabel(task)}</span><span class="card-share-more-hint">${t('share_more_hint')}</span><span class="card-share-arrow" style="font-size:15px;color:#b8a090;">›</span>`;
   shareFooter.addEventListener('click', e => {
     e.stopPropagation();
-    openShareDrawer(task, () => {
+    openOptionsSheet(task, () => {
       shareFooter.querySelector('.card-share-name').textContent = assignedLabel(task);
       const bell = c.querySelector('.card-bell');
       if (bell) {
@@ -7905,13 +7968,11 @@ function renderToday() {
           }
         }
       });
-      el.querySelector('.t-share').addEventListener('click', e => {
-        e.stopPropagation();
-        AppState._editingTask = realTForEdit;
-        if (typeof renderVisibility === 'function') renderVisibility();
-        if (typeof goto === 'function') goto('s-visibility', 'txLeaveFade', 'txEnterFade');
-      });
     }
+    el.querySelector('.t-share').addEventListener('click', e => {
+      e.stopPropagation();
+      openOptionsSheet(realTForEdit, () => { renderToday(); });
+    });
     el.querySelector('.t-split-btn')?.addEventListener('click', e => { e.stopPropagation(); openSplitSheet(t, el); });
 
     // ── Edit-in-place: title (contenteditable) + time (tap-to-keypad) ──
