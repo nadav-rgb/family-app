@@ -1873,6 +1873,15 @@ body.text-large .phone{font-size:17px}
 #s-notifications .n-test-btn:active{transform:scale(.97);}
 #s-notifications .n-test-btn:disabled{opacity:.45;cursor:default;}
 #s-notifications .n-perm-hint{font-size:10px;font-weight:500;color:var(--muted);text-align:center;margin-top:6px;min-height:14px;}
+#s-notifications .n-sound-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px;}
+#s-notifications .n-sound-btn{display:flex;flex-direction:column;align-items:center;gap:4px;border:1.5px solid rgba(0,0,0,0.07);border-radius:14px;padding:10px 6px 8px;background:var(--bg);cursor:pointer;transition:border-color .15s,background .15s,transform .1s;font-family:'Nunito',sans-serif;}
+#s-notifications .n-sound-btn:active{transform:scale(.95);}
+#s-notifications .n-sound-btn .s-emoji{font-size:20px;line-height:1;}
+#s-notifications .n-sound-btn .s-label{font-size:11px;font-weight:700;color:var(--muted);transition:color .15s;}
+#s-notifications .n-sound-btn.sel{border-color:var(--orange);background:rgba(255,112,51,.07);}
+#s-notifications .n-sound-btn.sel .s-label{color:var(--orange-deep);}
+#s-notifications .n-sound-btn .s-play{width:22px;height:22px;border-radius:50%;background:rgba(255,112,51,.12);color:var(--orange);display:flex;align-items:center;justify-content:center;font-size:10px;margin-top:2px;}
+#s-notifications .n-sound-btn.sel .s-play{background:var(--orange);color:#fff;}
 #s-notifications .bottom-wrap{position:absolute;left:0;right:0;bottom:0;pointer-events:none;}
 #s-notifications .bottom-nav{pointer-events:auto;background:rgba(255,255,255,0.78);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);border-top:1px solid rgba(255,255,255,0.8);box-shadow:0 -6px 20px rgba(160,90,30,0.06);padding:11px 19px 21px;display:flex;align-items:flex-end;justify-content:space-between;}
 #s-notifications .nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--muted);font-size:10px;font-weight:600;cursor:pointer;width:58px;text-decoration:none;transition:color .15s ease;background:none;border:none;font-family:'Rubik',sans-serif;}
@@ -3748,6 +3757,14 @@ body.text-large .phone{font-size:17px}
             <span class="slider"></span>
           </label>
         </div>
+      </div>
+    </div>
+
+    <!-- Sound selection -->
+    <div id="notifSoundSection">
+      <div class="n-sec-label">צליל התראה</div>
+      <div class="n-card">
+        <div class="n-sound-grid" id="notifSoundGrid"></div>
       </div>
     </div>
 
@@ -8937,6 +8954,7 @@ function _loadNotifPrefs() {
     return {
       defaultReminderMinutes: saved.defaultReminderMinutes ?? 10,
       overdueRemindersOn: saved.overdueRemindersOn ?? true,
+      notifSound: saved.notifSound ?? 'chime',
     };
   } catch (_) {
     return { defaultReminderMinutes: 10, overdueRemindersOn: true };
@@ -8983,13 +9001,11 @@ function renderNotifications() {
 
   // Show/hide prefs based on enabled state
   const disabledClass = 'n-disabled-overlay';
-  if (enabled) {
-    prefsSection.classList.remove(disabledClass);
-    testSection.classList.remove(disabledClass);
-  } else {
-    prefsSection.classList.add(disabledClass);
-    testSection.classList.add(disabledClass);
-  }
+  const soundSection2 = document.getElementById('notifSoundSection');
+  [prefsSection, testSection, soundSection2].forEach(el => {
+    if (!el) return;
+    el.classList.toggle(disabledClass, !enabled);
+  });
 
   // Chips
   chips.forEach(chip => {
@@ -9042,10 +9058,34 @@ function renderNotifications() {
     _saveNotifPrefs(p);
   });
 
+  // Sound grid
+  const soundGrid = document.getElementById('notifSoundGrid');
+  if (soundGrid) {
+    soundGrid.innerHTML = '';
+    NOTIF_SOUNDS.forEach(s => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'n-sound-btn' + (s.id === prefs.notifSound ? ' sel' : '');
+      btn.dataset.soundId = s.id;
+      btn.innerHTML = `<span class="s-emoji">${s.emoji}</span><span class="s-label">${s.label}</span><span class="s-play">▶</span>`;
+      btn.addEventListener('click', () => {
+        _playNotifSound(s.id);
+        const p = _loadNotifPrefs();
+        p.notifSound = s.id;
+        _saveNotifPrefs(p);
+        soundGrid.querySelectorAll('.n-sound-btn').forEach(b =>
+          b.classList.toggle('sel', b.dataset.soundId === s.id)
+        );
+      });
+      soundGrid.appendChild(btn);
+    });
+  }
+
   const newTestBtn = testBtn.cloneNode(true);
   testBtn.parentNode.replaceChild(newTestBtn, testBtn);
   newTestBtn.disabled = !enabled;
   newTestBtn.addEventListener('click', () => {
+    _playNotifSound(_loadNotifPrefs().notifSound || 'chime');
     if (_notifPermission() !== 'granted') return;
     try {
       new Notification('משפחה — ניסיון התראה 🔔', {
@@ -9068,6 +9108,61 @@ async function _requestNotifPermission() {
     AppLog.info('notif perm', r);
     return r;
   } catch (_) { return 'default'; }
+}
+
+// ─── Notification sound catalogue ────────────────────────────────
+const NOTIF_SOUNDS = [
+  { id: 'chime',   label: 'צלצול',  emoji: '🔔' },
+  { id: 'ping',    label: 'פינג',   emoji: '✨' },
+  { id: 'waves',   label: 'גלים',   emoji: '〰️' },
+  { id: 'joy',     label: 'שמחה',   emoji: '🎵' },
+  { id: 'soft',    label: 'עדין',   emoji: '🌸' },
+  { id: 'none',    label: 'ללא',    emoji: '🔇' },
+];
+
+function _playNotifSound(id) {
+  try {
+    const ctx = _getAudio();
+    const tone = (freq, atTime, dur, vol, type) => {
+      const osc = ctx.createOscillator();
+      const g   = ctx.createGain();
+      osc.type = type || 'sine';
+      osc.frequency.value = freq;
+      const t = ctx.currentTime + atTime;
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(vol, t + 0.018);
+      g.gain.exponentialRampToValueAtTime(0.0008, t + dur);
+      osc.connect(g); g.connect(ctx.destination);
+      osc.start(t); osc.stop(t + dur + 0.04);
+    };
+    switch (id) {
+      case 'chime':
+        tone(880,  0.00, 0.22, 0.11);
+        tone(1175, 0.10, 0.28, 0.09);
+        break;
+      case 'ping':
+        tone(1047, 0.00, 0.18, 0.13);
+        break;
+      case 'waves':
+        tone(523, 0.00, 0.20, 0.10);
+        tone(659, 0.14, 0.20, 0.10);
+        tone(784, 0.28, 0.26, 0.10);
+        break;
+      case 'joy':
+        tone(523,  0.00, 0.14, 0.10);
+        tone(659,  0.10, 0.14, 0.10);
+        tone(784,  0.20, 0.14, 0.10);
+        tone(1047, 0.30, 0.24, 0.10);
+        break;
+      case 'soft':
+        tone(330, 0.00, 0.32, 0.07, 'triangle');
+        tone(440, 0.18, 0.36, 0.06, 'triangle');
+        break;
+      case 'none':
+      default:
+        break;
+    }
+  } catch (_) {}
 }
 
 // _chime — pleasant two-tone reminder sound. Uses the existing _getAudio
@@ -9098,7 +9193,7 @@ function _chime() {
 // (3) chime sound. tag dedupes identical pings (e.g. minute-grain re-runs).
 async function _fireRealNotification(title, body, tag) {
   showNotifToast(`${title} — ${body}`);
-  _chime();
+  _playNotifSound(_loadNotifPrefs().notifSound || 'chime');
   if (!_notifSupported() || Notification.permission !== 'granted') return;
   // Prefer the Service Worker's showNotification — it's the only API that
   // works when the page is fully backgrounded on some browsers, and it's
