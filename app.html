@@ -1732,7 +1732,7 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 #s-visibility .vis-ts-text{flex:1 1 auto;text-align:center;display:flex;flex-direction:column;gap:3px;}
 #s-visibility .vis-ts-title{font-size:15px;font-weight:900;color:var(--ink);display:flex;align-items:center;justify-content:center;gap:5px;}
 #s-visibility .vis-ts-meta{font-size:10px;font-weight:600;color:var(--muted);display:flex;align-items:center;justify-content:center;gap:5px;}
-#s-visibility .vis-gd{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 0 1.5px rgba(255,255,255,0.6);}
+#s-visibility .vis-gd{width:8px;height:8px;border-radius:50%;background:var(--orange);box-shadow:0 0 0 1.5px rgba(255,255,255,0.6);}
 #s-visibility .vis-section-card{margin-top:14px;background:var(--card-bg);border-radius:20px;padding:14px 12px 12px;box-shadow:var(--card-shadow);border:1px solid rgba(255,255,255,0.7);}
 #s-visibility .vis-sec-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:0 2px 12px;}
 #s-visibility .vis-sec-icon{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:0 0 auto;box-shadow:inset 0 1px 0 rgba(255,255,255,0.5);}
@@ -1781,6 +1781,20 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 #s-visibility .vis-cta:hover{transform:translateY(-1px)}
 #s-visibility .vis-check-circle{width:22px;height:22px;border-radius:50%;background:#fff;color:var(--orange);display:flex;align-items:center;justify-content:center;flex:0 0 auto;}
 #s-visibility .vis-check-circle svg{width:13px;height:13px}
+#s-visibility .vis-ava-frame.dimmed{opacity:0.32;pointer-events:none;}
+#s-visibility .vis-hero-card{margin-top:14px;background:var(--card-bg);border-radius:18px;padding:13px 12px;box-shadow:var(--card-shadow);border:1px solid rgba(255,255,255,0.7);display:flex;align-items:center;gap:12px;}
+#s-visibility .vis-hero-perf{display:flex;flex-direction:column;align-items:center;gap:4px;flex:0 0 auto;}
+#s-visibility .vis-hero-big-ava{width:56px;height:56px;border-radius:50%;border:2.5px solid var(--orange);box-shadow:0 4px 12px rgba(255,122,61,0.20),inset 0 1px 2px rgba(255,255,255,0.9);}
+#s-visibility .vis-hero-perf-name{font-size:12px;font-weight:800;color:var(--ink);text-align:center;}
+#s-visibility .vis-hero-perf-role{font-size:9px;font-weight:600;color:var(--orange-deep);text-align:center;}
+#s-visibility .vis-hero-sep{width:1px;height:50px;background:rgba(160,90,30,0.10);flex:0 0 auto;}
+#s-visibility .vis-hero-info{flex:1 1 auto;display:flex;flex-direction:column;gap:7px;min-width:0;text-align:right;}
+#s-visibility .vis-hero-task-name{font-size:14px;font-weight:900;color:var(--ink);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#s-visibility .vis-hero-viewers{display:flex;gap:4px;align-items:center;flex-direction:row-reverse;}
+#s-visibility .vis-hero-sm-wrap{position:relative;width:28px;height:28px;flex:0 0 auto;}
+#s-visibility .vis-hero-sm-ava{width:28px;height:28px;border-radius:50%;border:1.5px solid rgba(255,255,255,0.85);box-shadow:0 2px 6px rgba(160,90,30,0.10);}
+#s-visibility .vis-hero-sm-bell{position:absolute;bottom:-2px;right:-2px;font-size:8px;background:#fff;border-radius:50%;width:13px;height:13px;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(0,0,0,0.12);}
+#s-visibility .vis-hero-empty-label{font-size:10px;font-weight:600;color:var(--muted);}
 
 /* ════════════════════════════════════════════════════════════════════
    SCREEN — SPLIT TASK  (Claude Design merge)
@@ -3366,8 +3380,8 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
       </div>
     </div>
 
-    <!-- Task summary mini-card -->
-    <div class="vis-task-summary">
+    <!-- Task summary mini-card (hidden, replaced by hero) -->
+    <div class="vis-task-summary" style="display:none!important">
       <div class="vis-clipboard" aria-hidden="true">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="12" height="17" rx="2"/><rect x="9" y="2" width="6" height="3" rx="1"/><path d="M9 11l1.5 1.5L14 9"/><path d="M9 16h5"/></svg>
       </div>
@@ -3377,10 +3391,24 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
       </div>
     </div>
 
+    <!-- Hero card -->
+    <div class="vis-hero-card" id="visHeroCard">
+      <div class="vis-hero-perf">
+        <div class="vis-hero-big-ava av-aba" id="visHeroBigAva"></div>
+        <div class="vis-hero-perf-name" id="visHeroPerfName">אבא</div>
+        <div class="vis-hero-perf-role">מבצע</div>
+      </div>
+      <div class="vis-hero-sep"></div>
+      <div class="vis-hero-info">
+        <div class="vis-hero-task-name" id="visHeroTaskName">—</div>
+        <div class="vis-hero-viewers" id="visHeroViewers"></div>
+      </div>
+    </div>
+
     <!-- Section 1: מי רואה -->
     <div class="vis-section-card">
       <div class="vis-sec-head">
-        <div class="vis-sec-icon green" aria-hidden="true">
+        <div class="vis-sec-icon orange" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12Z"/><circle cx="12" cy="12" r="3.2"/></svg>
         </div>
         <div class="vis-sec-text">
@@ -3390,24 +3418,24 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
       </div>
 
       <div class="vis-avatars-row" id="visSeeRow">
-        <button class="vis-ava-frame green active" data-id="aba" type="button">
+        <button class="vis-ava-frame orange active" data-id="aba" type="button">
           <div class="vis-ava-circle av-aba"></div>
-          <span class="vis-badge green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg></span>
+          <span class="vis-badge orange"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg></span>
           <div class="vis-ava-name">אבא</div>
         </button>
-        <button class="vis-ava-frame green active" data-id="ima" type="button">
+        <button class="vis-ava-frame orange dimmed" data-id="ima" type="button">
           <div class="vis-ava-circle av-ima"></div>
-          <span class="vis-badge green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg></span>
+          <span class="vis-badge empty"></span>
           <div class="vis-ava-name">אמא</div>
         </button>
-        <button class="vis-ava-frame green active" data-id="leali" type="button">
+        <button class="vis-ava-frame orange dimmed" data-id="leali" type="button">
           <div class="vis-ava-circle av-leali"></div>
-          <span class="vis-badge green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg></span>
+          <span class="vis-badge empty"></span>
           <div class="vis-ava-name">ליאלי</div>
         </button>
-        <button class="vis-ava-frame green active" data-id="aharon" type="button">
+        <button class="vis-ava-frame orange dimmed" data-id="aharon" type="button">
           <div class="vis-ava-circle av-aharon"></div>
-          <span class="vis-badge green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg></span>
+          <span class="vis-badge empty"></span>
           <div class="vis-ava-name">אהרן</div>
         </button>
       </div>
@@ -3417,11 +3445,11 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h6M15 7h6"/><circle cx="12" cy="7" r="2.4"/><path d="M3 17h2M11 17h10"/><circle cx="8" cy="17" r="2.4"/></svg>
           <span>מותאם אישית</span>
         </button>
-        <button class="vis-filter-pill" type="button" data-id="performer">
+        <button class="vis-filter-pill on" type="button" data-id="performer">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M5 20c0-4 3.4-6 7-6s7 2 7 6"/></svg>
           <span>רק המבצע</span>
         </button>
-        <button class="vis-filter-pill on" type="button" data-id="all">
+        <button class="vis-filter-pill" type="button" data-id="all">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M2 20c0-3 2.5-5 7-5s7 2 7 5"/><path d="M14 20c.4-2 2-3 4-3s3 1 3 3"/></svg>
           <span>כולם</span>
         </button>
@@ -3466,7 +3494,22 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
         </button>
       </div>
 
-      <div class="vis-tip">
+      <div class="vis-filter-row" id="visNotifyFilters">
+        <button class="vis-filter-pill" type="button" data-id="custom">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h6M15 7h6"/><circle cx="12" cy="7" r="2.4"/><path d="M3 17h2M11 17h10"/><circle cx="8" cy="17" r="2.4"/></svg>
+          <span>מותאם אישית</span>
+        </button>
+        <button class="vis-filter-pill on" type="button" data-id="performer">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M5 20c0-4 3.4-6 7-6s7 2 7 6"/></svg>
+          <span>רק המבצע</span>
+        </button>
+        <button class="vis-filter-pill" type="button" data-id="all">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M2 20c0-3 2.5-5 7-5s7 2 7 5"/><path d="M14 20c.4-2 2-3 4-3s3 1 3 3"/></svg>
+          <span>כולם</span>
+        </button>
+      </div>
+
+      <div class="vis-tip" id="visNotifyTipWrap">
         <span class="bulb" aria-hidden="true">💡</span>
         <span id="visNotifyTip">רק <u>אבא</u> יקבל התראה, כדי לא להפריע לאחרים.</span>
       </div>
@@ -3480,12 +3523,12 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
         </div>
         <div class="vis-opt-text">
           <div class="vis-opt-title">שלח תזכורת נוספת אם לא בוצעה</div>
-          <div class="vis-opt-sub">20 דקות אחרי הזמן המתוכנן</div>
+          <div class="vis-opt-sub">5, 10 ו-15 דקות לאחר הזמן המתוכנן</div>
         </div>
         <label class="vis-toggle"><input type="checkbox" checked/><span class="slider"></span></label>
       </div>
-      <div class="vis-divider"></div>
-      <div class="vis-opt-row">
+      <div class="vis-divider" style="display:none!important"></div>
+      <div class="vis-opt-row" style="display:none!important">
         <div class="vis-opt-icon" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.13 4.21a6 6 0 0 1 8.87 5.79c0 5 3 7 3 7H8"/><path d="M6 8a6 6 0 0 1 .58-2.58"/><path d="M3 11H1l3-3"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
         </div>
@@ -7382,6 +7425,7 @@ function renderToday() {
       el.querySelector('.t-share').addEventListener('click', e => {
         e.stopPropagation();
         AppState._editingTask = realTForEdit;
+        if (typeof renderVisibility === 'function') renderVisibility();
         if (typeof goto === 'function') goto('s-visibility', 'txLeaveFade', 'txEnterFade');
       });
     }
@@ -10307,6 +10351,115 @@ function _tdBuildCalGrid(year, month, selDate) {
   grid.innerHTML = html;
 }
 
+// ── #s-visibility globals ──────────────────────────────────────────
+var _visPerformer      = 'aba';
+var _visSeeFilter      = 'performer';
+var _visNotifyFilter   = 'performer';
+var _visMemberNames    = {aba:'אבא', ima:'אמא', leali:'ליאלי', aharon:'אהרן'};
+var _visSVGCheck       = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg>';
+
+function _visSetFilter(section, val) {
+  var rowId     = section === 'see' ? 'visSeeRow'     : 'visNotifyRow';
+  var filtersId = section === 'see' ? 'visSeeFilters' : 'visNotifyFilters';
+  if (section === 'see') _visSeeFilter = val; else _visNotifyFilter = val;
+
+  document.querySelectorAll('#' + filtersId + ' .vis-filter-pill').forEach(function(p) {
+    p.classList.toggle('on', p.dataset.id === val);
+  });
+
+  document.querySelectorAll('#' + rowId + ' .vis-ava-frame').forEach(function(b) {
+    var id    = b.dataset.id;
+    var badge = b.querySelector('.vis-badge');
+    b.classList.remove('dimmed');
+
+    if (val === 'performer') {
+      if (id === _visPerformer) {
+        b.classList.add('active');
+        if (badge) { badge.className = 'vis-badge orange'; badge.innerHTML = _visSVGCheck; }
+      } else {
+        b.classList.remove('active');
+        if (badge) { badge.className = 'vis-badge empty'; badge.innerHTML = ''; }
+        b.classList.add('dimmed');
+      }
+    } else if (val === 'all') {
+      b.classList.add('active');
+      if (badge) { badge.className = 'vis-badge orange'; badge.innerHTML = _visSVGCheck; }
+    } else if (val === 'custom') {
+      if (id === _visPerformer) {
+        b.classList.add('active');
+        if (badge) { badge.className = 'vis-badge orange'; badge.innerHTML = _visSVGCheck; }
+      } else {
+        var isActive = b.classList.contains('active');
+        if (badge) {
+          badge.className = isActive ? 'vis-badge orange' : 'vis-badge empty';
+          badge.innerHTML  = isActive ? _visSVGCheck : '';
+        }
+      }
+    }
+  });
+  _visUpdateTip();
+  _visUpdateHero();
+}
+
+function _visUpdateTip() {
+  var wrap = document.getElementById('visNotifyTipWrap');
+  if (!wrap) return;
+  var active = document.querySelectorAll('#visNotifyRow .vis-ava-frame.active');
+  if (active.length === 1) {
+    var id   = active[0].dataset.id;
+    var name = _visMemberNames[id] || id;
+    var span = document.getElementById('visNotifyTip');
+    if (span) span.innerHTML = 'רק <u>' + name + '</u> יקבל התראה, כדי לא להפריע לאחרים.';
+    wrap.style.display = '';
+  } else {
+    wrap.style.display = 'none';
+  }
+}
+
+function _visUpdateHero() {
+  var bigAva   = document.getElementById('visHeroBigAva');
+  var perfName = document.getElementById('visHeroPerfName');
+  var taskName = document.getElementById('visHeroTaskName');
+  var viewers  = document.getElementById('visHeroViewers');
+
+  if (bigAva)   bigAva.className   = 'vis-hero-big-ava av-' + _visPerformer;
+  if (perfName) perfName.textContent = _visMemberNames[_visPerformer] || _visPerformer;
+
+  if (taskName) {
+    var t = (AppState.previewTasks && AppState.previewTasks[0]) ? AppState.previewTasks[0] : null;
+    taskName.textContent = t ? (t.title || '—') : '—';
+  }
+
+  if (!viewers) return;
+  var seeActive = [];
+  document.querySelectorAll('#visSeeRow .vis-ava-frame.active').forEach(function(b) {
+    if (b.dataset.id !== _visPerformer) seeActive.push(b.dataset.id);
+  });
+  var notifyActive = [];
+  document.querySelectorAll('#visNotifyRow .vis-ava-frame.active').forEach(function(b) {
+    notifyActive.push(b.dataset.id);
+  });
+
+  if (seeActive.length === 0) {
+    viewers.innerHTML = '<span class="vis-hero-empty-label">רק המבצע רואה</span>';
+  } else {
+    viewers.innerHTML = seeActive.map(function(id) {
+      var bell = notifyActive.indexOf(id) > -1
+        ? '<span class="vis-hero-sm-bell">🔔</span>' : '';
+      return '<div class="vis-hero-sm-wrap"><div class="vis-hero-sm-ava av-' + id + '"></div>' + bell + '</div>';
+    }).join('');
+  }
+}
+
+function renderVisibility() {
+  var t = AppState.previewTasks && AppState.previewTasks[0];
+  _visPerformer = (t && t.assignedTo) ? t.assignedTo : 'aba';
+  _visSetFilter('see',    'performer');
+  _visSetFilter('notify', 'performer');
+  _visUpdateHero();
+}
+// ── end #s-visibility globals ──────────────────────────────────────
+
 document.addEventListener('DOMContentLoaded', function() {
   var calToggle = document.getElementById('tdCalToggle');
   var calWrap   = document.getElementById('tdCalWrap');
@@ -10788,57 +10941,75 @@ function splitSave() {
   var editPill = document.querySelector('#s-confirmation .edit-pill');
   if (editPill) {
     editPill.addEventListener('click', function() {
+      if (typeof renderVisibility === 'function') renderVisibility();
       if (typeof goto === 'function') goto('s-visibility', 'txLeaveFade', 'txEnterFade');
     });
   }
   var whoCard = document.querySelector('#s-confirmation .who-card');
   if (whoCard) {
     whoCard.addEventListener('click', function() {
+      if (typeof renderVisibility === 'function') renderVisibility();
       if (typeof goto === 'function') goto('s-visibility', 'txLeaveFade', 'txEnterFade');
     });
   }
 
-  // #s-visibility: "מי רואה" avatars — each toggles on/off independently
-  document.querySelectorAll('#visSeeRow .vis-ava-frame').forEach(function(b) {
-    b.addEventListener('click', function() {
-      var badge = b.querySelector('.vis-badge');
-      var isOn  = b.classList.contains('active');
-      if (isOn) {
-        b.classList.remove('active');
-        badge.className = 'vis-badge empty';
-        badge.innerHTML = '';
-      } else {
-        b.classList.add('active');
-        badge.className = 'vis-badge green';
-        badge.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg>';
-      }
-    });
-  });
-
-  // #s-visibility: filter pills — single-select
+  // #s-visibility: filter pills — see section
   document.querySelectorAll('#visSeeFilters .vis-filter-pill').forEach(function(p) {
     p.addEventListener('click', function() {
-      document.querySelectorAll('#visSeeFilters .vis-filter-pill').forEach(function(x){ x.classList.remove('on'); });
-      p.classList.add('on');
+      if (typeof _visSetFilter === 'function') _visSetFilter('see', p.dataset.id);
     });
   });
 
-  // #s-visibility: "מי יקבל התראה" avatars — toggle on/off
-  document.querySelectorAll('#visNotifyRow .vis-ava-frame').forEach(function(b) {
-    b.addEventListener('click', function() {
-      var badge = b.querySelector('.vis-badge');
-      var isOn  = b.classList.contains('active');
-      if (isOn) {
-        b.classList.remove('active');
-        badge.className = 'vis-badge empty';
-        badge.innerHTML = '';
-      } else {
-        b.classList.add('active');
-        badge.className = 'vis-badge orange';
-        badge.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg>';
-      }
+  // #s-visibility: filter pills — notify section
+  document.querySelectorAll('#visNotifyFilters .vis-filter-pill').forEach(function(p) {
+    p.addEventListener('click', function() {
+      if (typeof _visSetFilter === 'function') _visSetFilter('notify', p.dataset.id);
     });
   });
+
+  // #s-visibility: avatar clicks — see row
+  document.querySelectorAll('#visSeeRow .vis-ava-frame').forEach(function(b) {
+    b.addEventListener('click', function() {
+      var filter = _visSeeFilter;
+      if (filter === 'performer') return;
+      if (b.dataset.id === _visPerformer) return;
+      if (filter === 'all') _visSetFilter('see', 'custom');
+      var badge  = b.querySelector('.vis-badge');
+      var isOn   = b.classList.contains('active');
+      if (isOn) {
+        b.classList.remove('active');
+        if (badge) { badge.className = 'vis-badge empty'; badge.innerHTML = ''; }
+      } else {
+        b.classList.add('active');
+        if (badge) { badge.className = 'vis-badge orange'; badge.innerHTML = _visSVGCheck; }
+      }
+      _visUpdateHero();
+    });
+  });
+
+  // #s-visibility: avatar clicks — notify row
+  document.querySelectorAll('#visNotifyRow .vis-ava-frame').forEach(function(b) {
+    b.addEventListener('click', function() {
+      var filter = _visNotifyFilter;
+      if (filter === 'performer') return;
+      if (b.dataset.id === _visPerformer) return;
+      if (filter === 'all') _visSetFilter('notify', 'custom');
+      var badge  = b.querySelector('.vis-badge');
+      var isOn   = b.classList.contains('active');
+      if (isOn) {
+        b.classList.remove('active');
+        if (badge) { badge.className = 'vis-badge empty'; badge.innerHTML = ''; }
+      } else {
+        b.classList.add('active');
+        if (badge) { badge.className = 'vis-badge orange'; badge.innerHTML = _visSVGCheck; }
+      }
+      _visUpdateTip();
+      _visUpdateHero();
+    });
+  });
+
+  // Init visibility screen state on load
+  if (typeof renderVisibility === 'function') renderVisibility();
 
   // #s-visibility: CTA → s-today
   var visCta = document.getElementById('visSaveCta');
