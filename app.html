@@ -932,22 +932,24 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 /* ─── Split bottom sheet ─── */
 .split-sheet-bg{position:fixed;inset:0;z-index:9000;background:rgba(28,17,10,.42);display:flex;align-items:flex-end;pointer-events:none;opacity:0;transition:opacity .25s ease;}
 .split-sheet-bg.open{opacity:1;pointer-events:auto;}
-.split-sheet{width:100%;max-width:420px;margin:0 auto;background:#fffaf5;border-radius:26px 26px 0 0;box-shadow:0 -8px 40px rgba(100,60,20,.22);transform:translateY(100%);transition:transform .34s cubic-bezier(.34,1.1,.64,1);max-height:85dvh;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;padding-bottom:env(safe-area-inset-bottom,0);}
+.split-sheet{width:100%;max-width:420px;margin:0 auto;background:#fffaf5;border-radius:26px 26px 0 0;box-shadow:0 -8px 40px rgba(100,60,20,.22);transform:translateY(100%);transition:transform .34s cubic-bezier(.34,1.1,.64,1);max-height:85dvh;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;padding-bottom:env(safe-area-inset-bottom,0);direction:rtl;}
 .split-sheet-bg.open .split-sheet{transform:translateY(0);}
 .split-sh-handle{width:36px;height:4px;background:rgba(100,60,20,.15);border-radius:2px;margin:12px auto 0;flex-shrink:0;}
-.split-sh-hdr{padding:14px 22px 12px;border-bottom:1px solid rgba(224,180,140,.2);flex-shrink:0;}
-.split-sh-title{font-family:'Nunito',sans-serif;font-size:13px;font-weight:900;text-transform:uppercase;letter-spacing:1px;color:#c4ae9f;margin-bottom:8px;}
-.split-sh-orig-lbl{font-family:'Nunito',sans-serif;font-size:11px;font-weight:700;color:#b8a090;margin-bottom:4px;}
-.split-sh-orig{font-family:'Rubik',sans-serif;font-size:14px;font-weight:600;color:#9e8878;line-height:1.45;direction:rtl;word-break:break-word;}
-.split-sh-body{flex:1;overflow-y:auto;padding:14px 20px 8px;display:flex;flex-direction:column;gap:10px;scrollbar-width:none;-webkit-overflow-scrolling:touch;}
+.split-sh-hdr{padding:16px 20px 14px;border-bottom:1px solid rgba(224,180,140,.2);flex-shrink:0;}
+.split-sh-title{font-family:'Rubik',sans-serif;font-size:17px;font-weight:900;color:#1c110a;margin-bottom:10px;display:flex;align-items:center;gap:7px;}
+.split-sh-orig-lbl{font-family:'Rubik',sans-serif;font-size:11px;font-weight:600;color:#b8a090;margin-bottom:4px;}
+.split-sh-orig{font-family:'Rubik',sans-serif;font-size:13px;font-weight:600;color:#9e8878;line-height:1.45;word-break:break-word;text-decoration:line-through;text-decoration-color:rgba(158,136,120,.4);}
+.split-sh-body{flex:1;overflow-y:auto;padding:14px 20px 8px;display:flex;flex-direction:column;gap:9px;scrollbar-width:none;-webkit-overflow-scrolling:touch;}
 .split-sh-body::-webkit-scrollbar{display:none;}
-.split-sh-row-lbl{font-family:'Nunito',sans-serif;font-size:11px;font-weight:700;color:#c4ae9f;margin-bottom:3px;direction:rtl;}
-.split-sh-row{background:rgba(255,240,230,.55);border-radius:14px;border-inline-start:3px solid rgba(255,112,51,.45);padding:13px 14px;font-family:'Rubik',sans-serif;font-size:15px;font-weight:700;color:#1c110a;line-height:1.4;direction:rtl;word-break:break-word;opacity:0;transform:translateY(8px);transition:opacity 220ms ease,transform 220ms cubic-bezier(.34,1.1,.64,1);}
+.split-sh-row-lbl{font-family:'Rubik',sans-serif;font-size:10px;font-weight:700;color:#c4ae9f;margin-bottom:3px;letter-spacing:.3px;}
+.split-sh-row{background:#fff;border-radius:14px;border:1.5px solid rgba(255,112,51,.18);padding:12px 14px;font-family:'Rubik',sans-serif;font-size:14px;font-weight:700;color:#1c110a;line-height:1.4;word-break:break-word;opacity:0;transform:translateY(8px);transition:opacity 220ms ease,transform 220ms cubic-bezier(.34,1.1,.64,1);display:flex;align-items:flex-start;gap:9px;box-shadow:0 2px 8px rgba(160,90,30,.06);}
 .split-sh-row.visible{opacity:1;transform:translateY(0);}
-.split-sh-foot{padding:14px 20px 22px;border-top:1px solid rgba(224,180,140,.15);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
-.split-sh-confirm{background:linear-gradient(135deg,#ff7033,#e05a20);color:#fff;border:none;border-radius:14px;padding:12px 28px;font-family:'Nunito',sans-serif;font-size:15px;font-weight:800;cursor:pointer;box-shadow:0 3px 12px rgba(255,112,51,.26);transition:transform .14s,box-shadow .14s;}
-.split-sh-confirm:active{transform:scale(.95);}
-.split-sh-cancel{background:none;border:none;color:#b8a090;font-family:'Nunito',sans-serif;font-size:14px;font-weight:700;cursor:pointer;padding:12px 8px;}
+.split-sh-row-ck{width:18px;height:18px;border-radius:50%;border:2px solid #FF7A3D;display:flex;align-items:center;justify-content:center;flex:0 0 auto;margin-top:1px;}
+.split-sh-row-ck svg{width:9px;height:9px;stroke:#FF7A3D;}
+.split-sh-foot{padding:14px 20px 22px;display:flex;flex-direction:column;gap:9px;flex-shrink:0;}
+.split-sh-confirm{background:linear-gradient(135deg,#FFB36B,#FF7A3D 50%,#E5621A);color:#fff;border:none;border-radius:14px;padding:14px;font-family:'Rubik',sans-serif;font-size:15px;font-weight:900;cursor:pointer;box-shadow:0 6px 18px rgba(255,122,61,.32),inset 0 1px 1px rgba(255,255,255,.3);transition:transform .14s;width:100%;}
+.split-sh-confirm:active{transform:scale(.97);}
+.split-sh-cancel{background:#fff;border:1.5px solid rgba(160,90,30,.14);border-radius:14px;color:#9e8878;font-family:'Rubik',sans-serif;font-size:14px;font-weight:700;cursor:pointer;padding:12px;width:100%;box-shadow:0 2px 6px rgba(160,90,30,.05);}
 
 /* ─── Family settings sheet ─── */
 .fam-sheet-bg{position:absolute;inset:0;background:rgba(28,17,10,.42);opacity:0;pointer-events:none;transition:opacity .26s ease;z-index:92;}
@@ -6427,14 +6429,21 @@ async function vOrganize() {
     const sh = document.querySelector('#s-dp .list-shimmer');
     if (sh) { sh.style.animation = 'none'; void sh.offsetWidth; sh.style.animation = ''; }
 
-    // When the AI detected 2+ tasks → show split screen so user can choose
+    // When the AI detected 2+ tasks → show confirmation + split sheet
     if (result.tasks.length >= 2) {
       AppState.voiceText        = spokenText || '';
-      AppState.splitSuggestions = AppState.previewTasks.slice(); // AI's split
-      // Option 1 default: single task with raw voice text
+      AppState.splitSuggestions = AppState.previewTasks.slice();
+      // Merge all AI tasks back into one task (the full spoken text) for the sheet
       AppState.previewTasks = [aiParsedToTask({ title: spokenText || '', time: null, date: null, assignee: null }, 0)];
-      if (typeof renderSplitScreen === 'function') renderSplitScreen();
-      goto('s-split', 'txLeaveBloom', 'txEnterFocus');
+      renderConfirmationTasks();
+      goto('s-confirmation', 'txLeaveBloom', 'txEnterFocus');
+      setTimeout(function() {
+        if (typeof openSplitSheet === 'function' && AppState.previewTasks[0]) {
+          openSplitSheet(AppState.previewTasks[0], null, function() {
+            if (typeof renderConfirmationTasks === 'function') renderConfirmationTasks();
+          });
+        }
+      }, 450);
     } else {
       renderConfirmationTasks();
       goto('s-confirmation', 'txLeaveBloom', 'txEnterFocus');
@@ -6610,7 +6619,7 @@ function filterMovementCompound(segs, originalTitle) {
   return segs;
 }
 
-function openSplitSheet(task, cardEl) {
+function openSplitSheet(task, cardEl, onConfirm) {
   const suggestions = sanitizeSegments(mockSplit(task.title));
   if (suggestions.length < 2) return;
 
@@ -6625,19 +6634,23 @@ function openSplitSheet(task, cardEl) {
   const isHe = AppState.lang === 'he';
   const bg   = document.getElementById('splitSheetBg');
 
-  document.getElementById('splitShTitle').textContent   = isHe ? 'פיצול משימה' : 'Split task';
-  document.getElementById('splitShOrigLbl').textContent = isHe ? 'משימה מקורית:' : 'Original task:';
+  const svgCk = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg>`;
+
+  document.getElementById('splitShTitle').innerHTML  = isHe ? '✂️ כך אפשר לפצל את המשימה' : '✂️ Split task';
+  document.getElementById('splitShOrigLbl').textContent = isHe ? 'משימה מקורית:' : 'Original:';
   document.getElementById('splitShOrig').textContent    = task.title;
 
   const body = document.getElementById('splitShBody');
   body.innerHTML = suggestions.map((s, i) =>
-    `<div><div class="split-sh-row-lbl">${isHe ? 'משימה ' + (i + 1) : 'Task ' + (i + 1)}</div>` +
-    `<div class="split-sh-row">${s}</div></div>`
+    `<div>` +
+    `<div class="split-sh-row-lbl">${isHe ? 'משימה ' + (i + 1) : 'Task ' + (i + 1)}</div>` +
+    `<div class="split-sh-row"><span class="split-sh-row-ck">${svgCk}</span><span>${s}</span></div>` +
+    `</div>`
   ).join('');
   body.scrollTop = 0;
 
-  document.getElementById('splitShConfirm').textContent = isHe ? 'פצל ✓' : 'Split ✓';
-  document.getElementById('splitShCancel').textContent  = isHe ? 'בטל'   : 'Cancel';
+  document.getElementById('splitShConfirm').textContent = isHe ? 'אשר פיצול' : 'Split ✓';
+  document.getElementById('splitShCancel').textContent  = isHe ? 'השאר כמשימה אחת' : 'Keep as one';
 
   bg.classList.add('open');
 
@@ -6663,8 +6676,11 @@ function openSplitSheet(task, cardEl) {
         }));
         AppState.previewTasks.splice(idx, 1, ...newTasks);
       }
-      AppLog.info('split confirm', suggestions);
-      setTimeout(() => dpRender(false), 360);
+      if (typeof onConfirm === 'function') {
+        setTimeout(onConfirm, 360);
+      } else {
+        setTimeout(() => dpRender(false), 360);
+      }
     }
   }
 
@@ -10962,7 +10978,7 @@ function splitSave() {
   if (tdSaveBtn)   tdSaveBtn.addEventListener('click',   function() { if (typeof tdSave === 'function') tdSave(); });
   if (tdCancelBtn) tdCancelBtn.addEventListener('click', function() { if (typeof goto === 'function') goto('s-confirmation','txLeaveFade','txEnterFade'); });
 
-  // #s-confirmation: "פצל" button on task card → split screen
+  // #s-confirmation: "פצל" button on task card → bottom sheet
   if (confirmList) {
     confirmList.addEventListener('click', function(e) {
       var btn = e.target.closest('.conf-split-btn');
@@ -10973,16 +10989,11 @@ function splitSave() {
       var taskId = taskRow.dataset.taskid;
       var task = (AppState.previewTasks || []).find(function(t) { return String(t.id) === String(taskId); });
       if (!task) return;
-      var segs = (typeof mockSplit === 'function') ? mockSplit(task.title) : [];
-      if (segs.length < 2) return; // can't split — do nothing
-      var now = Date.now();
-      AppState.voiceText = task.title;
-      AppState.splitSuggestions = segs.map(function(s, i) {
-        return { id: now + i, title: s, mins: task.mins || null, date: task.date || null, assignedTo: task.assignedTo || null };
-      });
-      _splitTargetId = taskId;
-      if (typeof renderSplitScreen === 'function') renderSplitScreen();
-      if (typeof goto === 'function') goto('s-split', 'txLeaveFade', 'txEnterFade');
+      if (typeof openSplitSheet === 'function') {
+        openSplitSheet(task, btn, function() {
+          if (typeof renderConfirmationTasks === 'function') renderConfirmationTasks();
+        });
+      }
     });
   }
 
