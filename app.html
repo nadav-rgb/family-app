@@ -162,6 +162,12 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 .sb-dots span:nth-child(3){animation-delay:.64s;}
 @keyframes sbDot{0%,100%{opacity:.18;transform:scale(.65);}50%{opacity:.8;transform:scale(1.1);}}
 .v-type-row{text-align:center;flex-shrink:0;animation:fadeUp .4s ease .28s both;}
+.v-rec-actions{display:flex;gap:14px;justify-content:center;align-items:center;min-height:40px;flex-shrink:0;opacity:0;pointer-events:none;transition:opacity .2s ease;}
+.v-rec-actions.show{opacity:1;pointer-events:auto;}
+.v-act-btn{display:inline-flex;align-items:center;gap:6px;border:none;border-radius:99px;padding:8px 20px;font-family:'Nunito',sans-serif;font-size:13px;font-weight:800;cursor:pointer;transition:background .15s,transform .1s;}
+.v-act-btn:active{transform:scale(.95);}
+.v-act-pause{background:rgba(255,112,51,.13);color:#c96b28;}
+.v-act-cancel{background:rgba(180,50,50,.09);color:#b03030;}
 .v-type-toggle{display:inline-block;font-size:14px;font-weight:800;color:#e07c3a;cursor:pointer;padding:6px 0;letter-spacing:.01em;border-bottom:1.5px solid rgba(224,124,58,.3);transition:opacity .15s;}
 .v-type-toggle:active{opacity:.6;}
 .v-type-area{display:none;flex-direction:column;gap:10px;background:linear-gradient(148deg,rgba(255,210,220,.48) 0%,rgba(255,185,130,.26) 42%,rgba(255,250,243,.96) 100%);border-radius:28px;padding:16px 20px 14px;box-shadow:0 6px 32px rgba(255,100,70,.1),0 2px 10px rgba(255,155,90,.08),inset 0 1px 0 rgba(255,255,255,.72);margin:0 16px;}
@@ -2469,6 +2475,10 @@ body.text-large .phone{font-size:17px}
   <div class="listen-sec">
     <div class="ltxt" id="ltxt">לחץ לדיבור</div>
     <div class="wdots" id="wdots"><div class="wd wd1"></div><div class="wd wd2"></div><div class="wd wd3"></div><div class="wd wd4"></div><div class="wd wd5"></div></div>
+  </div>
+  <div class="v-rec-actions" id="vRecActions">
+    <button class="v-act-btn v-act-pause" id="vPauseBtn" type="button">⏸ השהה</button>
+    <button class="v-act-btn v-act-cancel" id="vCancelBtn" type="button">✕ התחל מחדש</button>
   </div>
   <div class="v-type-row" id="vTypeRow">
     <div class="v-type-toggle" id="vTypeToggle">או הקלד במקום</div>
@@ -5023,7 +5033,7 @@ function goto(toId, leaveKf, enterKf, onDone) {
 }
 
 // ─── Voice screen ─────────────────────────────────────────────────
-let vMode = 'heart', vListening = false, vTimer = null, _restartTimer = null;
+let vMode = 'heart', vListening = false, vPaused = false, vTimer = null, _restartTimer = null;
 const wrapIds = { heart:'wrap-heart', star:'wrap-star', classic:'wrap-classic', blob:'wrap-blob' };
 const zone  = document.getElementById('micZone');
 const ltxt  = document.getElementById('ltxt');
@@ -6513,7 +6523,17 @@ zone.addEventListener('click', () => {
     ltxt.className   = 'ltxt';
     return;
   }
+  if (vPaused) { vResume(); return; }
   vListening ? vStop() : vStart();
+});
+
+document.getElementById('vPauseBtn').addEventListener('click', (e) => {
+  e.stopPropagation();
+  vPaused ? vResume() : vPause();
+});
+document.getElementById('vCancelBtn').addEventListener('click', (e) => {
+  e.stopPropagation();
+  vCancel();
 });
 
 function vStart() {
@@ -6531,8 +6551,11 @@ function vStart() {
   _beepStart();
   _startKeepAlive();
   vListening    = true;
+  vPaused       = false;
   zone.classList.add('rec');
   wdots.classList.add('on');
+  document.getElementById('vRecActions').classList.add('show');
+  document.getElementById('vPauseBtn').textContent = '⏸ השהה';
   showBubble('');
   if (vMode === 'star') vBurst();
   if (recognition) {
@@ -6562,8 +6585,10 @@ function vStop(userInitiated = true) {
   clearTimeout(vTimer);
   clearTimeout(_restartTimer);
   vListening = false;
+  vPaused    = false;
   zone.classList.remove('rec');
   wdots.classList.remove('on');
+  document.getElementById('vRecActions').classList.remove('show');
   AppLog.group('speech stopped');
   AppLog.info('userInitiated', userInitiated);
   AppLog.info('transcript', vTranscript);
@@ -6590,6 +6615,54 @@ function vStop(userInitiated = true) {
     if (recognition) { try { recognition.abort(); } catch(_) {} }
     setTimeout(() => { hideBubble(false); vOrganize(); }, 200);
   }
+}
+
+function vPause() {
+  if (!vListening) return;
+  _pendingOrganize = false;
+  vListening = false;
+  vPaused    = true;
+  _stopKeepAlive(); _clearMaxRecTimers(); _stopSilencePoll();
+  clearTimeout(vTimer); clearTimeout(_restartTimer);
+  zone.classList.remove('rec');
+  wdots.classList.remove('on');
+  if (recognition) { try { recognition.abort(); } catch(_) {} }
+  document.getElementById('vPauseBtn').textContent = '▶ המשך';
+  ltxt.textContent = 'מושהה';
+}
+
+function vResume() {
+  if (!vPaused) return;
+  vPaused    = false;
+  vListening = true;
+  zone.classList.add('rec');
+  wdots.classList.add('on');
+  if (recognition) {
+    recognition.lang = AppState.lang === 'he' ? 'he-IL' : 'en-US';
+    _recStart();
+    _startKeepAlive();
+    _startMaxRecTimers(false);
+    _startSilencePoll();
+  }
+  document.getElementById('vPauseBtn').textContent = '⏸ השהה';
+  ltxt.textContent = '';
+}
+
+function vCancel() {
+  _pendingOrganize = false;
+  vListening = false;
+  vPaused    = false;
+  _stopKeepAlive(); _clearMaxRecTimers(); _stopSilencePoll();
+  clearTimeout(vTimer); clearTimeout(_restartTimer);
+  zone.classList.remove('rec');
+  wdots.classList.remove('on');
+  if (recognition) { try { recognition.abort(); } catch(_) {} }
+  vTranscript = ''; vCarryOver = ''; vSessionFinal = '';
+  _lastAcceptedFinal = ''; _lastProcessedTranscript = '';
+  hideBubble(false);
+  document.getElementById('vRecActions').classList.remove('show');
+  document.getElementById('vPauseBtn').textContent = '⏸ השהה';
+  ltxt.textContent = t('voice_tap') || 'לחץ לדיבור';
 }
 
 // ─── Time extraction helper ───────────────────────────────────────
