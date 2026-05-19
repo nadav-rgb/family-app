@@ -10443,6 +10443,7 @@ function _visSyncNotifyToSee() {
 }
 
 function _visUpdateTip() {
+  _visUpdateReminderRow();
   var wrap = document.getElementById('visNotifyTipWrap');
   if (!wrap) return;
   var active = document.querySelectorAll('#visNotifyRow .vis-ava-frame.active');
@@ -10455,11 +10456,10 @@ function _visUpdateTip() {
   } else {
     wrap.style.display = 'none';
   }
-  _visUpdateReminderRow();
 }
 
 function _visUpdateReminderRow() {
-  var row    = document.getElementById('visOptReminderRow');
+  var row = document.getElementById('visOptReminderRow');
   if (!row) return;
   var active = document.querySelectorAll('#visNotifyRow .vis-ava-frame.active');
   row.classList.toggle('dimmed', active.length === 0);
