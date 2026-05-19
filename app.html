@@ -10320,14 +10320,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
   var calPrev = document.getElementById('tdCalPrev');
   var calNext = document.getElementById('tdCalNext');
+  // ב-RTL: › נמצא מימין (חודש אחורה), ‹ נמצא משמאל (חודש קדימה)
   if (calPrev) calPrev.addEventListener('click', function() {
-    var m = _tdCalMonth - 1, y = _tdCalYear;
-    if (m < 0) { m = 11; y--; }
+    var m = _tdCalMonth + 1, y = _tdCalYear;
+    if (m > 11) { m = 0; y++; }
     _tdBuildCalGrid(y, m, _tdCalSelDate);
   });
   if (calNext) calNext.addEventListener('click', function() {
-    var m = _tdCalMonth + 1, y = _tdCalYear;
-    if (m > 11) { m = 0; y++; }
+    var m = _tdCalMonth - 1, y = _tdCalYear;
+    if (m < 0) { m = 11; y--; }
     _tdBuildCalGrid(y, m, _tdCalSelDate);
   });
 
