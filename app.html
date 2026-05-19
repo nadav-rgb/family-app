@@ -1527,6 +1527,8 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 #s-confirmation .conf-split-btn{display:inline-flex;align-self:flex-start;align-items:center;gap:3px;margin-top:5px;background:transparent;border:1px solid rgba(224,112,64,0.55);color:#C05020;font-family:'Rubik',sans-serif;font-size:9px;font-weight:700;border-radius:4px;padding:1px 5px;cursor:pointer;line-height:1.5;transition:transform .12s ease;width:fit-content;}
 #s-confirmation .conf-split-btn svg{width:9px;height:9px;flex:0 0 auto;}
 #s-confirmation .conf-split-btn:active{background:#FFF3EE;transform:scale(.93);}
+#s-confirmation .conf-shop-btn{display:inline-flex;align-self:flex-start;align-items:center;gap:4px;margin-top:6px;background:linear-gradient(135deg,#FFF8F0 0%,#FFE9D0 100%);border:1px solid rgba(224,140,60,0.4);color:#B85A10;font-family:'Rubik',sans-serif;font-size:10px;font-weight:700;border-radius:7px;padding:3px 8px;cursor:pointer;line-height:1.5;width:fit-content;box-shadow:0 1px 4px rgba(200,100,30,0.10);transition:transform .12s ease,box-shadow .12s ease;}
+#s-confirmation .conf-shop-btn:active{transform:scale(.94);box-shadow:none;}
 
 /* ════════════════════════════════════════════════════════════════════
    SCREEN — SYNC & BACKUP  (Claude Design merge, step 4)
@@ -6191,6 +6193,20 @@ function extractTimeFromText(text) {
   return null;
 }
 
+function _attachConfShoppingBtn(task, taskEl) {
+  if (taskEl.querySelector('.conf-shop-btn')) return;
+  const colMid = taskEl.querySelector('.col-mid');
+  if (!colMid) return;
+  const btn = document.createElement('button');
+  btn.className = 'conf-shop-btn';
+  btn.textContent = '🛒 רשימת קניות מסודרת';
+  btn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    showTitleTip(task, btn);
+  });
+  colMid.appendChild(btn);
+}
+
 function renderConfirmationTasks() {
   const tasks   = AppState.previewTasks || [];
   const listEl  = document.getElementById('confirmTasksList');
@@ -6246,6 +6262,21 @@ function renderConfirmationTasks() {
       '</div>' +
     '</div>';
   }).join('');
+
+  // Shopping categorization — show 🛒 button when AI returns grouped list
+  tasks.forEach(function(task) {
+    var taskEl = listEl.querySelector('[data-taskid="' + task.id + '"]');
+    if (!taskEl) return;
+    if (task.shoppingList) {
+      _attachConfShoppingBtn(task, taskEl);
+    } else if (isShoppingListTitle(task.title) && !task._categorizing) {
+      categorizeShoppingTitle(task).then(function() {
+        if (!task.shoppingList) return;
+        var el = listEl.querySelector('[data-taskid="' + task.id + '"]');
+        if (el) _attachConfShoppingBtn(task, el);
+      });
+    }
+  });
 
 }
 
