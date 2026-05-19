@@ -1425,6 +1425,18 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 #s-family-members .info-text{flex:1 1 auto;text-align:right;display:flex;flex-direction:column;gap:2px;}
 #s-family-members .info-t{font-size:13px;font-weight:700;color:var(--ink);line-height:1.15;}
 #s-family-members .info-s{font-size:11px;font-weight:500;color:var(--muted);line-height:1.4;}
+/* Family join-code card */
+#s-family-members .fm-code-card{margin-top:14px;background:linear-gradient(135deg,#fff5ee 0%,#ffe8d6 100%);border-radius:18px;padding:16px;box-shadow:var(--card-shadow);border:1px solid rgba(255,122,61,0.18);}
+#s-family-members .fm-code-kicker{font-size:10px;font-weight:700;color:#B85F23;letter-spacing:.6px;margin-bottom:10px;display:flex;align-items:center;gap:5px;}
+#s-family-members .fm-code-box{background:#fff;border-radius:12px;padding:14px;text-align:center;margin-bottom:12px;border:1px solid rgba(255,122,61,0.12);}
+#s-family-members .fm-code-lbl{font-size:10px;font-weight:700;color:#B8A090;letter-spacing:.6px;margin-bottom:8px;}
+#s-family-members .fm-code-val{font-size:28px;font-weight:800;color:#C06030;letter-spacing:6px;font-family:'Manrope',sans-serif;}
+#s-family-members .fm-code-hint{font-size:10px;color:#C4AE9F;margin-top:6px;}
+#s-family-members .fm-copy-btn{width:100%;padding:12px;border:none;border-radius:12px;background:linear-gradient(135deg,#ff7033,#e05a20);color:#fff;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(255,112,51,.28);transition:transform .14s,opacity .14s;}
+#s-family-members .fm-copy-btn:active{transform:scale(.97);opacity:.9;}
+#s-family-members .fm-local-hint{font-size:11px;color:#9E8878;text-align:center;padding:6px 0 2px;line-height:1.5;}
+#s-family-members .fm-code-card.fm-local .fm-code-box{display:none;}
+#s-family-members .fm-code-card.fm-local .fm-copy-btn{display:none;}
 #s-family-members .fab{position:absolute;left:50%;bottom:90px;transform:translateX(-50%);width:63px;height:63px;border-radius:50%;background:radial-gradient(120% 120% at 30% 20%,#FFB36B 0%,#FF7A3D 50%,#E5621A 100%);display:flex;align-items:center;justify-content:center;color:#fff;box-shadow:0 10px 24px rgba(255,122,61,0.45),0 2px 6px rgba(229,98,26,0.35),inset 0 1px 1px rgba(255,255,255,0.5);cursor:pointer;border:none;transition:transform .15s ease;z-index:5;}
 #s-family-members .fab:hover{transform:translateX(-50%) scale(1.04);}
 #s-family-members .fab svg{width:29px;height:29px;}
@@ -2784,6 +2796,21 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
         <div class="info-t">איך זה עובד?</div>
         <div class="info-s">כל בן משפחה מקבל צבע אישי, שם ותמונה משלו.<br/>כך קל להבדיל בין המשימות של כל אחד.</div>
       </div>
+    </div>
+
+    <!-- Family join-code card -->
+    <div class="fm-code-card" id="fmCodeCard">
+      <div class="fm-code-kicker">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        קוד חיבור משפחתי
+      </div>
+      <div class="fm-code-box">
+        <div class="fm-code-lbl">שתף את הקוד עם בני המשפחה</div>
+        <div class="fm-code-val" id="fmCodeVal">——</div>
+        <div class="fm-code-hint">הכנס קוד זה במכשיר השני להצטרפות</div>
+      </div>
+      <button class="fm-copy-btn" id="fmCopyBtn" type="button">העתק קוד</button>
+      <div class="fm-local-hint" id="fmLocalHint">כדי לקבל קוד חיבור — הפעל מצב משפחה דרך הגדרות → סנכרון וגיבוי</div>
     </div>
 
   </div>
@@ -7340,8 +7367,10 @@ function renderToday() {
   _maybeShowNotifPermBanner();
 }
 
-// "הגדרות" tab → open family sheet
-document.querySelector('#s-today .t-ntab:last-child').addEventListener('click', openFamilySheet);
+// "הגדרות" tab → navigates to s-settings (onclick set in HTML); close sheet if open
+document.querySelector('#s-today .t-ntab:last-child').addEventListener('click', function() {
+  if (typeof closeFamilySheet === 'function') closeFamilySheet();
+});
 document.getElementById('famSheetBg').addEventListener('click', e => {
   if (e.target === document.getElementById('famSheetBg')) closeFamilySheet();
 });
@@ -10492,6 +10521,59 @@ function splitSave() {
       });
       if (typeof _confirmSaveAll === 'function') _confirmSaveAll();
     };
+  }
+
+  // ── #s-family-members: family join-code card ──
+  function _fmRefreshCodeCard() {
+    var card    = document.getElementById('fmCodeCard');
+    var val     = document.getElementById('fmCodeVal');
+    var copyBtn = document.getElementById('fmCopyBtn');
+    var hint    = document.getElementById('fmLocalHint');
+    if (!card) return;
+    var code = (typeof DataAdapter !== 'undefined' && DataAdapter.isFamily && DataAdapter.isFamily())
+               ? DataAdapter.familyId : null;
+    if (code) {
+      card.classList.remove('fm-local');
+      if (val)  val.textContent  = code;
+      if (hint) hint.style.display = 'none';
+    } else {
+      card.classList.add('fm-local');
+      if (val)  val.textContent  = '——';
+      if (hint) hint.style.display = '';
+    }
+  }
+  _fmRefreshCodeCard();
+
+  var fmCopy = document.getElementById('fmCopyBtn');
+  if (fmCopy) {
+    fmCopy.addEventListener('click', function() {
+      var code = (typeof DataAdapter !== 'undefined' && DataAdapter.familyId) ? DataAdapter.familyId : '';
+      if (!code) return;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(code).then(function() {
+          fmCopy.textContent = 'הועתק ✓';
+          setTimeout(function() { fmCopy.textContent = 'העתק קוד'; }, 2000);
+        });
+      } else {
+        var ta = document.createElement('textarea');
+        ta.value = code; ta.style.position = 'fixed'; ta.style.opacity = '0';
+        document.body.appendChild(ta); ta.select();
+        try { document.execCommand('copy'); fmCopy.textContent = 'הועתק ✓'; setTimeout(function(){ fmCopy.textContent='העתק קוד'; },2000); } catch(e) {}
+        document.body.removeChild(ta);
+      }
+    });
+  }
+
+  // Refresh code card each time s-family-members becomes visible
+  var fmScreen = document.getElementById('s-family-members');
+  if (fmScreen && typeof MutationObserver !== 'undefined') {
+    new MutationObserver(function(muts) {
+      muts.forEach(function(m) {
+        if (m.attributeName === 'class' && fmScreen.classList.contains('active')) {
+          _fmRefreshCodeCard();
+        }
+      });
+    }).observe(fmScreen, { attributes: true });
   }
 })();
 </script>
