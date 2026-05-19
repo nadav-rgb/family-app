@@ -6222,9 +6222,12 @@ function closeOptionsSheet() {
     if (typeof goto === 'function') goto('s-time-date', 'txLeaveFade', 'txEnterFade');
   });
   document.getElementById('optsShareVis').addEventListener('click', function() {
-    var task = _optsTask, cb = _optsCb;
+    var task = _optsTask;
     closeOptionsSheet();
-    if (task) openShareDrawer(task, cb);
+    if (!task) return;
+    AppState._editingTask = task;
+    if (typeof renderVisibility === 'function') renderVisibility();
+    if (typeof goto === 'function') goto('s-visibility', 'txLeaveFade', 'txEnterFade');
   });
 })();
 
