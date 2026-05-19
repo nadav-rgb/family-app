@@ -1481,14 +1481,17 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 #s-confirmation .tasks-count .spark{color:var(--orange);font-size:11px;}
 #s-confirmation .edit-pill{background:linear-gradient(135deg,#FFE9D2 0%,#FDD9B6 100%);color:var(--orange-deep);border:none;border-radius:99px;padding:5px 12px;font-family:inherit;font-size:11px;font-weight:800;display:inline-flex;align-items:center;gap:5px;cursor:pointer;box-shadow:inset 0 1px 0 rgba(255,255,255,0.5);}
 #s-confirmation .edit-pill svg{width:11px;height:11px;}
-#s-confirmation .task{display:flex;align-items:flex-start;gap:8px;padding:11px 6px;}
+#s-confirmation .task{display:flex;align-items:center;gap:8px;padding:13px 6px;}
 #s-confirmation .task+.task{border-top:1px solid rgba(160,90,30,0.08);}
 #s-confirmation .menu{background:transparent;border:none;cursor:pointer;color:var(--ink);padding:4px 2px;flex:0 0 auto;align-self:center;font-family:inherit;opacity:0.7;}
 #s-confirmation .menu svg{width:22px;height:22px;display:block;}
-#s-confirmation .col-left{flex:0 0 auto;display:flex;flex-direction:column;align-items:flex-end;gap:4px;min-width:70px;}
-#s-confirmation .time-row{display:flex;align-items:center;gap:4px;font-size:14px;font-weight:900;color:var(--ink);line-height:1;}
-#s-confirmation .time-row svg{color:var(--orange);width:12px;height:12px;}
-#s-confirmation .date{font-size:9px;font-weight:600;color:var(--muted);line-height:1;}
+#s-confirmation .col-left{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;min-width:68px;cursor:pointer;background:transparent;border:none;font-family:inherit;padding:4px 6px;border-radius:10px;transition:background .15s;}
+#s-confirmation .col-left:active{background:rgba(255,122,61,0.08);}
+#s-confirmation .time-row{display:flex;align-items:center;gap:5px;font-size:19px;font-weight:900;color:var(--ink);line-height:1;}
+#s-confirmation .time-row svg{color:var(--orange);width:16px;height:16px;}
+#s-confirmation .time-row.no-time span{color:var(--orange);letter-spacing:0.06em;opacity:0.75;}
+#s-confirmation .time-row.no-time svg{opacity:0.6;}
+#s-confirmation .date{font-size:10px;font-weight:600;color:var(--muted);line-height:1;text-align:center;}
 #s-confirmation .category{font-size:9px;font-weight:700;color:var(--muted);display:inline-flex;align-items:center;gap:5px;line-height:1;margin-top:2px;}
 #s-confirmation .cdot{width:8px;height:8px;border-radius:50%;box-shadow:0 0 0 1.5px rgba(255,255,255,0.6);}
 #s-confirmation .dot-turquoise{background:var(--turquoise);}
@@ -3130,7 +3133,7 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
     <!-- Lock hint -->
     <div class="lock-hint">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
-      <span>הזמנים והפרטים <u>ניתנים</u> לעריכה</span>
+      <span>כל הפרטים <u>ניתנים</u> לעריכה</span>
     </div>
 
 
@@ -6221,12 +6224,15 @@ function renderConfirmationTasks() {
   listEl.innerHTML = tasks.map(function(task) {
     const avClass  = LEGACY_TO_AVATAR[task.assignedTo] || 'av-aba';
     const name     = t('family_' + task.assignedTo) || task.person || task.assignedTo || '—';
+    const hasTime  = task.mins != null;
+    const timeHTML = hasTime
+      ? '<div class="time-row">' + CLOCK_SVG + '<span>' + fmtTime(task.mins) + '</span></div>' +
+        '<div class="date">' + (fmtDate(task.date) || '') + '</div>'
+      : '<div class="time-row no-time">' + CLOCK_SVG + '<span>--:--</span></div>' +
+        '<div class="date">ללא שעה</div>';
     return '<div class="task" data-taskid="' + task.id + '">' +
       '<button class="menu" aria-label="אפשרויות" onclick="goto(\'s-visibility\',\'txLeaveBloom\',\'txEnterFocus\')">' + MENU_SVG + '</button>' +
-      '<div class="col-left">' +
-        '<div class="time-row">' + CLOCK_SVG + '<span>' + fmtTime(task.mins) + '</span></div>' +
-        '<div class="date">' + fmtDate(task.date) + '</div>' +
-      '</div>' +
+      '<button class="col-left" type="button" aria-label="ערוך שעה">' + timeHTML + '</button>' +
       '<div class="col-mid"><div class="t-title"><span>' + esc(task.title) + '</span></div>' +
         (sanitizeSegments(mockSplit(task.subItems ? task.subItems.mainTitle || task.title : task.title)).length >= 2 ?
           '<button class="conf-split-btn" data-splitid="' + task.id + '">' +
