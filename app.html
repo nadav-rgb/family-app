@@ -1529,6 +1529,8 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 #s-confirmation .conf-split-btn:active{background:#FFF3EE;transform:scale(.93);}
 #s-confirmation .conf-shop-btn{display:inline-flex;align-self:flex-start;align-items:center;gap:4px;margin-top:6px;background:linear-gradient(135deg,#FFF8F0 0%,#FFE9D0 100%);border:1px solid rgba(224,140,60,0.4);color:#B85A10;font-family:'Rubik',sans-serif;font-size:10px;font-weight:700;border-radius:7px;padding:3px 8px;cursor:pointer;line-height:1.5;width:fit-content;box-shadow:0 1px 4px rgba(200,100,30,0.10);transition:transform .12s ease,box-shadow .12s ease;}
 #s-confirmation .conf-shop-btn:active{transform:scale(.94);box-shadow:none;}
+#s-confirmation .t-title span[contenteditable]{outline:none;border-radius:5px;padding:1px 3px;margin:-1px -3px;transition:background .15s;}
+#s-confirmation .t-title span[contenteditable]:focus{background:rgba(255,122,61,0.08);}
 
 /* ════════════════════════════════════════════════════════════════════
    SCREEN — SYNC & BACKUP  (Claude Design merge, step 4)
@@ -5392,15 +5394,17 @@ let _titleTipDismissCl = null, _titleTipDismissScroll = null;
 // shopping list, so we won't set task.shoppingList in that case — safe to be
 // permissive here.
 function isShoppingListTitle(title) {
-  if (!title || typeof title !== 'string' || title.length < 25) {
-    return false;
-  }
+  if (!title || typeof title !== 'string' || title.length < 10) return false;
   const words = title.split(/\s+/).filter(Boolean);
-  const hasKeyword = /(לסופר|פיצוצייה|בשוק|סופרמרקט|לקנות)/.test(title);
-  let result = false;
-  if (hasKeyword && words.length >= 6) result = true;
-  else if (words.length >= 12) result = true;
-  return result;
+  // Explicit shopping location/action keywords
+  if (/(לסופר|פיצוצייה|בשוק|סופרמרקט|לקנות|קניות)/.test(title) && words.length >= 5) return true;
+  // Very long list — almost certainly a list regardless of content
+  if (words.length >= 12) return true;
+  // Grocery item detection — 2+ known food/household items = shopping list
+  const GROCERY_RX = /חלב|ביצ|לחם|גבינ|שמן|קמח|בשר|פסט|שוקו|בנ[ננ]|תפוח|עגבני|מלפפ|גזר|עוף|דג[יו]?|שמנת|חמאה|יוגורט|קפה|סוכר|מלח|אורז|בצל|שום|לימון|תות|גלידה|מיץ|שקד|אגוז|דבש|חטיף|עוגי/g;
+  const groceryHits = (title.match(GROCERY_RX) || []).length;
+  if (groceryHits >= 2 && words.length >= 4) return true;
+  return false;
 }
 
 // Async-categorize a task title via /api/categorize-shopping. Idempotent + dedupe.
@@ -6249,7 +6253,7 @@ function renderConfirmationTasks() {
     return '<div class="task" data-taskid="' + task.id + '">' +
       '<button class="menu" aria-label="אפשרויות" onclick="goto(\'s-visibility\',\'txLeaveBloom\',\'txEnterFocus\')">' + MENU_SVG + '</button>' +
       '<button class="col-left" type="button" aria-label="ערוך שעה">' + timeHTML + '</button>' +
-      '<div class="col-mid"><div class="t-title"><span>' + esc(task.title) + '</span></div>' +
+      '<div class="col-mid"><div class="t-title"><span contenteditable="plaintext-only" role="textbox" aria-label="כותרת משימה">' + esc(task.title) + '</span></div>' +
         (sanitizeSegments(mockSplit(task.subItems ? task.subItems.mainTitle || task.title : task.title)).length >= 2 ?
           '<button class="conf-split-btn" data-splitid="' + task.id + '">' +
           '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5"/><path d="M8 3H3v5"/><path d="M12 22v-8.3a4 4 0 0 0-1.172-2.872L3 3"/><path d="m15 9 6-6"/></svg>' +
@@ -6263,10 +6267,24 @@ function renderConfirmationTasks() {
     '</div>';
   }).join('');
 
-  // Shopping categorization — show 🛒 button when AI returns grouped list
+  // Post-render: wire editing + shopping categorization
   tasks.forEach(function(task) {
     var taskEl = listEl.querySelector('[data-taskid="' + task.id + '"]');
     if (!taskEl) return;
+
+    // Title editing
+    var span = taskEl.querySelector('.t-title span[contenteditable]');
+    if (span) {
+      span.addEventListener('input', function() {
+        var updated = span.textContent.trim();
+        if (updated) task.title = updated;
+      });
+      span.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') { e.preventDefault(); span.blur(); }
+      });
+    }
+
+    // Shopping categorization — show 🛒 button when AI returns grouped list
     if (task.shoppingList) {
       _attachConfShoppingBtn(task, taskEl);
     } else if (isShoppingListTitle(task.title) && !task._categorizing) {
