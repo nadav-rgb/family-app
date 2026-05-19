@@ -10554,16 +10554,18 @@ function _tdUpdateRecurPopup(recur) {
   var textEl = document.getElementById('tdRecurPopupText');
   if (!popup || !textEl) return;
   if (!recur || recur === 'none') { popup.classList.remove('open'); return; }
-  var hh = parseInt((document.getElementById('tdHourDigit') || {}).textContent || '0', 10) || 0;
-  var mm = parseInt((document.getElementById('tdMinDigit')  || {}).textContent || '0', 10) || 0;
-  var timeStr = String(hh).padStart(2,'0') + ':' + String(mm).padStart(2,'0');
-  if (recur === 'daily') {
-    textEl.textContent = 'התראה תישלח מדי יום בשעה ' + timeStr;
-  } else if (recur === 'weekly') {
-    var selDay = document.querySelector('#tdDateStrip .td-day.on');
-    var dayName = 'ראשון';
-    if (selDay) { var dObj = new Date(selDay.dataset.date + 'T00:00:00'); dayName = _TD_DOW_FULL[dObj.getDay()]; }
-    textEl.textContent = 'התראה תישלח מדי יום ' + dayName + ' בשעה ' + timeStr;
+  var selDay = document.querySelector('#tdDateStrip .td-day.on');
+  var dayName = 'ראשון';
+  if (selDay) { var dObj = new Date(selDay.dataset.date + 'T00:00:00'); dayName = _TD_DOW_FULL[dObj.getDay()]; }
+  if (_tdNoTime) {
+    if (recur === 'daily')  textEl.textContent = 'המשימה תופיע מדי יום';
+    else                    textEl.textContent = 'המשימה תופיע מדי יום ' + dayName;
+  } else {
+    var hh = parseInt((document.getElementById('tdHourDigit') || {}).textContent || '0', 10) || 0;
+    var mm = parseInt((document.getElementById('tdMinDigit')  || {}).textContent || '0', 10) || 0;
+    var timeStr = String(hh).padStart(2,'0') + ':' + String(mm).padStart(2,'0');
+    if (recur === 'daily')  textEl.textContent = 'התראה תישלח מדי יום בשעה ' + timeStr;
+    else                    textEl.textContent = 'התראה תישלח מדי יום ' + dayName + ' בשעה ' + timeStr;
   }
   popup.classList.add('open');
 }
