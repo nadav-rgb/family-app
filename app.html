@@ -5394,16 +5394,16 @@ let _titleTipDismissCl = null, _titleTipDismissScroll = null;
 // shopping list, so we won't set task.shoppingList in that case — safe to be
 // permissive here.
 function isShoppingListTitle(title) {
-  if (!title || typeof title !== 'string' || title.length < 10) return false;
+  if (!title || typeof title !== 'string' || title.length < 6) return false;
   const words = title.split(/\s+/).filter(Boolean);
-  // Explicit shopping location/action keywords
-  if (/(לסופר|פיצוצייה|בשוק|סופרמרקט|לקנות|קניות)/.test(title) && words.length >= 5) return true;
+  // Explicit shopping location/action keywords — even 2 words suffice
+  if (/(לסופר|פיצוצייה|בשוק|סופרמרקט|לקנות|קניות)/.test(title) && words.length >= 2) return true;
   // Very long list — almost certainly a list regardless of content
   if (words.length >= 12) return true;
-  // Grocery item detection — 2+ known food/household items = shopping list
+  // Grocery item detection — 2+ known food/household items + 3+ words = shopping list
   const GROCERY_RX = /חלב|ביצ|לחם|גבינ|שמן|קמח|בשר|פסט|שוקו|בנ[ננ]|תפוח|עגבני|מלפפ|גזר|עוף|דג[יו]?|שמנת|חמאה|יוגורט|קפה|סוכר|מלח|אורז|בצל|שום|לימון|תות|גלידה|מיץ|שקד|אגוז|דבש|חטיף|עוגי/g;
   const groceryHits = (title.match(GROCERY_RX) || []).length;
-  if (groceryHits >= 2 && words.length >= 4) return true;
+  if (groceryHits >= 2 && words.length >= 3) return true;
   return false;
 }
 
