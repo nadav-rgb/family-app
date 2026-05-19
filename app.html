@@ -1434,9 +1434,11 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 #s-family-members .fm-code-hint{font-size:10px;color:#C4AE9F;margin-top:6px;}
 #s-family-members .fm-copy-btn{width:100%;padding:12px;border:none;border-radius:12px;background:linear-gradient(135deg,#ff7033,#e05a20);color:#fff;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(255,112,51,.28);transition:transform .14s,opacity .14s;}
 #s-family-members .fm-copy-btn:active{transform:scale(.97);opacity:.9;}
-#s-family-members .fm-local-hint{font-size:11px;color:#9E8878;text-align:center;padding:6px 0 2px;line-height:1.5;}
+#s-family-members .fm-local-btn{width:100%;padding:12px;border:none;border-radius:12px;background:rgba(255,180,120,.22);color:#c06030;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;transition:transform .14s,opacity .14s;display:block;}
+#s-family-members .fm-local-btn:active{transform:scale(.97);opacity:.9;}
 #s-family-members .fm-code-card.fm-local .fm-code-box{display:none;}
 #s-family-members .fm-code-card.fm-local .fm-copy-btn{display:none;}
+#s-family-members .fm-code-card:not(.fm-local) .fm-local-btn{display:none;}
 #s-family-members .fab{position:absolute;left:50%;bottom:90px;transform:translateX(-50%);width:63px;height:63px;border-radius:50%;background:radial-gradient(120% 120% at 30% 20%,#FFB36B 0%,#FF7A3D 50%,#E5621A 100%);display:flex;align-items:center;justify-content:center;color:#fff;box-shadow:0 10px 24px rgba(255,122,61,0.45),0 2px 6px rgba(229,98,26,0.35),inset 0 1px 1px rgba(255,255,255,0.5);cursor:pointer;border:none;transition:transform .15s ease;z-index:5;}
 #s-family-members .fab:hover{transform:translateX(-50%) scale(1.04);}
 #s-family-members .fab svg{width:29px;height:29px;}
@@ -2805,7 +2807,7 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
         <div class="fm-code-hint">הכנס קוד זה במכשיר השני להצטרפות</div>
       </div>
       <button class="fm-copy-btn" id="fmCopyBtn" type="button">העתק קוד</button>
-      <div class="fm-local-hint" id="fmLocalHint">כדי לקבל קוד חיבור — הפעל מצב משפחה דרך הגדרות → סנכרון וגיבוי</div>
+      <button class="fm-local-btn" id="fmLocalHint" type="button" onclick="goto('s-sync','txLeaveFade','txEnterFade')">הפעל מצב משפחה ←</button>
     </div>
 
   </div>
