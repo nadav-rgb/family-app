@@ -15,21 +15,22 @@ Return ONLY valid JSON with this exact structure:
 }
 
 Categories — use these exact Hebrew names. Only include categories that have items:
-- "פירות וירקות"      (fruits & vegetables)
+- "פירות וירקות"      (fruits, vegetables, herbs, spices from plants)
 - "מוצרי חלב"        (dairy)
 - "מוצרי בשר ודגים"  (meat & fish)
-- "שתייה"            (non-alcoholic drinks: water, juice, soda, energy)
-- "שתייה חריפה"      (alcoholic drinks: wine, beer, spirits, liqueur)
+- "שתייה"            (non-alcoholic drinks: water, juice, soda, energy drinks)
+- "שתייה חריפה"      (ALL alcoholic drinks: wine, beer, vodka, brandy, whisky, arak, liqueur, spirits)
 - "חטיפים ומתוקים"   (snacks, sweets, cookies, chocolate)
 - "פחמימות ודגנים"   (bread, cereal, rice, pasta, flour)
-- "אחר"              (everything else: oils, condiments, hygiene, household, etc.)
+- "אחר"              (everything else: oils, condiments, hygiene, household, charcoal, non-food items)
 
 Rules:
 - "action" is the action phrase only (e.g. "ללכת לסופר") — without the items.
 - Each item is a short, clean Hebrew noun phrase ("מלפפונים", "יין אדום", "פלסטרים").
-- Combine related variants under one category (e.g. "יין לבן", "יין אדום", "יין מתוק" → all under "שתייה חריפה").
-- Wines, beer, vodka, brandy, cognac, whisky, arak, liqueur → "שתייה חריפה".
+- "פירות וירקות" includes: all vegetables (שום, בצל, עגבניות, מלפפון, גזר, תפוח אדמה, כרובית, ברוקולי, סלרי…), all fruits (תפוח, בננה, לימון, תות, ענב…), and ALL fresh or dried herbs (פטרוזיליה, נענע, כוסברה, בזיליקום, זעתר, רוזמרין, תימין, שמיר, מרווה, עלי דפנה, כרכום…). Garlic (שום) and onion (בצל) are vegetables → "פירות וירקות".
+- "שתייה חריפה" includes: יין (כל סוגיו), בירה, וודקה, ברנדי, קוניאק, וויסקי, ערק, ליקר, ג'ין, רום, טקילה. Do NOT put these in "אחר".
 - Sodas, juices, water, mineral water → "שתייה".
+- Oils (שמן זית, שמן קנולה, שמן סויה) → "אחר".
 - If unsure about a category, put the item in "אחר".
 - Return only categories that contain at least one item.
 - Do NOT add categories that are empty.
