@@ -5066,8 +5066,10 @@ function parsedToTask(p, idx) {
     visibleTo:             defaultVisibleTo,
     notifyTo:              [DataAdapter.isFamily() && assignedToMemberId ? assignedToMemberId : assignedTo],
     reminderOffsetMinutes: 10,
+    reminderOffsets:       (_loadNotifPrefs().defaultReminderMinutes.length ? _loadNotifPrefs().defaultReminderMinutes : [10]),
     overdueReminderOffsets:[5, 10, 15],
     sentInitialReminder:   false,
+    sentReminderOffsets:   [],
     sentReminderStages:    [],
     lastReminderSentAt:    null,
     timeSource:            p.timeFromText ? 'explicit' : 'suggested',
@@ -8963,7 +8965,7 @@ function _loadNotifPrefs() {
     const raw = localStorage.getItem(NOTIF_PREFS_KEY);
     const saved = raw ? JSON.parse(raw) : {};
     return {
-      defaultReminderMinutes: saved.defaultReminderMinutes ?? 10,
+      defaultReminderMinutes: Array.isArray(saved.defaultReminderMinutes) ? saved.defaultReminderMinutes : [saved.defaultReminderMinutes ?? 10],
       overdueRemindersOn: saved.overdueRemindersOn ?? true,
       sounds: {
         reminder: saved.sounds?.reminder ?? 'soft',
@@ -8972,7 +8974,7 @@ function _loadNotifPrefs() {
       },
     };
   } catch (_) {
-    return { defaultReminderMinutes: 10, overdueRemindersOn: true };
+    return { defaultReminderMinutes: [10], overdueRemindersOn: true };
   }
 }
 
@@ -9022,10 +9024,10 @@ function renderNotifications() {
     el.classList.toggle(disabledClass, !enabled);
   });
 
-  // Chips
+  // Chips — multi-select
   chips.forEach(chip => {
     const min = parseInt(chip.dataset.min, 10);
-    chip.classList.toggle('sel', min === prefs.defaultReminderMinutes);
+    chip.classList.toggle('sel', prefs.defaultReminderMinutes.includes(min));
   });
 
   // Overdue toggle
@@ -9053,13 +9055,20 @@ function renderNotifications() {
   chips.forEach(chip => {
     const newChip = chip.cloneNode(true);
     chip.parentNode.replaceChild(newChip, chip);
-    newChip.classList.toggle('sel', parseInt(newChip.dataset.min, 10) === prefs.defaultReminderMinutes);
+    const chipMin = parseInt(newChip.dataset.min, 10);
+    newChip.classList.toggle('sel', prefs.defaultReminderMinutes.includes(chipMin));
     newChip.addEventListener('click', () => {
       const p = _loadNotifPrefs();
-      p.defaultReminderMinutes = parseInt(newChip.dataset.min, 10);
+      const idx = p.defaultReminderMinutes.indexOf(chipMin);
+      if (idx === -1) {
+        p.defaultReminderMinutes.push(chipMin);
+        p.defaultReminderMinutes.sort((a, b) => a - b);
+      } else if (p.defaultReminderMinutes.length > 1) {
+        p.defaultReminderMinutes.splice(idx, 1);
+      }
       _saveNotifPrefs(p);
       document.querySelectorAll('#notifChips .n-chip').forEach(c =>
-        c.classList.toggle('sel', parseInt(c.dataset.min, 10) === p.defaultReminderMinutes)
+        c.classList.toggle('sel', p.defaultReminderMinutes.includes(parseInt(c.dataset.min, 10)))
       );
     });
   });
@@ -9458,32 +9467,38 @@ function checkOverdueReminders() {
     if (!_taskNotifiesThisDevice(task)) { console.log('    → skipped: this device is not in notifyTo'); return; }
 
     // Apply defaults for older tasks
-    if (!task.overdueReminderOffsets) task.overdueReminderOffsets = [5, 10, 15];
-    if (!task.sentReminderStages)     task.sentReminderStages     = [];
+    if (!task.overdueReminderOffsets)  task.overdueReminderOffsets  = [5, 10, 15];
+    if (!task.sentReminderStages)      task.sentReminderStages      = [];
+    if (!task.sentReminderOffsets)     task.sentReminderOffsets     = [];
     if (task.sentInitialReminder === undefined) task.sentInitialReminder = false;
+    // Migrate legacy sentInitialReminder → sentReminderOffsets
+    if (task.sentInitialReminder && task.sentReminderOffsets.length === 0) {
+      task.sentReminderOffsets.push(task.reminderOffsetMinutes ?? 10);
+    }
 
     const assignedId  = task.assignedTo || PERSON_TO_ID[task.person] || 'dad';
     const createdById = task.createdBy  || assignedId;
     const recipients  = [...new Set([assignedId, createdById])];
 
-    // Initial reminder (reminderOffsetMinutes before task time)
-    const offset     = task.reminderOffsetMinutes ?? 10;
-    const fireMins   = task.mins - offset;
-    const inWindow   = nowMins >= fireMins && nowMins < task.mins + 30;
-    console.log(`    initial check: fireMins=${fireMins} (${Math.floor(fireMins/60)}:${String(fireMins%60).padStart(2,'0')}), window=[${fireMins},${task.mins+30}), inWindow=${inWindow}, sentInit=${!!task.sentInitialReminder}`);
-    if (!task.sentInitialReminder && inWindow) {
+    // Initial reminders — one per offset in reminderOffsets array
+    const offsets = (Array.isArray(task.reminderOffsets) && task.reminderOffsets.length)
+      ? task.reminderOffsets
+      : [task.reminderOffsetMinutes ?? 10];
+    offsets.forEach(offset => {
+      if (task.sentReminderOffsets.includes(offset)) return;
+      const fireMins = task.mins - offset;
+      const inWindow = nowMins >= fireMins && nowMins < task.mins + 30;
+      console.log(`    reminder check offset=${offset}: fireMins=${fireMins}, inWindow=${inWindow}`);
+      if (!inWindow) return;
+      task.sentReminderOffsets.push(offset);
       task.sentInitialReminder = true;
       task.lastReminderSentAt  = now.toISOString();
-      // Use actual remaining minutes, not stored offset — avoids stale
-      // "בעוד 10 דקות" when the app opens mid-window.
-      let label;
       const isDue = nowMins >= task.mins || task.mins - nowMins <= 1;
-      if (isDue) label = t('notif_starting');
-      else       label = tFmt('time_in_min', {n: task.mins - nowMins});
-      console.log(`    → FIRING initial: "${task.title}" — ${label}`);
-      _fireRealNotification(task.title, label, `task-${task.id}-initial`, isDue ? 'due' : 'reminder');
+      const label = isDue ? t('notif_starting') : tFmt('time_in_min', {n: task.mins - nowMins});
+      console.log(`    → FIRING reminder offset=${offset}: "${task.title}" — ${label}`);
+      _fireRealNotification(task.title, label, `task-${task.id}-reminder-${offset}`, isDue ? 'due' : 'reminder');
       changed = true;
-    }
+    });
 
     // Overdue reminders (after task time)
     const elapsedMins = nowMins - task.mins;
@@ -9941,6 +9956,8 @@ async function _daLoadTasksFromCloud() {
         notifyTo:               d.notifyTo   || [],
         recurrence:             d.recurrence || { type: 'none' },
         reminderOffsetMinutes:  d.reminderOffsetMinutes  ?? 10,
+        reminderOffsets:        Array.isArray(d.reminderOffsets) ? d.reminderOffsets : null,
+        sentReminderOffsets:    Array.isArray(d.sentReminderOffsets) ? d.sentReminderOffsets : [],
         overdueReminderOffsets: d.overdueReminderOffsets || [5, 10, 15],
         notify:                 d.notify !== false,
         updatedAt:              _toMs(d.updatedAt) || _toMs(d.createdAt) || 0,
