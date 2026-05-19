@@ -3063,7 +3063,7 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
     </button>
 
     <!-- Save CTA -->
-    <button class="cta" type="button" onclick="goto('s-today','txLeaveFade','txEnterFade')">
+    <button class="cta" type="button" onclick="_confirmSaveAll()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg>
       <span>נראה טוב, שמור הכל</span>
     </button>
@@ -9938,6 +9938,29 @@ document.getElementById('btnAddMore').addEventListener('click', () => {
 })();
 </script>
 
+<!-- ════ CONFIRM SAVE — commits previewTasks → AppState.tasks ════ -->
+<script>
+function _confirmSaveAll() {
+  if (!AppState.previewTasks || AppState.previewTasks.length === 0) {
+    if (typeof goto === 'function') goto('s-today', 'txLeaveFade', 'txEnterFade');
+    return;
+  }
+  var newTasks = AppState.previewTasks.map(function(t) {
+    return Object.assign({}, t, { completed: false, date: t.date || (typeof activeDate !== 'undefined' ? activeDate : null) || (typeof todayDate === 'function' ? todayDate() : null) });
+  });
+  // Append new tasks to existing tasks, keeping all prior tasks
+  AppState.tasks = AppState.tasks.concat(newTasks);
+  AppState.previewTasks = [];
+  if (typeof saveState === 'function') saveState();
+  newTasks.forEach(function(task) {
+    if (typeof _daWriteTask === 'function') _daWriteTask(task, true).catch(function() {});
+  });
+  if (typeof _capRescheduleAll === 'function') _capRescheduleAll().catch(function() {});
+  if (typeof renderToday === 'function') renderToday();
+  if (typeof goto === 'function') goto('s-today', 'txLeaveRise', 'txEnterSettle');
+}
+</script>
+
 <!-- ════ HOME PROGRESS CARD — helper (Home.html merge) ════ -->
 <script>
 /* ─── icon picker for task cards ─────────────────────────────────────── */
@@ -10412,6 +10435,64 @@ function splitSave() {
     });
   }
   // splEditBtn: data-todo="edit-manual" — no navigation yet
+
+  // ── Fix "המשפחה" nav tab → s-family-members on all settings screens ──
+  ['s-settings', 's-sync', 's-privacy'].forEach(function(sid) {
+    var screen = document.getElementById(sid);
+    if (!screen) return;
+    screen.querySelectorAll('.bottom-nav .nav-item').forEach(function(btn) {
+      var lbl = btn.querySelector('span:not(.underline)');
+      if (lbl && lbl.textContent.trim() === 'המשפחה') {
+        btn.onclick = function() { if (typeof goto === 'function') goto('s-family-members', 'txLeaveFade', 'txEnterFade'); };
+      }
+    });
+  });
+
+  // ── #s-settings: "בני המשפחה" row → s-family-members ──
+  var peopleRow = document.querySelector('#s-settings .icn.ic-people');
+  if (peopleRow) {
+    var fmRow = peopleRow.closest('.row');
+    if (fmRow) fmRow.style.cursor = 'pointer';
+    if (fmRow) fmRow.addEventListener('click', function() {
+      if (typeof goto === 'function') goto('s-family-members', 'txLeaveFade', 'txEnterFade');
+    });
+  }
+
+  // ── #s-settings: "התראות" row → toast (screen not built yet) ──
+  var bellRow = document.querySelector('#s-settings .icn.ic-bell');
+  if (bellRow) {
+    var bRow = bellRow.closest('.row');
+    if (bRow) { bRow.style.cursor = 'pointer'; bRow.setAttribute('data-todo', 'settings-notifications'); }
+  }
+
+  // ── #s-sync: "בדוק סנכרון עכשיו" → saveState + visual (animation already in onclick) ──
+  var syncCheckAct = document.querySelector('#s-sync .act .at.green');
+  if (syncCheckAct) {
+    var syncActBtn = syncCheckAct.closest('.act');
+    if (syncActBtn) {
+      syncActBtn.addEventListener('click', function() {
+        if (typeof saveState === 'function') saveState();
+      });
+    }
+  }
+
+  // ── #s-visibility: visSaveCta → save visibility to current previewTask then go home ──
+  var visCta2 = document.getElementById('visSaveCta');
+  if (visCta2) {
+    visCta2.onclick = function() {
+      // Collect who-sees selection
+      var seeIds = [];
+      document.querySelectorAll('#visSeeRow .vis-ava-frame.active').forEach(function(b) { seeIds.push(b.dataset.id); });
+      var notifyIds = [];
+      document.querySelectorAll('#visNotifyRow .vis-ava-frame.active').forEach(function(b) { notifyIds.push(b.dataset.id); });
+      // Apply to all previewTasks
+      (AppState.previewTasks || []).forEach(function(t) {
+        if (seeIds.length)    t.visibleTo  = seeIds;
+        if (notifyIds.length) t.notifyTo   = notifyIds;
+      });
+      if (typeof _confirmSaveAll === 'function') _confirmSaveAll();
+    };
+  }
 })();
 </script>
 </body>
