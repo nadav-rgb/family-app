@@ -1849,7 +1849,8 @@ body.text-large .phone{font-size:17px}
   font-family:'Rubik',sans-serif;color:var(--ink);
   background:radial-gradient(circle at top right,rgba(255,244,232,0.9),transparent 35%),linear-gradient(180deg,#FBF8F5 0%,#F7F2ED 45%,#F4EEE8 100%);
 }
-#s-notifications .scroll{padding:16px 16px 110px;display:flex;flex-direction:column;gap:10px;}
+#s-notifications .scroll{flex:1 1 auto;overflow-y:auto;padding:16px 16px 110px;display:flex;flex-direction:column;gap:10px;scrollbar-width:none;}
+#s-notifications .scroll::-webkit-scrollbar{display:none;}
 #s-notifications .n-header{display:flex;align-items:center;gap:10px;margin-bottom:4px;}
 #s-notifications .n-back{width:36px;height:36px;border-radius:50%;background:var(--card-bg);border:1px solid rgba(255,255,255,0.7);box-shadow:var(--card-shadow);display:flex;align-items:center;justify-content:center;cursor:pointer;flex:0 0 auto;color:var(--ink);}
 #s-notifications .n-back svg{width:18px;height:18px;}
