@@ -1873,23 +1873,30 @@ body.text-large .phone{font-size:17px}
 #s-notifications .n-test-btn:active{transform:scale(.97);}
 #s-notifications .n-test-btn:disabled{opacity:.45;cursor:default;}
 #s-notifications .n-perm-hint{font-size:10px;font-weight:500;color:var(--muted);text-align:center;margin-top:6px;min-height:14px;}
-#s-notifications .n-scenario-cards{display:flex;flex-direction:column;gap:10px;}
-#s-notifications .n-scenario-card{background:var(--card-bg);border-radius:16px;padding:12px 14px;box-shadow:var(--card-shadow);border:1px solid rgba(255,255,255,0.7);}
-#s-notifications .n-sc-header{display:flex;align-items:center;gap:10px;}
-#s-notifications .n-sc-icn{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex:0 0 auto;box-shadow:inset 0 1px 0 rgba(255,255,255,0.5);}
-#s-notifications .n-sc-icn svg{width:16px;height:16px;}
-#s-notifications .n-sc-icn.ic-reminder{background:#FFF3DA;color:#C88B00;}
-#s-notifications .n-sc-icn.ic-due{background:#FFE3D6;color:#E5621A;}
-#s-notifications .n-sc-icn.ic-overdue{background:#FFE0E0;color:#C53030;}
-#s-notifications .n-sc-title{flex:1 1 auto;text-align:right;font-size:13px;font-weight:700;color:var(--ink);font-family:'Rubik',sans-serif;}
-#s-notifications .n-sc-badge{font-size:10px;font-weight:700;padding:3px 8px;border-radius:99px;background:var(--bg);color:var(--muted);white-space:nowrap;}
-#s-notifications .n-sc-sounds{display:flex;gap:6px;margin-top:10px;padding-top:10px;border-top:1px solid rgba(0,0,0,0.05);flex-wrap:wrap;justify-content:flex-end;}
-#s-notifications .n-sc-btn{display:flex;align-items:center;gap:4px;border:1.5px solid rgba(0,0,0,0.08);border-radius:99px;padding:5px 10px;background:var(--bg);cursor:pointer;font-family:'Nunito',sans-serif;font-size:11px;font-weight:700;color:var(--muted);transition:border-color .14s,background .14s,color .14s,transform .1s;}
-#s-notifications .n-sc-btn:active{transform:scale(.93);}
-#s-notifications .n-sc-btn .sc-play{font-size:8px;opacity:.6;}
-#s-notifications .n-sc-btn.sel.ic-reminder{border-color:#C88B00;background:#FFF3DA;color:#C88B00;}
-#s-notifications .n-sc-btn.sel.ic-due{border-color:#E5621A;background:#FFE3D6;color:#E5621A;}
-#s-notifications .n-sc-btn.sel.ic-overdue{border-color:#C53030;background:#FFE0E0;color:#C53030;}
+#s-notifications .n-scenario-cards{display:flex;flex-direction:column;gap:14px;}
+#s-notifications .n-scenario-card{background:var(--card-bg);border-radius:22px;padding:16px;box-shadow:var(--card-shadow);border:1px solid rgba(255,255,255,0.82);}
+#s-notifications .n-sc-header{display:flex;align-items:center;gap:12px;margin-bottom:14px;}
+#s-notifications .n-sc-icn{width:44px;height:44px;border-radius:14px;display:flex;align-items:center;justify-content:center;flex:0 0 auto;box-shadow:0 3px 8px rgba(0,0,0,0.10),inset 0 1px 0 rgba(255,255,255,0.55);}
+#s-notifications .n-sc-icn svg{width:21px;height:21px;}
+#s-notifications .n-sc-icn.ic-reminder{background:linear-gradient(140deg,#FFF3D0,#FFD96A);color:#A07000;}
+#s-notifications .n-sc-icn.ic-due{background:linear-gradient(140deg,#FFE5D2,#FFAF78);color:#B84A0E;}
+#s-notifications .n-sc-icn.ic-overdue{background:linear-gradient(140deg,#FFE0E0,#FFB0B0);color:#9A1C1C;}
+#s-notifications .n-sc-info{flex:1 1 auto;text-align:right;}
+#s-notifications .n-sc-info .t{font-size:14px;font-weight:800;color:var(--ink);font-family:'Rubik',sans-serif;line-height:1.2;}
+#s-notifications .n-sc-info .s{font-size:11px;font-weight:600;color:var(--muted);margin-top:3px;}
+#s-notifications .n-sc-div{height:1px;background:rgba(0,0,0,0.06);margin:0 -2px 14px;}
+#s-notifications .n-sound-opts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+#s-notifications .n-sopt{display:flex;flex-direction:column;align-items:center;gap:5px;padding:11px 6px 10px;border-radius:15px;border:1.5px solid rgba(0,0,0,0.07);background:rgba(0,0,0,0.025);cursor:pointer;transition:transform .12s,border-color .15s,background .15s,box-shadow .15s;font-family:'Nunito',sans-serif;}
+#s-notifications .n-sopt:active{transform:scale(0.90);}
+#s-notifications .n-sopt .so-em{font-size:24px;line-height:1;}
+#s-notifications .n-sopt .so-lbl{font-size:11px;font-weight:800;color:var(--muted);letter-spacing:-.01em;}
+#s-notifications .n-sopt.sel{border-width:2px;}
+#s-notifications .n-sopt.sel.ic-reminder{background:linear-gradient(150deg,#FFF5D6,#FFE897);border-color:#C88B00;box-shadow:0 4px 10px rgba(200,139,0,0.22);}
+#s-notifications .n-sopt.sel.ic-reminder .so-lbl{color:#8B6000;}
+#s-notifications .n-sopt.sel.ic-due{background:linear-gradient(150deg,#FFEADB,#FFD0A8);border-color:#E5621A;box-shadow:0 4px 10px rgba(229,98,26,0.22);}
+#s-notifications .n-sopt.sel.ic-due .so-lbl{color:#9A3C08;}
+#s-notifications .n-sopt.sel.ic-overdue{background:linear-gradient(150deg,#FFE5E5,#FFBBBB);border-color:#C53030;box-shadow:0 4px 10px rgba(197,48,48,0.22);}
+#s-notifications .n-sopt.sel.ic-overdue .so-lbl{color:#7C1010;}
 #s-notifications .bottom-wrap{position:absolute;left:0;right:0;bottom:0;pointer-events:none;}
 #s-notifications .bottom-nav{pointer-events:auto;background:rgba(255,255,255,0.78);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);border-top:1px solid rgba(255,255,255,0.8);box-shadow:0 -6px 20px rgba(160,90,30,0.06);padding:11px 19px 21px;display:flex;align-items:flex-end;justify-content:space-between;}
 #s-notifications .nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--muted);font-size:10px;font-weight:600;cursor:pointer;width:58px;text-decoration:none;transition:color .15s ease;background:none;border:none;font-family:'Rubik',sans-serif;}
@@ -9074,7 +9081,7 @@ function renderNotifications() {
     scenarioCards.innerHTML = '';
     SCENARIO_DEFS.forEach(def => {
       const selSound = prefs.sounds[def.type] || def.defaultSound;
-      const selLabel = (SOUND_OPTIONS.find(s => s.id === selSound) || {}).label || selSound;
+      const selOpt   = SOUND_OPTIONS.find(s => s.id === selSound) || SOUND_OPTIONS[0];
       const card = document.createElement('div');
       card.className = 'n-scenario-card';
       card.innerHTML = `
@@ -9082,30 +9089,33 @@ function renderNotifications() {
           <div class="n-sc-icn ${def.colorCls}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${def.svgPath}</svg>
           </div>
-          <div class="n-sc-title">${def.label}</div>
-          <span class="n-sc-badge" id="scBadge-${def.type}">${selLabel}</span>
+          <div class="n-sc-info">
+            <div class="t">${def.label}</div>
+            <div class="s" id="scSub-${def.type}">${selOpt.emoji} ${selOpt.label}</div>
+          </div>
         </div>
-        <div class="n-sc-sounds" id="scSounds-${def.type}"></div>`;
+        <div class="n-sc-div"></div>
+        <div class="n-sound-opts" id="scOpts-${def.type}"></div>`;
       scenarioCards.appendChild(card);
-      const soundsRow = card.querySelector(`#scSounds-${def.type}`);
+      const optsGrid = card.querySelector(`#scOpts-${def.type}`);
       SOUND_OPTIONS.forEach(opt => {
         const btn = document.createElement('button');
         btn.type = 'button';
-        btn.className = `n-sc-btn ${def.colorCls}${opt.id === selSound ? ' sel' : ''}`;
+        btn.className = `n-sopt ${def.colorCls}${opt.id === selSound ? ' sel' : ''}`;
         btn.dataset.soundId = opt.id;
-        btn.innerHTML = `${opt.label} <span class="sc-play">▶</span>`;
+        btn.innerHTML = `<span class="so-em">${opt.emoji}</span><span class="so-lbl">${opt.label}</span>`;
         btn.addEventListener('click', () => {
           _playNotifSound(opt.id);
           const p = _loadNotifPrefs();
           p.sounds[def.type] = opt.id;
           _saveNotifPrefs(p);
-          soundsRow.querySelectorAll('.n-sc-btn').forEach(b =>
+          optsGrid.querySelectorAll('.n-sopt').forEach(b =>
             b.classList.toggle('sel', b.dataset.soundId === opt.id)
           );
-          const badge = document.getElementById(`scBadge-${def.type}`);
-          if (badge) badge.textContent = opt.label;
+          const sub = document.getElementById(`scSub-${def.type}`);
+          if (sub) sub.textContent = `${opt.emoji} ${opt.label}`;
         });
-        soundsRow.appendChild(btn);
+        optsGrid.appendChild(btn);
       });
     });
     const soundSection = document.getElementById('notifSoundSection');
@@ -9143,12 +9153,12 @@ async function _requestNotifPermission() {
 
 // ─── Notification sound catalogue + per-scenario picker ──────────
 const SOUND_OPTIONS = [
-  { id: 'chime',  label: 'צלצול' },
-  { id: 'ping',   label: 'פינג'  },
-  { id: 'waves',  label: 'גלים'  },
-  { id: 'joy',    label: 'שמחה'  },
-  { id: 'soft',   label: 'עדין'  },
-  { id: 'none',   label: 'ללא'   },
+  { id: 'chime',  label: 'צלצול', emoji: '🔔' },
+  { id: 'ping',   label: 'פינג',  emoji: '💫' },
+  { id: 'waves',  label: 'גלים',  emoji: '〰️' },
+  { id: 'joy',    label: 'שמחה',  emoji: '🎵' },
+  { id: 'soft',   label: 'עדין',  emoji: '🍃' },
+  { id: 'none',   label: 'ללא',   emoji: '🔕' },
 ];
 
 const SCENARIO_DEFS = [
