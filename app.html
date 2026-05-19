@@ -1873,22 +1873,23 @@ body.text-large .phone{font-size:17px}
 #s-notifications .n-test-btn:active{transform:scale(.97);}
 #s-notifications .n-test-btn:disabled{opacity:.45;cursor:default;}
 #s-notifications .n-perm-hint{font-size:10px;font-weight:500;color:var(--muted);text-align:center;margin-top:6px;min-height:14px;}
-#s-notifications .n-scenario-list{display:flex;flex-direction:column;gap:0;}
-#s-notifications .n-scenario-row{display:flex;align-items:center;gap:10px;padding:11px 2px;}
-#s-notifications .n-scenario-row+.n-scenario-row{border-top:1px solid rgba(0,0,0,0.05);}
-#s-notifications .n-scenario-row .n-icn{width:36px;height:36px;border-radius:11px;display:flex;align-items:center;justify-content:center;flex:0 0 auto;box-shadow:inset 0 1px 0 rgba(255,255,255,0.5);}
-#s-notifications .n-scenario-row .n-icn svg{width:17px;height:17px;}
-#s-notifications .n-scenario-row .n-icn.ic-reminder{background:#FFF3DA;color:#C88B00;}
-#s-notifications .n-scenario-row .n-icn.ic-due{background:#FFE3D6;color:#E5621A;}
-#s-notifications .n-scenario-row .n-icn.ic-overdue{background:#FFE0E0;color:#C53030;}
-#s-notifications .n-scenario-row .n-body{flex:1 1 auto;text-align:right;min-width:0;}
-#s-notifications .n-scenario-row .n-body .t{font-size:13px;font-weight:700;color:var(--ink);font-family:'Rubik',sans-serif;line-height:1.2;}
-#s-notifications .n-scenario-row .n-body .s{font-size:10px;font-weight:500;color:var(--muted);margin-top:1px;}
-#s-notifications .n-play-btn{width:32px;height:32px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:0 0 auto;transition:transform .12s,background .15s;}
-#s-notifications .n-play-btn:active{transform:scale(.88);}
-#s-notifications .n-play-btn.ic-reminder{background:rgba(200,139,0,.12);color:#C88B00;}
-#s-notifications .n-play-btn.ic-due{background:rgba(229,98,26,.12);color:#E5621A;}
-#s-notifications .n-play-btn.ic-overdue{background:rgba(197,48,48,.12);color:#C53030;}
+#s-notifications .n-scenario-cards{display:flex;flex-direction:column;gap:10px;}
+#s-notifications .n-scenario-card{background:var(--card-bg);border-radius:16px;padding:12px 14px;box-shadow:var(--card-shadow);border:1px solid rgba(255,255,255,0.7);}
+#s-notifications .n-sc-header{display:flex;align-items:center;gap:10px;}
+#s-notifications .n-sc-icn{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex:0 0 auto;box-shadow:inset 0 1px 0 rgba(255,255,255,0.5);}
+#s-notifications .n-sc-icn svg{width:16px;height:16px;}
+#s-notifications .n-sc-icn.ic-reminder{background:#FFF3DA;color:#C88B00;}
+#s-notifications .n-sc-icn.ic-due{background:#FFE3D6;color:#E5621A;}
+#s-notifications .n-sc-icn.ic-overdue{background:#FFE0E0;color:#C53030;}
+#s-notifications .n-sc-title{flex:1 1 auto;text-align:right;font-size:13px;font-weight:700;color:var(--ink);font-family:'Rubik',sans-serif;}
+#s-notifications .n-sc-badge{font-size:10px;font-weight:700;padding:3px 8px;border-radius:99px;background:var(--bg);color:var(--muted);white-space:nowrap;}
+#s-notifications .n-sc-sounds{display:flex;gap:6px;margin-top:10px;padding-top:10px;border-top:1px solid rgba(0,0,0,0.05);flex-wrap:wrap;justify-content:flex-end;}
+#s-notifications .n-sc-btn{display:flex;align-items:center;gap:4px;border:1.5px solid rgba(0,0,0,0.08);border-radius:99px;padding:5px 10px;background:var(--bg);cursor:pointer;font-family:'Nunito',sans-serif;font-size:11px;font-weight:700;color:var(--muted);transition:border-color .14s,background .14s,color .14s,transform .1s;}
+#s-notifications .n-sc-btn:active{transform:scale(.93);}
+#s-notifications .n-sc-btn .sc-play{font-size:8px;opacity:.6;}
+#s-notifications .n-sc-btn.sel.ic-reminder{border-color:#C88B00;background:#FFF3DA;color:#C88B00;}
+#s-notifications .n-sc-btn.sel.ic-due{border-color:#E5621A;background:#FFE3D6;color:#E5621A;}
+#s-notifications .n-sc-btn.sel.ic-overdue{border-color:#C53030;background:#FFE0E0;color:#C53030;}
 #s-notifications .bottom-wrap{position:absolute;left:0;right:0;bottom:0;pointer-events:none;}
 #s-notifications .bottom-nav{pointer-events:auto;background:rgba(255,255,255,0.78);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);border-top:1px solid rgba(255,255,255,0.8);box-shadow:0 -6px 20px rgba(160,90,30,0.06);padding:11px 19px 21px;display:flex;align-items:flex-end;justify-content:space-between;}
 #s-notifications .nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--muted);font-size:10px;font-weight:600;cursor:pointer;width:58px;text-decoration:none;transition:color .15s ease;background:none;border:none;font-family:'Rubik',sans-serif;}
@@ -3770,50 +3771,7 @@ body.text-large .phone{font-size:17px}
     <!-- Sound preview -->
     <div id="notifSoundSection">
       <div class="n-sec-label">צלילי התראה</div>
-      <div class="n-card">
-        <div class="n-scenario-list">
-
-          <div class="n-scenario-row">
-            <div class="n-icn ic-reminder" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14.5 14.5"/></svg>
-            </div>
-            <div class="n-body">
-              <div class="t">לפני המשימה</div>
-              <div class="s">תזכורת לפני הזמן שנקבע</div>
-            </div>
-            <button class="n-play-btn ic-reminder" type="button" aria-label="האזן לצליל" onclick="_playNotifSound('reminder')">
-              <svg viewBox="0 0 24 24" fill="currentColor" width="13" height="13"><polygon points="5,3 19,12 5,21"/></svg>
-            </button>
-          </div>
-
-          <div class="n-scenario-row">
-            <div class="n-icn ic-due" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
-            </div>
-            <div class="n-body">
-              <div class="t">הגיע זמן המשימה</div>
-              <div class="s">בדיוק בזמן שנקבע</div>
-            </div>
-            <button class="n-play-btn ic-due" type="button" aria-label="האזן לצליל" onclick="_playNotifSound('due')">
-              <svg viewBox="0 0 24 24" fill="currentColor" width="13" height="13"><polygon points="5,3 19,12 5,21"/></svg>
-            </button>
-          </div>
-
-          <div class="n-scenario-row">
-            <div class="n-icn ic-overdue" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-            </div>
-            <div class="n-body">
-              <div class="t">איחור</div>
-              <div class="s">כשהמשימה עברה את מועדה</div>
-            </div>
-            <button class="n-play-btn ic-overdue" type="button" aria-label="האזן לצליל" onclick="_playNotifSound('overdue')">
-              <svg viewBox="0 0 24 24" fill="currentColor" width="13" height="13"><polygon points="5,3 19,12 5,21"/></svg>
-            </button>
-          </div>
-
-        </div>
-      </div>
+      <div class="n-scenario-cards" id="notifScenarioCards"></div>
     </div>
 
     <!-- Test button -->
@@ -9002,6 +8960,11 @@ function _loadNotifPrefs() {
     return {
       defaultReminderMinutes: saved.defaultReminderMinutes ?? 10,
       overdueRemindersOn: saved.overdueRemindersOn ?? true,
+      sounds: {
+        reminder: saved.sounds?.reminder ?? 'soft',
+        due:      saved.sounds?.due      ?? 'chime',
+        overdue:  saved.sounds?.overdue  ?? 'ping',
+      },
     };
   } catch (_) {
     return { defaultReminderMinutes: 10, overdueRemindersOn: true };
@@ -9105,11 +9068,55 @@ function renderNotifications() {
     _saveNotifPrefs(p);
   });
 
+  // Scenario sound pickers
+  const scenarioCards = document.getElementById('notifScenarioCards');
+  if (scenarioCards) {
+    scenarioCards.innerHTML = '';
+    SCENARIO_DEFS.forEach(def => {
+      const selSound = prefs.sounds[def.type] || def.defaultSound;
+      const selLabel = (SOUND_OPTIONS.find(s => s.id === selSound) || {}).label || selSound;
+      const card = document.createElement('div');
+      card.className = 'n-scenario-card';
+      card.innerHTML = `
+        <div class="n-sc-header">
+          <div class="n-sc-icn ${def.colorCls}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${def.svgPath}</svg>
+          </div>
+          <div class="n-sc-title">${def.label}</div>
+          <span class="n-sc-badge" id="scBadge-${def.type}">${selLabel}</span>
+        </div>
+        <div class="n-sc-sounds" id="scSounds-${def.type}"></div>`;
+      scenarioCards.appendChild(card);
+      const soundsRow = card.querySelector(`#scSounds-${def.type}`);
+      SOUND_OPTIONS.forEach(opt => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `n-sc-btn ${def.colorCls}${opt.id === selSound ? ' sel' : ''}`;
+        btn.dataset.soundId = opt.id;
+        btn.innerHTML = `${opt.label} <span class="sc-play">▶</span>`;
+        btn.addEventListener('click', () => {
+          _playNotifSound(opt.id);
+          const p = _loadNotifPrefs();
+          p.sounds[def.type] = opt.id;
+          _saveNotifPrefs(p);
+          soundsRow.querySelectorAll('.n-sc-btn').forEach(b =>
+            b.classList.toggle('sel', b.dataset.soundId === opt.id)
+          );
+          const badge = document.getElementById(`scBadge-${def.type}`);
+          if (badge) badge.textContent = opt.label;
+        });
+        soundsRow.appendChild(btn);
+      });
+    });
+    const soundSection = document.getElementById('notifSoundSection');
+    if (soundSection) soundSection.classList.toggle('n-disabled-overlay', !enabled);
+  }
+
   const newTestBtn = testBtn.cloneNode(true);
   testBtn.parentNode.replaceChild(newTestBtn, testBtn);
   newTestBtn.disabled = !enabled;
   newTestBtn.addEventListener('click', () => {
-    _playNotifSound('due');
+    _playNotifSound(prefs.sounds.due || 'chime');
     if (_notifPermission() !== 'granted') return;
     try {
       new Notification('משפחה — ניסיון התראה 🔔', {
@@ -9134,10 +9141,28 @@ async function _requestNotifPermission() {
   } catch (_) { return 'default'; }
 }
 
-// ─── Notification sounds — one per scenario ───────────────────────
-// 'reminder' = לפני המשימה  /  'due' = הגיע זמן  /  'overdue' = איחור
-function _playNotifSound(type) {
+// ─── Notification sound catalogue + per-scenario picker ──────────
+const SOUND_OPTIONS = [
+  { id: 'chime',  label: 'צלצול' },
+  { id: 'ping',   label: 'פינג'  },
+  { id: 'waves',  label: 'גלים'  },
+  { id: 'joy',    label: 'שמחה'  },
+  { id: 'soft',   label: 'עדין'  },
+  { id: 'none',   label: 'ללא'   },
+];
+
+const SCENARIO_DEFS = [
+  { type: 'reminder', label: 'לפני המשימה',     colorCls: 'ic-reminder', defaultSound: 'soft',
+    svgPath: '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14.5 14.5"/>' },
+  { type: 'due',      label: 'הגיע זמן המשימה', colorCls: 'ic-due',      defaultSound: 'chime',
+    svgPath: '<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>' },
+  { type: 'overdue',  label: 'איחור',            colorCls: 'ic-overdue',  defaultSound: 'ping',
+    svgPath: '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>' },
+];
+
+function _playNotifSound(soundId) {
   try {
+    if (soundId === 'none') return;
     const ctx = _getAudio();
     const tone = (freq, atTime, dur, vol, waveType) => {
       const osc = ctx.createOscillator();
@@ -9151,27 +9176,17 @@ function _playNotifSound(type) {
       osc.connect(g); g.connect(ctx.destination);
       osc.start(t); osc.stop(t + dur + 0.05);
     };
-    switch (type) {
-      case 'reminder':
-        // עדין ועולה — רמז עדין שמשהו מגיע
-        tone(880,  0.00, 0.22, 0.10);
-        tone(1175, 0.14, 0.28, 0.09);
-        break;
-      case 'due':
-        // שלושה טונים בהירים — "עכשיו!"
-        tone(1047, 0.00, 0.14, 0.12);
-        tone(1047, 0.16, 0.14, 0.10);
-        tone(1319, 0.32, 0.26, 0.12);
-        break;
-      case 'overdue':
-        // יורד ודוחק — "פספסת!"
-        tone(880, 0.00, 0.16, 0.13);
-        tone(740, 0.14, 0.16, 0.12);
-        tone(622, 0.28, 0.28, 0.13);
-        break;
-      default:
-        tone(880, 0.00, 0.22, 0.10);
-        tone(1175, 0.14, 0.28, 0.09);
+    switch (soundId) {
+      case 'chime':
+        tone(880,  0.00, 0.22, 0.10); tone(1175, 0.14, 0.28, 0.09); break;
+      case 'ping':
+        tone(1047, 0.00, 0.18, 0.13); break;
+      case 'waves':
+        tone(523, 0.00, 0.20, 0.10); tone(659, 0.14, 0.20, 0.10); tone(784, 0.28, 0.26, 0.10); break;
+      case 'joy':
+        tone(523, 0.00, 0.13, 0.10); tone(659, 0.10, 0.13, 0.10); tone(784, 0.20, 0.13, 0.10); tone(1047, 0.30, 0.22, 0.10); break;
+      case 'soft':
+        tone(330, 0.00, 0.30, 0.07, 'triangle'); tone(440, 0.18, 0.34, 0.06, 'triangle'); break;
     }
   } catch (_) {}
 }
@@ -9204,7 +9219,8 @@ function _chime() {
 // (3) chime sound. tag dedupes identical pings (e.g. minute-grain re-runs).
 async function _fireRealNotification(title, body, tag, soundType) {
   showNotifToast(`${title} — ${body}`);
-  _playNotifSound(soundType || 'reminder');
+  const sounds = _loadNotifPrefs().sounds;
+  _playNotifSound(sounds[soundType] || sounds.reminder || 'chime');
   if (!_notifSupported() || Notification.permission !== 'granted') return;
   // Prefer the Service Worker's showNotification — it's the only API that
   // works when the page is fully backgrounded on some browsers, and it's
