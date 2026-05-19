@@ -10357,11 +10357,6 @@ document.addEventListener('DOMContentLoaded', function() {
   });
   document.addEventListener('mouseup', function() { _tdDrag.active = false; });
 
-  function _tdSetReminderSectionDisabled(disabled) {
-    var sec = document.getElementById('tdReminderSection');
-    if (sec) sec.classList.toggle('td-rem-disabled', disabled);
-  }
-
   function _tdActivateTimeIfNeeded() {
     if (!_tdNoTime) return;
     _tdNoTime = false;
@@ -10525,6 +10520,11 @@ function _tdInitCalAndOptions(task) {
 }
 
 var _TD_DOW_FULL = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
+
+function _tdSetReminderSectionDisabled(disabled) {
+  var sec = document.getElementById('tdReminderSection');
+  if (sec) sec.classList.toggle('td-rem-disabled', disabled);
+}
 
 function _tdUpdateRemInfo() {
   var ri = document.getElementById('tdReminderInfo');
