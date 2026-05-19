@@ -10367,10 +10367,26 @@ function _visSetFilter(section, val) {
     p.classList.toggle('on', p.dataset.id === val);
   });
 
+  // For notify: only avatars that are in the see-selection are available
+  var seeActiveIds = [];
+  if (section === 'notify') {
+    document.querySelectorAll('#visSeeRow .vis-ava-frame.active').forEach(function(b) {
+      seeActiveIds.push(b.dataset.id);
+    });
+  }
+
   document.querySelectorAll('#' + rowId + ' .vis-ava-frame').forEach(function(b) {
     var id    = b.dataset.id;
     var badge = b.querySelector('.vis-badge');
     b.classList.remove('dimmed');
+
+    // Notify: dim anyone not in the see selection (always, regardless of filter)
+    if (section === 'notify' && seeActiveIds.indexOf(id) === -1) {
+      b.classList.remove('active');
+      b.classList.add('dimmed');
+      if (badge) { badge.className = 'vis-badge empty'; badge.innerHTML = ''; }
+      return;
+    }
 
     if (val === 'performer') {
       if (id === _visPerformer) {
@@ -10385,16 +10401,40 @@ function _visSetFilter(section, val) {
       b.classList.add('active');
       if (badge) { badge.className = 'vis-badge orange'; badge.innerHTML = _visSVGCheck; }
     } else if (val === 'custom') {
-      if (id === _visPerformer) {
+      if (section === 'see' && id === _visPerformer) {
+        // In see-custom: performer always fixed active
         b.classList.add('active');
         if (badge) { badge.className = 'vis-badge orange'; badge.innerHTML = _visSVGCheck; }
       } else {
+        // In notify-custom (incl. performer) and see-custom (others): keep current state
         var isActive = b.classList.contains('active');
         if (badge) {
           badge.className = isActive ? 'vis-badge orange' : 'vis-badge empty';
           badge.innerHTML  = isActive ? _visSVGCheck : '';
         }
       }
+    }
+  });
+
+  if (section === 'see') _visSyncNotifyToSee();
+  _visUpdateTip();
+  _visUpdateHero();
+}
+
+function _visSyncNotifyToSee() {
+  var seeActiveIds = [];
+  document.querySelectorAll('#visSeeRow .vis-ava-frame.active').forEach(function(b) {
+    seeActiveIds.push(b.dataset.id);
+  });
+  document.querySelectorAll('#visNotifyRow .vis-ava-frame').forEach(function(b) {
+    var id    = b.dataset.id;
+    var badge = b.querySelector('.vis-badge');
+    if (seeActiveIds.indexOf(id) === -1) {
+      b.classList.remove('active');
+      b.classList.add('dimmed');
+      if (badge) { badge.className = 'vis-badge empty'; badge.innerHTML = ''; }
+    } else {
+      b.classList.remove('dimmed');
     }
   });
   _visUpdateTip();
@@ -10972,10 +11012,10 @@ function splitSave() {
     b.addEventListener('click', function() {
       var filter = _visSeeFilter;
       if (filter === 'performer') return;
-      if (b.dataset.id === _visPerformer) return;
-      if (filter === 'all') _visSetFilter('see', 'custom');
-      var badge  = b.querySelector('.vis-badge');
-      var isOn   = b.classList.contains('active');
+      if (b.dataset.id === _visPerformer) return; // performer always fixed in see
+      if (filter === 'all') _visSetFilter('see', 'custom'); // auto-switch to custom
+      var badge = b.querySelector('.vis-badge');
+      var isOn  = b.classList.contains('active');
       if (isOn) {
         b.classList.remove('active');
         if (badge) { badge.className = 'vis-badge empty'; badge.innerHTML = ''; }
@@ -10983,7 +11023,7 @@ function splitSave() {
         b.classList.add('active');
         if (badge) { badge.className = 'vis-badge orange'; badge.innerHTML = _visSVGCheck; }
       }
-      _visUpdateHero();
+      _visSyncNotifyToSee(); // keep notify in sync with see
     });
   });
 
@@ -10991,11 +11031,15 @@ function splitSave() {
   document.querySelectorAll('#visNotifyRow .vis-ava-frame').forEach(function(b) {
     b.addEventListener('click', function() {
       var filter = _visNotifyFilter;
-      if (filter === 'performer') return;
-      if (b.dataset.id === _visPerformer) return;
-      if (filter === 'all') _visSetFilter('notify', 'custom');
-      var badge  = b.querySelector('.vis-badge');
-      var isOn   = b.classList.contains('active');
+      if (filter === 'performer') return; // dimmed anyway, safety guard
+      // Performer CAN be toggled in custom mode (but not in 'all' mode without first switching)
+      if (b.dataset.id === _visPerformer && filter === 'all') {
+        _visSetFilter('notify', 'custom');
+      } else if (filter === 'all') {
+        _visSetFilter('notify', 'custom');
+      }
+      var badge = b.querySelector('.vis-badge');
+      var isOn  = b.classList.contains('active');
       if (isOn) {
         b.classList.remove('active');
         if (badge) { badge.className = 'vis-badge empty'; badge.innerHTML = ''; }
