@@ -3658,7 +3658,7 @@ body.text-large .phone{font-size:17px}
 
     <!-- Header -->
     <div class="header">
-      <button class="back" type="button" aria-label="חזרה" onclick="goto('s-today','txLeaveFade','txEnterFade')">
+      <button class="back" type="button" aria-label="חזרה" onclick="goto(_visBackScreen,'txLeaveFade','txEnterFade')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
       </button>
       <div class="head-text">
@@ -3855,7 +3855,7 @@ body.text-large .phone{font-size:17px}
   <div class="td-scroll">
 
     <div class="td-header">
-      <button class="td-back" type="button" aria-label="חזרה" onclick="goto('s-today','txLeaveFade','txEnterFade')">
+      <button class="td-back" type="button" aria-label="חזרה" onclick="goto(_tdBackScreen,'txLeaveFade','txEnterFade')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
       </button>
       <div class="td-head-text">
@@ -6203,6 +6203,7 @@ function openShareDrawer(task, onSave) {
 
 // ── Options mini-sheet ("אפשרויות נוספות") ──────────────────────────
 var _optsTask = null, _optsCb = null;
+var _visBackScreen = 's-today', _tdBackScreen = 's-today';
 function openOptionsSheet(task, onShareSaved) {
   _optsTask = task;
   _optsCb   = onShareSaved || null;
@@ -6218,6 +6219,7 @@ function closeOptionsSheet() {
   document.getElementById('optsTimeDate').addEventListener('click', function() {
     var task = _optsTask;
     closeOptionsSheet();
+    _tdBackScreen = 's-today';
     if (task && typeof renderTimeDateScreen === 'function') renderTimeDateScreen(task.id);
     if (typeof goto === 'function') goto('s-time-date', 'txLeaveFade', 'txEnterFade');
   });
@@ -6225,6 +6227,7 @@ function closeOptionsSheet() {
     var task = _optsTask;
     closeOptionsSheet();
     if (!task) return;
+    _visBackScreen = 's-today';
     AppState._editingTask = task;
     if (typeof renderVisibility === 'function') renderVisibility();
     if (typeof goto === 'function') goto('s-visibility', 'txLeaveFade', 'txEnterFade');
@@ -11441,6 +11444,7 @@ function splitSave() {
       var taskRow = timeRow.closest('.task[data-taskid]');
       if (!taskRow) return;
       if (typeof renderTimeDateScreen === 'function') renderTimeDateScreen(taskRow.dataset.taskid);
+      _tdBackScreen = 's-confirmation';
       if (typeof goto === 'function') goto('s-time-date', 'txLeaveFade', 'txEnterFade');
     });
   }
@@ -11534,6 +11538,7 @@ function splitSave() {
   var editPill = document.querySelector('#s-confirmation .edit-pill');
   if (editPill) {
     editPill.addEventListener('click', function() {
+      _visBackScreen = 's-confirmation';
       if (typeof renderVisibility === 'function') renderVisibility();
       if (typeof goto === 'function') goto('s-visibility', 'txLeaveFade', 'txEnterFade');
     });
@@ -11541,6 +11546,7 @@ function splitSave() {
   var whoCard = document.querySelector('#s-confirmation .who-card');
   if (whoCard) {
     whoCard.addEventListener('click', function() {
+      _visBackScreen = 's-confirmation';
       if (typeof renderVisibility === 'function') renderVisibility();
       if (typeof goto === 'function') goto('s-visibility', 'txLeaveFade', 'txEnterFade');
     });
