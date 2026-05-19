@@ -1765,6 +1765,7 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 #s-visibility .vis-tip u{text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:2px}
 #s-visibility .vis-options-card{margin-top:14px;background:var(--card-bg);border-radius:18px;padding:4px 12px;box-shadow:var(--card-shadow);border:1px solid rgba(255,255,255,0.7);}
 #s-visibility .vis-opt-row{display:flex;align-items:center;gap:11px;padding:11px 0;}
+#s-visibility .vis-opt-row.dimmed{opacity:0.35;pointer-events:none;}
 #s-visibility .vis-opt-icon{width:34px;height:34px;border-radius:11px;background:#F4ECE2;color:var(--muted);display:flex;align-items:center;justify-content:center;flex:0 0 auto;}
 #s-visibility .vis-opt-icon svg{width:16px;height:16px}
 #s-visibility .vis-opt-text{flex:1 1 auto;text-align:right;display:flex;flex-direction:column;gap:2px;min-width:0;}
@@ -3517,7 +3518,7 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 
     <!-- Options -->
     <div class="vis-options-card">
-      <div class="vis-opt-row">
+      <div class="vis-opt-row" id="visOptReminderRow">
         <div class="vis-opt-icon" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2"/><path d="M5 4 2 7"/><path d="m19 4 3 3"/></svg>
         </div>
@@ -10454,6 +10455,14 @@ function _visUpdateTip() {
   } else {
     wrap.style.display = 'none';
   }
+  _visUpdateReminderRow();
+}
+
+function _visUpdateReminderRow() {
+  var row    = document.getElementById('visOptReminderRow');
+  if (!row) return;
+  var active = document.querySelectorAll('#visNotifyRow .vis-ava-frame.active');
+  row.classList.toggle('dimmed', active.length === 0);
 }
 
 function _visUpdateHero() {
