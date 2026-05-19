@@ -6430,21 +6430,11 @@ async function vOrganize() {
     const sh = document.querySelector('#s-dp .list-shimmer');
     if (sh) { sh.style.animation = 'none'; void sh.offsetWidth; sh.style.animation = ''; }
 
-    // When the AI detected 2+ tasks → show confirmation + split sheet
+    // When the AI detected 2+ tasks → show all as separate cards
     if (result.tasks.length >= 2) {
-      AppState.voiceText        = spokenText || '';
-      AppState.splitSuggestions = AppState.previewTasks.slice();
-      // Merge all AI tasks back into one task (the full spoken text) for the sheet
-      AppState.previewTasks = [aiParsedToTask({ title: spokenText || '', time: null, date: null, assignee: null }, 0)];
+      AppState.previewTasks = result.tasks.map(aiParsedToTask);
       renderConfirmationTasks();
       goto('s-confirmation', 'txLeaveBloom', 'txEnterFocus');
-      setTimeout(function() {
-        if (typeof openSplitSheet === 'function' && AppState.previewTasks[0]) {
-          openSplitSheet(AppState.previewTasks[0], null, function() {
-            if (typeof renderConfirmationTasks === 'function') renderConfirmationTasks();
-          });
-        }
-      }, 450);
     } else {
       renderConfirmationTasks();
       goto('s-confirmation', 'txLeaveBloom', 'txEnterFocus');
