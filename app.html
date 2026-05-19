@@ -1722,6 +1722,107 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 #s-privacy .nav-item.active .underline{opacity:1;}
 
 /* ════════════════════════════════════════════════════════════════════
+   SCREEN — APPEARANCE  (Claude Design merge)
+   Source: App Appearance (1).html
+   Scoped under #s-appearance. Global theme/textSize rules at bottom.
+═══════════════════════════════════════════════════════════════════════ */
+#s-appearance{--accent:var(--orange);--accent-deep:var(--orange-deep);--accent-soft:var(--orange-soft);}
+#s-appearance .scroll{flex:1 1 auto;overflow-y:auto;padding:6px 14px 96px;scrollbar-width:none;}
+#s-appearance .scroll::-webkit-scrollbar{display:none}
+#s-appearance .header{display:flex;align-items:center;justify-content:space-between;margin-top:11px;gap:10px;}
+#s-appearance .back{width:34px;height:34px;border-radius:11px;background:#fff;box-shadow:var(--card-shadow);display:flex;align-items:center;justify-content:center;color:var(--ink);border:1px solid rgba(255,255,255,0.6);cursor:pointer;flex:0 0 auto;font-family:inherit;}
+#s-appearance .back svg{width:14px;height:14px}
+#s-appearance .head-title{flex:1 1 auto;text-align:center;display:flex;flex-direction:column;align-items:center;gap:4px;}
+#s-appearance .title{margin:0;font-size:22px;font-weight:800;line-height:1;letter-spacing:-0.02em;color:var(--ink);}
+#s-appearance .subtitle{margin:0;font-size:11px;font-weight:500;line-height:1.4;color:var(--muted);text-align:center;}
+#s-appearance .head-icon{width:38px;height:38px;border-radius:11px;background:var(--orange-soft);color:var(--orange);display:flex;align-items:center;justify-content:center;flex:0 0 auto;box-shadow:inset 0 1px 0 rgba(255,255,255,0.5);}
+#s-appearance .head-icon svg{width:19px;height:19px}
+#s-appearance .section{background:var(--card-bg);border-radius:18px;padding:14px;box-shadow:var(--card-shadow);border:1px solid rgba(255,255,255,0.7);margin-top:12px;}
+#s-appearance .sec-head{text-align:right;margin-bottom:12px;}
+#s-appearance .sec-title{font-size:15px;font-weight:800;color:var(--ink);line-height:1.2;margin:0 0 2px;}
+#s-appearance .sec-sub{font-size:10.5px;font-weight:500;color:var(--muted);line-height:1.4;margin:0;}
+#s-appearance .tile-row{display:grid;gap:8px;}
+#s-appearance .tile{position:relative;background:#fff;border-radius:14px;border:1.5px solid rgba(0,0,0,0.05);padding:8px 6px;display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer;transition:border-color .18s ease,transform .12s ease,box-shadow .18s ease;}
+#s-appearance .tile:active{transform:scale(0.97)}
+#s-appearance .tile.selected{border-color:var(--orange);box-shadow:0 0 0 1px var(--orange) inset,0 6px 14px rgba(229,98,26,0.08);}
+#s-appearance .tile .check{position:absolute;top:6px;left:6px;width:18px;height:18px;border-radius:50%;background:var(--orange);color:#fff;display:flex;align-items:center;justify-content:center;opacity:0;transform:scale(0.6);transition:opacity .18s ease,transform .18s ease;box-shadow:0 2px 5px rgba(229,98,26,0.35);}
+#s-appearance .tile .check svg{width:11px;height:11px}
+#s-appearance .tile.selected .check{opacity:1;transform:scale(1)}
+#s-appearance .tile-label{font-size:12px;font-weight:700;color:var(--ink)}
+#s-appearance .themes{grid-template-columns:repeat(4,1fr)}
+#s-appearance .theme-art{width:100%;aspect-ratio:1/1;border-radius:12px;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+#s-appearance .theme-bright{background:linear-gradient(160deg,#FFF6E8 0%,#FFE5C9 100%);color:#FF9636;}
+#s-appearance .theme-dark{background:linear-gradient(160deg,#1F2533 0%,#11151E 100%);color:#E9E8FF;}
+#s-appearance .theme-calm{background:linear-gradient(160deg,#EFE6F2 0%,#E2D6E8 100%);color:#7B9560;}
+#s-appearance .theme-colorful{background:linear-gradient(160deg,#FFE0CF 0%,#FFD4C2 100%);position:relative;}
+#s-appearance .theme-art svg{width:54%;height:54%}
+#s-appearance .colorful-dots{position:relative;width:64%;height:64%;}
+#s-appearance .colorful-dots span{position:absolute;border-radius:50%;box-shadow:0 2px 5px rgba(0,0,0,0.12),inset 0 1px 2px rgba(255,255,255,0.4);}
+#s-appearance .colorful-dots .d1{width:60%;height:60%;left:0;top:0;background:radial-gradient(120% 120% at 30% 30%,#FFB36B,#E54E4E);}
+#s-appearance .colorful-dots .d2{width:50%;height:50%;right:0;top:18%;background:radial-gradient(120% 120% at 30% 30%,#7A5BE5,#5E3FCC);}
+#s-appearance .colorful-dots .d3{width:46%;height:46%;left:14%;bottom:0;background:radial-gradient(120% 120% at 30% 30%,#52C7E8,#2F8FD1);}
+#s-appearance .swatches{display:flex;align-items:center;justify-content:space-between;gap:6px;}
+#s-appearance .swatch{flex:1 1 0;aspect-ratio:1/1;max-width:46px;border-radius:50%;cursor:pointer;position:relative;display:flex;align-items:center;justify-content:center;color:#fff;transition:transform .15s ease,box-shadow .18s ease;box-shadow:0 3px 8px rgba(0,0,0,0.10),inset 0 1px 2px rgba(255,255,255,0.35);}
+#s-appearance .swatch:active{transform:scale(0.92)}
+#s-appearance .swatch .ck{width:16px;height:16px;opacity:0;transform:scale(0.5);transition:opacity .18s ease,transform .18s ease;}
+#s-appearance .swatch.selected .ck{opacity:1;transform:scale(1)}
+#s-appearance .swatch.selected{box-shadow:0 0 0 3px #fff,0 0 0 5px currentColor,0 4px 10px rgba(0,0,0,0.12);}
+#s-appearance .segment{display:flex;gap:8px;}
+#s-appearance .seg-opt{flex:1 1 0;border-radius:13px;padding:12px 6px;text-align:center;cursor:pointer;border:1.5px solid transparent;background:var(--orange-soft);color:var(--orange-deep);font-family:'Rubik',sans-serif;transition:border-color .2s ease,transform .12s ease,box-shadow .2s ease;display:flex;flex-direction:column;align-items:center;gap:2px;}
+#s-appearance .seg-opt:active{transform:scale(0.97)}
+#s-appearance .seg-opt .lead{font-weight:700;color:inherit;line-height:1}
+#s-appearance .seg-opt .sub{font-size:10px;font-weight:500;color:inherit;line-height:1.1;opacity:0.75}
+#s-appearance .seg-opt[data-val="small"] .lead{font-size:14px}
+#s-appearance .seg-opt[data-val="normal"] .lead{font-size:16px}
+#s-appearance .seg-opt[data-val="large"] .lead{font-size:18px}
+#s-appearance .seg-opt.selected{border-color:var(--orange);box-shadow:0 0 0 1px var(--orange) inset,0 6px 14px rgba(229,98,26,0.08);}
+#s-appearance .voices{grid-template-columns:repeat(5,1fr)}
+#s-appearance .voice-art{width:100%;aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;position:relative;}
+#s-appearance .vbtn{width:80%;height:80%;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;box-shadow:0 4px 10px rgba(0,0,0,0.12),inset 0 1px 2px rgba(255,255,255,0.35);position:relative;}
+#s-appearance .vbtn svg{width:48%;height:48%}
+#s-appearance .v-classic{background:radial-gradient(120% 120% at 30% 25%,var(--orange-soft) -10%,var(--orange) 55%,var(--orange-deep) 100%);}
+#s-appearance .v-soft{background:radial-gradient(120% 120% at 30% 25%,#7DD4A4,#2EAE63 70%,#1F8A4D 100%);}
+#s-appearance .v-waves{background:radial-gradient(120% 120% at 30% 25%,#A48DEC 0%,#7A5BE5 70%,#5E3FCC 100%);}
+#s-appearance .v-waves::before,#s-appearance .v-waves::after{content:"";position:absolute;border-radius:50%;border:1.5px solid rgba(255,255,255,0.55);}
+#s-appearance .v-waves::before{inset:14%}
+#s-appearance .v-waves::after{inset:2%;border-color:rgba(255,255,255,0.30)}
+#s-appearance .v-pulse{background:radial-gradient(120% 120% at 30% 25%,#FF9CC0 0%,#F25C92 70%,#D33C76 100%);}
+#s-appearance .v-pulse::after{content:"";position:absolute;inset:-12%;border-radius:50%;border:2px solid rgba(242,92,146,0.30);}
+#s-appearance .v-star{background:radial-gradient(120% 120% at 30% 25%,#9FD4F7 0%,#5BA9E5 70%,#3A85BF 100%);}
+#s-appearance .info-pill{margin-top:12px;display:flex;align-items:center;justify-content:center;gap:7px;font-size:10.5px;color:var(--muted);font-weight:500;text-align:center;}
+#s-appearance .info-pill .ic{width:18px;height:18px;border-radius:50%;background:#EEE9F9;color:#7A5BE5;display:flex;align-items:center;justify-content:center;flex:0 0 auto;}
+#s-appearance .info-pill .ic svg{width:10px;height:10px}
+#s-appearance .avatar-rows{display:flex;flex-direction:column;}
+#s-appearance .av-row{display:flex;align-items:center;gap:10px;padding:11px 2px;cursor:pointer;border-bottom:1px solid rgba(160,90,30,0.08);}
+#s-appearance .av-row:last-child{border-bottom:none}
+#s-appearance .av-row .chev{color:var(--muted);flex:0 0 auto}
+#s-appearance .av-row .chev svg{width:13px;height:13px;display:block}
+#s-appearance .av-row .ico{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;flex:0 0 auto;box-shadow:inset 0 1px 0 rgba(255,255,255,0.5);}
+#s-appearance .av-row .ico svg{width:18px;height:18px}
+#s-appearance .ic-cam{background:#FFE0CB;color:#C25E2A}
+#s-appearance .ic-magic{background:#DFF3DD;color:#2E8C53}
+#s-appearance .ic-sparks{background:#E7DDF6;color:#6E47C9}
+#s-appearance .av-row .body{flex:1 1 auto;text-align:right;min-width:0;display:flex;flex-direction:column;gap:1px;}
+#s-appearance .av-row .t{font-size:13px;font-weight:700;color:var(--ink);line-height:1.2}
+#s-appearance .av-row .s{font-size:10px;font-weight:500;color:var(--muted);line-height:1.35}
+#s-appearance .av-dot{width:42px;height:42px;border-radius:50%;background:radial-gradient(120% 120% at 30% 25%,#FFE3CB 0%,#F2C9A3 60%,#D9A57A 100%);box-shadow:0 3px 8px rgba(160,90,30,0.10),inset 0 1px 2px rgba(255,255,255,0.55);border:1.5px solid #fff;flex:0 0 auto;}
+#s-appearance .privacy-note{margin-top:14px;display:flex;align-items:center;justify-content:center;gap:7px;font-size:10.5px;color:var(--muted);font-weight:500;text-align:center;}
+#s-appearance .privacy-note .lk{width:14px;height:14px;color:#7A5BE5;display:flex;align-items:center;justify-content:center;flex:0 0 auto;}
+#s-appearance .privacy-note .lk svg{width:13px;height:13px}
+#s-appearance .bottom-wrap{position:absolute;left:0;right:0;bottom:0;pointer-events:none;}
+#s-appearance .bottom-nav{pointer-events:auto;background:rgba(255,255,255,0.78);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);border-top:1px solid rgba(255,255,255,0.8);box-shadow:0 -6px 20px rgba(160,90,30,0.06);padding:11px 19px 21px;display:flex;align-items:flex-end;justify-content:space-between;}
+#s-appearance .nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--muted);font-size:10px;font-weight:600;cursor:pointer;width:58px;background:none;border:none;font-family:'Rubik',sans-serif;transition:color .15s ease;}
+#s-appearance .nav-item.active{color:var(--orange);}
+#s-appearance .nav-item .underline{width:14px;height:2px;border-radius:99px;background:var(--orange);margin-top:2px;opacity:0;}
+#s-appearance .nav-item.active .underline{opacity:1;}
+/* Global theme overrides — applied on .phone so body background stays intact */
+body[data-theme="dark"] .phone{background:linear-gradient(175deg,#1F2533 0%,#161B27 100%);}
+body[data-theme="calm"] .phone{background:linear-gradient(175deg,#F2EBF0 0%,#E6DCEE 100%);}
+body[data-theme="colorful"] .phone{background:radial-gradient(800px 400px at 80% -10%,#FFDFE9 0%,transparent 55%),radial-gradient(700px 500px at -10% 110%,#E0E9FF 0%,transparent 60%),linear-gradient(175deg,#FFF4ED 0%,#FFE9DA 100%);}
+body.text-small .phone{font-size:13px}
+body.text-large .phone{font-size:17px}
+
+/* ════════════════════════════════════════════════════════════════════
    SCREEN — VISIBILITY  (Claude Design merge, step 6)
    Source: Visibility & Notifications.html
    Palette: orange + green (#34C759)
@@ -2696,6 +2797,7 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
         <div class="body"><div class="t">מראה האפליקציה</div><div class="s">ערכות נושא, צבעים וטקסט</div></div>
         <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></span>
       </div>
+      <script>document.currentScript.previousElementSibling.addEventListener('click',function(){goto('s-appearance','txLeaveFade','txEnterFade');renderAppearance();});</script>
       <div class="row" onclick="goto('s-sync','txLeaveFade','txEnterFade')">
         <div class="icn ic-cloud" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18a5 5 0 0 1-1-9.9A6 6 0 0 1 17.5 9 4.5 4.5 0 0 1 17 18Z"/></svg></div>
         <div class="body"><div class="t">סנכרון וגיבוי</div><div class="s">גיבוי בענן וסנכרון בין מכשירים</div></div>
@@ -3350,6 +3452,183 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
   </div>
 </div>
 
+<!-- ════════════════ #s-appearance — מראה האפליקציה ════════════════
+     Source: App Appearance (1).html — Claude Design
+════════════════════════════════════════════════════════════════════════ -->
+<div class="app-screen" id="s-appearance">
+  <div class="status">
+    <span class="time">10:30</span>
+    <span class="icons" aria-hidden="true">
+      <svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="0.8"/><rect x="4.5" y="5" width="3" height="6" rx="0.8"/><rect x="9" y="2.5" width="3" height="8.5" rx="0.8"/><rect x="13.5" y="0" width="3" height="11" rx="0.8"/></svg>
+      <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor"><path d="M8 12a1.4 1.4 0 1 0 0-2.8A1.4 1.4 0 0 0 8 12Zm3.6-3.4-.06.06.06-.06Zm-7.2 0a4.6 4.6 0 0 1 7.2 0l1.2-1.2a6.4 6.4 0 0 0-9.6 0l1.2 1.2Zm-2.4-2.4a8.4 8.4 0 0 1 12 0l1.2-1.2a10.2 10.2 0 0 0-14.4 0l1.2 1.2Z"/></svg>
+      <svg width="26" height="12" viewBox="0 0 26 12" fill="none"><rect x="0.5" y="0.5" width="22" height="11" rx="2.6" stroke="currentColor" opacity=".5"/><rect x="2" y="2" width="19" height="8" rx="1.6" fill="currentColor"/><rect x="23.5" y="4" width="2" height="4" rx="0.8" fill="currentColor" opacity=".5"/></svg>
+    </span>
+  </div>
+
+  <div class="scroll">
+    <div class="header">
+      <button class="back" type="button" aria-label="חזרה" onclick="goto('s-settings','txLeaveFade','txEnterFade')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+      </button>
+      <div class="head-title">
+        <h1 class="title">מראה האפליקציה</h1>
+        <p class="subtitle">ערכות נושא, צבעים וסגנון הדיבור</p>
+      </div>
+      <div class="head-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c5 0 9 4 9 9 0 3-2 4-4 4h-2a2 2 0 0 0 0 4c0 1-1 2-3 2-5 0-9-4-9-9s4-9 9-9Z"/><circle cx="7.5" cy="11" r="1.2" fill="currentColor"/><circle cx="9.5" cy="7" r="1.2" fill="currentColor"/><circle cx="14.5" cy="6.5" r="1.2" fill="currentColor"/><circle cx="17" cy="10.5" r="1.2" fill="currentColor"/></svg>
+      </div>
+    </div>
+
+    <!-- ערכת נושא -->
+    <section class="section">
+      <div class="sec-head">
+        <h2 class="sec-title">ערכת נושא</h2>
+        <p class="sec-sub">בחרו את המראה הכללי של האפליקציה</p>
+      </div>
+      <div class="tile-row themes" id="appr-themes" role="radiogroup" aria-label="ערכת נושא">
+        <button class="tile" data-theme="bright" role="radio" aria-checked="true">
+          <div class="theme-art theme-bright"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4" fill="currentColor" stroke="none"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/><line x1="4.5" y1="4.5" x2="6.6" y2="6.6"/><line x1="17.4" y1="17.4" x2="19.5" y2="19.5"/><line x1="4.5" y1="19.5" x2="6.6" y2="17.4"/><line x1="17.4" y1="6.6" x2="19.5" y2="4.5"/></svg></div>
+          <span class="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg></span>
+          <span class="tile-label">בהיר</span>
+        </button>
+        <button class="tile" data-theme="dark" role="radio" aria-checked="false">
+          <div class="theme-art theme-dark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 14.5A8 8 0 1 1 9.5 3a6.5 6.5 0 0 0 11.5 11.5Z" fill="currentColor" stroke="none"/><path d="M17 4l.6 1.6L19 6l-1.4.6L17 8l-.7-1.4L15 6l1.4-.6Z" fill="currentColor" stroke="none"/></svg></div>
+          <span class="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg></span>
+          <span class="tile-label">כהה</span>
+        </button>
+        <button class="tile" data-theme="calm" role="radio" aria-checked="false">
+          <div class="theme-art theme-calm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21c0-5 3-9 8-10-1 6-4 9-8 10Z" fill="currentColor" stroke="currentColor" opacity="0.85"/><path d="M12 21c0-5-3-9-8-10 1 6 4 9 8 10Z" fill="currentColor" stroke="currentColor" opacity="0.65"/><path d="M12 21v-9" stroke-width="1.8"/></svg></div>
+          <span class="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg></span>
+          <span class="tile-label">נעים</span>
+        </button>
+        <button class="tile" data-theme="colorful" role="radio" aria-checked="false">
+          <div class="theme-art theme-colorful"><div class="colorful-dots"><span class="d1"></span><span class="d2"></span><span class="d3"></span></div></div>
+          <span class="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg></span>
+          <span class="tile-label">צבעוני</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- צבעי המערכת -->
+    <section class="section">
+      <div class="sec-head">
+        <h2 class="sec-title">צבעי המערכת</h2>
+        <p class="sec-sub">בחרו את צבע המבטאים של האפליקציה</p>
+      </div>
+      <div class="swatches" id="appr-swatches" role="radiogroup" aria-label="צבע מערכת">
+        <button class="swatch" data-color="#FF7A3D" data-deep="#E5621A" data-soft="#FFE9D2" style="background:radial-gradient(120% 120% at 30% 25%,#FFB36B,#FF7A3D 55%,#E5621A);color:#FF7A3D" aria-label="כתום"><svg class="ck" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg></button>
+        <button class="swatch" data-color="#F25C92" data-deep="#D33C76" data-soft="#FCE3EC" style="background:radial-gradient(120% 120% at 30% 25%,#FF9CC0,#F25C92 55%,#D33C76);color:#F25C92" aria-label="ורוד"><svg class="ck" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg></button>
+        <button class="swatch" data-color="#7A5BE5" data-deep="#5E3FCC" data-soft="#EEE9F9" style="background:radial-gradient(120% 120% at 30% 25%,#A48DEC,#7A5BE5 55%,#5E3FCC);color:#7A5BE5" aria-label="סגול"><svg class="ck" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg></button>
+        <button class="swatch" data-color="#3A85DB" data-deep="#2364B2" data-soft="#DBEAFC" style="background:radial-gradient(120% 120% at 30% 25%,#7BB1ED,#3A85DB 55%,#2364B2);color:#3A85DB" aria-label="כחול"><svg class="ck" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg></button>
+        <button class="swatch" data-color="#1FA2A4" data-deep="#147F81" data-soft="#D6F0F0" style="background:radial-gradient(120% 120% at 30% 25%,#6CCFD1,#1FA2A4 55%,#147F81);color:#1FA2A4" aria-label="טורקיז"><svg class="ck" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg></button>
+        <button class="swatch" data-color="#2EAE63" data-deep="#1F8A4D" data-soft="#DEF1E6" style="background:radial-gradient(120% 120% at 30% 25%,#7DD4A4,#2EAE63 55%,#1F8A4D);color:#2EAE63" aria-label="ירוק"><svg class="ck" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg></button>
+      </div>
+    </section>
+
+    <!-- גודל טקסט -->
+    <section class="section">
+      <div class="sec-head">
+        <h2 class="sec-title">גודל טקסט</h2>
+        <p class="sec-sub">התאימו את גודל הטקסט באפליקציה</p>
+      </div>
+      <div class="segment" id="appr-textsize" role="radiogroup" aria-label="גודל טקסט">
+        <button class="seg-opt" data-val="small" role="radio" aria-checked="false"><span class="lead">A-</span><span class="sub">קטן</span></button>
+        <button class="seg-opt selected" data-val="normal" role="radio" aria-checked="true"><span class="lead">A</span><span class="sub">בינוני</span></button>
+        <button class="seg-opt" data-val="large" role="radio" aria-checked="false"><span class="lead">A+</span><span class="sub">גדול</span></button>
+      </div>
+    </section>
+
+    <!-- סגנון כפתור הדיבור -->
+    <section class="section">
+      <div class="sec-head">
+        <h2 class="sec-title">סגנון כפתור הדיבור</h2>
+        <p class="sec-sub">בחרו את הסגנון של כפתור ההקלטה במסך "משימה חדשה"</p>
+      </div>
+      <div class="tile-row voices" id="appr-voices" role="radiogroup" aria-label="סגנון דיבור">
+        <button class="tile" data-voice="classic" role="radio" aria-checked="true">
+          <div class="voice-art"><div class="vbtn v-classic"><svg viewBox="0 0 24 24" fill="#fff" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"><path d="M12 21s-7-4.6-9.2-9A5.2 5.2 0 0 1 12 6.6 5.2 5.2 0 0 1 21.2 12C19 16.4 12 21 12 21Z"/></svg></div></div>
+          <span class="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg></span>
+          <span class="tile-label">לב</span>
+        </button>
+        <button class="tile" data-voice="soft" role="radio" aria-checked="false">
+          <div class="voice-art"><div class="vbtn v-soft"><svg viewBox="0 0 24 24" fill="#fff" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"><path d="M12 2.6l2.7 5.8 6.3.7-4.7 4.3 1.3 6.2L12 16.7 6.4 19.6l1.3-6.2L3 9.1l6.3-.7z"/></svg></div></div>
+          <span class="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg></span>
+          <span class="tile-label">כוכב</span>
+        </button>
+        <button class="tile" data-voice="waves" role="radio" aria-checked="false">
+          <div class="voice-art"><div class="vbtn v-waves"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2.5" width="6" height="11" rx="3" fill="currentColor" stroke="none"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0"/><line x1="12" y1="17.5" x2="12" y2="21.5"/><line x1="8.5" y1="21.5" x2="15.5" y2="21.5"/></svg></div></div>
+          <span class="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg></span>
+          <span class="tile-label">קלאסי</span>
+        </button>
+        <button class="tile" data-voice="pulse" role="radio" aria-checked="false">
+          <div class="voice-art"><div class="vbtn v-pulse"><svg viewBox="0 0 24 24" fill="#fff" stroke="none"><circle cx="9" cy="13" r="5.4"/><circle cx="17" cy="9" r="3.2"/><circle cx="18.5" cy="16.5" r="1.6"/></svg></div></div>
+          <span class="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg></span>
+          <span class="tile-label">בלוב</span>
+        </button>
+        <button class="tile" data-voice="star" role="radio" aria-checked="false">
+          <div class="voice-art"><div class="vbtn v-star"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div></div>
+          <span class="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg></span>
+          <span class="tile-label">הדמות</span>
+        </button>
+      </div>
+      <div class="info-pill">
+        <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="11" x2="12" y2="17"/><circle cx="12" cy="7.5" r="0.6" fill="currentColor"/><circle cx="12" cy="12" r="9.5"/></svg></span>
+        <span>השינויים יחולו גם במסך "משימה חדשה"</span>
+      </div>
+    </section>
+
+    <!-- תמונות ודמויות משפחה -->
+    <section class="section">
+      <div class="sec-head">
+        <h2 class="sec-title">תמונות ודמויות משפחה</h2>
+        <p class="sec-sub">בחרו איך יוצגו בני המשפחה באפליקציה</p>
+      </div>
+      <div class="avatar-rows" id="appr-avatars">
+        <div class="av-row" data-av="photo">
+          <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></span>
+          <div class="ico ic-cam"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2.5h6L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.4"/></svg></div>
+          <div class="body"><div class="t">השתמש בתמונה מקורית</div><div class="s">בחרו או צלמו תמונה אמיתית של בני המשפחה</div></div>
+          <div class="av-dot" aria-hidden="true"></div>
+        </div>
+        <div class="av-row" data-av="ai-from-photo">
+          <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></span>
+          <div class="ico ic-magic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19 18 6"/><path d="M14 4l1 2 2 1-2 1-1 2-1-2-2-1 2-1z"/><path d="M5 9l.7 1.4L7 11l-1.3.7L5 13l-.7-1.3L3 11l1.3-.6z"/></svg></div>
+          <div class="body"><div class="t">צור דמות AI מתמונה</div><div class="s">ניצור עבורכם דמות מאיירת בהתאמה אישית מתמונה שאתם מעלים</div></div>
+          <div class="av-dot" aria-hidden="true"></div>
+        </div>
+        <div class="av-row" data-av="ai-4-options">
+          <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></span>
+          <div class="ico ic-sparks"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4l1.6 3.4L17 9l-3.4 1.6L12 14l-1.6-3.4L7 9l3.4-1.6z"/><path d="M6 15l.8 1.6L8.5 17.5l-1.7.8L6 20l-.8-1.7L3.5 17.5l1.7-.8z"/></svg></div>
+          <div class="body"><div class="t">בחר מתוך 4 אפשרויות AI</div><div class="s">ניצור 4 דמויות מאיירות שונות לבחירתכם</div></div>
+          <div class="av-dot" aria-hidden="true"></div>
+        </div>
+      </div>
+      <div class="privacy-note">
+        <span class="lk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>
+        <span>התמונות והדמויות מוצגות רק לכם ולא נשמרות בענן</span>
+      </div>
+    </section>
+
+  </div>
+
+  <div class="bottom-wrap">
+    <div class="bottom-nav">
+      <button class="nav-item active" type="button" onclick="goto('s-settings','txLeaveFade','txEnterFade')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9 1.65 1.65 0 0 0 4.27 7.18l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09A1.65 1.65 0 0 0 15 4.6a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9c.14.34.22.7.22 1.06"/></svg>
+        <span>הגדרות</span><span class="underline"></span>
+      </button>
+      <button class="nav-item" type="button" onclick="goto('s-today','txLeaveFade','txEnterFade')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v10h14V10"/></svg>
+        <span>היום</span><span class="underline"></span>
+      </button>
+      <button class="nav-item" type="button" onclick="goto('s-today','txLeaveFade','txEnterFade')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><circle cx="17" cy="9" r="2.5"/><path d="M3 19c0-3 2.7-5 6-5s6 2 6 5"/><path d="M14.5 19c.3-2 2-3.4 4.5-3.4 1.8 0 3 .8 3 2.4"/></svg>
+        <span>המשפחה</span><span class="underline"></span>
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- ════════════════ #s-visibility — מי רואה ומי מקבל התראה ════════════════
      Access for testing: app.html#s-visibility
 ════════════════════════════════════════════════════════════════════════ -->
@@ -3968,7 +4247,10 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 <script>
 // ─── State ────────────────────────────────────────────────────────
 const STORAGE_KEY = 'family-app-v1';
-const AppState = { tasks: [], previewTasks: [], recurringCompletions: {}, lang: 'he', voiceText: '', splitSuggestions: [] };
+const APPEARANCE_KEY = 'family-app-appearance';
+const AppState = { tasks: [], previewTasks: [], recurringCompletions: {}, lang: 'he', voiceText: '', splitSuggestions: [],
+  theme: 'bright', accentColor: '#FF7A3D', accentDeep: '#E5621A', accentSoft: '#FFE9D2',
+  textSize: 'normal', voiceStyle: 'classic', avatarMode: null };
 
 // ─── Debug logger (?debug=1 in URL  OR  window.APP_DEBUG = true) ─
 const _urlDbg  = new URLSearchParams(window.location.search).get('debug') === '1';
@@ -4023,6 +4305,97 @@ if (_devUiEnabled()) {
   const qaBtn = document.getElementById('qaBtn');
   if (qaBtn) qaBtn.style.display = 'block';
 }
+
+// ─── Appearance: load / save / apply / render ─────────────────────
+function loadAppearance() {
+  try {
+    const s = JSON.parse(localStorage.getItem(APPEARANCE_KEY) || 'null');
+    if (!s) return;
+    if (s.theme)       AppState.theme       = s.theme;
+    if (s.accentColor) { AppState.accentColor = s.accentColor; AppState.accentDeep = s.accentDeep; AppState.accentSoft = s.accentSoft; }
+    if (s.textSize)    AppState.textSize    = s.textSize;
+    if (s.voiceStyle)  AppState.voiceStyle  = s.voiceStyle;
+    if (s.avatarMode)  AppState.avatarMode  = s.avatarMode;
+  } catch(e) {}
+}
+function saveAppearance() {
+  try {
+    localStorage.setItem(APPEARANCE_KEY, JSON.stringify({
+      theme: AppState.theme, accentColor: AppState.accentColor,
+      accentDeep: AppState.accentDeep, accentSoft: AppState.accentSoft,
+      textSize: AppState.textSize, voiceStyle: AppState.voiceStyle, avatarMode: AppState.avatarMode,
+    }));
+  } catch(e) {}
+}
+function applyAppearance() {
+  document.body.setAttribute('data-theme', AppState.theme || 'bright');
+  const r = document.documentElement.style;
+  r.setProperty('--orange',      AppState.accentColor || '#FF7A3D');
+  r.setProperty('--orange-deep', AppState.accentDeep  || '#E5621A');
+  r.setProperty('--orange-soft', AppState.accentSoft  || '#FFE9D2');
+  document.body.classList.remove('text-small', 'text-normal', 'text-large');
+  document.body.classList.add('text-' + (AppState.textSize || 'normal'));
+}
+// voice style → existing mic mode mapping
+const _VOICE_TO_MODE = { classic:'heart', soft:'star', waves:'classic', pulse:'blob', star:'heart' };
+const _MODE_TO_VOICE = { heart:'classic', star:'soft', classic:'waves', blob:'pulse' };
+function renderAppearance() {
+  const currentVoice = _MODE_TO_VOICE[typeof vMode !== 'undefined' ? vMode : 'heart'] || 'classic';
+  document.querySelectorAll('#appr-themes .tile').forEach(function(t) {
+    const on = t.dataset.theme === AppState.theme;
+    t.classList.toggle('selected', on); t.setAttribute('aria-checked', String(on));
+  });
+  document.querySelectorAll('#appr-swatches .swatch').forEach(function(s) {
+    const on = s.dataset.color.toLowerCase() === (AppState.accentColor || '').toLowerCase();
+    s.classList.toggle('selected', on);
+  });
+  document.querySelectorAll('#appr-textsize .seg-opt').forEach(function(o) {
+    const on = o.dataset.val === AppState.textSize;
+    o.classList.toggle('selected', on); o.setAttribute('aria-checked', String(on));
+  });
+  document.querySelectorAll('#appr-voices .tile').forEach(function(t) {
+    const on = t.dataset.voice === currentVoice;
+    t.classList.toggle('selected', on); t.setAttribute('aria-checked', String(on));
+  });
+}
+// Event handlers for #s-appearance controls
+document.querySelectorAll('#appr-themes .tile').forEach(function(t) {
+  t.addEventListener('click', function() {
+    AppState.theme = t.dataset.theme;
+    saveAppearance(); applyAppearance(); renderAppearance();
+  });
+});
+document.querySelectorAll('#appr-swatches .swatch').forEach(function(s) {
+  s.addEventListener('click', function() {
+    AppState.accentColor = s.dataset.color;
+    AppState.accentDeep  = s.dataset.deep;
+    AppState.accentSoft  = s.dataset.soft;
+    saveAppearance(); applyAppearance(); renderAppearance();
+  });
+});
+document.querySelectorAll('#appr-textsize .seg-opt').forEach(function(o) {
+  o.addEventListener('click', function() {
+    AppState.textSize = o.dataset.val;
+    saveAppearance(); applyAppearance(); renderAppearance();
+  });
+});
+document.querySelectorAll('#appr-voices .tile').forEach(function(t) {
+  t.addEventListener('click', function() {
+    AppState.voiceStyle = t.dataset.voice;
+    const mode = _VOICE_TO_MODE[t.dataset.voice] || 'heart';
+    if (typeof switchMode === 'function' && typeof wrapIds !== 'undefined' && wrapIds[mode]) {
+      switchMode(mode);
+      localStorage.setItem(MIC_STYLE_KEY, mode);
+    }
+    saveAppearance(); renderAppearance();
+  });
+});
+document.querySelectorAll('#appr-avatars .av-row').forEach(function(r) {
+  r.addEventListener('click', function() {
+    AppState.avatarMode = r.dataset.av;
+    saveAppearance();
+  });
+});
 
 // ─── Translations ─────────────────────────────────────────────────
 const I18N = {
@@ -9948,6 +10321,9 @@ async function _loadFamilyMembers() {
 // to hard-reload (or the SW will catch up on next visit).
 console.log('%c[Family App] build: rt-hero-portrait-diag-2026-05-14', 'background:#ff5e14;color:#fff;padding:3px 8px;border-radius:6px;font-weight:bold');
 loadState();
+loadAppearance();
+applyAppearance();
+renderAppearance();
 updateDateBadge();
 // Run the reminder check ONCE immediately after state loads so opening
 // the app inside an active reminder window fires right away (instead of
