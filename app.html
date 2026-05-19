@@ -1899,9 +1899,9 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 #s-time-date .td-time-card{padding:11px 12px 10px;}
 #s-time-date .td-time-picker{display:flex;align-items:center;justify-content:center;gap:8px;padding:4px 0 8px;direction:ltr;}
 #s-time-date .td-time-picker.td-no-time{opacity:.35;pointer-events:none;}
-#s-time-date .td-time-slot{background:#fff;border-radius:14px;width:78px;height:82px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:5px 0;box-shadow:0 2px 8px rgba(160,90,30,0.08),inset 0 1px 0 rgba(255,255,255,0.7);border:1px solid rgba(160,90,30,0.06);flex:0 0 auto;}
-#s-time-date .td-chev{background:transparent;border:none;cursor:pointer;color:var(--orange);padding:2px 6px;line-height:0;}
-#s-time-date .td-chev svg{width:14px;height:14px;display:block}
+#s-time-date .td-time-slot{background:#fff;border-radius:14px;width:78px;height:120px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:6px 0;box-shadow:0 2px 8px rgba(160,90,30,0.08),inset 0 1px 0 rgba(255,255,255,0.7);border:1px solid rgba(160,90,30,0.06);flex:0 0 auto;}
+#s-time-date .td-chev{background:transparent;border:none;cursor:pointer;color:var(--orange);padding:6px 10px;line-height:0;}
+#s-time-date .td-chev svg{width:28px;height:28px;display:block}
 #s-time-date .td-digit{font-size:40px;font-weight:500;line-height:1;letter-spacing:-0.02em;font-variant-numeric:tabular-nums;}
 #s-time-date .td-digit.td-hour{color:var(--orange)}
 #s-time-date .td-digit.td-min{color:var(--ink)}
@@ -1911,7 +1911,7 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 #s-time-date .td-pill{flex:1 1 0;min-width:0;background:#fff;color:var(--ink);border:1px solid rgba(255,122,61,0.18);border-radius:99px;padding:5px 6px;font-family:inherit;font-size:10px;font-weight:500;display:inline-flex;align-items:center;justify-content:center;gap:5px;cursor:pointer;transition:all .2s ease;}
 #s-time-date .td-pill svg{width:11px;height:11px;flex:0 0 auto}
 #s-time-date .td-pill.on{background:linear-gradient(135deg,var(--orange-light) 0%,var(--orange) 60%,var(--orange-deep) 100%);color:#fff;border-color:transparent;box-shadow:0 4px 10px rgba(229,98,26,0.22),inset 0 1px 0 rgba(255,255,255,0.4);}
-#s-time-date .td-options-row{display:flex;gap:8px;margin-top:8px;}
+#s-time-date .td-options-row{display:none!important}
 #s-time-date .td-opt-card{flex:1 1 0;min-width:0;background:var(--card-bg);border-radius:16px;padding:5px 10px;box-shadow:var(--card-shadow);border:1px solid rgba(255,255,255,0.7);display:flex;align-items:center;gap:8px;}
 #s-time-date .td-icn{width:22px;height:22px;border-radius:7px;background:#F4ECE2;color:var(--muted);display:flex;align-items:center;justify-content:center;flex:0 0 auto;}
 #s-time-date .td-icn svg{width:11px;height:11px}
@@ -1930,6 +1930,37 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 #s-time-date .td-cta{flex:1 1 auto;height:48px;border-radius:14px;border:none;background:linear-gradient(135deg,var(--orange-light) 0%,var(--orange) 50%,var(--orange-deep) 100%);color:#fff;font-family:inherit;font-size:15px;font-weight:900;display:flex;align-items:center;justify-content:center;gap:7px;cursor:pointer;box-shadow:0 8px 18px rgba(255,122,61,0.32),0 2px 5px rgba(229,98,26,0.22),inset 0 1px 1px rgba(255,255,255,0.4);transition:transform .15s ease;}
 #s-time-date .td-cta:hover{transform:translateY(-1px)}
 #s-time-date .td-cta svg{width:16px;height:16px}
+#s-time-date .td-sec-label-row{display:flex;align-items:center;justify-content:space-between;margin:14px 2px 8px;}
+#s-time-date .td-sec-label-row .td-sec-inner{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:800;color:var(--ink);}
+#s-time-date .td-sec-label-row .td-sec-inner svg{width:14px;height:14px;}
+#s-time-date .td-cal-btn{display:inline-flex;align-items:center;gap:4px;background:var(--orange-soft);color:var(--orange-deep);border:none;border-radius:99px;padding:4px 10px;font-family:inherit;font-size:11px;font-weight:800;cursor:pointer;}
+#s-time-date .td-cal-btn svg{width:12px;height:12px;}
+#s-time-date .td-cal-btn.on{background:var(--orange);color:#fff;}
+#s-time-date .td-cal-wrap{overflow:hidden;max-height:0;transition:max-height .35s ease;}
+#s-time-date .td-cal-wrap.open{max-height:360px;}
+#s-time-date .td-cal-card{margin-bottom:8px;padding:12px;}
+#s-time-date .td-cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;direction:rtl;}
+#s-time-date .td-cal-month-name{font-size:14px;font-weight:900;color:var(--ink);}
+#s-time-date .td-cal-nav{background:none;border:none;color:var(--orange);font-size:20px;font-weight:900;cursor:pointer;padding:0 6px;line-height:1;}
+#s-time-date .td-cal-dow-row{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;margin-bottom:4px;}
+#s-time-date .td-cal-dow-row span{font-size:10px;font-weight:700;color:var(--muted);}
+#s-time-date .td-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;}
+#s-time-date .td-cal-cell{aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--ink);border-radius:50%;cursor:pointer;transition:all .15s ease;}
+#s-time-date .td-cal-cell:hover{background:var(--orange-soft);}
+#s-time-date .td-cal-cell.empty{cursor:default;}
+#s-time-date .td-cal-cell.empty:hover{background:transparent;}
+#s-time-date .td-cal-cell.today{box-shadow:0 0 0 1.5px var(--orange);}
+#s-time-date .td-cal-cell.on{background:linear-gradient(135deg,var(--orange-light),var(--orange));color:#fff;box-shadow:0 3px 8px rgba(229,98,26,.28);}
+#s-time-date .td-manual-btn{display:block;margin:8px auto 0;background:none;border:1px solid rgba(255,122,61,.35);border-radius:99px;padding:4px 16px;font-family:inherit;font-size:11px;font-weight:700;color:var(--orange-deep);cursor:pointer;}
+#s-time-date .td-optfull-card{background:var(--card-bg);border-radius:18px;padding:14px;box-shadow:var(--card-shadow);border:1px solid rgba(255,255,255,.7);margin-top:8px;display:flex;flex-direction:column;gap:12px;}
+#s-time-date .td-optfull-section{display:flex;flex-direction:column;gap:8px;}
+#s-time-date .td-optfull-label{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:800;color:var(--ink);}
+#s-time-date .td-optfull-label svg{width:13px;height:13px;color:var(--orange);}
+#s-time-date .td-optfull-chips{display:flex;gap:5px;flex-wrap:wrap;}
+#s-time-date .td-optfull-chip{flex:0 0 auto;background:#fff;color:var(--ink);border:1px solid rgba(255,122,61,.2);border-radius:99px;padding:5px 11px;font-family:inherit;font-size:11px;font-weight:700;cursor:pointer;transition:all .15s ease;}
+#s-time-date .td-optfull-chip.on{background:linear-gradient(135deg,var(--orange-light),var(--orange));color:#fff;border-color:transparent;box-shadow:0 3px 8px rgba(229,98,26,.22);}
+#s-time-date .td-optfull-info{font-size:10px;font-weight:500;color:var(--muted);background:var(--orange-soft);border-radius:8px;padding:6px 10px;text-align:right;}
+#s-time-date .td-optfull-divider{height:1px;background:rgba(160,90,30,.1);}
 </style>
 <!-- Firebase SDK (compat — Phase 3) -->
 <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
@@ -3493,9 +3524,28 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
     </div>
 
     <!-- Date -->
-    <div class="td-sec-label">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg>
-      <span>בחר תאריך</span>
+    <div class="td-sec-label-row">
+      <div class="td-sec-inner">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg>
+        <span>בחר תאריך</span>
+      </div>
+      <button class="td-cal-btn" id="tdCalToggle" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg>
+        <span>לוח שנה</span>
+      </button>
+    </div>
+    <div class="td-cal-wrap" id="tdCalWrap">
+      <div class="td-card td-cal-card">
+        <div class="td-cal-header">
+          <button class="td-cal-nav" id="tdCalNext" type="button">&#8250;</button>
+          <div class="td-cal-month-name" id="tdCalMonthName"></div>
+          <button class="td-cal-nav" id="tdCalPrev" type="button">&#8249;</button>
+        </div>
+        <div class="td-cal-dow-row">
+          <span>ש</span><span>ו</span><span>ה</span><span>ד</span><span>ג</span><span>ב</span><span>א</span>
+        </div>
+        <div class="td-cal-grid" id="tdCalGrid"></div>
+      </div>
     </div>
     <div class="td-card">
       <div class="td-date-strip" id="tdDateStrip"></div>
@@ -3520,6 +3570,7 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
           <button class="td-chev" id="tdMinDown" aria-label="דקות למטה"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button>
         </div>
       </div>
+      <button class="td-manual-btn" id="tdManualEditBtn" type="button">עריכה ידנית</button>
     </div>
 
     <div class="td-card td-period-card">
@@ -3547,6 +3598,35 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
     <div class="td-sec-label">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9 1.65 1.65 0 0 0 4.27 7.18l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09A1.65 1.65 0 0 0 15 4.6a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9"/></svg>
       <span>אפשרויות נוספות</span>
+    </div>
+    <div class="td-optfull-card">
+      <!-- Reminder -->
+      <div class="td-optfull-section">
+        <div class="td-optfull-label">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+          <span>תזכורת</span>
+        </div>
+        <div class="td-optfull-chips" id="tdReminderChips">
+          <button class="td-optfull-chip on" data-mins="0" type="button">בזמן</button>
+          <button class="td-optfull-chip" data-mins="10" type="button">10 דק׳ לפני</button>
+          <button class="td-optfull-chip" data-mins="30" type="button">30 דק׳ לפני</button>
+          <button class="td-optfull-chip" data-mins="60" type="button">שעה לפני</button>
+        </div>
+        <div class="td-optfull-info" id="tdReminderInfo">נשלח התראה בדיוק בזמן המשימה</div>
+      </div>
+      <div class="td-optfull-divider"></div>
+      <!-- Recurrence -->
+      <div class="td-optfull-section">
+        <div class="td-optfull-label">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/></svg>
+          <span>חזרה</span>
+        </div>
+        <div class="td-optfull-chips" id="tdRecurChips">
+          <button class="td-optfull-chip on" data-recur="none" type="button">חד פעמי</button>
+          <button class="td-optfull-chip" data-recur="daily" type="button">יומי</button>
+          <button class="td-optfull-chip" data-recur="weekly" type="button">שבועי</button>
+        </div>
+      </div>
     </div>
     <div class="td-options-row">
       <div class="td-opt-card">
@@ -10106,23 +10186,208 @@ function renderTimeDateScreen(taskId) {
   _tdSetPeriodPill(mins);
   var picker = document.getElementById('tdTimePicker');
   if (picker) picker.classList.toggle('td-no-time', _tdNoTime);
+  if (typeof _tdInitCalAndOptions === 'function') _tdInitCalAndOptions(task);
 }
 
 function tdSave() {
   var task = (AppState.previewTasks || []).find(function(t) { return String(t.id) === String(_tdTargetId); });
   if (task) {
     var selDay = document.querySelector('#tdDateStrip .td-day.on');
+    if (!selDay) selDay = document.querySelector('#tdCalGrid .td-cal-cell.on');
     if (selDay) task.date = selDay.dataset.date;
     if (_tdNoTime) {
       task.mins = null;
     } else {
-      var h = parseInt(document.getElementById('tdHourDigit').textContent, 10) || 0;
-      var m = parseInt(document.getElementById('tdMinDigit').textContent, 10) || 0;
-      task.mins = h * 60 + m;
+      var hh = parseInt(document.getElementById('tdHourDigit').textContent, 10) || 0;
+      var mm = parseInt(document.getElementById('tdMinDigit').textContent, 10) || 0;
+      task.mins = hh * 60 + mm;
     }
+    var remChip = document.querySelector('#tdReminderChips .td-optfull-chip.on');
+    if (remChip) task.reminderOffsetMinutes = parseInt(remChip.dataset.mins, 10) || 0;
+    var recurChip = document.querySelector('#tdRecurChips .td-optfull-chip.on');
+    if (recurChip) task.recurrenceFreq = recurChip.dataset.recur || 'none';
   }
   if (typeof renderConfirmationTasks === 'function') renderConfirmationTasks();
   if (typeof goto === 'function') goto('s-confirmation', 'txLeaveFade', 'txEnterFade');
+}
+</script>
+
+<!-- ════ TIME & DATE — calendar, scroll, manual edit, options ════ -->
+<script>
+var _tdCalYear = new Date().getFullYear();
+var _tdCalMonth = new Date().getMonth();
+var _tdCalSelDate = null;
+
+var _TD_MONTH_HE = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+
+function _tdBuildCalGrid(year, month, selDate) {
+  _tdCalYear = year; _tdCalMonth = month;
+  var nameEl = document.getElementById('tdCalMonthName');
+  if (nameEl) nameEl.textContent = _TD_MONTH_HE[month] + ' ' + year;
+  var grid = document.getElementById('tdCalGrid');
+  if (!grid) return;
+  var today = (typeof todayDate === 'function') ? todayDate() : new Date().toISOString().slice(0,10);
+  var firstDay = new Date(year, month, 1).getDay();
+  var daysInMonth = new Date(year, month + 1, 0).getDate();
+  var html = '';
+  for (var e = 0; e < firstDay; e++) { html += '<div class="td-cal-cell empty"></div>'; }
+  for (var d = 1; d <= daysInMonth; d++) {
+    var iso = year + '-' + String(month + 1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+    var cls = 'td-cal-cell';
+    if (iso === today) cls += ' today';
+    if (iso === selDate) cls += ' on';
+    html += '<div class="' + cls + '" data-date="' + iso + '">' + d + '</div>';
+  }
+  grid.innerHTML = html;
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  var calToggle = document.getElementById('tdCalToggle');
+  var calWrap   = document.getElementById('tdCalWrap');
+  if (calToggle && calWrap) {
+    calToggle.addEventListener('click', function() {
+      var open = calWrap.classList.toggle('open');
+      calToggle.classList.toggle('on', open);
+      if (open) _tdBuildCalGrid(_tdCalYear, _tdCalMonth, _tdCalSelDate);
+    });
+  }
+
+  var calPrev = document.getElementById('tdCalPrev');
+  var calNext = document.getElementById('tdCalNext');
+  if (calPrev) calPrev.addEventListener('click', function() {
+    var m = _tdCalMonth - 1, y = _tdCalYear;
+    if (m < 0) { m = 11; y--; }
+    _tdBuildCalGrid(y, m, _tdCalSelDate);
+  });
+  if (calNext) calNext.addEventListener('click', function() {
+    var m = _tdCalMonth + 1, y = _tdCalYear;
+    if (m > 11) { m = 0; y++; }
+    _tdBuildCalGrid(y, m, _tdCalSelDate);
+  });
+
+  var calGrid = document.getElementById('tdCalGrid');
+  if (calGrid) {
+    calGrid.addEventListener('click', function(e) {
+      var cell = e.target.closest('.td-cal-cell:not(.empty)');
+      if (!cell) return;
+      _tdCalSelDate = cell.dataset.date;
+      calGrid.querySelectorAll('.td-cal-cell').forEach(function(c) { c.classList.remove('on'); });
+      cell.classList.add('on');
+      document.querySelectorAll('#tdDateStrip .td-day').forEach(function(d) {
+        d.classList.toggle('on', d.dataset.date === _tdCalSelDate);
+      });
+    });
+  }
+
+  var hourDigit = document.getElementById('tdHourDigit');
+  var minDigit  = document.getElementById('tdMinDigit');
+  if (hourDigit) {
+    hourDigit.style.cursor = 'ns-resize';
+    hourDigit.style.userSelect = 'none';
+    hourDigit.addEventListener('wheel', function(e) {
+      e.preventDefault();
+      _tdChev('tdHourDigit', e.deltaY > 0 ? -1 : +1, true);
+    }, {passive: false});
+    var _hTY = 0;
+    hourDigit.addEventListener('touchstart', function(e) { _hTY = e.touches[0].clientY; }, {passive: true});
+    hourDigit.addEventListener('touchend', function(e) {
+      var dy = _hTY - e.changedTouches[0].clientY;
+      if (Math.abs(dy) > 10) _tdChev('tdHourDigit', dy > 0 ? +1 : -1, true);
+    }, {passive: true});
+  }
+  if (minDigit) {
+    minDigit.style.cursor = 'ns-resize';
+    minDigit.style.userSelect = 'none';
+    minDigit.addEventListener('wheel', function(e) {
+      e.preventDefault();
+      _tdChev('tdMinDigit', e.deltaY > 0 ? -15 : +15, false);
+    }, {passive: false});
+    var _mTY = 0;
+    minDigit.addEventListener('touchstart', function(e) { _mTY = e.touches[0].clientY; }, {passive: true});
+    minDigit.addEventListener('touchend', function(e) {
+      var dy = _mTY - e.changedTouches[0].clientY;
+      if (Math.abs(dy) > 10) _tdChev('tdMinDigit', dy > 0 ? +15 : -15, false);
+    }, {passive: true});
+  }
+
+  var manualBtn = document.getElementById('tdManualEditBtn');
+  if (manualBtn) {
+    manualBtn.addEventListener('click', function() {
+      var task = (AppState.previewTasks || []).find(function(t) { return String(t.id) === String(_tdTargetId); }) || {};
+      if (typeof openManualTimeModal === 'function') {
+        openManualTimeModal(task, function() {
+          if (task.mins != null) {
+            var hh = Math.floor(task.mins / 60), mm = task.mins % 60;
+            var hEl = document.getElementById('tdHourDigit'), mEl = document.getElementById('tdMinDigit');
+            if (hEl) hEl.textContent = String(hh).padStart(2,'0');
+            if (mEl) mEl.textContent = String(mm).padStart(2,'0');
+            _tdNoTime = false;
+            var pk = document.getElementById('tdTimePicker');
+            if (pk) pk.classList.remove('td-no-time');
+            _tdSetPeriodPill(task.mins);
+          }
+        });
+      }
+    });
+  }
+
+  var _tdRemInfo = {
+    '0':  'נשלח התראה בדיוק בזמן המשימה',
+    '10': 'נשלח התראה 10 דקות לפני המשימה',
+    '30': 'נשלח התראה 30 דקות לפני המשימה',
+    '60': 'נשלח התראה שעה לפני המשימה'
+  };
+  var remChipsEl = document.getElementById('tdReminderChips');
+  var remInfoEl  = document.getElementById('tdReminderInfo');
+  if (remChipsEl) {
+    remChipsEl.addEventListener('click', function(e) {
+      var chip = e.target.closest('.td-optfull-chip');
+      if (!chip) return;
+      remChipsEl.querySelectorAll('.td-optfull-chip').forEach(function(c) { c.classList.remove('on'); });
+      chip.classList.add('on');
+      if (remInfoEl) remInfoEl.textContent = _tdRemInfo[chip.dataset.mins] || '';
+    });
+  }
+
+  var recurChipsEl = document.getElementById('tdRecurChips');
+  if (recurChipsEl) {
+    recurChipsEl.addEventListener('click', function(e) {
+      var chip = e.target.closest('.td-optfull-chip');
+      if (!chip) return;
+      recurChipsEl.querySelectorAll('.td-optfull-chip').forEach(function(c) { c.classList.remove('on'); });
+      chip.classList.add('on');
+    });
+  }
+});
+
+function _tdInitCalAndOptions(task) {
+  var now = new Date();
+  _tdCalSelDate = task.date || null;
+  if (_tdCalSelDate) {
+    var d = new Date(_tdCalSelDate + 'T00:00:00');
+    _tdCalYear = d.getFullYear(); _tdCalMonth = d.getMonth();
+  } else {
+    _tdCalYear = now.getFullYear(); _tdCalMonth = now.getMonth();
+  }
+  var calWrap = document.getElementById('tdCalWrap');
+  var calToggle = document.getElementById('tdCalToggle');
+  if (calWrap) calWrap.classList.remove('open');
+  if (calToggle) calToggle.classList.remove('on');
+
+  var remMin = task.reminderOffsetMinutes != null ? String(task.reminderOffsetMinutes) : '0';
+  var rc = document.getElementById('tdReminderChips');
+  if (rc) rc.querySelectorAll('.td-optfull-chip').forEach(function(c) {
+    c.classList.toggle('on', c.dataset.mins === remMin);
+  });
+  var ri = document.getElementById('tdReminderInfo');
+  var _info = {'0':'נשלח התראה בדיוק בזמן המשימה','10':'נשלח התראה 10 דקות לפני המשימה','30':'נשלח התראה 30 דקות לפני המשימה','60':'נשלח התראה שעה לפני המשימה'};
+  if (ri) ri.textContent = _info[remMin] || _info['0'];
+
+  var freq = task.recurrenceFreq || 'none';
+  var rcc = document.getElementById('tdRecurChips');
+  if (rcc) rcc.querySelectorAll('.td-optfull-chip').forEach(function(c) {
+    c.classList.toggle('on', c.dataset.recur === freq);
+  });
 }
 </script>
 
