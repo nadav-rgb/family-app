@@ -3559,9 +3559,9 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
     <div class="td-cal-wrap" id="tdCalWrap">
       <div class="td-card td-cal-card">
         <div class="td-cal-header">
-          <button class="td-cal-nav" id="tdCalNext" type="button">&#8250;</button>
+          <button class="td-cal-nav" id="tdCalNext" type="button">&#8249;</button>
           <div class="td-cal-month-name" id="tdCalMonthName"></div>
-          <button class="td-cal-nav" id="tdCalPrev" type="button">&#8249;</button>
+          <button class="td-cal-nav" id="tdCalPrev" type="button">&#8250;</button>
         </div>
         <div class="td-cal-dow-row">
           <span>ש</span><span>ו</span><span>ה</span><span>ד</span><span>ג</span><span>ב</span><span>א</span>
@@ -10320,15 +10320,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
   var calPrev = document.getElementById('tdCalPrev');
   var calNext = document.getElementById('tdCalNext');
-  // ב-RTL: › נמצא מימין (חודש אחורה), ‹ נמצא משמאל (חודש קדימה)
   if (calPrev) calPrev.addEventListener('click', function() {
-    var m = _tdCalMonth + 1, y = _tdCalYear;
-    if (m > 11) { m = 0; y++; }
+    var m = _tdCalMonth - 1, y = _tdCalYear;
+    if (m < 0) { m = 11; y--; }
     _tdBuildCalGrid(y, m, _tdCalSelDate);
   });
   if (calNext) calNext.addEventListener('click', function() {
-    var m = _tdCalMonth - 1, y = _tdCalYear;
-    if (m < 0) { m = 11; y--; }
+    var m = _tdCalMonth + 1, y = _tdCalYear;
+    if (m > 11) { m = 0; y++; }
     _tdBuildCalGrid(y, m, _tdCalSelDate);
   });
 
