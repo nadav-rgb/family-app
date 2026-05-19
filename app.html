@@ -1529,6 +1529,9 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 #s-confirmation .conf-split-btn:active{background:#FFF3EE;transform:scale(.93);}
 #s-confirmation .conf-shop-btn{display:inline-flex;align-self:flex-start;align-items:center;gap:4px;margin-top:6px;background:linear-gradient(135deg,#FFF8F0 0%,#FFE9D0 100%);border:1px solid rgba(224,140,60,0.4);color:#B85A10;font-family:'Rubik',sans-serif;font-size:10px;font-weight:700;border-radius:7px;padding:3px 8px;cursor:pointer;line-height:1.5;width:fit-content;box-shadow:0 1px 4px rgba(200,100,30,0.10);transition:transform .12s ease,box-shadow .12s ease;}
 #s-confirmation .conf-shop-btn:active{transform:scale(.94);box-shadow:none;}
+#s-confirmation .shop-spinner{display:inline-block;margin-top:6px;font-size:11px;color:#B85A10;opacity:.7;animation:shopSpin 1.2s linear infinite;}
+@keyframes shopSpin{0%{opacity:.4}50%{opacity:1}100%{opacity:.4}}
+#s-confirmation .shop-err{display:inline-block;margin-top:6px;font-size:10px;color:#c75139;opacity:.8;}
 #s-confirmation .t-title span[contenteditable]{outline:none;border-radius:5px;padding:1px 3px;margin:-1px -3px;transition:background .15s;}
 #s-confirmation .t-title span[contenteditable]:focus{background:rgba(255,122,61,0.08);}
 
@@ -5429,9 +5432,9 @@ async function categorizeShoppingTitle(task) {
       task.shoppingList = { action: data.action, categories: data.categories };
       try { saveState(); } catch(_) {}
     }
-  } catch (_) {
-    // Shopping categorization is enrichment-only; silently fall back to
-    // the plain title if AI is unreachable.
+  } catch (err) {
+    console.error('[categorize-shopping] failed for:', task.title, err?.message || err);
+    task._shopError = true;
   } finally {
     delete task._categorizing;
   }
@@ -6287,11 +6290,32 @@ function renderConfirmationTasks() {
     // Shopping categorization — show 🛒 button when AI returns grouped list
     if (task.shoppingList) {
       _attachConfShoppingBtn(task, taskEl);
+    } else if (task._shopError) {
+      var errSpan = document.createElement('span');
+      errSpan.className = 'shop-err';
+      errSpan.textContent = '⚠️ לא הצלחנו לסדר את רשימת הקניות';
+      var colMidErr = taskEl.querySelector('.col-mid');
+      if (colMidErr) colMidErr.appendChild(errSpan);
     } else if (isShoppingListTitle(task.title) && !task._categorizing) {
+      var spinner = document.createElement('span');
+      spinner.className = 'shop-spinner';
+      spinner.textContent = '⏳';
+      var colMidSpin = taskEl.querySelector('.col-mid');
+      if (colMidSpin) colMidSpin.appendChild(spinner);
       categorizeShoppingTitle(task).then(function() {
-        if (!task.shoppingList) return;
         var el = listEl.querySelector('[data-taskid="' + task.id + '"]');
-        if (el) _attachConfShoppingBtn(task, el);
+        if (!el) return;
+        var sp = el.querySelector('.shop-spinner');
+        if (sp) sp.remove();
+        if (task.shoppingList) {
+          _attachConfShoppingBtn(task, el);
+        } else if (task._shopError) {
+          var e2 = document.createElement('span');
+          e2.className = 'shop-err';
+          e2.textContent = '⚠️ לא הצלחנו לסדר את רשימת הקניות';
+          var cm = el.querySelector('.col-mid');
+          if (cm) cm.appendChild(e2);
+        }
       });
     }
   });
