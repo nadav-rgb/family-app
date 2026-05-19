@@ -1342,7 +1342,7 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 #s-settings .sec-label{margin:14px 4px 8px;display:flex;align-items:center;justify-content:flex-start;gap:6px;font-size:13px;font-weight:600;color:var(--muted);}
 #s-settings .sec-label svg{width:14px;height:14px;}
 #s-settings .members-card{background:var(--card-bg);border-radius:18px;padding:13px 10px 12px;box-shadow:var(--card-shadow);border:1px solid rgba(255,255,255,0.7);display:flex;justify-content:space-between;gap:6px;}
-#s-settings .member{flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer;position:relative;}
+#s-settings .member{flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;gap:7px;cursor:default;position:relative;}
 #s-settings .ava-circle{width:56px;height:56px;border-radius:50%;position:relative;box-shadow:0 3px 8px rgba(160,90,30,0.10),0 1px 2px rgba(160,90,30,0.06),inset 0 1px 2px rgba(255,255,255,0.9);border:1px solid rgba(255,255,255,0.7);}
 #s-settings .av-aba{background:radial-gradient(120% 120% at 30% 25%,#ffffff 0%,#F4FAFE 55%,#E6F2FB 100%);}
 #s-settings .av-ima{background:radial-gradient(120% 120% at 30% 25%,#ffffff 0%,#FFF4F0 55%,#FCE5DC 100%);}
@@ -2817,9 +2817,6 @@ body.text-large .phone{font-size:17px}
 
     <!-- Family hero card -->
     <div class="fam-card">
-      <button class="fam-arrow" aria-label="עבור" type="button" onclick="goto('s-family-members','txLeaveFade','txEnterFade')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-      </button>
       <div class="fam-text">
         <div class="fam-name"><span>משפחת לוי</span> <span class="heart" aria-hidden="true">💗</span></div>
         <div class="fam-desc">מרחב משפחתי משותף<br/>לנהל, לתכנן ולדאוג אחד לשני</div>
@@ -11889,13 +11886,7 @@ function splitSave() {
   }
   window.addEventListener('hashchange', check);
 
-  // Avatar selector — visual-only toggle inside #s-settings, no app-state side effects.
-  document.querySelectorAll('#settingsMembers .member').forEach(function(m){
-    m.addEventListener('click', function(){
-      document.querySelectorAll('#settingsMembers .member').forEach(function(x){ x.classList.remove('active'); });
-      m.classList.add('active');
-    });
-  });
+  // Avatar selector — visual only, no click interaction.
 
   // #s-confirmation: click on time-row → open #s-time-date
   var confirmList = document.getElementById('confirmTasksList');
