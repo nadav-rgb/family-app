@@ -6715,7 +6715,7 @@ function renderConfirmationTasks() {
       : '<div class="time-row no-time">' + CLOCK_SVG + '<span>--:--</span></div>' +
         '<div class="date">ללא שעה</div>';
     return '<div class="task" data-taskid="' + task.id + '">' +
-      '<button class="menu" aria-label="אפשרויות" onclick="goto(\'s-visibility\',\'txLeaveBloom\',\'txEnterFocus\')">' + MENU_SVG + '</button>' +
+      '<button class="menu" aria-label="אפשרויות" onclick="_visBackScreen=\'s-confirmation\';goto(\'s-visibility\',\'txLeaveBloom\',\'txEnterFocus\')">' + MENU_SVG + '</button>' +
       '<button class="col-left" type="button" aria-label="ערוך שעה">' + timeHTML + '</button>' +
       '<div class="col-mid"><div class="t-title"><span contenteditable="plaintext-only" role="textbox" aria-label="כותרת משימה">' + esc(task.title) + '</span></div>' +
         (sanitizeSegments(mockSplit(task.subItems ? task.subItems.mainTitle || task.title : task.title)).length >= 2 ?
