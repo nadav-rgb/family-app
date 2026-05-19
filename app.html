@@ -1527,11 +1527,11 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 #s-confirmation .conf-split-btn{display:inline-flex;align-self:flex-start;align-items:center;gap:3px;margin-top:5px;background:transparent;border:1px solid rgba(224,112,64,0.55);color:#C05020;font-family:'Rubik',sans-serif;font-size:9px;font-weight:700;border-radius:4px;padding:1px 5px;cursor:pointer;line-height:1.5;transition:transform .12s ease;width:fit-content;}
 #s-confirmation .conf-split-btn svg{width:9px;height:9px;flex:0 0 auto;}
 #s-confirmation .conf-split-btn:active{background:#FFF3EE;transform:scale(.93);}
-#s-confirmation .conf-shop-btn{display:inline-flex;align-self:flex-start;align-items:center;gap:4px;margin-top:6px;background:linear-gradient(135deg,#FFF8F0 0%,#FFE9D0 100%);border:1px solid rgba(224,140,60,0.4);color:#B85A10;font-family:'Rubik',sans-serif;font-size:10px;font-weight:700;border-radius:7px;padding:3px 8px;cursor:pointer;line-height:1.5;width:fit-content;box-shadow:0 1px 4px rgba(200,100,30,0.10);transition:transform .12s ease,box-shadow .12s ease;}
-#s-confirmation .conf-shop-btn:active{transform:scale(.94);box-shadow:none;}
-#s-confirmation .shop-spinner{display:inline-block;margin-top:6px;font-size:11px;color:#B85A10;opacity:.7;animation:shopSpin 1.2s linear infinite;}
+#s-confirmation .conf-shop-btn,#s-today .conf-shop-btn{display:inline-flex;align-self:flex-start;align-items:center;gap:4px;margin-top:6px;background:linear-gradient(135deg,#FFF8F0 0%,#FFE9D0 100%);border:1px solid rgba(224,140,60,0.4);color:#B85A10;font-family:'Rubik',sans-serif;font-size:10px;font-weight:700;border-radius:7px;padding:3px 8px;cursor:pointer;line-height:1.5;width:fit-content;box-shadow:0 1px 4px rgba(200,100,30,0.10);transition:transform .12s ease,box-shadow .12s ease;}
+#s-confirmation .conf-shop-btn:active,#s-today .conf-shop-btn:active{transform:scale(.94);box-shadow:none;}
+#s-confirmation .shop-spinner,#s-today .shop-spinner{display:inline-block;margin-top:6px;font-size:11px;color:#B85A10;opacity:.7;animation:shopSpin 1.2s linear infinite;}
 @keyframes shopSpin{0%{opacity:.4}50%{opacity:1}100%{opacity:.4}}
-#s-confirmation .shop-err{display:inline-block;margin-top:6px;font-size:10px;color:#c75139;opacity:.8;}
+#s-confirmation .shop-err,#s-today .shop-err{display:inline-block;margin-top:6px;font-size:10px;color:#c75139;opacity:.8;}
 #s-confirmation .t-title span[contenteditable]{outline:none;border-radius:5px;padding:1px 3px;margin:-1px -3px;transition:background .15s;}
 #s-confirmation .t-title span[contenteditable]:focus{background:rgba(255,122,61,0.08);}
 
@@ -6592,6 +6592,20 @@ function _attachConfShoppingBtn(task, taskEl) {
   colMid.appendChild(btn);
 }
 
+function _attachTodayShoppingBtn(task, taskEl) {
+  if (taskEl.querySelector('.conf-shop-btn')) return;
+  const tbody = taskEl.querySelector('.t-tbody');
+  if (!tbody) return;
+  const btn = document.createElement('button');
+  btn.className = 'conf-shop-btn';
+  btn.textContent = '🛒 רשימת קניות מסודרת';
+  btn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    showTitleTip(task, btn);
+  });
+  tbody.appendChild(btn);
+}
+
 function renderConfirmationTasks() {
   const tasks   = AppState.previewTasks || [];
   const listEl  = document.getElementById('confirmTasksList');
@@ -7841,6 +7855,23 @@ function renderToday() {
       expBtn.textContent = '···';
       expBtn.addEventListener('click', e => { e.stopPropagation(); showTitleTip(t, expBtn); });
       ttitle.after(expBtn);
+    }
+    // Shopping list button — mirrors confirmation screen behaviour
+    if (isShoppingListTitle(t.title)) {
+      const tbody = el.querySelector('.t-tbody');
+      if (t.shoppingList) {
+        _attachTodayShoppingBtn(t, el);
+      } else if (!t._shopError) {
+        const sp = document.createElement('span');
+        sp.className = 'shop-spinner';
+        sp.textContent = '⏳';
+        if (tbody) tbody.appendChild(sp);
+        categorizeShoppingTitle(t).then(function() {
+          const sp2 = el.querySelector('.shop-spinner');
+          if (sp2) sp2.remove();
+          if (t.shoppingList) _attachTodayShoppingBtn(t, el);
+        });
+      }
     }
     if (canEditCommitted) {
       el.querySelector('.t-bell').addEventListener('click', e => {
