@@ -3748,18 +3748,21 @@ body.text-large .phone{font-size:17px}
 
     <!-- Reminder chips card -->
     <div id="notifPrefsSection">
-      <div class="n-sec-label">תזכורת ברירת מחדל לפני המשימה</div>
-      <div class="n-card">
-        <div class="n-chips" id="notifChips">
-          <button class="n-chip" data-min="5"  type="button">5 דק׳</button>
-          <button class="n-chip" data-min="10" type="button">10 דק׳</button>
-          <button class="n-chip" data-min="15" type="button">15 דק׳</button>
-          <button class="n-chip" data-min="20" type="button">20 דק׳</button>
-          <button class="n-chip" data-min="30" type="button">30 דק׳</button>
+      <div id="notifChipsWrapper">
+        <div class="n-sec-label">תזכורת ברירת מחדל לפני המשימה</div>
+        <div class="n-card" style="margin-bottom:10px;">
+          <div class="n-chips" id="notifChips">
+            <button class="n-chip" data-min="5"  type="button">5 דק׳</button>
+            <button class="n-chip" data-min="10" type="button">10 דק׳</button>
+            <button class="n-chip" data-min="15" type="button">15 דק׳</button>
+            <button class="n-chip" data-min="20" type="button">20 דק׳</button>
+            <button class="n-chip" data-min="30" type="button">30 דק׳</button>
+          </div>
         </div>
-
+      </div>
+      <div class="n-card">
         <!-- Overdue toggle -->
-        <div class="n-row" style="margin-top:14px;padding-top:14px;border-top:1px solid rgba(0,0,0,0.05);">
+        <div class="n-row">
           <div class="n-icn overdue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
           <div class="n-body">
             <div class="t">תזכורות על איחורים</div>
@@ -9073,6 +9076,12 @@ function renderNotifications() {
     });
   });
 
+  const chipsWrapper = document.getElementById('notifChipsWrapper');
+  function _applyOverdueState(on) {
+    if (chipsWrapper) chipsWrapper.classList.toggle('n-disabled-overlay', !on);
+  }
+  _applyOverdueState(prefs.overdueRemindersOn);
+
   const newOverdue = overdueToggle.cloneNode(true);
   overdueToggle.parentNode.replaceChild(newOverdue, overdueToggle);
   newOverdue.checked = prefs.overdueRemindersOn;
@@ -9080,6 +9089,7 @@ function renderNotifications() {
     const p = _loadNotifPrefs();
     p.overdueRemindersOn = newOverdue.checked;
     _saveNotifPrefs(p);
+    _applyOverdueState(newOverdue.checked);
   });
 
   // Scenario sound pickers
