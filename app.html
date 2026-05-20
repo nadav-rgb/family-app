@@ -2751,19 +2751,19 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
     <!-- Avatar strip — SVG illustrated portraits -->
     <div class="t-avatars" onclick="if(_devUiEnabled()) openUserSwitcher()">
       <div class="t-mem">
-        <div class="t-av av-mom online"></div>
+        <div class="t-av av-mom online" data-avatar-for="member_mom" data-avatar-size="54"><div data-avatar-slot></div></div>
         <span class="t-avname">Mom</span>
       </div>
       <div class="t-mem">
-        <div class="t-av av-dad online"></div>
+        <div class="t-av av-dad online" data-avatar-for="member_dad" data-avatar-size="54"><div data-avatar-slot></div></div>
         <span class="t-avname">Dad</span>
       </div>
       <div class="t-mem">
-        <div class="t-av av-dudi"></div>
+        <div class="t-av av-dudi" data-avatar-for="member_laali" data-avatar-size="54"><div data-avatar-slot></div></div>
         <span class="t-avname">Dudi</span>
       </div>
       <div class="t-mem">
-        <div class="t-av av-yona"></div>
+        <div class="t-av av-yona" data-avatar-for="member_aharon" data-avatar-size="54"><div data-avatar-slot></div></div>
         <span class="t-avname">Yonatan</span>
       </div>
     </div>
@@ -3264,7 +3264,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
       </div>
 
       <div class="device-row">
-        <div class="dev-avatar av-aba"><span class="online"></span></div>
+        <div class="dev-avatar av-aba" data-avatar-for="member_dad" data-avatar-size="40"><div data-avatar-slot></div><span class="online"></span></div>
         <div class="dev-body">
           <div class="dev-top">
             <span class="dev-name">הטלפון של אבא</span>
@@ -3278,7 +3278,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
       </div>
 
       <div class="device-row">
-        <div class="dev-avatar av-ima"><span class="online"></span></div>
+        <div class="dev-avatar av-ima" data-avatar-for="member_mom" data-avatar-size="40"><div data-avatar-slot></div><span class="online"></span></div>
         <div class="dev-body">
           <div class="dev-top">
             <span class="dev-name">הטלפון של אמא</span>
@@ -6572,7 +6572,13 @@ function renderAssignedSection() {
       const row      = document.createElement('div');
       row.className  = 'share-member';
       const sel      = task.assignedToMemberId === m.memberId;
-      const emHtml   = `<span class="share-em" style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#ffd0a8,#f0a870);display:inline-flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">${m.avatar.value}</span>`;
+      // 1B: prefer cache (has latest avatar including photo) over seed.
+      const live     = (_familyMembersCache && _familyMembersCache.find(x => x.memberId === m.memberId)) || m;
+      const av       = (live && live.avatar) || m.avatar;
+      const hasPhoto = av && (av.type === 'photo' || av.type === 'ai-photo') && av.url;
+      const emHtml   = hasPhoto
+        ? `<span class="share-em" data-avatar-for="${m.memberId}" data-avatar-size="36" style="width:36px;height:36px;border-radius:50%;overflow:hidden;flex-shrink:0;display:inline-block;background:#f4e8dc;">${renderAvatarHTML(av, 36)}</span>`
+        : `<span class="share-em" data-avatar-for="${m.memberId}" data-avatar-size="36" style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#ffd0a8,#f0a870);display:inline-flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">${(av && av.value) || m.avatar.value}</span>`;
       row.innerHTML  = `${emHtml}<span class="share-lbl" style="flex:1;">${m.name}</span><span class="share-radio${sel ? ' on' : ''}"></span>`;
       row.addEventListener('click', () => {
         const legacyId  = m.memberId.replace('member_', '');
@@ -7098,6 +7104,19 @@ function renderConfirmationTasks() {
   listEl.innerHTML = tasks.map(function(task) {
     const avClass  = LEGACY_TO_AVATAR[task.assignedTo] || 'av-aba';
     const name     = t('family_' + task.assignedTo) || task.person || task.assignedTo || '—';
+    // ─ 1B: resolve member's current avatar (cache → seed) and inject into the
+    // empty .avatar circle so a photo shows here too, not just the gradient.
+    const _confMemberId = (typeof LEGACY_ID_TO_MEMBER_ID === 'object' && LEGACY_ID_TO_MEMBER_ID[task.assignedTo]) || null;
+    const _confMember   = _confMemberId
+      ? ((_familyMembersCache && _familyMembersCache.find(m => m.memberId === _confMemberId))
+         || _FAMILY_MEMBERS_SEED.find(m => m.memberId === _confMemberId))
+      : null;
+    const _confAvHTML = (_confMember && _confMember.avatar && typeof renderAvatarHTML === 'function')
+      ? renderAvatarHTML(_confMember.avatar, 40)
+      : '';
+    const _confTagAttrs = _confMemberId
+      ? ' data-avatar-for="' + _confMemberId + '" data-avatar-size="40"'
+      : '';
     const hasTime  = task.mins != null;
     const timeHTML = hasTime
       ? '<div class="time-row">' + CLOCK_SVG + '<span>' + fmtTime(task.mins) + '</span></div>' +
@@ -7115,7 +7134,7 @@ function renderConfirmationTasks() {
           '</button>' : '') +
       '</div>' +
       '<div class="col-right">' +
-        '<div class="avatar ' + avClass + '"></div>' +
+        '<div class="avatar ' + avClass + '"' + _confTagAttrs + '><div data-avatar-slot>' + _confAvHTML + '</div></div>' +
         '<div class="ava-name">' + esc(name) + '</div>' +
       '</div>' +
     '</div>';
@@ -10744,11 +10763,6 @@ async function _uploadAvatarBlob(blob, memberId) {
         const pct = snap.totalBytes ? Math.round((snap.bytesTransferred / snap.totalBytes) * 100) : 0;
         console.log('[Avatar] upload progress state=' + snap.state
           + ' ' + snap.bytesTransferred + '/' + snap.totalBytes + ' (' + pct + '%)');
-        // First progress event → flash an alert so user knows it actually started.
-        if (stateEvents === 1) {
-          try { alert('🔄 upload started\nstate=' + snap.state
-            + '\n' + snap.bytesTransferred + '/' + snap.totalBytes + ' bytes'); } catch (_) {}
-        }
       },
       (err) => {
         console.error('[Avatar] upload error from state_changed', err);
@@ -11012,72 +11026,20 @@ const AvatarFlow = {
     this._unlock();
     const btn = document.getElementById('avchoiceUse');
     btn.disabled = true; btn.textContent = 'שומר…';
-
-    // ─── TEMP DEBUG (mobile diagnosis, no DevTools): step-by-step alerts.
-    // Remove this _debug block once we confirm the avatar save+render chain
-    // is healthy end-to-end on the device.
-    const _debug = true;
-
-    // STEP 1/5: upload to Firebase Storage
-    let url;
     try {
-      if (_debug) {
-        const bucket = (_storage && _storage.app && _storage.app.options && _storage.app.options.storageBucket) || '(?)';
-        const appName = (_storage && _storage.app && _storage.app.name) || '(?)';
-        alert('1/5 מעלה ל-Storage…\n'
-          + 'memberId=' + this.memberId + '\n'
-          + 'blob=' + this.blob.size + 'B (' + (this.blob.type || 'image/jpeg') + ')\n'
-          + 'familyId=' + DataAdapter.familyId + '\n'
-          + 'bucket=' + bucket + '\n'
-          + 'app=' + appName);
-      }
-      url = await _uploadAvatarBlob(this.blob, this.memberId);
-      if (_debug) alert('2/5 ✓ העלאה הצליחה\nURL:\n' + url.slice(0, 160));
-      console.log('[Avatar] step1 upload OK url=' + url.slice(0, 80));
-    } catch (e) {
-      console.error('[Avatar] step1 upload FAILED', e);
-      alert('✗ שגיאה ב-1/5 (Upload):\n'
-        + (e.code ? '[' + e.code + '] ' : '')
-        + (e.message || e)
-        + '\n\nstack:\n' + (e.stack || '(no stack)').slice(0, 400));
-      btn.disabled = false; btn.textContent = 'השתמש בתמונה הזו';
-      return;
-    }
-
-    // STEP 2/5: write Firestore member doc
-    const avatar = { type: 'photo', url };
-    try {
-      if (_debug) alert('3/5 שומר ב-Firestore…\npath=\nfamilies/' + DataAdapter.familyId
-        + '/members/' + this.memberId);
+      const url    = await _uploadAvatarBlob(this.blob, this.memberId);
+      const avatar = { type: 'photo', url };
       await _saveMemberAvatar(this.memberId, avatar);
-      if (_debug) alert('4/5 ✓ שמירה ב-Firestore הצליחה\navatar={type:"photo", url:"…"}');
-      console.log('[Avatar] step2 firestore save OK');
+      const nodeCount = _refreshAvatarUI(this.memberId, avatar);
+      console.log('[Avatar] saved + rendered for ' + this.memberId + ' nodes=' + nodeCount);
     } catch (e) {
-      console.error('[Avatar] step2 firestore FAILED', e);
-      alert('✗ שגיאה ב-3/5 (Firestore):\n'
-        + (e.code ? '[' + e.code + '] ' : '')
-        + (e.message || e)
-        + '\n\nstack:\n' + (e.stack || '(no stack)').slice(0, 400));
+      console.error('[Avatar] save failed', e);
+      alert('שמירה נכשלה:\n' + (e.code ? '[' + e.code + '] ' : '') + (e.message || e));
+    } finally {
       btn.disabled = false; btn.textContent = 'השתמש בתמונה הזו';
-      return;
+      this.blob = null;
+      this._revokeUrls();
     }
-
-    // STEP 3/5: refresh DOM nodes for this member
-    let nodeCount;
-    try {
-      nodeCount = _refreshAvatarUI(this.memberId, avatar);
-      if (_debug) alert('5/5 ✓ רינדור — ' + nodeCount + ' nodes התעדכנו\n'
-        + 'avatar.type=photo url=' + url.slice(0, 60) + '…\n\n'
-        + (nodeCount === 0 ? '⚠ אזהרה: לא נמצא אף DOM node עם data-avatar-for="' + this.memberId + '" — האווטר לא יוצג בלי רענון מסך.' : 'אם התמונה עדיין לא מופיעה, צלם מסך וצרף.'));
-      console.log('[Avatar] step3 render OK nodes=' + nodeCount);
-    } catch (e) {
-      console.error('[Avatar] step3 render FAILED', e);
-      alert('✗ שגיאה ב-5/5 (Render):\n' + (e.message || e));
-    }
-
-    btn.disabled = false; btn.textContent = 'השתמש בתמונה הזו';
-    this.blob = null;
-    this._revokeUrls();
   },
   async removePhoto() {
     if (!this.memberId) return;
