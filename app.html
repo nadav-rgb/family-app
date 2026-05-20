@@ -1898,6 +1898,27 @@ body.text-large .phone{font-size:17px}
 #s-notifications .n-sopt.sel.ic-reminder{background:#C88B00;color:#fff;box-shadow:0 3px 9px rgba(200,139,0,0.35);}
 #s-notifications .n-sopt.sel.ic-due{background:#E5621A;color:#fff;box-shadow:0 3px 9px rgba(229,98,26,0.35);}
 #s-notifications .n-sopt.sel.ic-overdue{background:#C53030;color:#fff;box-shadow:0 3px 9px rgba(197,48,48,0.35);}
+#s-notifications .n-sound-select{position:relative;}
+#s-notifications .n-sound-trigger{width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 14px;border-radius:14px;border:none;background:rgba(128,128,128,0.08);cursor:pointer;font-family:'Nunito',sans-serif;font-size:13px;font-weight:700;color:var(--ink);transition:background .15s,box-shadow .15s,transform .12s;}
+#s-notifications .n-sound-trigger:active{transform:scale(.98);}
+#s-notifications .n-sound-trigger .ns-cur{display:flex;align-items:center;gap:8px;}
+#s-notifications .n-sound-trigger .ns-cur .so-em{font-size:16px;line-height:1;}
+#s-notifications .n-sound-trigger .ns-chev{width:14px;height:14px;color:var(--muted);transition:transform .22s ease;flex:0 0 auto;}
+#s-notifications .n-sound-select.open .n-sound-trigger .ns-chev{transform:rotate(180deg);}
+#s-notifications .n-sound-select.ic-reminder.open .n-sound-trigger{background:rgba(200,139,0,0.10);box-shadow:0 0 0 2px rgba(200,139,0,0.25);}
+#s-notifications .n-sound-select.ic-due.open .n-sound-trigger{background:rgba(229,98,26,0.10);box-shadow:0 0 0 2px rgba(229,98,26,0.25);}
+#s-notifications .n-sound-select.ic-overdue.open .n-sound-trigger{background:rgba(197,48,48,0.10);box-shadow:0 0 0 2px rgba(197,48,48,0.25);}
+#s-notifications .n-sound-menu{overflow:hidden;max-height:0;opacity:0;transition:max-height .25s ease,opacity .2s ease,margin-top .25s ease;display:flex;flex-direction:column;gap:3px;}
+#s-notifications .n-sound-select.open .n-sound-menu{max-height:360px;opacity:1;margin-top:6px;}
+#s-notifications .n-sound-item{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 14px;border-radius:12px;border:none;background:transparent;cursor:pointer;font-family:'Nunito',sans-serif;font-size:13px;font-weight:700;color:var(--ink);transition:background .15s,color .15s;text-align:right;}
+#s-notifications .n-sound-item .ns-cur{display:flex;align-items:center;gap:8px;}
+#s-notifications .n-sound-item .so-em{font-size:16px;line-height:1;}
+#s-notifications .n-sound-item:hover{background:rgba(128,128,128,0.07);}
+#s-notifications .n-sound-item .ns-check{width:14px;height:14px;opacity:0;flex:0 0 auto;}
+#s-notifications .n-sound-item.sel .ns-check{opacity:1;}
+#s-notifications .n-sound-select.ic-reminder .n-sound-item.sel{background:rgba(200,139,0,0.12);color:#C88B00;}
+#s-notifications .n-sound-select.ic-due .n-sound-item.sel{background:rgba(229,98,26,0.12);color:#E5621A;}
+#s-notifications .n-sound-select.ic-overdue .n-sound-item.sel{background:rgba(197,48,48,0.12);color:#C53030;}
 #s-notifications .bottom-wrap{position:absolute;left:0;right:0;bottom:0;pointer-events:none;}
 #s-notifications .bottom-nav{pointer-events:auto;background:rgba(255,255,255,0.78);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);border-top:1px solid rgba(255,255,255,0.8);box-shadow:0 -6px 20px rgba(160,90,30,0.06);padding:11px 19px 21px;display:flex;align-items:flex-end;justify-content:space-between;}
 #s-notifications .nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--muted);font-size:10px;font-weight:600;cursor:pointer;width:58px;text-decoration:none;transition:color .15s ease;background:none;border:none;font-family:'Rubik',sans-serif;}
@@ -9112,29 +9133,72 @@ function renderNotifications() {
           </div>
         </div>
         <div class="n-sc-div"></div>
-        <div class="n-sound-opts" id="scOpts-${def.type}"></div>`;
+        <div class="n-sound-select ${def.colorCls}" id="scSel-${def.type}">
+          <button type="button" class="n-sound-trigger" id="scTrig-${def.type}" aria-haspopup="listbox" aria-expanded="false">
+            <span class="ns-cur"><span class="so-em">${selOpt.emoji}</span><span class="so-lbl">${selOpt.label}</span></span>
+            <svg class="ns-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="n-sound-menu" id="scMenu-${def.type}" role="listbox"></div>
+        </div>`;
       scenarioCards.appendChild(card);
-      const optsGrid = card.querySelector(`#scOpts-${def.type}`);
+      const selWrap = card.querySelector(`#scSel-${def.type}`);
+      const trigger = card.querySelector(`#scTrig-${def.type}`);
+      const menu    = card.querySelector(`#scMenu-${def.type}`);
       SOUND_OPTIONS.forEach(opt => {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = `n-sopt ${def.colorCls}${opt.id === selSound ? ' sel' : ''}`;
-        btn.dataset.soundId = opt.id;
-        btn.innerHTML = `<span class="so-em">${opt.emoji}</span><span class="so-lbl">${opt.label}</span>`;
-        btn.addEventListener('click', () => {
+        const item = document.createElement('button');
+        item.type = 'button';
+        item.className = `n-sound-item${opt.id === selSound ? ' sel' : ''}`;
+        item.dataset.soundId = opt.id;
+        item.setAttribute('role', 'option');
+        item.setAttribute('aria-selected', opt.id === selSound ? 'true' : 'false');
+        item.innerHTML = `<span class="ns-cur"><span class="so-em">${opt.emoji}</span><span class="so-lbl">${opt.label}</span></span>
+          <svg class="ns-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+        item.addEventListener('click', (e) => {
+          e.stopPropagation();
           _playNotifSound(opt.id);
           const p = _loadNotifPrefs();
           p.sounds[def.type] = opt.id;
           _saveNotifPrefs(p);
-          optsGrid.querySelectorAll('.n-sopt').forEach(b =>
-            b.classList.toggle('sel', b.dataset.soundId === opt.id)
-          );
+          menu.querySelectorAll('.n-sound-item').forEach(b => {
+            const isSel = b.dataset.soundId === opt.id;
+            b.classList.toggle('sel', isSel);
+            b.setAttribute('aria-selected', isSel ? 'true' : 'false');
+          });
           const sub = document.getElementById(`scSub-${def.type}`);
           if (sub) sub.textContent = `${opt.emoji} ${opt.label}`;
+          const cur = trigger.querySelector('.ns-cur');
+          if (cur) cur.innerHTML = `<span class="so-em">${opt.emoji}</span><span class="so-lbl">${opt.label}</span>`;
+          selWrap.classList.remove('open');
+          trigger.setAttribute('aria-expanded', 'false');
         });
-        optsGrid.appendChild(btn);
+        menu.appendChild(item);
+      });
+      trigger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const willOpen = !selWrap.classList.contains('open');
+        document.querySelectorAll('#s-notifications .n-sound-select.open').forEach(el => {
+          if (el !== selWrap) {
+            el.classList.remove('open');
+            const t = el.querySelector('.n-sound-trigger');
+            if (t) t.setAttribute('aria-expanded', 'false');
+          }
+        });
+        selWrap.classList.toggle('open', willOpen);
+        trigger.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
       });
     });
+    if (!document._nSoundOutsideBound) {
+      document.addEventListener('click', (e) => {
+        document.querySelectorAll('#s-notifications .n-sound-select.open').forEach(el => {
+          if (!el.contains(e.target)) {
+            el.classList.remove('open');
+            const t = el.querySelector('.n-sound-trigger');
+            if (t) t.setAttribute('aria-expanded', 'false');
+          }
+        });
+      });
+      document._nSoundOutsideBound = true;
+    }
     const soundSection = document.getElementById('notifSoundSection');
     if (soundSection) soundSection.classList.toggle('n-disabled-overlay', !enabled);
   }
