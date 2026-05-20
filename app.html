@@ -10707,11 +10707,15 @@ function _escAttr(s) {
 
 // uploadAvatarBlob — uploads a blob to Storage, returns download URL.
 // Path: families/{familyId}/avatars/{memberId}-{timestamp}.jpg
+// Uses DataAdapter.isFamily() as gate (same as tasks/members write paths).
 async function _uploadAvatarBlob(blob, memberId) {
   const tStart = performance.now();
   if (!_storage) throw new Error('Storage not initialized');
+  if (!DataAdapter.isFamily()) {
+    throw new Error('Not in family mode (mode=' + DataAdapter.mode
+      + ' familyId=' + DataAdapter.familyId + ')');
+  }
   const familyId = DataAdapter.familyId;
-  if (!familyId) throw new Error('No familyId — cannot upload');
   if (!memberId) throw new Error('No memberId — cannot upload');
   const ts   = Date.now();
   const path = 'families/' + familyId + '/avatars/' + memberId + '-' + ts + '.jpg';
@@ -10800,10 +10804,17 @@ const AvatarFlow = {
     stage.replaceChildren(newImg);
     const url = URL.createObjectURL(file);
     this._objUrls.push(url);
-    newImg.onload = () => this._initCropper();
-    newImg.src = url;
+    // Open modal FIRST so the CSS transition + mobile URL-bar collapse begin.
+    // Then load the image. Then wait for the modal transition to settle
+    // (200ms covers the 320ms cubic-bezier — close enough; cropper.responsive
+    // will catch any final adjustment). Without this delay, cropper measures
+    // a stale viewport and the first 2-3s of drag are glitchy.
     document.getElementById('avcropBg').classList.add('open');
     this._lock();
+    newImg.onload = () => {
+      setTimeout(() => this._initCropper(), 220);
+    };
+    newImg.src = url;
   },
   _teardownCropper() {
     if (this.cropper) {
@@ -10880,12 +10891,27 @@ const AvatarFlow = {
     console.log('[Avatar] choice cancelled');
   },
   async useOriginal() {
+    // Diagnostic log — includes mode + isFamily() so we can match against
+    // the rest of the app's family-mode guard. Same source of truth as tasks/members.
+    const inFamily = DataAdapter && DataAdapter.isFamily && DataAdapter.isFamily();
     console.log('[Avatar] useOriginal click — blob=' + (this.blob ? this.blob.size + 'B' : 'null')
-      + ' memberId=' + this.memberId + ' storage=' + !!_storage + ' familyId=' + (DataAdapter && DataAdapter.familyId));
+      + ' memberId=' + this.memberId
+      + ' storage=' + !!_storage
+      + ' mode=' + (DataAdapter && DataAdapter.mode)
+      + ' familyId=' + (DataAdapter && DataAdapter.familyId)
+      + ' isFamily=' + inFamily);
     if (!this.blob) { console.warn('[Avatar] useOriginal: blob is null — aborting'); alert('שגיאה: התמונה לא נטענה. נסו שוב.'); return; }
     if (!this.memberId) { console.warn('[Avatar] useOriginal: memberId is null'); return; }
     if (!_storage) { console.warn('[Avatar] useOriginal: storage not ready'); alert('Storage לא מוכן. רענן את הדף.'); return; }
-    if (!DataAdapter || !DataAdapter.familyId) { console.warn('[Avatar] useOriginal: no familyId'); alert('המשפחה לא מוגדרת — הגדר משפחה לפני העלאה.'); return; }
+    // Use isFamily() — same guard as task writes (_writeTaskToFirestore) and
+    // member loads (_loadFamilyMembersCache). Single source of truth.
+    if (!inFamily) {
+      console.warn('[Avatar] useOriginal: not in family mode (mode='
+        + (DataAdapter && DataAdapter.mode) + ' familyId='
+        + (DataAdapter && DataAdapter.familyId) + ')');
+      alert('המשפחה לא מוגדרת — הגדר/הצטרף למשפחה לפני העלאה.');
+      return;
+    }
     document.getElementById('avchoiceBg').classList.remove('open');
     this._unlock();
     const btn = document.getElementById('avchoiceUse');
