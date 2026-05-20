@@ -10951,20 +10951,65 @@ const AvatarFlow = {
     this._unlock();
     const btn = document.getElementById('avchoiceUse');
     btn.disabled = true; btn.textContent = 'שומר…';
+
+    // ─── TEMP DEBUG (mobile diagnosis, no DevTools): step-by-step alerts.
+    // Remove this _debug block once we confirm the avatar save+render chain
+    // is healthy end-to-end on the device.
+    const _debug = true;
+
+    // STEP 1/5: upload to Firebase Storage
+    let url;
     try {
-      const url = await _uploadAvatarBlob(this.blob, this.memberId);
-      const avatar = { type: 'photo', url };
-      await _saveMemberAvatar(this.memberId, avatar);
-      _refreshAvatarUI(this.memberId, avatar);
-      console.log('[Avatar] saved photo for ' + this.memberId);
+      if (_debug) alert('1/5 מעלה ל-Storage…\nmemberId=' + this.memberId
+        + '\nblob=' + this.blob.size + 'B'
+        + '\nfamilyId=' + DataAdapter.familyId);
+      url = await _uploadAvatarBlob(this.blob, this.memberId);
+      if (_debug) alert('2/5 ✓ העלאה הצליחה\nURL:\n' + url.slice(0, 160));
+      console.log('[Avatar] step1 upload OK url=' + url.slice(0, 80));
     } catch (e) {
-      console.error('[Avatar] save failed', e);
-      alert('שמירה נכשלה: ' + (e.message || e));
-    } finally {
+      console.error('[Avatar] step1 upload FAILED', e);
+      alert('✗ שגיאה ב-1/5 (Upload):\n'
+        + (e.code ? '[' + e.code + '] ' : '')
+        + (e.message || e)
+        + '\n\nstack:\n' + (e.stack || '(no stack)').slice(0, 400));
       btn.disabled = false; btn.textContent = 'השתמש בתמונה הזו';
-      this.blob = null;
-      this._revokeUrls();
+      return;
     }
+
+    // STEP 2/5: write Firestore member doc
+    const avatar = { type: 'photo', url };
+    try {
+      if (_debug) alert('3/5 שומר ב-Firestore…\npath=\nfamilies/' + DataAdapter.familyId
+        + '/members/' + this.memberId);
+      await _saveMemberAvatar(this.memberId, avatar);
+      if (_debug) alert('4/5 ✓ שמירה ב-Firestore הצליחה\navatar={type:"photo", url:"…"}');
+      console.log('[Avatar] step2 firestore save OK');
+    } catch (e) {
+      console.error('[Avatar] step2 firestore FAILED', e);
+      alert('✗ שגיאה ב-3/5 (Firestore):\n'
+        + (e.code ? '[' + e.code + '] ' : '')
+        + (e.message || e)
+        + '\n\nstack:\n' + (e.stack || '(no stack)').slice(0, 400));
+      btn.disabled = false; btn.textContent = 'השתמש בתמונה הזו';
+      return;
+    }
+
+    // STEP 3/5: refresh DOM nodes for this member
+    let nodeCount;
+    try {
+      nodeCount = _refreshAvatarUI(this.memberId, avatar);
+      if (_debug) alert('5/5 ✓ רינדור — ' + nodeCount + ' nodes התעדכנו\n'
+        + 'avatar.type=photo url=' + url.slice(0, 60) + '…\n\n'
+        + (nodeCount === 0 ? '⚠ אזהרה: לא נמצא אף DOM node עם data-avatar-for="' + this.memberId + '" — האווטר לא יוצג בלי רענון מסך.' : 'אם התמונה עדיין לא מופיעה, צלם מסך וצרף.'));
+      console.log('[Avatar] step3 render OK nodes=' + nodeCount);
+    } catch (e) {
+      console.error('[Avatar] step3 render FAILED', e);
+      alert('✗ שגיאה ב-5/5 (Render):\n' + (e.message || e));
+    }
+
+    btn.disabled = false; btn.textContent = 'השתמש בתמונה הזו';
+    this.blob = null;
+    this._revokeUrls();
   },
   async removePhoto() {
     if (!this.memberId) return;
@@ -10988,6 +11033,7 @@ const AvatarFlow = {
 // Nodes opt-in via data-avatar-for="<memberId>" data-avatar-size="<px>".
 // Content goes into [data-avatar-slot] child if present, else into the node itself
 // (slot pattern preserves siblings like the camera overlay button).
+// Returns the number of DOM nodes updated (used by the upload-flow diagnostic).
 function _refreshAvatarUI(memberId, avatar) {
   const tStart = performance.now();
   const nodes  = document.querySelectorAll('[data-avatar-for="' + memberId + '"]');
@@ -10998,6 +11044,7 @@ function _refreshAvatarUI(memberId, avatar) {
   });
   console.log('[Avatar] render +' + Math.round(performance.now() - tStart)
     + 'ms memberId=' + memberId + ' nodes=' + nodes.length + ' type=' + avatar.type);
+  return nodes.length;
 }
 
 // Render every avatar slot on the page from seed (initial) or cache (post-sync).
