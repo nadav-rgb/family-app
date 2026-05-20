@@ -11361,9 +11361,17 @@ function _tdSetPeriodPill(mins) {
   inds.forEach(function(p) { if (p.dataset.period === active) p.classList.add('on'); });
 }
 
+function _tdFindTask(taskId) {
+  var id = String(taskId);
+  var fromPreview = (AppState.previewTasks || []).find(function(t) { return String(t.id) === id; });
+  if (fromPreview) return fromPreview;
+  var fromTasks = (AppState.tasks || []).find(function(t) { return String(t.id) === id; });
+  return fromTasks || null;
+}
+
 function renderTimeDateScreen(taskId) {
   _tdTargetId = taskId;
-  var task = (AppState.previewTasks || []).find(function(t) { return String(t.id) === String(taskId); }) || {};
+  var task = _tdFindTask(taskId) || {};
 
   var titleEl = document.getElementById('tdTaskTitle');
   var ownerEl = document.getElementById('tdTaskOwner');
@@ -11392,7 +11400,7 @@ function renderTimeDateScreen(taskId) {
 }
 
 function tdSave() {
-  var task = (AppState.previewTasks || []).find(function(t) { return String(t.id) === String(_tdTargetId); });
+  var task = _tdFindTask(_tdTargetId);
   if (task) {
     var selDay = document.querySelector('#tdDateStrip .td-day.on');
     if (!selDay) selDay = document.querySelector('#tdCalGrid .td-cal-cell.on');
@@ -11419,8 +11427,14 @@ function tdSave() {
     var recurChip = document.querySelector('#tdRecurChips .td-optfull-chip.on');
     if (recurChip) task.recurrenceFreq = recurChip.dataset.recur || 'none';
   }
-  if (typeof renderConfirmationTasks === 'function') renderConfirmationTasks();
-  if (typeof goto === 'function') goto('s-confirmation', 'txLeaveFade', 'txEnterFade');
+  var dest = _tdBackScreen || 's-confirmation';
+  if (dest === 's-today') {
+    if (typeof saveState === 'function') { try { saveState(); } catch (_) {} }
+    if (typeof renderToday === 'function') renderToday();
+  } else {
+    if (typeof renderConfirmationTasks === 'function') renderConfirmationTasks();
+  }
+  if (typeof goto === 'function') goto(dest, 'txLeaveFade', 'txEnterFade');
 }
 </script>
 
@@ -12057,7 +12071,7 @@ function splitSave() {
   var tdSaveBtn   = document.getElementById('tdSaveBtn');
   var tdCancelBtn = document.getElementById('tdCancelBtn');
   if (tdSaveBtn)   tdSaveBtn.addEventListener('click',   function() { if (typeof tdSave === 'function') tdSave(); });
-  if (tdCancelBtn) tdCancelBtn.addEventListener('click', function() { if (typeof goto === 'function') goto('s-confirmation','txLeaveFade','txEnterFade'); });
+  if (tdCancelBtn) tdCancelBtn.addEventListener('click', function() { if (typeof goto === 'function') goto(_tdBackScreen || 's-confirmation','txLeaveFade','txEnterFade'); });
 
   // #s-confirmation: "פצל" button on task card → bottom sheet
   if (confirmList) {
