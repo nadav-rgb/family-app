@@ -2891,7 +2891,7 @@ body.text-large .phone{font-size:17px}
     <div class="rows">
       <div class="row" onclick="goto('s-notifications','txLeaveFade','txEnterFade');renderNotifications();">
         <div class="icn ic-bell" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></div>
-        <div class="body"><div class="t">התראות</div><div class="s">הגדרות התראות לכל בני המשפחה</div></div>
+        <div class="body"><div class="t">התראות</div><div class="s">הגדרת זמני וצלילי התראה</div></div>
         <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></span>
       </div>
       <div class="row">
@@ -3808,12 +3808,6 @@ body.text-large .phone{font-size:17px}
     <div id="notifSoundSection">
       <div class="n-sec-label">צלילי התראה</div>
       <div class="n-scenario-cards" id="notifScenarioCards"></div>
-    </div>
-
-    <!-- Test button -->
-    <div id="notifTestSection">
-      <button class="n-test-btn" id="notifTestBtn" type="button">שלח התראת ניסיון 🔔</button>
-      <div class="n-perm-hint" id="notifTestHint"></div>
     </div>
 
   </div>
@@ -9065,8 +9059,8 @@ function renderNotifications() {
   overdueToggle.checked = prefs.overdueRemindersOn;
 
   // Test button hint
-  testHint.textContent = enabled ? '' : 'הפעל התראות כדי לשלוח ניסיון';
-  testBtn.disabled = !enabled;
+  if (testHint) testHint.textContent = enabled ? '' : 'הפעל התראות כדי לשלוח ניסיון';
+  if (testBtn)  testBtn.disabled = !enabled;
 
   // Wire events (idempotent — clone to remove old listeners)
   const newMaster = masterToggle.cloneNode(true);
@@ -9220,20 +9214,22 @@ function renderNotifications() {
     if (soundSection) soundSection.classList.toggle('n-disabled-overlay', !enabled);
   }
 
-  const newTestBtn = testBtn.cloneNode(true);
-  testBtn.parentNode.replaceChild(newTestBtn, testBtn);
-  newTestBtn.disabled = !enabled;
-  newTestBtn.addEventListener('click', () => {
-    _playNotifSound(prefs.sounds.due || 'chime');
-    if (_notifPermission() !== 'granted') return;
-    try {
-      new Notification('משפחה — ניסיון התראה 🔔', {
-        body: 'התראות עובדות בהצלחה!',
-        icon: '/icons/icon-192.png',
-      });
-    } catch (_) {}
-    if (typeof showNotifToast === 'function') showNotifToast('התראת ניסיון נשלחה!');
-  });
+  if (testBtn) {
+    const newTestBtn = testBtn.cloneNode(true);
+    testBtn.parentNode.replaceChild(newTestBtn, testBtn);
+    newTestBtn.disabled = !enabled;
+    newTestBtn.addEventListener('click', () => {
+      _playNotifSound(prefs.sounds.due || 'chime');
+      if (_notifPermission() !== 'granted') return;
+      try {
+        new Notification('משפחה — ניסיון התראה 🔔', {
+          body: 'התראות עובדות בהצלחה!',
+          icon: '/icons/icon-192.png',
+        });
+      } catch (_) {}
+      if (typeof showNotifToast === 'function') showNotifToast('התראת ניסיון נשלחה!');
+    });
+  }
 }
 
 function _notifSupported() { return 'Notification' in window; }
