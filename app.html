@@ -10891,27 +10891,62 @@ const AvatarFlow = {
     console.log('[Avatar] choice cancelled');
   },
   async useOriginal() {
-    // Diagnostic log — includes mode + isFamily() so we can match against
-    // the rest of the app's family-mode guard. Same source of truth as tasks/members.
-    const inFamily = DataAdapter && DataAdapter.isFamily && DataAdapter.isFamily();
-    console.log('[Avatar] useOriginal click — blob=' + (this.blob ? this.blob.size + 'B' : 'null')
-      + ' memberId=' + this.memberId
-      + ' storage=' + !!_storage
-      + ' mode=' + (DataAdapter && DataAdapter.mode)
-      + ' familyId=' + (DataAdapter && DataAdapter.familyId)
-      + ' isFamily=' + inFamily);
-    if (!this.blob) { console.warn('[Avatar] useOriginal: blob is null — aborting'); alert('שגיאה: התמונה לא נטענה. נסו שוב.'); return; }
+    // Full diagnostic snapshot — read localStorage DIRECTLY (bypass DataAdapter),
+    // compare against DataAdapter properties, and check cache state.
+    // This is the same data the rest of the app reads from.
+    const lsFamilyId = localStorage.getItem('family-app-da-family-id');
+    const lsMode     = localStorage.getItem('family-app-da-mode');
+    const lsUserId   = localStorage.getItem('family-app-da-user-id');
+    const daMode     = DataAdapter && DataAdapter.mode;
+    const daFamilyId = DataAdapter && DataAdapter.familyId;
+    const daIsFamily = DataAdapter && DataAdapter.isFamily && DataAdapter.isFamily();
+    const cacheLen   = (typeof _familyMembersCache !== 'undefined') ? _familyMembersCache.length : -1;
+    const dbReady    = !!_db;
+
+    const diag = {
+      blob:        this.blob ? this.blob.size + 'B' : 'null',
+      memberId:    this.memberId,
+      storageReady:!!_storage,
+      dbReady,
+      daMode, daFamilyId, daIsFamily,
+      lsMode, lsFamilyId, lsUserId,
+      cacheLen,
+    };
+    console.log('[Avatar] useOriginal click — diagnostic:', diag);
+
+    if (!this.blob) { console.warn('[Avatar] useOriginal: blob is null'); alert('שגיאה: התמונה לא נטענה. נסו שוב.'); return; }
     if (!this.memberId) { console.warn('[Avatar] useOriginal: memberId is null'); return; }
     if (!_storage) { console.warn('[Avatar] useOriginal: storage not ready'); alert('Storage לא מוכן. רענן את הדף.'); return; }
-    // Use isFamily() — same guard as task writes (_writeTaskToFirestore) and
-    // member loads (_loadFamilyMembersCache). Single source of truth.
-    if (!inFamily) {
-      console.warn('[Avatar] useOriginal: not in family mode (mode='
-        + (DataAdapter && DataAdapter.mode) + ' familyId='
-        + (DataAdapter && DataAdapter.familyId) + ')');
-      alert('המשפחה לא מוגדרת — הגדר/הצטרף למשפחה לפני העלאה.');
+
+    // ─── Self-healing: localStorage has family data but in-memory DataAdapter
+    // lost track (e.g. capacitor WebView restart, stale module instance).
+    // The rest of the app uses DataAdapter.familyId for paths, so we must
+    // restore DataAdapter from the persisted source of truth.
+    if (!daIsFamily && lsFamilyId && lsMode === 'family') {
+      console.warn('[Avatar] DataAdapter out of sync with localStorage — recovering');
+      DataAdapter.familyId = lsFamilyId;
+      DataAdapter.mode     = 'family';
+      if (lsUserId) DataAdapter.userId = lsUserId;
+    }
+
+    // Re-check after recovery.
+    if (!DataAdapter.isFamily()) {
+      const msg =
+        'לא ניתן להעלות — המכשיר לא במצב משפחה.\n\n' +
+        'אבחון:\n' +
+        '• mode (memory): ' + daMode + '\n' +
+        '• mode (localStorage): ' + lsMode + '\n' +
+        '• familyId (memory): ' + (daFamilyId || '(null)') + '\n' +
+        '• familyId (localStorage): ' + (lsFamilyId || '(null)') + '\n' +
+        '• members cache: ' + cacheLen + ' entries\n' +
+        '• Firestore connected: ' + dbReady + '\n\n' +
+        'צלם מסך וצרף לבדיקה.';
+      console.error('[Avatar] CANNOT UPLOAD — full diagnostic:', diag);
+      alert(msg);
       return;
     }
+
+    console.log('[Avatar] guard passed — mode=' + DataAdapter.mode + ' familyId=' + DataAdapter.familyId);
     document.getElementById('avchoiceBg').classList.remove('open');
     this._unlock();
     const btn = document.getElementById('avchoiceUse');
