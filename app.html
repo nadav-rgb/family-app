@@ -11699,9 +11699,43 @@ function _visUpdateHero() {
   }
 }
 
+var _VIS_TO_LEGACY = { aba:'dad', ima:'mom', leali:'dudi', aharon:'yonatan' };
+var _LEGACY_TO_VIS = { dad:'aba', mom:'ima', dudi:'leali', yonatan:'aharon' };
+function _visIdAliases(visId) {
+  var set = [String(visId)];
+  var leg = _VIS_TO_LEGACY[visId];
+  if (leg) {
+    set.push(leg);
+    var mem = (typeof _memberIdForLegacyId === 'function') ? _memberIdForLegacyId(leg) : null;
+    if (mem) set.push(mem);
+  }
+  return set;
+}
+
 function renderVisibility() {
-  var t = AppState.previewTasks && AppState.previewTasks[0];
-  _visPerformer = (t && t.assignedTo) ? t.assignedTo : 'aba';
+  var editing = AppState._editingTask;
+  var t = editing || (AppState.previewTasks && AppState.previewTasks[0]);
+  var rawAssignee = t && t.assignedTo;
+  _visPerformer = _LEGACY_TO_VIS[rawAssignee] || rawAssignee || 'aba';
+
+  if (editing) {
+    var visStored = Array.isArray(editing.visibleTo) ? editing.visibleTo.map(String) : [];
+    var notStored = Array.isArray(editing.notifyTo)  ? editing.notifyTo.map(String)  : [];
+    var notifyOn  = editing.notify !== false;
+    document.querySelectorAll('#visSeeRow .vis-ava-frame').forEach(function(b) {
+      var aliases = _visIdAliases(b.dataset.id);
+      var active  = aliases.some(function(a) { return visStored.indexOf(a) !== -1; });
+      b.classList.toggle('active', active);
+      b.classList.toggle('dimmed', false);
+    });
+    document.querySelectorAll('#visNotifyRow .vis-ava-frame').forEach(function(b) {
+      var aliases = _visIdAliases(b.dataset.id);
+      var active  = notifyOn && aliases.some(function(a) { return notStored.indexOf(a) !== -1; });
+      b.classList.toggle('active', active);
+      b.classList.toggle('dimmed', false);
+    });
+  }
+
   _visSetFilter('see',    'custom');
   _visSetFilter('notify', 'custom');
   _visUpdateHero();
@@ -12330,12 +12364,28 @@ function splitSave() {
   var visCta2 = document.getElementById('visSaveCta');
   if (visCta2) {
     visCta2.onclick = function() {
-      // Collect who-sees selection
-      var seeIds = [];
-      document.querySelectorAll('#visSeeRow .vis-ava-frame.active').forEach(function(b) { seeIds.push(b.dataset.id); });
-      var notifyIds = [];
-      document.querySelectorAll('#visNotifyRow .vis-ava-frame.active').forEach(function(b) { notifyIds.push(b.dataset.id); });
-      // Apply to all previewTasks
+      var toLegacy = function(visId) { return _VIS_TO_LEGACY[visId] || visId; };
+      var seeIdsRaw = [];
+      document.querySelectorAll('#visSeeRow .vis-ava-frame.active').forEach(function(b) { seeIdsRaw.push(b.dataset.id); });
+      var notifyIdsRaw = [];
+      document.querySelectorAll('#visNotifyRow .vis-ava-frame.active').forEach(function(b) { notifyIdsRaw.push(b.dataset.id); });
+      var seeIds    = seeIdsRaw.map(toLegacy);
+      var notifyIds = notifyIdsRaw.map(toLegacy);
+
+      var editing = AppState._editingTask;
+      if (editing) {
+        editing.visibleTo  = seeIds.length    ? seeIds    : editing.visibleTo;
+        editing.notifyTo   = notifyIds.length ? notifyIds : editing.notifyTo;
+        editing.updatedAt  = Date.now();
+        if (typeof saveState === 'function') { try { saveState(); } catch (_) {} }
+        if (typeof _daWriteTask === 'function') _daWriteTask(editing, false).catch(function(){});
+        if (typeof _capRescheduleAll === 'function') _capRescheduleAll().catch(function(){});
+        if (typeof renderToday === 'function') renderToday();
+        AppState._editingTask = null;
+        var dest = (typeof _visBackScreen !== 'undefined' && _visBackScreen) ? _visBackScreen : 's-today';
+        if (typeof goto === 'function') goto(dest, 'txLeaveFade', 'txEnterFade');
+        return;
+      }
       (AppState.previewTasks || []).forEach(function(t) {
         if (seeIds.length)    t.visibleTo  = seeIds;
         if (notifyIds.length) t.notifyTo   = notifyIds;
