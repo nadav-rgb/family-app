@@ -8180,13 +8180,30 @@ function renderToday() {
             const ownerId = _taskLegacyAssigneeId(t);
             const visIds  = Array.isArray(t.visibleTo) ? t.visibleTo.slice() : [];
             const notifyIds = new Set((Array.isArray(t.notifyTo) ? t.notifyTo : []).map(String));
+            const notifyOn = t.notify !== false;
             const seen = new Set();
             const ordered = [];
             if (ownerId) { ordered.push(ownerId); seen.add(String(ownerId)); }
-            visIds.forEach(id => { if (id != null && !seen.has(String(id))) { ordered.push(id); seen.add(String(id)); } });
+            visIds.forEach(id => {
+              if (id == null) return;
+              const legacy = _legacyIdForMemberId(id) || String(id);
+              if (seen.has(String(legacy))) return;
+              ordered.push(legacy); seen.add(String(legacy));
+            });
+            const idAliases = id => {
+              const out = new Set();
+              if (id == null) return out;
+              out.add(String(id));
+              const mem = _memberIdForLegacyId(id); if (mem) out.add(String(mem));
+              const leg = _legacyIdForMemberId(id); if (leg) out.add(String(leg));
+              return out;
+            };
             return ordered.map(id => {
               const isOwner = String(id) === String(ownerId);
-              const hasBell = notifyIds.has(String(id));
+              let hasBell = false;
+              if (notifyOn) {
+                for (const a of idAliases(id)) { if (notifyIds.has(a)) { hasBell = true; break; } }
+              }
               return `<div class="t-share-av${isOwner?' owner':''}" data-id="${id}">
                 <div class="t-share-circle"></div>
                 ${hasBell?'<span class="t-share-bell">🔔</span>':''}
