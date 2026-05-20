@@ -10708,6 +10708,10 @@ function _escAttr(s) {
 // uploadAvatarBlob — uploads a blob to Storage, returns download URL.
 // Path: families/{familyId}/avatars/{memberId}-{timestamp}.jpg
 // Uses DataAdapter.isFamily() as gate (same as tasks/members write paths).
+//
+// Diagnostic mode: uses uploadTask.on('state_changed', …) so we get
+// progress events. Races against a 15s timeout so a stuck Promise becomes
+// a clear error instead of silently hanging forever.
 async function _uploadAvatarBlob(blob, memberId) {
   const tStart = performance.now();
   if (!_storage) throw new Error('Storage not initialized');
@@ -10717,14 +10721,71 @@ async function _uploadAvatarBlob(blob, memberId) {
   }
   const familyId = DataAdapter.familyId;
   if (!memberId) throw new Error('No memberId — cannot upload');
-  const ts   = Date.now();
-  const path = 'families/' + familyId + '/avatars/' + memberId + '-' + ts + '.jpg';
-  console.log('[Avatar] upload start path=' + path + ' bytes=' + blob.size);
-  const ref  = _storage.ref(path);
-  await ref.put(blob, { contentType: blob.type || 'image/jpeg' });
-  const url  = await ref.getDownloadURL();
-  console.log('[Avatar] upload done +' + Math.round(performance.now() - tStart) + 'ms url=' + url.slice(0, 80) + '…');
-  return url;
+  const ts       = Date.now();
+  const path     = 'families/' + familyId + '/avatars/' + memberId + '-' + ts + '.jpg';
+  const ref      = _storage.ref(path);
+  const meta     = { contentType: blob.type || 'image/jpeg' };
+  const bucket   = (_storage.app && _storage.app.options && _storage.app.options.storageBucket) || '(unknown)';
+  const appName  = (_storage.app && _storage.app.name) || '(unknown)';
+  console.log('[Avatar] upload start fullPath=' + ref.fullPath
+    + ' bucket=' + bucket + ' app=' + appName
+    + ' bytes=' + blob.size + ' contentType=' + meta.contentType);
+
+  const uploadTask = ref.put(blob, meta);
+  let lastSnap = null;
+  let stateEvents = 0;
+
+  const uploadPromise = new Promise((resolve, reject) => {
+    uploadTask.on(
+      'state_changed',
+      (snap) => {
+        lastSnap = snap;
+        stateEvents++;
+        const pct = snap.totalBytes ? Math.round((snap.bytesTransferred / snap.totalBytes) * 100) : 0;
+        console.log('[Avatar] upload progress state=' + snap.state
+          + ' ' + snap.bytesTransferred + '/' + snap.totalBytes + ' (' + pct + '%)');
+        // First progress event → flash an alert so user knows it actually started.
+        if (stateEvents === 1) {
+          try { alert('🔄 upload started\nstate=' + snap.state
+            + '\n' + snap.bytesTransferred + '/' + snap.totalBytes + ' bytes'); } catch (_) {}
+        }
+      },
+      (err) => {
+        console.error('[Avatar] upload error from state_changed', err);
+        reject(err);
+      },
+      async () => {
+        try {
+          const url = await uploadTask.snapshot.ref.getDownloadURL();
+          console.log('[Avatar] upload complete +' + Math.round(performance.now() - tStart) + 'ms url=' + url.slice(0, 80));
+          resolve(url);
+        } catch (e) {
+          console.error('[Avatar] getDownloadURL failed', e);
+          reject(e);
+        }
+      }
+    );
+  });
+
+  const timeoutPromise = new Promise((_, reject) => {
+    setTimeout(() => {
+      const stateInfo = lastSnap
+        ? ('last state=' + lastSnap.state
+           + ' transferred=' + lastSnap.bytesTransferred + '/' + lastSnap.totalBytes
+           + ' events=' + stateEvents)
+        : ('no state_changed events fired at all (events=' + stateEvents + ')');
+      const msg = 'Storage upload TIMEOUT (15s)\n'
+        + 'path: ' + path + '\n'
+        + 'fullPath: ' + ref.fullPath + '\n'
+        + 'bucket: ' + bucket + '\n'
+        + 'app: ' + appName + '\n'
+        + 'blob: ' + blob.size + 'B (' + meta.contentType + ')\n'
+        + stateInfo;
+      reject(new Error(msg));
+    }, 15000);
+  });
+
+  return Promise.race([uploadPromise, timeoutPromise]);
 }
 
 // Save avatar to member doc in Firestore.
@@ -10960,9 +11021,16 @@ const AvatarFlow = {
     // STEP 1/5: upload to Firebase Storage
     let url;
     try {
-      if (_debug) alert('1/5 מעלה ל-Storage…\nmemberId=' + this.memberId
-        + '\nblob=' + this.blob.size + 'B'
-        + '\nfamilyId=' + DataAdapter.familyId);
+      if (_debug) {
+        const bucket = (_storage && _storage.app && _storage.app.options && _storage.app.options.storageBucket) || '(?)';
+        const appName = (_storage && _storage.app && _storage.app.name) || '(?)';
+        alert('1/5 מעלה ל-Storage…\n'
+          + 'memberId=' + this.memberId + '\n'
+          + 'blob=' + this.blob.size + 'B (' + (this.blob.type || 'image/jpeg') + ')\n'
+          + 'familyId=' + DataAdapter.familyId + '\n'
+          + 'bucket=' + bucket + '\n'
+          + 'app=' + appName);
+      }
       url = await _uploadAvatarBlob(this.blob, this.memberId);
       if (_debug) alert('2/5 ✓ העלאה הצליחה\nURL:\n' + url.slice(0, 160));
       console.log('[Avatar] step1 upload OK url=' + url.slice(0, 80));
