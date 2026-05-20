@@ -2237,7 +2237,7 @@ body.text-large .phone{font-size:17px}
 .avsh-bg.open .avsh-sheet{transform:translateY(0);}
 .avsh-pill{width:42px;height:4px;border-radius:99px;background:#e6dad0;margin:6px auto 10px;}
 .avsh-ttl{font-size:13px;font-weight:900;color:#7a6055;text-align:center;letter-spacing:.4px;margin-bottom:14px;}
-.avsh-row{display:flex;align-items:center;gap:14px;padding:14px 12px;border-radius:14px;cursor:pointer;transition:background .14s,transform .1s;background:transparent;border:none;width:100%;text-align:start;font-family:inherit;color:inherit;}
+.avsh-row{display:flex;align-items:center;gap:14px;padding:14px 12px;border-radius:14px;cursor:pointer;transition:background .14s,transform .1s;background:transparent;border:none;width:100%;text-align:start;font-family:inherit;color:inherit;touch-action:manipulation;}
 .avsh-row:hover{background:rgba(255,154,78,.08);}
 .avsh-row:active{transform:scale(.98);background:rgba(255,154,78,.14);}
 .avsh-row + .avsh-row{margin-top:2px;}
@@ -2249,21 +2249,36 @@ body.text-large .phone{font-size:17px}
 .avsh-row .s{font-size:12px;font-weight:600;color:#9e8878;}
 
 /* ─── Avatar crop modal (1A) ─── */
-.avcrop-bg{position:absolute;inset:0;z-index:940;background:rgba(20,10,5,.78);display:flex;flex-direction:column;align-items:stretch;justify-content:stretch;pointer-events:none;opacity:0;transition:opacity .2s ease;}
+/* Body scroll lock — applied while any avatar modal is open so mobile drag
+   doesn't scroll the page underneath (Samsung Android was scrolling instead
+   of moving the cropper image). */
+body.av-modal-lock{overflow:hidden;touch-action:none;}
+.avcrop-bg{position:absolute;inset:0;z-index:940;background:rgba(20,10,5,.92);display:flex;flex-direction:column;align-items:stretch;justify-content:stretch;pointer-events:none;opacity:0;transition:opacity .2s ease;}
 .avcrop-bg.open{opacity:1;pointer-events:auto;}
-.avcrop-hdr{flex:0 0 auto;padding:14px 18px 8px;color:#fff;text-align:center;font-size:13px;font-weight:800;letter-spacing:.3px;}
-.avcrop-canvas-wrap{flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;padding:0 16px;overflow:hidden;}
-.avcrop-canvas-wrap img{max-width:100%;display:block;}
+.avcrop-hdr{flex:0 0 auto;padding:18px 18px 6px;color:#fff;text-align:center;}
+.avcrop-hdr .t{font-size:15px;font-weight:800;letter-spacing:.2px;line-height:1.35;}
+.avcrop-hdr .s{font-size:11.5px;font-weight:600;color:rgba(255,255,255,.62);margin-top:4px;letter-spacing:.2px;}
+.avcrop-canvas-wrap{flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;padding:14px 0;overflow:hidden;touch-action:none;}
+/* Stage = fixed square where cropper.js renders. Constrains the giant default
+   container so the circle crop box reads as the focal point (WhatsApp-style). */
+.avcrop-stage{width:min(86vw, 60vh, 380px);height:min(86vw, 60vh, 380px);position:relative;}
+.avcrop-stage img{max-width:100%;display:block;}
 .avcrop-foot{flex:0 0 auto;padding:14px 18px calc(20px + env(safe-area-inset-bottom,0)) 18px;display:flex;gap:10px;}
-.avcrop-btn{flex:1;padding:14px;border-radius:14px;border:none;font-family:inherit;font-size:14px;font-weight:900;cursor:pointer;transition:transform .14s,opacity .14s;}
+.avcrop-btn{flex:1;padding:14px;border-radius:14px;border:none;font-family:inherit;font-size:14px;font-weight:900;cursor:pointer;transition:transform .14s,opacity .14s;touch-action:manipulation;}
 .avcrop-btn:active{transform:scale(.97);}
 .avcrop-btn.cancel{background:rgba(255,255,255,.14);color:#fff;}
 .avcrop-btn.ok{background:linear-gradient(135deg,#ff9a4e,#ff5e14);color:#fff;box-shadow:0 5px 16px rgba(255,94,20,.32);}
 .avcrop-btn:disabled{opacity:.5;cursor:not-allowed;}
-/* Force cropper circle preview (override cropper defaults to look like avatar) */
+/* Cropper circle styling — prominent orange ring + dim outside the circle.
+   The 9999px box-shadow trick paints a dark mask everywhere except the circle. */
 .avcrop-canvas-wrap .cropper-view-box,
 .avcrop-canvas-wrap .cropper-face{border-radius:50%;}
-.avcrop-canvas-wrap .cropper-view-box{outline:2px solid #ff9a4e;outline-color:rgba(255,154,78,.95);}
+.avcrop-canvas-wrap .cropper-view-box{outline:3px solid #ff9a4e !important;outline-offset:-1px;box-shadow:0 0 0 9999px rgba(0,0,0,.55);}
+.avcrop-canvas-wrap .cropper-face{background-color:transparent !important;}
+.avcrop-canvas-wrap .cropper-modal{opacity:0 !important;}
+.avcrop-canvas-wrap .cropper-line,
+.avcrop-canvas-wrap .cropper-point{display:none !important;}
+.avcrop-canvas-wrap .cropper-dashed{display:none !important;}
 
 /* ─── Avatar use-or-AI choice modal (1A: only "use" enabled, AI button stays disabled) ─── */
 .avchoice-bg{position:absolute;inset:0;z-index:945;background:rgba(28,17,10,.46);display:flex;align-items:center;justify-content:center;pointer-events:none;opacity:0;transition:opacity .22s ease;padding:24px;}
@@ -2274,7 +2289,7 @@ body.text-large .phone{font-size:17px}
 .avchoice-prev img{width:100%;height:100%;object-fit:cover;display:block;}
 .avchoice-ttl{font-size:16px;font-weight:900;color:#1c110a;text-align:center;margin-bottom:18px;}
 .avchoice-row{display:flex;flex-direction:column;gap:8px;}
-.avchoice-btn{padding:14px;border-radius:14px;border:none;font-family:inherit;font-size:14px;font-weight:900;cursor:pointer;transition:transform .14s,opacity .14s;display:flex;align-items:center;justify-content:center;gap:8px;}
+.avchoice-btn{padding:14px;border-radius:14px;border:none;font-family:inherit;font-size:14px;font-weight:900;cursor:pointer;transition:transform .14s,opacity .14s;display:flex;align-items:center;justify-content:center;gap:8px;touch-action:manipulation;}
 .avchoice-btn:active{transform:scale(.98);}
 .avchoice-btn.primary{background:linear-gradient(135deg,#ff9a4e,#ff5e14);color:#fff;box-shadow:0 5px 16px rgba(255,94,20,.28);}
 .avchoice-btn.ai{background:rgba(184,164,232,.18);color:#7560c0;border:1.5px solid rgba(184,164,232,.45);position:relative;}
@@ -4536,8 +4551,13 @@ body.text-large .phone{font-size:17px}
 
 <!-- Crop modal: cropper.js circle crop -->
 <div class="avcrop-bg" id="avcropBg">
-  <div class="avcrop-hdr">הזיזו וזום עד שהפנים במרכז העיגול</div>
-  <div class="avcrop-canvas-wrap"><img id="avcropImg" alt=""></div>
+  <div class="avcrop-hdr">
+    <div class="t">מקמו את הפנים במרכז והתאימו את התמונה כרצונכם</div>
+    <div class="s">אפשר לגרור ולהגדיל עם האצבעות</div>
+  </div>
+  <div class="avcrop-canvas-wrap" id="avcropCanvasWrap">
+    <div class="avcrop-stage" id="avcropStage"><img id="avcropImg" alt=""></div>
+  </div>
   <div class="avcrop-foot">
     <button class="avcrop-btn cancel" id="avcropCancel" type="button">ביטול</button>
     <button class="avcrop-btn ok"     id="avcropOk"     type="button">השתמש בתמונה</button>
@@ -10720,9 +10740,27 @@ async function _saveMemberAvatar(memberId, avatar) {
 // ─── Avatar flow controller (1A) ─────────────────────────────────
 // State machine: idle → sheet → pick → crop → choice → upload → save → render
 const AvatarFlow = {
-  memberId: null,
-  cropper:  null,
-  blob:     null,
+  memberId:  null,
+  cropper:   null,
+  blob:      null,
+  _objUrls:  [],  // active object URLs to revoke on cleanup
+
+  // Body scroll lock — prevents Samsung Android from scrolling the page
+  // when the user drags inside the cropper. Refcounted across modals.
+  _lockCount: 0,
+  _lock() {
+    this._lockCount++;
+    if (this._lockCount === 1) document.body.classList.add('av-modal-lock');
+  },
+  _unlock() {
+    this._lockCount = Math.max(0, this._lockCount - 1);
+    if (this._lockCount === 0) document.body.classList.remove('av-modal-lock');
+  },
+  _revokeUrls() {
+    this._objUrls.forEach(u => { try { URL.revokeObjectURL(u); } catch (_) {} });
+    this._objUrls = [];
+  },
+
   open(memberId) {
     if (!memberId) { console.warn('[Avatar] open without memberId'); return; }
     this.memberId = memberId;
@@ -10732,9 +10770,14 @@ const AvatarFlow = {
     document.getElementById('avshTitle').textContent = 'תמונת פרופיל — ' + (member?.name || '');
     document.getElementById('avshRemove').style.display = hasPhoto ? '' : 'none';
     document.getElementById('avshBg').classList.add('open');
+    this._lock();
     console.log('[Avatar] sheet open memberId=' + memberId + ' hasPhoto=' + hasPhoto);
   },
-  closeSheet() { document.getElementById('avshBg').classList.remove('open'); },
+  closeSheet() {
+    if (!document.getElementById('avshBg').classList.contains('open')) return;
+    document.getElementById('avshBg').classList.remove('open');
+    this._unlock();
+  },
   pick(source) {
     console.log('[Avatar] pick source=' + source);
     this.closeSheet();
@@ -10744,25 +10787,40 @@ const AvatarFlow = {
     inp.click();
   },
   async onFile(file) {
-    if (!file) return;
+    if (!file) { console.log('[Avatar] onFile no file (user cancelled picker)'); return; }
     console.log('[Avatar] file selected name=' + file.name + ' type=' + file.type + ' size=' + file.size);
+    // Tear down any previous cropper instance + replace the <img> element so
+    // no stale cropper artifacts, listeners, or canvas drawings remain.
+    // Fixes the "image stacking on cancel→reopen" bug.
+    this._teardownCropper();
+    const stage = document.getElementById('avcropStage');
+    const newImg = document.createElement('img');
+    newImg.id = 'avcropImg';
+    newImg.alt = '';
+    stage.replaceChildren(newImg);
     const url = URL.createObjectURL(file);
-    const img = document.getElementById('avcropImg');
-    img.onload = () => {
-      URL.revokeObjectURL(url);
-      this._initCropper();
-    };
-    img.src = url;
+    this._objUrls.push(url);
+    newImg.onload = () => this._initCropper();
+    newImg.src = url;
     document.getElementById('avcropBg').classList.add('open');
+    this._lock();
+  },
+  _teardownCropper() {
+    if (this.cropper) {
+      try { this.cropper.destroy(); } catch (e) { console.warn('[Avatar] cropper destroy threw', e); }
+      this.cropper = null;
+    }
   },
   _initCropper() {
-    if (this.cropper) { this.cropper.destroy(); this.cropper = null; }
+    this._teardownCropper();
     const img = document.getElementById('avcropImg');
+    if (!img) { console.warn('[Avatar] _initCropper: img missing'); return; }
+    if (typeof Cropper !== 'function') { console.warn('[Avatar] Cropper not loaded'); return; }
     this.cropper = new Cropper(img, {
       aspectRatio:    1,
       viewMode:       1,
       dragMode:       'move',
-      autoCropArea:   0.9,
+      autoCropArea:   0.95,
       cropBoxMovable: false,
       cropBoxResizable: false,
       toggleDragModeOnDblclick: false,
@@ -10770,16 +10828,23 @@ const AvatarFlow = {
       guides:         false,
       center:         false,
       highlight:      false,
+      movable:        true,
+      zoomable:       true,
+      zoomOnTouch:    true,
+      zoomOnWheel:    true,
+      responsive:     true,
     });
     console.log('[Avatar] cropper ready');
   },
   cancelCrop() {
-    if (this.cropper) { this.cropper.destroy(); this.cropper = null; }
+    this._teardownCropper();
     document.getElementById('avcropBg').classList.remove('open');
+    this._unlock();
+    this._revokeUrls();
     console.log('[Avatar] crop cancelled');
   },
   async confirmCrop() {
-    if (!this.cropper) return;
+    if (!this.cropper) { console.warn('[Avatar] confirmCrop: no cropper'); return; }
     const tStart = performance.now();
     const canvas = this.cropper.getCroppedCanvas({
       width: 512, height: 512,
@@ -10789,25 +10854,40 @@ const AvatarFlow = {
     console.log('[Avatar] crop done +' + Math.round(performance.now() - tStart)
       + 'ms out=512x512 size=' + blob.size + 'B');
     this.blob = blob;
-    if (this.cropper) { this.cropper.destroy(); this.cropper = null; }
+    this._teardownCropper();
     document.getElementById('avcropBg').classList.remove('open');
+    this._unlock();
+    this._revokeUrls();
     this._showChoice(blob);
   },
   _showChoice(blob) {
+    // Reset button state in case a previous attempt left it disabled.
+    const useBtn = document.getElementById('avchoiceUse');
+    useBtn.disabled = false;
+    useBtn.textContent = 'השתמש בתמונה הזו';
     const dataUrl = URL.createObjectURL(blob);
+    this._objUrls.push(dataUrl);
     const prev = document.getElementById('avchoicePrev');
-    prev.onload = () => URL.revokeObjectURL(dataUrl);
     prev.src = dataUrl;
     document.getElementById('avchoiceBg').classList.add('open');
+    this._lock();
   },
   cancelChoice() {
     document.getElementById('avchoiceBg').classList.remove('open');
+    this._unlock();
+    this._revokeUrls();
     this.blob = null;
     console.log('[Avatar] choice cancelled');
   },
   async useOriginal() {
-    if (!this.blob || !this.memberId) return;
+    console.log('[Avatar] useOriginal click — blob=' + (this.blob ? this.blob.size + 'B' : 'null')
+      + ' memberId=' + this.memberId + ' storage=' + !!_storage + ' familyId=' + (DataAdapter && DataAdapter.familyId));
+    if (!this.blob) { console.warn('[Avatar] useOriginal: blob is null — aborting'); alert('שגיאה: התמונה לא נטענה. נסו שוב.'); return; }
+    if (!this.memberId) { console.warn('[Avatar] useOriginal: memberId is null'); return; }
+    if (!_storage) { console.warn('[Avatar] useOriginal: storage not ready'); alert('Storage לא מוכן. רענן את הדף.'); return; }
+    if (!DataAdapter || !DataAdapter.familyId) { console.warn('[Avatar] useOriginal: no familyId'); alert('המשפחה לא מוגדרת — הגדר משפחה לפני העלאה.'); return; }
     document.getElementById('avchoiceBg').classList.remove('open');
+    this._unlock();
     const btn = document.getElementById('avchoiceUse');
     btn.disabled = true; btn.textContent = 'שומר…';
     try {
@@ -10822,6 +10902,7 @@ const AvatarFlow = {
     } finally {
       btn.disabled = false; btn.textContent = 'השתמש בתמונה הזו';
       this.blob = null;
+      this._revokeUrls();
     }
   },
   async removePhoto() {
