@@ -2229,11 +2229,67 @@ body.text-large .phone{font-size:17px}
 #s-time-date .td-custom-rem-input{flex:1;height:34px;border-radius:12px;border:1.5px solid rgba(255,122,61,.35);background:#fff;font-family:inherit;font-size:15px;font-weight:700;color:var(--ink);text-align:center;direction:ltr;outline:none;}
 #s-time-date .td-custom-rem-input:focus{border-color:var(--orange);}
 #s-time-date .td-custom-rem-ok{height:34px;padding:0 14px;border-radius:12px;background:var(--orange);color:#fff;border:none;font-family:inherit;font-size:12px;font-weight:800;cursor:pointer;flex:0 0 auto;}
+
+/* ─── Avatar bottom sheet (1A) ─── */
+.avsh-bg{position:absolute;inset:0;z-index:930;background:rgba(28,17,10,.36);display:flex;align-items:flex-end;pointer-events:none;opacity:0;transition:opacity .22s ease;}
+.avsh-bg.open{opacity:1;pointer-events:auto;}
+.avsh-sheet{width:100%;background:#fff9f5;border-radius:24px 24px 0 0;padding:10px 18px 28px;box-shadow:0 -8px 40px rgba(100,60,20,.18);transform:translateY(100%);transition:transform .32s cubic-bezier(.34,1.1,.64,1);}
+.avsh-bg.open .avsh-sheet{transform:translateY(0);}
+.avsh-pill{width:42px;height:4px;border-radius:99px;background:#e6dad0;margin:6px auto 10px;}
+.avsh-ttl{font-size:13px;font-weight:900;color:#7a6055;text-align:center;letter-spacing:.4px;margin-bottom:14px;}
+.avsh-row{display:flex;align-items:center;gap:14px;padding:14px 12px;border-radius:14px;cursor:pointer;transition:background .14s,transform .1s;background:transparent;border:none;width:100%;text-align:start;font-family:inherit;color:inherit;}
+.avsh-row:hover{background:rgba(255,154,78,.08);}
+.avsh-row:active{transform:scale(.98);background:rgba(255,154,78,.14);}
+.avsh-row + .avsh-row{margin-top:2px;}
+.avsh-row .ic{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#ffd9b8,#ff9a4e);display:flex;align-items:center;justify-content:center;flex:0 0 auto;color:#fff;}
+.avsh-row .ic svg{width:20px;height:20px;}
+.avsh-row.danger .ic{background:linear-gradient(135deg,#fdd1c1,#d76a55);}
+.avsh-row .body{flex:1;display:flex;flex-direction:column;gap:2px;}
+.avsh-row .t{font-size:15px;font-weight:800;color:#1c110a;}
+.avsh-row .s{font-size:12px;font-weight:600;color:#9e8878;}
+
+/* ─── Avatar crop modal (1A) ─── */
+.avcrop-bg{position:absolute;inset:0;z-index:940;background:rgba(20,10,5,.78);display:flex;flex-direction:column;align-items:stretch;justify-content:stretch;pointer-events:none;opacity:0;transition:opacity .2s ease;}
+.avcrop-bg.open{opacity:1;pointer-events:auto;}
+.avcrop-hdr{flex:0 0 auto;padding:14px 18px 8px;color:#fff;text-align:center;font-size:13px;font-weight:800;letter-spacing:.3px;}
+.avcrop-canvas-wrap{flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;padding:0 16px;overflow:hidden;}
+.avcrop-canvas-wrap img{max-width:100%;display:block;}
+.avcrop-foot{flex:0 0 auto;padding:14px 18px calc(20px + env(safe-area-inset-bottom,0)) 18px;display:flex;gap:10px;}
+.avcrop-btn{flex:1;padding:14px;border-radius:14px;border:none;font-family:inherit;font-size:14px;font-weight:900;cursor:pointer;transition:transform .14s,opacity .14s;}
+.avcrop-btn:active{transform:scale(.97);}
+.avcrop-btn.cancel{background:rgba(255,255,255,.14);color:#fff;}
+.avcrop-btn.ok{background:linear-gradient(135deg,#ff9a4e,#ff5e14);color:#fff;box-shadow:0 5px 16px rgba(255,94,20,.32);}
+.avcrop-btn:disabled{opacity:.5;cursor:not-allowed;}
+/* Force cropper circle preview (override cropper defaults to look like avatar) */
+.avcrop-canvas-wrap .cropper-view-box,
+.avcrop-canvas-wrap .cropper-face{border-radius:50%;}
+.avcrop-canvas-wrap .cropper-view-box{outline:2px solid #ff9a4e;outline-color:rgba(255,154,78,.95);}
+
+/* ─── Avatar use-or-AI choice modal (1A: only "use" enabled, AI button stays disabled) ─── */
+.avchoice-bg{position:absolute;inset:0;z-index:945;background:rgba(28,17,10,.46);display:flex;align-items:center;justify-content:center;pointer-events:none;opacity:0;transition:opacity .22s ease;padding:24px;}
+.avchoice-bg.open{opacity:1;pointer-events:auto;}
+.avchoice-card{width:100%;max-width:340px;background:#fff9f5;border-radius:22px;padding:22px 18px 18px;box-shadow:0 14px 46px rgba(100,60,20,.32);transform:translateY(8px) scale(.98);opacity:0;transition:transform .26s cubic-bezier(.34,1.1,.64,1),opacity .22s;}
+.avchoice-bg.open .avchoice-card{transform:translateY(0) scale(1);opacity:1;}
+.avchoice-prev{width:120px;height:120px;border-radius:50%;margin:0 auto 14px;background:#f4e8dc;box-shadow:0 4px 14px rgba(160,90,30,.18);overflow:hidden;}
+.avchoice-prev img{width:100%;height:100%;object-fit:cover;display:block;}
+.avchoice-ttl{font-size:16px;font-weight:900;color:#1c110a;text-align:center;margin-bottom:18px;}
+.avchoice-row{display:flex;flex-direction:column;gap:8px;}
+.avchoice-btn{padding:14px;border-radius:14px;border:none;font-family:inherit;font-size:14px;font-weight:900;cursor:pointer;transition:transform .14s,opacity .14s;display:flex;align-items:center;justify-content:center;gap:8px;}
+.avchoice-btn:active{transform:scale(.98);}
+.avchoice-btn.primary{background:linear-gradient(135deg,#ff9a4e,#ff5e14);color:#fff;box-shadow:0 5px 16px rgba(255,94,20,.28);}
+.avchoice-btn.ai{background:rgba(184,164,232,.18);color:#7560c0;border:1.5px solid rgba(184,164,232,.45);position:relative;}
+.avchoice-btn.ai[disabled]{cursor:not-allowed;opacity:.7;}
+.avchoice-btn.ai .soon-pill{font-size:10px;font-weight:900;padding:2px 8px;border-radius:99px;background:rgba(117,96,192,.18);color:#7560c0;letter-spacing:.3px;}
+.avchoice-btn.cancel{background:transparent;color:#9e8878;font-weight:700;font-size:13px;padding:10px;margin-top:4px;}
 </style>
+<!-- cropper.js (local vendor — no CDN dependency for Capacitor/offline) -->
+<link rel="stylesheet" href="vendor/cropper.min.css">
 <!-- Firebase SDK (compat — Phase 3) -->
 <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-storage-compat.js"></script>
 <!-- firebase-auth-compat loaded lazily in _fbLoadAuth() to reduce initial memory pressure -->
+<script src="vendor/cropper.min.js" defer></script>
 </head>
 <body>
 
@@ -2852,7 +2908,7 @@ body.text-large .phone{font-size:17px}
         <div class="fam-name"><span>משפחת לוי</span> <span class="heart" aria-hidden="true">💗</span></div>
         <div class="fam-desc">מרחב משפחתי משותף<br/>לנהל, לתכנן ולדאוג אחד לשני</div>
       </div>
-      <div class="fam-avatar"></div>
+      <div class="fam-avatar" data-avatar-bind="me" data-avatar-size="78"><div data-avatar-slot></div></div>
     </div>
 
     <!-- Section label -->
@@ -2981,7 +3037,8 @@ body.text-large .phone{font-size:17px}
           <span class="pen-circle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4Z"/></svg></span>
           <span class="lbl">עריכה</span>
         </button>
-        <div class="mavatar av-aba">
+        <div class="mavatar av-aba" data-avatar-for="member_dad" data-avatar-size="78" onclick="AvatarFlow.open('member_dad')">
+          <div data-avatar-slot></div>
           <span class="cam"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2Z"/><circle cx="12" cy="13" r="4"/></svg></span>
         </div>
         <div class="mbody">
@@ -3007,7 +3064,8 @@ body.text-large .phone{font-size:17px}
           <span class="pen-circle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4Z"/></svg></span>
           <span class="lbl">עריכה</span>
         </button>
-        <div class="mavatar av-ima">
+        <div class="mavatar av-ima" data-avatar-for="member_mom" data-avatar-size="78" onclick="AvatarFlow.open('member_mom')">
+          <div data-avatar-slot></div>
           <span class="cam"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2Z"/><circle cx="12" cy="13" r="4"/></svg></span>
         </div>
         <div class="mbody">
@@ -3030,7 +3088,8 @@ body.text-large .phone{font-size:17px}
           <span class="pen-circle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4Z"/></svg></span>
           <span class="lbl">עריכה</span>
         </button>
-        <div class="mavatar av-leali">
+        <div class="mavatar av-leali" data-avatar-for="member_laali" data-avatar-size="78" onclick="AvatarFlow.open('member_laali')">
+          <div data-avatar-slot></div>
           <span class="cam"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2Z"/><circle cx="12" cy="13" r="4"/></svg></span>
         </div>
         <div class="mbody">
@@ -3053,7 +3112,8 @@ body.text-large .phone{font-size:17px}
           <span class="pen-circle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4Z"/></svg></span>
           <span class="lbl">עריכה</span>
         </button>
-        <div class="mavatar av-uri">
+        <div class="mavatar av-uri" data-avatar-for="member_aharon" data-avatar-size="78" onclick="AvatarFlow.open('member_aharon')">
+          <div data-avatar-slot></div>
           <span class="cam"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2Z"/><circle cx="12" cy="13" r="4"/></svg></span>
         </div>
         <div class="mbody">
@@ -4445,6 +4505,56 @@ body.text-large .phone{font-size:17px}
     <div class="split-sh-foot">
       <button class="split-sh-cancel"  id="splitShCancel"></button>
       <button class="split-sh-confirm" id="splitShConfirm"></button>
+    </div>
+  </div>
+</div>
+
+<!-- ════ AVATAR SHEETS (1A — infrastructure) ════ -->
+<!-- Hidden file inputs: two separate (camera vs gallery) for cross-device reliability -->
+<input type="file" id="avFileCamera"  accept="image/*" capture="user" style="display:none">
+<input type="file" id="avFileGallery" accept="image/*" style="display:none">
+
+<!-- Bottom sheet: choose source (camera / gallery / remove) -->
+<div class="avsh-bg" id="avshBg">
+  <div class="avsh-sheet">
+    <div class="avsh-pill"></div>
+    <div class="avsh-ttl" id="avshTitle">תמונת פרופיל</div>
+    <button class="avsh-row" id="avshCamera" type="button">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2Z"/><circle cx="12" cy="13" r="4"/></svg></span>
+      <div class="body"><span class="t">צלם עכשיו</span><span class="s">פתח את המצלמה הקדמית</span></div>
+    </button>
+    <button class="avsh-row" id="avshGallery" type="button">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="9" r="1.6"/><path d="M21 16l-5-5L5 21"/></svg></span>
+      <div class="body"><span class="t">בחר מהגלריה</span><span class="s">העלה תמונה קיימת</span></div>
+    </button>
+    <button class="avsh-row danger" id="avshRemove" type="button" style="display:none">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg></span>
+      <div class="body"><span class="t">הסר תמונה</span><span class="s">חזרה לאווטר ברירת מחדל</span></div>
+    </button>
+  </div>
+</div>
+
+<!-- Crop modal: cropper.js circle crop -->
+<div class="avcrop-bg" id="avcropBg">
+  <div class="avcrop-hdr">הזיזו וזום עד שהפנים במרכז העיגול</div>
+  <div class="avcrop-canvas-wrap"><img id="avcropImg" alt=""></div>
+  <div class="avcrop-foot">
+    <button class="avcrop-btn cancel" id="avcropCancel" type="button">ביטול</button>
+    <button class="avcrop-btn ok"     id="avcropOk"     type="button">השתמש בתמונה</button>
+  </div>
+</div>
+
+<!-- Use-original-or-AI choice modal (1A: AI button disabled with "soon" pill) -->
+<div class="avchoice-bg" id="avchoiceBg">
+  <div class="avchoice-card">
+    <div class="avchoice-prev"><img id="avchoicePrev" alt=""></div>
+    <div class="avchoice-ttl">איך להשתמש בתמונה?</div>
+    <div class="avchoice-row">
+      <button class="avchoice-btn primary" id="avchoiceUse" type="button">השתמש בתמונה הזו</button>
+      <button class="avchoice-btn ai" id="avchoiceAI" type="button" disabled title="בקרוב">
+        ✨ צור דמות AI <span class="soon-pill">בקרוב</span>
+      </button>
+      <button class="avchoice-btn cancel" id="avchoiceCancel" type="button">ביטול</button>
     </div>
   </div>
 </div>
@@ -10318,6 +10428,7 @@ console.log('[DA] mode=' + DataAdapter.mode
 // initial memory pressure low and avoid WebView OOM on startup.
 let _db            = null;
 let _auth          = null;
+let _storage       = null;
 let _rtUnsubscribe = null;
 
 // ─── Sync diagnostics (rt-sync-diagnostics-2026-05-14) ───────────
@@ -10410,6 +10521,12 @@ async function _fbLinkAuthToMember(authUid) {
     });
     _db = firebase.firestore();
     console.log('[FB] Firestore ready');
+    if (typeof firebase.storage === 'function') {
+      _storage = firebase.storage();
+      console.log('[FB] Storage ready');
+    } else {
+      console.warn('[FB] Storage SDK not loaded — avatar upload disabled');
+    }
     // Load Auth SDK lazily after Firestore is up
     _fbLoadAuth()
       .then(() => {
@@ -10518,6 +10635,7 @@ async function _loadFamilyMembersCache() {
     _familyMembersCache = snap.docs.map(d => d.data())
       .filter(m => IDENTITY_MEMBER_IDS.includes(m.memberId));
     console.log('[DA] members cache loaded:', _familyMembersCache.length);
+    if (typeof _renderAllAvatars === 'function') _renderAllAvatars();
   } catch (e) {
     AppLog.warn('DA', 'loadMembersCache failed', e.message || e);
   }
@@ -10537,6 +10655,253 @@ function resolveMember(task) {
   const legacy = FAMILY.find(f => f.id === (task.assignedTo || ''));
   if (legacy) return { name: legacy.label, avatar: { type: 'emoji', value: legacy.emoji }, memberId: null };
   return { name: task.person || task.assignedTo || '?', avatar: { type: 'emoji', value: '👤' }, memberId: null };
+}
+
+// ─── Avatar System (1A — infrastructure) ─────────────────────────
+// Schema: avatar = { type: 'emoji'|'photo'|'ai-photo', value?, url?, originalUrl? }
+//   emoji    → { type:'emoji', value:'👨' }
+//   photo    → { type:'photo', url:'https://firebasestorage.../...' }
+//   ai-photo → { type:'ai-photo', url:'...', originalUrl:'...' }  (V2)
+// avatarVariants[] lives on member doc (sibling of avatar), reserved for V2.
+function renderAvatarHTML(avatar, sizePx) {
+  const size = Number(sizePx) || 64;
+  const a    = avatar || { type: 'emoji', value: '👤' };
+  if (a.type === 'photo' || a.type === 'ai-photo') {
+    if (a.url) {
+      return '<img src="' + _escAttr(a.url) + '" alt="" '
+        + 'style="width:100%;height:100%;border-radius:inherit;object-fit:cover;display:block;" '
+        + 'loading="lazy" decoding="async" />';
+    }
+  }
+  const em = (a.value || '👤');
+  const fs = Math.round(size * 0.58);
+  return '<span style="width:100%;height:100%;border-radius:inherit;display:flex;'
+    + 'align-items:center;justify-content:center;font-size:' + fs + 'px;line-height:1;">'
+    + em + '</span>';
+}
+function _escAttr(s) {
+  return String(s == null ? '' : s).replace(/[&"<>]/g, c => (
+    { '&':'&amp;', '"':'&quot;', '<':'&lt;', '>':'&gt;' }[c]
+  ));
+}
+
+// uploadAvatarBlob — uploads a blob to Storage, returns download URL.
+// Path: families/{familyId}/avatars/{memberId}-{timestamp}.jpg
+async function _uploadAvatarBlob(blob, memberId) {
+  const tStart = performance.now();
+  if (!_storage) throw new Error('Storage not initialized');
+  const familyId = DataAdapter.familyId;
+  if (!familyId) throw new Error('No familyId — cannot upload');
+  if (!memberId) throw new Error('No memberId — cannot upload');
+  const ts   = Date.now();
+  const path = 'families/' + familyId + '/avatars/' + memberId + '-' + ts + '.jpg';
+  console.log('[Avatar] upload start path=' + path + ' bytes=' + blob.size);
+  const ref  = _storage.ref(path);
+  await ref.put(blob, { contentType: blob.type || 'image/jpeg' });
+  const url  = await ref.getDownloadURL();
+  console.log('[Avatar] upload done +' + Math.round(performance.now() - tStart) + 'ms url=' + url.slice(0, 80) + '…');
+  return url;
+}
+
+// Save avatar to member doc in Firestore.
+async function _saveMemberAvatar(memberId, avatar) {
+  const tStart = performance.now();
+  if (!_db || !DataAdapter.isFamily()) throw new Error('Firestore not ready');
+  const ref = _db.collection('families').doc(DataAdapter.familyId)
+                 .collection('members').doc(memberId);
+  await ref.set({ avatar }, { merge: true });
+  console.log('[Avatar] firestore save +' + Math.round(performance.now() - tStart)
+    + 'ms memberId=' + memberId + ' type=' + avatar.type);
+  // Refresh in-memory cache so render uses new avatar immediately.
+  const cached = _familyMembersCache.find(m => m.memberId === memberId);
+  if (cached) cached.avatar = avatar;
+}
+
+// ─── Avatar flow controller (1A) ─────────────────────────────────
+// State machine: idle → sheet → pick → crop → choice → upload → save → render
+const AvatarFlow = {
+  memberId: null,
+  cropper:  null,
+  blob:     null,
+  open(memberId) {
+    if (!memberId) { console.warn('[Avatar] open without memberId'); return; }
+    this.memberId = memberId;
+    const member  = _FAMILY_MEMBERS_SEED.find(m => m.memberId === memberId)
+                 || _familyMembersCache.find(m => m.memberId === memberId);
+    const hasPhoto = member && member.avatar && (member.avatar.type === 'photo' || member.avatar.type === 'ai-photo');
+    document.getElementById('avshTitle').textContent = 'תמונת פרופיל — ' + (member?.name || '');
+    document.getElementById('avshRemove').style.display = hasPhoto ? '' : 'none';
+    document.getElementById('avshBg').classList.add('open');
+    console.log('[Avatar] sheet open memberId=' + memberId + ' hasPhoto=' + hasPhoto);
+  },
+  closeSheet() { document.getElementById('avshBg').classList.remove('open'); },
+  pick(source) {
+    console.log('[Avatar] pick source=' + source);
+    this.closeSheet();
+    const id = source === 'camera' ? 'avFileCamera' : 'avFileGallery';
+    const inp = document.getElementById(id);
+    inp.value = '';
+    inp.click();
+  },
+  async onFile(file) {
+    if (!file) return;
+    console.log('[Avatar] file selected name=' + file.name + ' type=' + file.type + ' size=' + file.size);
+    const url = URL.createObjectURL(file);
+    const img = document.getElementById('avcropImg');
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      this._initCropper();
+    };
+    img.src = url;
+    document.getElementById('avcropBg').classList.add('open');
+  },
+  _initCropper() {
+    if (this.cropper) { this.cropper.destroy(); this.cropper = null; }
+    const img = document.getElementById('avcropImg');
+    this.cropper = new Cropper(img, {
+      aspectRatio:    1,
+      viewMode:       1,
+      dragMode:       'move',
+      autoCropArea:   0.9,
+      cropBoxMovable: false,
+      cropBoxResizable: false,
+      toggleDragModeOnDblclick: false,
+      background:     false,
+      guides:         false,
+      center:         false,
+      highlight:      false,
+    });
+    console.log('[Avatar] cropper ready');
+  },
+  cancelCrop() {
+    if (this.cropper) { this.cropper.destroy(); this.cropper = null; }
+    document.getElementById('avcropBg').classList.remove('open');
+    console.log('[Avatar] crop cancelled');
+  },
+  async confirmCrop() {
+    if (!this.cropper) return;
+    const tStart = performance.now();
+    const canvas = this.cropper.getCroppedCanvas({
+      width: 512, height: 512,
+      imageSmoothingEnabled: true, imageSmoothingQuality: 'high',
+    });
+    const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.88));
+    console.log('[Avatar] crop done +' + Math.round(performance.now() - tStart)
+      + 'ms out=512x512 size=' + blob.size + 'B');
+    this.blob = blob;
+    if (this.cropper) { this.cropper.destroy(); this.cropper = null; }
+    document.getElementById('avcropBg').classList.remove('open');
+    this._showChoice(blob);
+  },
+  _showChoice(blob) {
+    const dataUrl = URL.createObjectURL(blob);
+    const prev = document.getElementById('avchoicePrev');
+    prev.onload = () => URL.revokeObjectURL(dataUrl);
+    prev.src = dataUrl;
+    document.getElementById('avchoiceBg').classList.add('open');
+  },
+  cancelChoice() {
+    document.getElementById('avchoiceBg').classList.remove('open');
+    this.blob = null;
+    console.log('[Avatar] choice cancelled');
+  },
+  async useOriginal() {
+    if (!this.blob || !this.memberId) return;
+    document.getElementById('avchoiceBg').classList.remove('open');
+    const btn = document.getElementById('avchoiceUse');
+    btn.disabled = true; btn.textContent = 'שומר…';
+    try {
+      const url = await _uploadAvatarBlob(this.blob, this.memberId);
+      const avatar = { type: 'photo', url };
+      await _saveMemberAvatar(this.memberId, avatar);
+      _refreshAvatarUI(this.memberId, avatar);
+      console.log('[Avatar] saved photo for ' + this.memberId);
+    } catch (e) {
+      console.error('[Avatar] save failed', e);
+      alert('שמירה נכשלה: ' + (e.message || e));
+    } finally {
+      btn.disabled = false; btn.textContent = 'השתמש בתמונה הזו';
+      this.blob = null;
+    }
+  },
+  async removePhoto() {
+    if (!this.memberId) return;
+    this.closeSheet();
+    const seed = _FAMILY_MEMBERS_SEED.find(m => m.memberId === this.memberId);
+    const def  = seed ? seed.avatar : { type: 'emoji', value: '👤' };
+    try {
+      await _saveMemberAvatar(this.memberId, def);
+      _refreshAvatarUI(this.memberId, def);
+      console.log('[Avatar] removed → reverted to default emoji for ' + this.memberId);
+    } catch (e) {
+      console.error('[Avatar] remove failed', e);
+      alert('הסרה נכשלה: ' + (e.message || e));
+    }
+  },
+};
+
+// Update all currently-rendered avatar DOM nodes for this member.
+// 1A: covers .mavatar (#s-family-members) and #s-settings .fam-avatar.
+// 1B will extend to: today strip, share drawer, confirmation screen.
+// Nodes opt-in via data-avatar-for="<memberId>" data-avatar-size="<px>".
+// Content goes into [data-avatar-slot] child if present, else into the node itself
+// (slot pattern preserves siblings like the camera overlay button).
+function _refreshAvatarUI(memberId, avatar) {
+  const tStart = performance.now();
+  const nodes  = document.querySelectorAll('[data-avatar-for="' + memberId + '"]');
+  nodes.forEach(node => {
+    const size = parseInt(node.dataset.avatarSize, 10) || 64;
+    const slot = node.querySelector('[data-avatar-slot]') || node;
+    slot.innerHTML = renderAvatarHTML(avatar, size);
+  });
+  console.log('[Avatar] render +' + Math.round(performance.now() - tStart)
+    + 'ms memberId=' + memberId + ' nodes=' + nodes.length + ' type=' + avatar.type);
+}
+
+// Render every avatar slot on the page from seed (initial) or cache (post-sync).
+function _renderAllAvatars() {
+  const src = (_familyMembersCache && _familyMembersCache.length)
+    ? _familyMembersCache : _FAMILY_MEMBERS_SEED;
+  src.forEach(m => { if (m && m.memberId && m.avatar) _refreshAvatarUI(m.memberId, m.avatar); });
+  // Resolve dynamic bindings like data-avatar-bind="me" → DataAdapter.myMemberId.
+  const myId = DataAdapter && DataAdapter.myMemberId;
+  document.querySelectorAll('[data-avatar-bind="me"]').forEach(node => {
+    if (!myId) return;
+    node.setAttribute('data-avatar-for', myId);
+    const me = src.find(m => m.memberId === myId);
+    if (me && me.avatar) _refreshAvatarUI(myId, me.avatar);
+  });
+}
+
+// Bootstrap: wire flow + initial render on DOM ready.
+function _initAvatarSystem() {
+  _wireAvatarFlow();
+  _renderAllAvatars();
+}
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', _initAvatarSystem);
+} else {
+  _initAvatarSystem();
+}
+
+// Wire up DOM listeners once on first call.
+let _avatarWired = false;
+function _wireAvatarFlow() {
+  if (_avatarWired) return;
+  _avatarWired = true;
+  document.getElementById('avshBg').addEventListener('click', e => {
+    if (e.target.id === 'avshBg') AvatarFlow.closeSheet();
+  });
+  document.getElementById('avshCamera').addEventListener('click', () => AvatarFlow.pick('camera'));
+  document.getElementById('avshGallery').addEventListener('click', () => AvatarFlow.pick('gallery'));
+  document.getElementById('avshRemove').addEventListener('click', () => AvatarFlow.removePhoto());
+  document.getElementById('avFileCamera').addEventListener('change', e => AvatarFlow.onFile(e.target.files[0]));
+  document.getElementById('avFileGallery').addEventListener('change', e => AvatarFlow.onFile(e.target.files[0]));
+  document.getElementById('avcropCancel').addEventListener('click', () => AvatarFlow.cancelCrop());
+  document.getElementById('avcropOk').addEventListener('click', () => AvatarFlow.confirmCrop());
+  document.getElementById('avchoiceCancel').addEventListener('click', () => AvatarFlow.cancelChoice());
+  document.getElementById('avchoiceUse').addEventListener('click', () => AvatarFlow.useOriginal());
+  console.log('[Avatar] flow wired');
 }
 
 // ─── QA Panel (temp diagnostic) ──────────────────────────────────
