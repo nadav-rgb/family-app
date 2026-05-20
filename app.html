@@ -8558,6 +8558,7 @@ function doDelete(task, screen) {
     state.exKey  = exKey;
     saveState();
     _capCancelTask(task.id).catch(() => {});
+    _cancelScheduledPushesForTask(task.id).catch(() => {});
     _capRescheduleAll().catch(() => {});
     _refreshTodayMetadata();
   } else {
@@ -8587,6 +8588,7 @@ function doDelete(task, screen) {
     }
     saveState();
     _capCancelTask(task.id).catch(() => {});
+    _cancelScheduledPushesForTask(task.id).catch(() => {});
     _capRescheduleAll().catch(() => {});
     if (state.type === 'soft') _daSoftDeleteTask(task).catch(() => {});
     else if (state.type === 'hide') _daWriteTask(task).catch(() => {});
@@ -8766,6 +8768,7 @@ document.getElementById('tTasks').addEventListener('click', e => {
   saveState();
   _daWriteTask(task).catch(() => {});
   _capCancelTask(task.id).catch(() => {});
+  _cancelScheduledPushesForTask(task.id).catch(() => {});
 
   // Animate then settle
   el.classList.add('completing');
@@ -9646,16 +9649,18 @@ function checkOverdueReminders() {
     const elapsedMins = nowMins - task.mins;
     if (elapsedMins < 0) { console.log(`    not yet at task time (elapsed=${elapsedMins})`); return; }
 
-    task.overdueReminderOffsets.forEach((stageOffset, idx) => {
-      const stageDue = elapsedMins >= stageOffset && !task.sentReminderStages.includes(idx);
-      if (stageDue) {
-        task.sentReminderStages.push(idx);
-        task.lastReminderSentAt = now.toISOString();
-        console.log(`    → FIRING overdue stage ${idx} (+${stageOffset} min)`);
-        _fireRealNotification(task.title, tFmt('notif_overdue',{n:stageOffset}), `task-${task.id}-overdue-${idx}`, 'overdue');
-        changed = true;
-      }
-    });
+    if (_loadNotifPrefs().overdueRemindersOn) {
+      task.overdueReminderOffsets.forEach((stageOffset, idx) => {
+        const stageDue = elapsedMins >= stageOffset && !task.sentReminderStages.includes(idx);
+        if (stageDue) {
+          task.sentReminderStages.push(idx);
+          task.lastReminderSentAt = now.toISOString();
+          console.log(`    → FIRING overdue stage ${idx} (+${stageOffset} min)`);
+          _fireRealNotification(task.title, tFmt('notif_overdue',{n:stageOffset}), `task-${task.id}-overdue-${idx}`, 'overdue');
+          changed = true;
+        }
+      });
+    }
   });
 
   if (changed) saveState();
@@ -9747,8 +9752,10 @@ async function _ensurePushSubscription() {
 // aren't in the new set. Simple, idempotent, no diff logic needed
 // client-side.
 function _buildScheduledPushList() {
-  const out   = [];
-  const today = todayDate();
+  const out      = [];
+  const today    = todayDate();
+  const deviceId = _getDeviceId();
+  const prefs    = _loadNotifPrefs();
   AppState.tasks.forEach(task => {
     if ((task.date || today) !== today) return;
     if (task.completed || task.notify === false || task.deleted) return;
@@ -9760,29 +9767,33 @@ function _buildScheduledPushList() {
     base.setHours(0, 0, 0, 0);
     const taskAt = base.getTime() + task.mins * 60 * 1000;
 
-    const offset    = (task.reminderOffsetMinutes ?? 10) * 60 * 1000;
-    const initialAt = taskAt - offset;
-    const offLabel  = offset === 0 ? t('notif_starting') : tFmt('time_in_min',{n:task.reminderOffsetMinutes ?? 10});
+    // Multi-chip: one push per selected offset. Older tasks fall back to the
+    // legacy single field. pushId includes deviceId so multiple devices in
+    // the same family don't overwrite each other's KV entries.
+    const offsets = (Array.isArray(task.reminderOffsets) && task.reminderOffsets.length)
+      ? task.reminderOffsets
+      : [task.reminderOffsetMinutes ?? 10];
 
-    out.push({
-      id:     `task-${task.id}-initial`,
-      taskId: task.id,
-      fireAt: initialAt,
-      title:  task.title,
-      body:   offLabel,
-      tag:    `task-${task.id}-initial`,
+    offsets.forEach(offsetMin => {
+      const fireAt = taskAt - offsetMin * 60 * 1000;
+      const body   = offsetMin === 0 ? t('notif_starting') : tFmt('time_in_min', { n: offsetMin });
+      const id     = `task-${task.id}-reminder-${offsetMin}-${deviceId}`;
+      out.push({ id, taskId: task.id, fireAt, title: task.title, body, tag: id });
     });
 
-    (task.overdueReminderOffsets || [5, 10, 15]).forEach((stageOffset, idx) => {
-      out.push({
-        id:     `task-${task.id}-overdue-${idx}`,
-        taskId: task.id,
-        fireAt: taskAt + stageOffset * 60 * 1000,
-        title:  task.title,
-        body:   tFmt('notif_overdue', { n: stageOffset }),
-        tag:    `task-${task.id}-overdue-${idx}`,
+    // Overdue stages — skip entirely when the global "overdue reminders" toggle is off.
+    if (prefs.overdueRemindersOn) {
+      (task.overdueReminderOffsets || [5, 10, 15]).forEach((stageOffset, idx) => {
+        const id = `task-${task.id}-overdue-${idx}-${deviceId}`;
+        out.push({
+          id, taskId: task.id,
+          fireAt: taskAt + stageOffset * 60 * 1000,
+          title:  task.title,
+          body:   tFmt('notif_overdue', { n: stageOffset }),
+          tag:    id,
+        });
       });
-    });
+    }
   });
   return out;
 }
@@ -9974,14 +9985,16 @@ async function _capScheduleTask(task) {
                   channelId: 'family-task',
                   schedule: { at: atTime, allowWhileIdle: true } });
   }
-  (task.overdueReminderOffsets || [5, 10, 15]).forEach((stageOffset, idx) => {
-    const fireAt = new Date(taskAt + stageOffset * 60 * 1000);
-    if (fireAt.getTime() > now)
-      notifs.push({ id: _capNotifId(task.id, idx + 2), title: task.title,
-                    body: tFmt('notif_overdue', { n: stageOffset }),
-                    channelId: 'family-overdue',
-                    schedule: { at: fireAt, allowWhileIdle: true } });
-  });
+  if (_loadNotifPrefs().overdueRemindersOn) {
+    (task.overdueReminderOffsets || [5, 10, 15]).forEach((stageOffset, idx) => {
+      const fireAt = new Date(taskAt + stageOffset * 60 * 1000);
+      if (fireAt.getTime() > now)
+        notifs.push({ id: _capNotifId(task.id, idx + 2), title: task.title,
+                      body: tFmt('notif_overdue', { n: stageOffset }),
+                      channelId: 'family-overdue',
+                      schedule: { at: fireAt, allowWhileIdle: true } });
+    });
+  }
 
   if (!notifs.length) { console.log('[capLN] no future notifications for task', task.id, '(all times past)'); return; }
   try {
