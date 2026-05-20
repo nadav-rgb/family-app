@@ -1914,8 +1914,15 @@ body.text-large .phone{font-size:17px}
 #s-notifications .n-sound-item .ns-cur{display:flex;align-items:center;gap:8px;}
 #s-notifications .n-sound-item .so-em{font-size:16px;line-height:1;}
 #s-notifications .n-sound-item:hover{background:rgba(128,128,128,0.07);}
+#s-notifications .n-sound-item .ns-right{display:flex;align-items:center;gap:6px;flex:0 0 auto;}
 #s-notifications .n-sound-item .ns-check{width:14px;height:14px;opacity:0;flex:0 0 auto;}
 #s-notifications .n-sound-item.sel .ns-check{opacity:1;}
+#s-notifications .n-sound-item .ns-play{width:26px;height:26px;border-radius:50%;border:none;background:rgba(128,128,128,0.10);color:var(--muted);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .15s,color .15s,transform .12s;flex:0 0 auto;padding:0;}
+#s-notifications .n-sound-item .ns-play:active{transform:scale(.88);}
+#s-notifications .n-sound-item .ns-play svg{width:11px;height:11px;margin-right:1px;}
+#s-notifications .n-sound-select.ic-reminder .n-sound-item .ns-play:hover{background:rgba(200,139,0,0.18);color:#C88B00;}
+#s-notifications .n-sound-select.ic-due .n-sound-item .ns-play:hover{background:rgba(229,98,26,0.18);color:#E5621A;}
+#s-notifications .n-sound-select.ic-overdue .n-sound-item .ns-play:hover{background:rgba(197,48,48,0.18);color:#C53030;}
 #s-notifications .n-sound-select.ic-reminder .n-sound-item.sel{background:rgba(200,139,0,0.12);color:#C88B00;}
 #s-notifications .n-sound-select.ic-due .n-sound-item.sel{background:rgba(229,98,26,0.12);color:#E5621A;}
 #s-notifications .n-sound-select.ic-overdue .n-sound-item.sel{background:rgba(197,48,48,0.12);color:#C53030;}
@@ -9152,7 +9159,17 @@ function renderNotifications() {
         item.setAttribute('role', 'option');
         item.setAttribute('aria-selected', opt.id === selSound ? 'true' : 'false');
         item.innerHTML = `<span class="ns-cur"><span class="so-em">${opt.emoji}</span><span class="so-lbl">${opt.label}</span></span>
-          <svg class="ns-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+          <span class="ns-right">
+            <svg class="ns-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            ${opt.id === 'none' ? '' : `<button type="button" class="ns-play" aria-label="השמע ${opt.label}"><svg viewBox="0 0 24 24" fill="currentColor"><polygon points="6 4 20 12 6 20 6 4"/></svg></button>`}
+          </span>`;
+        var playBtn = item.querySelector('.ns-play');
+        if (playBtn) {
+          playBtn.addEventListener('click', function(ev) {
+            ev.stopPropagation();
+            _playNotifSound(opt.id);
+          });
+        }
         item.addEventListener('click', (e) => {
           e.stopPropagation();
           _playNotifSound(opt.id);
