@@ -4475,7 +4475,7 @@ body.text-large .phone{font-size:17px}
 // ─── State ────────────────────────────────────────────────────────
 const STORAGE_KEY = 'family-app-v1';
 const APPEARANCE_KEY = 'family-app-appearance';
-const AppState = { tasks: [], previewTasks: [], recurringCompletions: {}, lang: 'he', voiceText: '', splitSuggestions: [],
+const AppState = { tasks: [], previewTasks: [], recurringCompletions: {}, recurringExclusions: {}, lang: 'he', voiceText: '', splitSuggestions: [],
   theme: 'bright', accentColor: '#FF7A3D', accentDeep: '#E5621A', accentSoft: '#FFE9D2',
   textSize: 'normal', voiceStyle: 'classic', avatarMode: null };
 
@@ -4816,7 +4816,8 @@ let activeDate = todayDate();
 function saveState() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify({
     tasks: AppState.tasks,
-    recurringCompletions: AppState.recurringCompletions
+    recurringCompletions: AppState.recurringCompletions,
+    recurringExclusions: AppState.recurringExclusions
   }));
 }
 
@@ -4825,6 +4826,7 @@ function loadState() {
     const s = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
     if (s && Array.isArray(s.tasks))          AppState.tasks               = s.tasks;
     if (s && s.recurringCompletions)           AppState.recurringCompletions = s.recurringCompletions;
+    if (s && s.recurringExclusions)            AppState.recurringExclusions  = s.recurringExclusions;
     // Migration — legacy weekly tasks used a single `dayOfWeek`. Convert
     // to `daysOfWeek` array so the multi-day UI + activeTasks projector
     // see a consistent shape. Idempotent: if already migrated, no-op.
@@ -8000,6 +8002,7 @@ function activeTasks() {
       if (t.deleted) return false;
       if ((t.date || todayDate()) > activeDate) return false;   // template created after this date
       if (!isVisible(t)) return false;
+      if (AppState.recurringExclusions && AppState.recurringExclusions[`${t.id}_${activeDate}`]) return false;
       if (t.recurrence.type === 'daily') return true;
       if (t.recurrence.type === 'weekly') {
         const days = Array.isArray(t.recurrence.daysOfWeek) ? t.recurrence.daysOfWeek
@@ -8376,6 +8379,11 @@ function undoDelete() {
     if (idx >= 0 && idx <= AppState.previewTasks.length) AppState.previewTasks.splice(idx, 0, task);
     else AppState.previewTasks.push(task);
     dpRender(false);
+  } else if (type === 'recur-exclude') {
+    if (state.exKey && AppState.recurringExclusions) delete AppState.recurringExclusions[state.exKey];
+    saveState();
+    if (typeof renderToday === 'function') renderToday();
+    if (typeof _capRescheduleAll === 'function') _capRescheduleAll().catch(() => {});
   } else if (type === 'soft') {
     task.deleted   = false;
     task.deletedAt = null;
@@ -8509,6 +8517,16 @@ function doDelete(task, screen) {
     // Surgical: card already removed from DOM by the swipe animation.
     // Just refresh the meta pills — no list rebuild → no flicker / vibration.
     _updateDpMeta();
+  } else if (task.isRecurring && task.recurrenceId) {
+    // Recurring virtual instance: don't touch template, exclude this date.
+    const exKey = `${task.recurrenceId}_${task.date}`;
+    AppState.recurringExclusions[exKey] = true;
+    state.type   = 'recur-exclude';
+    state.exKey  = exKey;
+    saveState();
+    _capCancelTask(task.id).catch(() => {});
+    _capRescheduleAll().catch(() => {});
+    _refreshTodayMetadata();
   } else {
     const isCreator = _canEditCommittedTask(task);
     if (!isCreator) {
@@ -11442,7 +11460,19 @@ function tdSave() {
     task.reminderOffsets = remOffsets;
     task.reminderOffsetMinutes = remOffsets.length ? Math.min.apply(null, remOffsets) : 0;
     var recurChip = document.querySelector('#tdRecurChips .td-optfull-chip.on');
-    if (recurChip) task.recurrenceFreq = recurChip.dataset.recur || 'none';
+    if (recurChip) {
+      var freq = recurChip.dataset.recur || 'none';
+      task.recurrenceFreq = freq;
+      if (freq === 'daily') {
+        task.recurrence = { type: 'daily' };
+      } else if (freq === 'weekly') {
+        var basisDate = task.date || (typeof todayDate === 'function' ? todayDate() : null);
+        var dow = basisDate ? new Date(basisDate + 'T00:00:00').getDay() : new Date().getDay();
+        task.recurrence = { type: 'weekly', daysOfWeek: [dow] };
+      } else {
+        task.recurrence = { type: 'none' };
+      }
+    }
   }
   var dest = _tdBackScreen || 's-confirmation';
   if (dest === 's-today') {
@@ -11844,7 +11874,9 @@ function _tdInitCalAndOptions(task) {
   if (typeof _tdUpdateRemInfo === 'function') _tdUpdateRemInfo();
 
   // חזרה
-  var freq = task.recurrenceFreq || 'none';
+  var freq = task.recurrenceFreq
+          || (task.recurrence && (task.recurrence.type === 'daily' || task.recurrence.type === 'weekly') ? task.recurrence.type : null)
+          || 'none';
   var rcc = document.getElementById('tdRecurChips');
   if (rcc) rcc.querySelectorAll('.td-optfull-chip').forEach(function(c) {
     c.classList.toggle('on', c.dataset.recur === freq);
