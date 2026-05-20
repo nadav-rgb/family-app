@@ -3926,11 +3926,11 @@ body.text-large .phone{font-size:17px}
       </div>
 
       <div class="vis-filter-row" id="visSeeFilters">
-        <button class="vis-filter-pill" type="button" data-id="custom">
+        <button class="vis-filter-pill on" type="button" data-id="custom">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h6M15 7h6"/><circle cx="12" cy="7" r="2.4"/><path d="M3 17h2M11 17h10"/><circle cx="8" cy="17" r="2.4"/></svg>
           <span>מותאם אישית</span>
         </button>
-        <button class="vis-filter-pill on" type="button" data-id="performer">
+        <button class="vis-filter-pill" type="button" data-id="performer">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M5 20c0-4 3.4-6 7-6s7 2 7 6"/></svg>
           <span>רק המבצע</span>
         </button>
@@ -3980,11 +3980,11 @@ body.text-large .phone{font-size:17px}
       </div>
 
       <div class="vis-filter-row" id="visNotifyFilters">
-        <button class="vis-filter-pill" type="button" data-id="custom">
+        <button class="vis-filter-pill on" type="button" data-id="custom">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h6M15 7h6"/><circle cx="12" cy="7" r="2.4"/><path d="M3 17h2M11 17h10"/><circle cx="8" cy="17" r="2.4"/></svg>
           <span>מותאם אישית</span>
         </button>
-        <button class="vis-filter-pill on" type="button" data-id="performer">
+        <button class="vis-filter-pill" type="button" data-id="performer">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M5 20c0-4 3.4-6 7-6s7 2 7 6"/></svg>
           <span>רק המבצע</span>
         </button>
@@ -11553,8 +11553,8 @@ function _tdBuildCalGrid(year, month, selDate) {
 
 // ── #s-visibility globals ──────────────────────────────────────────
 var _visPerformer      = 'aba';
-var _visSeeFilter      = 'performer';
-var _visNotifyFilter   = 'performer';
+var _visSeeFilter      = 'custom';
+var _visNotifyFilter   = 'custom';
 var _visMemberNames    = {aba:'אבא', ima:'אמא', leali:'ליאלי', aharon:'אהרן'};
 var _visSVGCheck       = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg>';
 
@@ -11702,8 +11702,8 @@ function _visUpdateHero() {
 function renderVisibility() {
   var t = AppState.previewTasks && AppState.previewTasks[0];
   _visPerformer = (t && t.assignedTo) ? t.assignedTo : 'aba';
-  _visSetFilter('see',    'performer');
-  _visSetFilter('notify', 'performer');
+  _visSetFilter('see',    'custom');
+  _visSetFilter('notify', 'custom');
   _visUpdateHero();
 }
 // ── end #s-visibility globals ──────────────────────────────────────
