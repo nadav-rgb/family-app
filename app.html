@@ -715,10 +715,16 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 /* ── Today task restructure ── */
 .t-task{background:#fffcf9;border-radius:16px;display:flex;flex-direction:column;align-items:stretch;box-shadow:0 2px 14px rgba(140,80,20,.07),0 1px 3px rgba(140,80,20,.05);cursor:pointer;transition:transform .18s,box-shadow .18s,opacity .4s;border:1.5px solid transparent;}
 .t-task-main{display:flex;align-items:center;gap:12px;padding:14px 15px;}
-.t-share{padding:10px 15px 12px;display:flex;align-items:center;gap:8px;cursor:pointer;border-top:1px solid rgba(0,0,0,.06);background:rgba(0,0,0,.022);transition:background .13s;}
+.t-share{padding:10px 15px 12px;display:flex;align-items:center;gap:10px;cursor:pointer;border-top:1px solid rgba(0,0,0,.06);background:rgba(0,0,0,.022);transition:background .13s;}
 .t-share:active{background:rgba(0,0,0,.07);}
 .t-share-lbl{font-size:11px;font-weight:700;color:#a8917f;flex-shrink:0;}
 .t-share-name{font-size:13px;font-weight:800;color:#5a3e2b;flex:1;letter-spacing:.1px;}
+.t-share-avs{flex:1 1 auto;display:flex;align-items:center;gap:9px;justify-content:flex-start;min-width:0;flex-wrap:wrap;}
+.t-share-av{position:relative;flex:0 0 auto;display:flex;flex-direction:column;align-items:center;}
+.t-share-circle{width:22px;height:22px;border-radius:50%;background:radial-gradient(120% 120% at 30% 25%,#ffffff 0%,#FBF4EB 60%,#EFE3D2 100%);border:1px solid rgba(255,255,255,0.85);box-shadow:0 2px 5px rgba(160,90,30,0.10),0 1px 2px rgba(160,90,30,0.06),inset 0 1px 2px rgba(255,255,255,0.95);}
+.t-share-av.owner .t-share-circle{width:32px;height:32px;border:2px solid #FF7A3D;box-shadow:0 3px 8px rgba(229,98,26,0.22),inset 0 1px 2px rgba(255,255,255,0.95);}
+.t-share-bell{position:absolute;bottom:-2px;left:-3px;width:13px;height:13px;border-radius:50%;background:#FF7A3D;color:#fff;font-size:8px;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(229,98,26,0.35),0 0 0 1.5px #fff;line-height:1;}
+.t-share-av.owner .t-share-bell{width:15px;height:15px;font-size:9px;bottom:-2px;left:-3px;}
 /* Subtle "more options" hint added before the arrow so the user knows
    tapping the bar opens a panel with extra settings (sharing, reminder,
    recurrence, etc.). Same style for preview cards (.card-share-more-hint)
@@ -8170,9 +8176,23 @@ function renderToday() {
           <div class="t-bell${_taskShowsActiveBell(t)?'':' off'}">${_taskShowsActiveBell(t)?'🔔':'🔕'}</div>
         </div>
         <div class="t-share">
-          <span class="t-share-lbl">${(I18N[AppState.lang]||I18N.en).assigned_to}</span>
-          <span class="t-share-name">${assignedLabel(t)}</span>
-          <span class="t-share-more-hint">${(I18N[AppState.lang]||I18N.en).share_more_hint}</span>
+          <div class="t-share-avs">${(() => {
+            const ownerId = _taskLegacyAssigneeId(t);
+            const visIds  = Array.isArray(t.visibleTo) ? t.visibleTo.slice() : [];
+            const notifyIds = new Set((Array.isArray(t.notifyTo) ? t.notifyTo : []).map(String));
+            const seen = new Set();
+            const ordered = [];
+            if (ownerId) { ordered.push(ownerId); seen.add(String(ownerId)); }
+            visIds.forEach(id => { if (id != null && !seen.has(String(id))) { ordered.push(id); seen.add(String(id)); } });
+            return ordered.map(id => {
+              const isOwner = String(id) === String(ownerId);
+              const hasBell = notifyIds.has(String(id));
+              return `<div class="t-share-av${isOwner?' owner':''}" data-id="${id}">
+                <div class="t-share-circle"></div>
+                ${hasBell?'<span class="t-share-bell">🔔</span>':''}
+              </div>`;
+            }).join('');
+          })()}</div>
           <span class="t-share-arrow">›</span>
         </div>
       </div>`;
