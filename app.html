@@ -1068,12 +1068,8 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 #s-today .av-dad,
 #s-today .av-dudi,
 #s-today .av-yona{background:radial-gradient(120% 120% at 30% 25%,#ffffff 0%,#FBF4EB 60%,#EFE3D2 100%);}
-#s-today .t-av.online::after{
-  content:'';position:absolute;bottom:4px;right:4px;left:unset;
-  width:12px;height:12px;border-radius:50%;
-  background:#34c759;
-  box-shadow:0 0 0 2px #fff;
-}
+#s-today .t-av.online::after{display:none;}
+#s-today .t-avatars .av-badge{display:none !important;}
 #s-today .t-avname{
   font-family:'Heebo',sans-serif;
   font-size:12px;font-weight:700;
