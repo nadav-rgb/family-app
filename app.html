@@ -1496,6 +1496,112 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 #s-family-members .nav-item.active .underline{opacity:1;}
 
 /* ════════════════════════════════════════════════════════════════════
+   SCREEN — MEMBER PROFILE
+   Scoped under #s-member-profile.
+═══════════════════════════════════════════════════════════════════════ */
+#s-member-profile{
+  --mp-bg:#FDF6EE;--mp-purple:#8B6FBF;--mp-purple-deep:#6E54A3;
+  --mp-soft:#E7DEF5;--mp-ink:#2A1F3D;--mp-muted:#8E839E;
+  --mp-shadow:0 6px 18px rgba(110,84,163,0.08);
+  font-family:'Rubik',sans-serif;color:var(--mp-ink);
+  background:
+    radial-gradient(700px 300px at 90% -5%,#FAEBD9 0%,transparent 60%),
+    radial-gradient(600px 280px at 10% 8%,#FFF3DE 0%,transparent 55%),
+    var(--mp-bg);
+}
+#s-member-profile .mp-status{flex:0 0 auto;padding:14px 22px 0;display:flex;align-items:center;justify-content:space-between;font-weight:700;font-size:15px;color:var(--mp-ink);direction:ltr;}
+#s-member-profile .mp-status .icons{display:flex;align-items:center;gap:6px}
+#s-member-profile .mp-scroll{flex:1 1 auto;overflow-y:auto;padding:8px 18px 36px;scrollbar-width:none;}
+#s-member-profile .mp-scroll::-webkit-scrollbar{display:none}
+#s-member-profile .mp-header{display:flex;align-items:center;justify-content:space-between;margin-top:6px;}
+#s-member-profile .mp-icon-btn{width:42px;height:42px;border-radius:50%;background:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(110,84,163,0.10),inset 0 0 0 1px rgba(255,255,255,0.7);color:var(--mp-ink);}
+#s-member-profile .mp-icon-btn svg{width:18px;height:18px}
+/* Profile section */
+#s-member-profile .mp-profile{position:relative;margin-top:6px;padding:14px 4px 6px;display:flex;align-items:center;justify-content:space-between;gap:14px;min-height:155px;}
+#s-member-profile .mp-name-wrap{flex:1 1 auto;text-align:center;padding-right:6px;}
+#s-member-profile .mp-name{font-size:50px;font-weight:900;line-height:0.95;letter-spacing:-0.03em;color:var(--mp-ink);margin:0;cursor:pointer;}
+#s-member-profile .mp-subtitle{margin-top:12px;font-size:14px;font-weight:500;color:#5C5470;display:flex;align-items:center;justify-content:center;gap:5px;cursor:pointer;flex-wrap:wrap;}
+#s-member-profile .mp-subtitle .mp-heart{color:var(--mp-purple)}
+#s-member-profile .mp-avatar-wrap{position:relative;width:116px;height:116px;flex:0 0 auto;margin-left:4px;}
+#s-member-profile .mp-avatar{width:116px;height:116px;border-radius:50%;background:radial-gradient(120% 120% at 30% 25%,#fff 0%,#FBF7FF 60%,#F2EAFB 100%);border:3px solid var(--mp-purple);box-shadow:0 10px 22px rgba(139,111,191,0.18),inset 0 2px 6px rgba(255,255,255,0.9);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:48px;}
+#s-member-profile .mp-pencil{position:absolute;bottom:2px;left:-4px;width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#9C82CC 0%,#7A5DB0 100%);color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 10px rgba(110,84,163,0.35);cursor:pointer;border:2px solid var(--mp-bg);}
+#s-member-profile .mp-pencil svg{width:13px;height:13px}
+/* Confetti */
+#s-member-profile .mp-c1{position:absolute;top:46px;right:38px;font-size:20px;transform:rotate(-12deg);pointer-events:none}
+#s-member-profile .mp-c2{position:absolute;top:118px;right:68px;font-size:16px;transform:rotate(8deg);pointer-events:none}
+#s-member-profile .mp-cb1{position:absolute;top:36px;right:110px;width:22px;height:7px;border-radius:99px;background:#F4B6C2;transform:rotate(-22deg);pointer-events:none}
+#s-member-profile .mp-cb2{position:absolute;top:72px;right:148px;width:17px;height:6px;border-radius:99px;background:#B6D6EE;transform:rotate(28deg);pointer-events:none}
+/* Info cards */
+#s-member-profile .mp-info-row{margin-top:14px;display:grid;gap:11px;}
+#s-member-profile .mp-info-row.two-col{grid-template-columns:1fr 1fr}
+#s-member-profile .mp-info-row.one-col{grid-template-columns:1fr}
+#s-member-profile .mp-info-card{background:#fff;border-radius:20px;padding:14px 14px 12px;box-shadow:var(--mp-shadow);border:1px solid rgba(255,255,255,0.8);cursor:pointer;transition:transform .15s;}
+#s-member-profile .mp-info-card:active{transform:scale(.97)}
+#s-member-profile .mp-info-head{display:flex;align-items:center;justify-content:space-between;gap:6px}
+#s-member-profile .mp-info-label{font-size:13px;font-weight:600;color:#6B5E80}
+#s-member-profile .mp-info-emoji{font-size:20px;line-height:1}
+#s-member-profile .mp-info-date{margin-top:8px;font-size:20px;font-weight:800;color:var(--mp-ink);direction:ltr;text-align:right;}
+#s-member-profile .mp-info-date.empty{font-size:13px;font-weight:500;color:var(--mp-muted)}
+#s-member-profile .mp-info-sub{margin-top:6px;font-size:12px;font-weight:500;color:var(--mp-muted);display:flex;align-items:center;justify-content:center;gap:4px}
+#s-member-profile .mp-info-sub .pp{color:var(--mp-purple)}
+/* Color row */
+#s-member-profile .mp-color-card{margin-top:11px;background:#fff;border-radius:20px;padding:14px 16px;box-shadow:var(--mp-shadow);border:1px solid rgba(255,255,255,0.8);display:flex;align-items:center;justify-content:space-between;gap:10px;}
+#s-member-profile .mp-color-label{font-size:13px;font-weight:600;color:#6B5E80}
+#s-member-profile .mp-color-right{display:flex;align-items:center;gap:8px}
+#s-member-profile .mp-color-name{font-size:13px;font-weight:500;color:var(--mp-muted)}
+#s-member-profile .mp-color-swatch{width:26px;height:26px;border-radius:50%;box-shadow:0 0 0 2px rgba(255,255,255,0.7);position:relative;cursor:pointer;border:none;}
+#s-member-profile .mp-color-swatch input[type=color]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;border-radius:50%;}
+/* Quote */
+#s-member-profile .mp-quote{margin-top:12px;background:linear-gradient(180deg,#EFE6FA 0%,#E7DEF5 100%);border-radius:22px;padding:16px 18px;display:flex;align-items:center;gap:14px;box-shadow:0 4px 14px rgba(139,111,191,0.12);border:1px solid rgba(255,255,255,0.55);cursor:pointer;}
+#s-member-profile .mp-quote-star{flex:0 0 auto;font-size:26px}
+#s-member-profile .mp-quote-text{flex:1 1 auto;text-align:center;font-size:13px;font-weight:500;color:#3D2E5C;line-height:1.55}
+#s-member-profile .mp-quote-text.empty{color:var(--mp-muted);font-style:italic}
+/* Tasks */
+#s-member-profile .mp-tasks-card{margin-top:14px;background:#fff;border-radius:22px;padding:14px 14px 12px;box-shadow:var(--mp-shadow);border:1px solid rgba(255,255,255,0.8);}
+#s-member-profile .mp-tasks-head{display:flex;align-items:center;justify-content:flex-end;gap:8px;padding:2px 4px 10px;}
+#s-member-profile .mp-tasks-title{font-size:15px;font-weight:700;color:var(--mp-ink)}
+#s-member-profile .mp-task-row{display:flex;align-items:center;gap:11px;padding:11px 12px;border-radius:16px;background:#FBF8F3;margin-bottom:8px;}
+#s-member-profile .mp-task-row:last-child{margin-bottom:0}
+#s-member-profile .mp-task-emoji{flex:0 0 auto;width:38px;height:38px;border-radius:12px;background:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 2px 6px rgba(0,0,0,0.04)}
+#s-member-profile .mp-task-body{flex:1 1 auto;text-align:right;min-width:0}
+#s-member-profile .mp-task-name{font-size:15px;font-weight:700;color:var(--mp-ink);line-height:1.1}
+#s-member-profile .mp-task-sub{margin-top:3px;font-size:12px;font-weight:500;color:var(--mp-muted)}
+#s-member-profile .mp-task-meta{flex:0 0 auto;text-align:left;min-width:52px}
+#s-member-profile .mp-task-day{font-size:12px;font-weight:700;color:var(--mp-purple);line-height:1.1}
+#s-member-profile .mp-task-time{margin-top:2px;font-size:13px;font-weight:700;color:var(--mp-ink);direction:ltr}
+#s-member-profile .mp-tasks-empty{text-align:center;padding:14px;color:var(--mp-muted);font-size:13px}
+/* Stats */
+#s-member-profile .mp-stats-row{margin-top:12px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+#s-member-profile .mp-stat{background:#fff;border-radius:18px;padding:12px 8px;box-shadow:var(--mp-shadow);border:1px solid rgba(255,255,255,0.8);display:flex;align-items:center;gap:6px;justify-content:center;}
+#s-member-profile .mp-stat .se{font-size:22px;line-height:1}
+#s-member-profile .mp-stat .sm{text-align:center}
+#s-member-profile .mp-stat .sn{font-size:19px;font-weight:800;color:var(--mp-purple);line-height:1;direction:ltr}
+#s-member-profile .mp-stat .sl{margin-top:3px;font-size:10px;font-weight:600;color:var(--mp-muted);line-height:1.2}
+/* About */
+#s-member-profile .mp-about{margin-top:12px;background:linear-gradient(180deg,#F6EFFD 0%,#EFE5FB 100%);border-radius:22px;padding:14px;box-shadow:0 4px 14px rgba(139,111,191,0.10);border:1px solid rgba(255,255,255,0.55);}
+#s-member-profile .mp-about-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+#s-member-profile .mp-about-title{display:flex;align-items:center;gap:7px;font-size:15px;font-weight:700;color:var(--mp-ink)}
+#s-member-profile .mp-about-add{width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.6);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--mp-purple);font-weight:700;line-height:1;}
+#s-member-profile .mp-chips{display:flex;flex-wrap:wrap;gap:8px;padding:2px 0 0;}
+#s-member-profile .mp-chip{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:#3D2E5C;background:rgba(255,255,255,0.65);border-radius:14px;padding:7px 10px;border:1px solid rgba(255,255,255,0.7);cursor:pointer;}
+#s-member-profile .mp-chip .ce{font-size:16px;line-height:1}
+#s-member-profile .mp-chip .cx{font-size:10px;color:var(--mp-muted);margin-right:2px;}
+/* Edit bottom sheet */
+#mpEditBg{position:fixed;inset:0;z-index:700;background:rgba(0,0,0,.38);display:none;align-items:flex-end;}
+#mpEditBg.open{display:flex;}
+#mpEditSheet{background:#fffaf5;border-radius:24px 24px 0 0;width:100%;padding:0 20px 36px;}
+#mpEditSheet .mpe-pill{width:36px;height:4px;border-radius:99px;background:#E5D5C5;margin:10px auto 18px;}
+#mpEditSheet .mpe-label{font-size:14px;font-weight:700;color:#2A1F3D;margin-bottom:10px;text-align:right;}
+#mpEditSheet .mpe-input{width:100%;border:1.5px solid #E7DEF5;border-radius:14px;padding:13px 14px;font-family:'Rubik',sans-serif;font-size:16px;color:#2A1F3D;background:#fff;outline:none;direction:rtl;text-align:right;box-sizing:border-box;}
+#mpEditSheet .mpe-input:focus{border-color:#8B6FBF}
+#mpEditSheet .mpe-row{display:flex;gap:10px;margin-top:10px;}
+#mpEditSheet .mpe-emoji{width:54px;border:1.5px solid #E7DEF5;border-radius:14px;padding:12px 6px;font-size:22px;text-align:center;background:#fff;outline:none;cursor:pointer;}
+#mpEditSheet .mpe-text{flex:1;border:1.5px solid #E7DEF5;border-radius:14px;padding:12px 14px;font-family:'Rubik',sans-serif;font-size:15px;color:#2A1F3D;background:#fff;outline:none;direction:rtl;text-align:right;}
+#mpEditSheet .mpe-text:focus,#mpEditSheet .mpe-emoji:focus{border-color:#8B6FBF}
+#mpEditSheet .mpe-save{width:100%;margin-top:14px;padding:14px;border:none;border-radius:14px;background:linear-gradient(135deg,#9C82CC 0%,#7A5DB0 100%);color:#fff;font-family:'Rubik',sans-serif;font-size:15px;font-weight:700;cursor:pointer;}
+#mpEditSheet .mpe-cancel{width:100%;margin-top:8px;padding:11px;border:none;border-radius:14px;background:transparent;color:#8E839E;font-family:'Rubik',sans-serif;font-size:14px;font-weight:600;cursor:pointer;}
+
+/* ════════════════════════════════════════════════════════════════════
    SCREEN — CONFIRMATION  (Claude Design merge, step 5)
    All rules scoped under #s-confirmation.
    No bottom nav — this is a flow screen in the task-creation journey.
@@ -2777,20 +2883,20 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
     </div>
 
     <!-- Avatar strip — SVG illustrated portraits -->
-    <div class="t-avatars" onclick="if(_devUiEnabled()) openUserSwitcher()">
-      <div class="t-mem">
+    <div class="t-avatars">
+      <div class="t-mem" onclick="openMemberProfile('member_mom','s-today')">
         <div class="t-av av-mom online" data-avatar-for="member_mom" data-avatar-size="54"><div data-avatar-slot></div></div>
         <span class="t-avname">Mom</span>
       </div>
-      <div class="t-mem">
+      <div class="t-mem" onclick="openMemberProfile('member_dad','s-today')">
         <div class="t-av av-dad online" data-avatar-for="member_dad" data-avatar-size="54"><div data-avatar-slot></div></div>
         <span class="t-avname">Dad</span>
       </div>
-      <div class="t-mem">
+      <div class="t-mem" onclick="openMemberProfile('member_laali','s-today')">
         <div class="t-av av-dudi" data-avatar-for="member_laali" data-avatar-size="54"><div data-avatar-slot></div></div>
         <span class="t-avname">Dudi</span>
       </div>
-      <div class="t-mem">
+      <div class="t-mem" onclick="openMemberProfile('member_aharon','s-today')">
         <div class="t-av av-yona" data-avatar-for="member_aharon" data-avatar-size="54"><div data-avatar-slot></div></div>
         <span class="t-avname">Yonatan</span>
       </div>
@@ -3084,7 +3190,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
           <span class="pen-circle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4Z"/></svg></span>
           <span class="lbl">עריכה</span>
         </button>
-        <div class="mavatar av-aba" data-avatar-for="member_dad" data-avatar-size="78" onclick="AvatarFlow.open('member_dad')">
+        <div class="mavatar av-aba" data-avatar-for="member_dad" data-avatar-size="78" onclick="openMemberProfile('member_dad','s-family-members')">
           <div data-avatar-slot></div>
           <span class="cam"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2Z"/><circle cx="12" cy="13" r="4"/></svg></span>
         </div>
@@ -3111,7 +3217,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
           <span class="pen-circle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4Z"/></svg></span>
           <span class="lbl">עריכה</span>
         </button>
-        <div class="mavatar av-ima" data-avatar-for="member_mom" data-avatar-size="78" onclick="AvatarFlow.open('member_mom')">
+        <div class="mavatar av-ima" data-avatar-for="member_mom" data-avatar-size="78" onclick="openMemberProfile('member_mom','s-family-members')">
           <div data-avatar-slot></div>
           <span class="cam"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2Z"/><circle cx="12" cy="13" r="4"/></svg></span>
         </div>
@@ -3135,7 +3241,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
           <span class="pen-circle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4Z"/></svg></span>
           <span class="lbl">עריכה</span>
         </button>
-        <div class="mavatar av-leali" data-avatar-for="member_laali" data-avatar-size="78" onclick="AvatarFlow.open('member_laali')">
+        <div class="mavatar av-leali" data-avatar-for="member_laali" data-avatar-size="78" onclick="openMemberProfile('member_laali','s-family-members')">
           <div data-avatar-slot></div>
           <span class="cam"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2Z"/><circle cx="12" cy="13" r="4"/></svg></span>
         </div>
@@ -3159,7 +3265,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
           <span class="pen-circle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4Z"/></svg></span>
           <span class="lbl">עריכה</span>
         </button>
-        <div class="mavatar av-uri" data-avatar-for="member_aharon" data-avatar-size="78" onclick="AvatarFlow.open('member_aharon')">
+        <div class="mavatar av-uri" data-avatar-for="member_aharon" data-avatar-size="78" onclick="openMemberProfile('member_aharon','s-family-members')">
           <div data-avatar-slot></div>
           <span class="cam"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2Z"/><circle cx="12" cy="13" r="4"/></svg></span>
         </div>
@@ -3234,6 +3340,110 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
         <span class="underline"></span>
       </button>
     </div>
+  </div>
+</div>
+
+<!-- ════ SCREEN: MEMBER PROFILE ════ -->
+<div class="app-screen" id="s-member-profile">
+  <div class="mp-status">
+    <span class="time">10:30</span>
+    <span class="icons" aria-hidden="true">
+      <svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="0.8"/><rect x="4.5" y="5" width="3" height="6" rx="0.8"/><rect x="9" y="2.5" width="3" height="8.5" rx="0.8"/><rect x="13.5" y="0" width="3" height="11" rx="0.8"/></svg>
+      <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor"><path d="M8 12a1.4 1.4 0 1 0 0-2.8A1.4 1.4 0 0 0 8 12Zm-4-3.4a4.6 4.6 0 0 1 8 0l1.2-1.2a6.4 6.4 0 0 0-10.4 0Zm-2.4-2.4a8.4 8.4 0 0 1 12 0l1.2-1.2a10.2 10.2 0 0 0-14.4 0Z"/></svg>
+      <svg width="26" height="12" viewBox="0 0 26 12" fill="none"><rect x="0.5" y="0.5" width="22" height="11" rx="2.6" stroke="currentColor" opacity=".5"/><rect x="2" y="2" width="19" height="8" rx="1.6" fill="currentColor"/><rect x="23.5" y="4" width="2" height="4" rx="0.8" fill="currentColor" opacity=".5"/></svg>
+    </span>
+  </div>
+  <div class="mp-scroll">
+    <div class="mp-header">
+      <button class="mp-icon-btn" id="mpBackBtn" aria-label="חזרה">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+      </button>
+      <button class="mp-icon-btn" aria-label="עוד">
+        <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>
+      </button>
+    </div>
+
+    <!-- Profile hero -->
+    <div class="mp-profile">
+      <span class="mp-c1">💗</span>
+      <span class="mp-c2">⭐</span>
+      <span class="mp-cb1"></span>
+      <span class="mp-cb2"></span>
+      <div class="mp-name-wrap">
+        <h1 class="mp-name" id="mpName" onclick="mpEditField('name')">—</h1>
+        <div class="mp-subtitle" id="mpSubtitle" onclick="mpEditField('subtitle')">
+          <span id="mpSubtitleText">לחץ לעריכה</span>
+          <span class="mp-heart">💜</span>
+        </div>
+      </div>
+      <div class="mp-avatar-wrap">
+        <div class="mp-avatar" id="mpAvatarCircle"></div>
+        <button class="mp-pencil" id="mpPencilBtn" style="display:none" aria-label="עריכת תמונה">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4Z"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Info cards: birthday [+ anniversary for parents] -->
+    <div class="mp-info-row two-col" id="mpInfoRow"></div>
+
+    <!-- Color row (self only) -->
+    <div class="mp-color-card" id="mpColorCard" style="display:none">
+      <span class="mp-color-label">🎨 צבע אישי</span>
+      <div class="mp-color-right">
+        <span class="mp-color-name" id="mpColorName"></span>
+        <div class="mp-color-swatch" id="mpColorSwatch">
+          <input type="color" id="mpColorInput" title="בחר צבע אישי">
+        </div>
+      </div>
+    </div>
+
+    <!-- Quote -->
+    <div class="mp-quote" onclick="mpEditField('quote')">
+      <span class="mp-quote-star">⭐</span>
+      <div class="mp-quote-text empty" id="mpQuoteText">לחץ להוספת ציטוט...</div>
+    </div>
+
+    <!-- Recurring tasks -->
+    <div class="mp-tasks-card" id="mpTasksCard">
+      <div class="mp-tasks-head">
+        <span class="mp-tasks-title" id="mpTasksTitle">המשימות הקבועות</span>
+        <span style="font-size:18px">📅</span>
+      </div>
+      <div id="mpTasksList"></div>
+    </div>
+
+    <!-- Stats -->
+    <div class="mp-stats-row" id="mpStatsRow">
+      <div class="mp-stat"><span class="se">🏆</span><span class="sm"><div class="sn" id="mpStatDone">0</div><div class="sl">בוצעו<br>השבוע</div></span></div>
+      <div class="mp-stat"><span class="se">🔥</span><span class="sm"><div class="sn" id="mpStatStreak">0</div><div class="sl">רצף<br>ימים</div></span></div>
+      <div class="mp-stat"><span class="se">⭐</span><span class="sm"><div class="sn" id="mpStatPoints">0</div><div class="sl">נקודות<br>צברת</div></span></div>
+    </div>
+
+    <!-- About chips -->
+    <div class="mp-about">
+      <div class="mp-about-head">
+        <button class="mp-about-add" id="mpAboutAdd" onclick="mpAddChip()">＋</button>
+        <div class="mp-about-title"><span>💜</span><span id="mpAboutTitle">כמה דברים</span></div>
+      </div>
+      <div class="mp-chips" id="mpChips"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Edit bottom sheet (member profile) -->
+<div id="mpEditBg">
+  <div id="mpEditSheet">
+    <div class="mpe-pill"></div>
+    <div class="mpe-label" id="mpeLabel">עריכה</div>
+    <input class="mpe-input" id="mpeInput" type="text" placeholder="">
+    <!-- Chip edit row (shown only for chip editing) -->
+    <div id="mpeChipRow" style="display:none">
+      <input class="mpe-emoji" id="mpeEmoji" type="text" placeholder="😀" maxlength="2">
+      <input class="mpe-text" id="mpeChipText" type="text" placeholder="טקסט">
+    </div>
+    <button class="mpe-save" id="mpeSaveBtn">שמור</button>
+    <button class="mpe-cancel" onclick="closeMpEdit()">ביטול</button>
   </div>
 </div>
 
@@ -13316,6 +13526,324 @@ function splitSave() {
     }).observe(fmScreen, { attributes: true });
   }
 })();
+</script>
+
+<script>
+// ════ MEMBER PROFILE SCREEN ════════════════════════════════════════════════
+
+let _mpCurrentId   = null;  // memberId being viewed
+let _mpFromScreen  = 's-today';
+let _mpEditField   = null;  // field key being edited
+let _mpEditChipIdx = -1;    // chip index (-1 = new chip)
+
+// Hebrew day names for recurring tasks
+const _MP_DAYS = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
+
+function openMemberProfile(memberId, fromScreen) {
+  _mpCurrentId  = memberId;
+  _mpFromScreen = fromScreen || (document.getElementById('s-family-members').classList.contains('active') ? 's-family-members' : 's-today');
+  _renderMemberProfile();
+  goto('s-member-profile', 'txLeaveFade', 'txEnterFade');
+}
+
+function _mpGetMember(memberId) {
+  const fromCache = (_familyMembersCache || []).find(m => m.memberId === memberId);
+  const fromSeed  = (_FAMILY_MEMBERS_SEED || []).find(m => m.memberId === memberId);
+  return fromCache ? { ...fromSeed, ...fromCache } : (fromSeed || null);
+}
+
+function _mpIsSelf(memberId) {
+  if (DataAdapter.isFamily()) return DataAdapter.myMemberId === memberId;
+  const legacyId = _legacyIdForMemberId(memberId);
+  return legacyId === currentUser;
+}
+
+function _mpCalcAge(ddmmyyyy) {
+  if (!ddmmyyyy) return null;
+  const parts = ddmmyyyy.split('.');
+  if (parts.length !== 3) return null;
+  const bday = new Date(+parts[2], +parts[1] - 1, +parts[0]);
+  if (isNaN(bday.getTime())) return null;
+  const now = new Date();
+  let age = now.getFullYear() - bday.getFullYear();
+  if (now < new Date(now.getFullYear(), bday.getMonth(), bday.getDate())) age--;
+  return age >= 0 ? age : null;
+}
+
+function _mpWeeklyDone(memberId) {
+  const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+  return (AppState.tasks || []).filter(t => {
+    if (!t.completed || !t.completedAt) return false;
+    if (new Date(t.completedAt).getTime() < oneWeekAgo) return false;
+    return t.assignedToMemberId === memberId ||
+           _memberIdForLegacyId(t.assignedTo) === memberId;
+  }).length;
+}
+
+function _mpRecurringTasks(memberId) {
+  const legacyId = _legacyIdForMemberId(memberId);
+  return (AppState.tasks || []).filter(t => {
+    if (t.deleted) return false;
+    if (!t.recurrence || t.recurrence.type === 'none') return false;
+    if (t.assignedToMemberId === memberId) return true;
+    if (legacyId && t.assignedTo === legacyId) return true;
+    if (t.visibleTo && (t.visibleTo.includes(memberId) || (legacyId && t.visibleTo.includes(legacyId)))) return true;
+    return false;
+  });
+}
+
+function _mpRecurringDayLabel(t) {
+  const rec = t.recurrence || {};
+  if (rec.type === 'daily') return 'כל יום';
+  if (rec.type === 'weekly') {
+    const days = rec.daysOfWeek || (rec.dayOfWeek != null ? [rec.dayOfWeek] : []);
+    if (days.length === 7) return 'כל יום';
+    return days.map(d => _MP_DAYS[d] || '').filter(Boolean).join(', ');
+  }
+  return '';
+}
+
+function _renderMemberProfile() {
+  const memberId = _mpCurrentId;
+  const m = _mpGetMember(memberId);
+  if (!m) return;
+  const isSelf  = _mpIsSelf(memberId);
+  const isParent = m.role === 'parent';
+
+  // Back button
+  document.getElementById('mpBackBtn').onclick = () => goto(_mpFromScreen, 'txLeaveFade', 'txEnterFade');
+
+  // Name
+  document.getElementById('mpName').textContent = m.name || '—';
+
+  // Subtitle
+  document.getElementById('mpSubtitleText').textContent = m.subtitle || (isParent ? 'הורה' : 'ילד/ה');
+
+  // Avatar
+  const avCircle = document.getElementById('mpAvatarCircle');
+  const av = m.avatar || {};
+  if ((av.type === 'photo' || av.type === 'ai-photo') && av.url) {
+    avCircle.innerHTML = `<img src="${av.url}" style="width:100%;height:100%;object-fit:cover;display:block;" alt="">`;
+  } else if (av.type === 'emoji' && av.value) {
+    avCircle.innerHTML = `<span style="font-size:48px;line-height:1">${av.value}</span>`;
+  } else {
+    avCircle.innerHTML = '';
+  }
+
+  // Pencil — self only
+  const pencil = document.getElementById('mpPencilBtn');
+  pencil.style.display = isSelf ? 'flex' : 'none';
+  pencil.onclick = () => AvatarFlow.open(memberId);
+
+  // Info row: birthday always + anniversary for parents only
+  const infoRow = document.getElementById('mpInfoRow');
+  const bdayAge = _mpCalcAge(m.birthday);
+  const bdayHtml = `
+    <div class="mp-info-card" onclick="mpEditField('birthday')">
+      <div class="mp-info-head"><span class="mp-info-label">יום הולדת</span><span class="mp-info-emoji">🎂</span></div>
+      <div class="mp-info-date${m.birthday ? '' : ' empty'}">${m.birthday || 'לחץ להוספה'}</div>
+      <div class="mp-info-sub">${bdayAge != null ? `<span>${bdayAge} שנים</span>` : '<span>—</span>'}</div>
+    </div>`;
+  let anniHtml = '';
+  if (isParent) {
+    const anniAge = _mpCalcAge(m.anniversary);
+    anniHtml = `
+      <div class="mp-info-card" onclick="mpEditField('anniversary')">
+        <div class="mp-info-head"><span class="mp-info-label">יום נישואין</span><span class="mp-info-emoji">💍</span></div>
+        <div class="mp-info-date${m.anniversary ? '' : ' empty'}">${m.anniversary || 'לחץ להוספה'}</div>
+        <div class="mp-info-sub">${anniAge != null ? `<span>${anniAge} שנים</span><span class="pp">💜</span>` : '<span>—</span>'}</div>
+      </div>`;
+  }
+  infoRow.className = 'mp-info-row ' + (isParent ? 'two-col' : 'one-col');
+  infoRow.innerHTML = (isParent ? anniHtml : '') + bdayHtml;
+
+  // Color card — self only
+  const colorCard = document.getElementById('mpColorCard');
+  if (isSelf) {
+    colorCard.style.display = '';
+    const colorVal = m.color || '#8B6FBF';
+    document.getElementById('mpColorSwatch').style.background = colorVal;
+    document.getElementById('mpColorInput').value = colorVal;
+    document.getElementById('mpColorName').textContent = colorVal;
+    document.getElementById('mpColorInput').oninput = e => {
+      const c = e.target.value;
+      document.getElementById('mpColorSwatch').style.background = c;
+      document.getElementById('mpColorName').textContent = c;
+      _mpSaveField(memberId, { color: c });
+    };
+  } else {
+    colorCard.style.display = 'none';
+  }
+
+  // Quote
+  const quoteEl = document.getElementById('mpQuoteText');
+  if (m.quote) {
+    quoteEl.textContent = m.quote;
+    quoteEl.classList.remove('empty');
+  } else {
+    quoteEl.textContent = 'לחץ להוספת ציטוט...';
+    quoteEl.classList.add('empty');
+  }
+
+  // Recurring tasks
+  const tasks = _mpRecurringTasks(memberId);
+  const tasksList = document.getElementById('mpTasksList');
+  document.getElementById('mpTasksTitle').textContent = 'המשימות הקבועות של ' + (m.name || '');
+  if (tasks.length) {
+    tasksList.innerHTML = tasks.slice(0, 5).map(t => {
+      const day  = _mpRecurringDayLabel(t);
+      const time = t.mins != null ? m2t(t.mins) : '';
+      return `<div class="mp-task-row">
+        <div class="mp-task-emoji">${t.emoji || '📌'}</div>
+        <div class="mp-task-body">
+          <div class="mp-task-name">${t.title}</div>
+          <div class="mp-task-sub">${day}</div>
+        </div>
+        <div class="mp-task-meta">
+          <div class="mp-task-day">${day}</div>
+          ${time ? `<div class="mp-task-time">${time}</div>` : ''}
+        </div>
+      </div>`;
+    }).join('');
+  } else {
+    tasksList.innerHTML = `<div class="mp-tasks-empty">אין משימות קבועות עדיין</div>`;
+  }
+
+  // Stats
+  document.getElementById('mpStatDone').textContent   = _mpWeeklyDone(memberId);
+  document.getElementById('mpStatStreak').textContent  = m.streak || 0;
+  document.getElementById('mpStatPoints').textContent  = m.points || 0;
+
+  // About chips
+  document.getElementById('mpAboutTitle').textContent = 'כמה דברים על ' + (m.name || '');
+  _renderMpChips(m.about || []);
+
+  // About add button
+  document.getElementById('mpAboutAdd').style.display = '';
+}
+
+function _renderMpChips(about) {
+  const chips = document.getElementById('mpChips');
+  if (!about || !about.length) {
+    chips.innerHTML = `<div style="font-size:13px;color:#8E839E;padding:4px 0">לחץ + להוספת פרט אישי</div>`;
+    return;
+  }
+  chips.innerHTML = about.map((item, i) =>
+    `<div class="mp-chip" onclick="mpEditChip(${i})">
+      <span class="cx" onclick="event.stopPropagation();mpRemoveChip(${i})">✕</span>
+      <span>${item.text}</span>
+      <span class="ce">${item.emoji || '⭐'}</span>
+    </div>`
+  ).join('');
+}
+
+// ── Field editing ──────────────────────────────────────────────────
+function mpEditField(field) {
+  const m = _mpGetMember(_mpCurrentId);
+  if (!m) return;
+  _mpEditField  = field;
+  _mpEditChipIdx = -1;
+  const labels = { name:'שם', subtitle:'תיאור', birthday:'יום הולדת (DD.MM.YYYY)', anniversary:'יום נישואין (DD.MM.YYYY)', quote:'ציטוט אישי' };
+  document.getElementById('mpeLabel').textContent   = labels[field] || field;
+  document.getElementById('mpeInput').value         = m[field] || '';
+  document.getElementById('mpeInput').placeholder   = field === 'birthday' || field === 'anniversary' ? 'DD.MM.YYYY' : '';
+  document.getElementById('mpeInput').style.display = '';
+  document.getElementById('mpeChipRow').style.display = 'none';
+  document.getElementById('mpeSaveBtn').onclick = () => {
+    const val = document.getElementById('mpeInput').value.trim();
+    _mpSaveField(_mpCurrentId, { [field]: val });
+    closeMpEdit();
+    _renderMemberProfile();
+  };
+  document.getElementById('mpEditBg').classList.add('open');
+  setTimeout(() => document.getElementById('mpeInput').focus(), 80);
+}
+
+function mpAddChip() {
+  _mpEditField   = 'about';
+  _mpEditChipIdx = -1;
+  document.getElementById('mpeLabel').textContent   = 'הוספת פרט אישי';
+  document.getElementById('mpeInput').style.display = 'none';
+  document.getElementById('mpeChipRow').style.display = 'flex';
+  document.getElementById('mpeEmoji').value    = '';
+  document.getElementById('mpeChipText').value = '';
+  document.getElementById('mpeSaveBtn').onclick = () => {
+    const emoji = document.getElementById('mpeEmoji').value.trim() || '⭐';
+    const text  = document.getElementById('mpeChipText').value.trim();
+    if (!text) { closeMpEdit(); return; }
+    const m = _mpGetMember(_mpCurrentId);
+    const about = [...(m.about || []), { emoji, text }];
+    _mpSaveField(_mpCurrentId, { about });
+    closeMpEdit();
+    _renderMpChips(about);
+  };
+  document.getElementById('mpEditBg').classList.add('open');
+  setTimeout(() => document.getElementById('mpeChipText').focus(), 80);
+}
+
+function mpEditChip(idx) {
+  const m = _mpGetMember(_mpCurrentId);
+  if (!m) return;
+  const chip = (m.about || [])[idx];
+  if (!chip) return;
+  _mpEditField   = 'about';
+  _mpEditChipIdx = idx;
+  document.getElementById('mpeLabel').textContent = 'עריכת פרט אישי';
+  document.getElementById('mpeInput').style.display = 'none';
+  document.getElementById('mpeChipRow').style.display = 'flex';
+  document.getElementById('mpeEmoji').value    = chip.emoji || '';
+  document.getElementById('mpeChipText').value = chip.text  || '';
+  document.getElementById('mpeSaveBtn').onclick = () => {
+    const emoji = document.getElementById('mpeEmoji').value.trim() || '⭐';
+    const text  = document.getElementById('mpeChipText').value.trim();
+    if (!text) { mpRemoveChip(idx); closeMpEdit(); return; }
+    const m2 = _mpGetMember(_mpCurrentId);
+    const about = [...(m2.about || [])];
+    about[idx] = { emoji, text };
+    _mpSaveField(_mpCurrentId, { about });
+    closeMpEdit();
+    _renderMpChips(about);
+  };
+  document.getElementById('mpEditBg').classList.add('open');
+  setTimeout(() => document.getElementById('mpeChipText').focus(), 80);
+}
+
+function mpRemoveChip(idx) {
+  const m = _mpGetMember(_mpCurrentId);
+  if (!m) return;
+  const about = (m.about || []).filter((_, i) => i !== idx);
+  _mpSaveField(_mpCurrentId, { about });
+  _renderMpChips(about);
+}
+
+function closeMpEdit() {
+  document.getElementById('mpEditBg').classList.remove('open');
+}
+
+document.getElementById('mpEditBg').addEventListener('click', e => {
+  if (e.target === document.getElementById('mpEditBg')) closeMpEdit();
+});
+
+// ── Save to Firestore + local cache ───────────────────────────────
+async function _mpSaveField(memberId, updates) {
+  // Update local cache first (optimistic)
+  const cacheIdx = (_familyMembersCache || []).findIndex(m => m.memberId === memberId);
+  if (cacheIdx >= 0) Object.assign(_familyMembersCache[cacheIdx], updates);
+  else {
+    const seedIdx = (_FAMILY_MEMBERS_SEED || []).findIndex(m => m.memberId === memberId);
+    if (seedIdx >= 0) Object.assign(_FAMILY_MEMBERS_SEED[seedIdx], updates);
+  }
+  // Persist to Firestore if in family mode
+  if (DataAdapter.isFamily() && _db) {
+    try {
+      await _db.collection('families').doc(DataAdapter.familyId)
+               .collection('members').doc(memberId)
+               .set(updates, { merge: true });
+    } catch(e) {
+      console.warn('[MemberProfile] save failed', e);
+    }
+  }
+}
 </script>
 </body>
 </html>
