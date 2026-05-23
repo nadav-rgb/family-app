@@ -14136,7 +14136,7 @@ function _mdpRender() {
     let sub;
     if(hol) {
       const subColor = isS ? 'rgba(255,255,255,.85)' : '#E63946';
-      sub = `<div class="mdp-heb" style="color:${subColor}">${hol.e}</div>`;
+      sub = `<div class="mdp-heb" style="color:${subColor}">${hol.e} ${hol.n}</div>`;
     } else {
       // Mark first of Hebrew month specially
       const hebDayStr = hd.d===1 ? `<b>א׳ ${_hMonthName(hd.y,hd.m).slice(0,3)}</b>` : _hDayLetters(hd.d);
