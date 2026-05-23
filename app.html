@@ -1623,8 +1623,8 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 #mpEditSheet .mpe-save{width:100%;margin-top:14px;padding:14px;border:none;border-radius:14px;background:linear-gradient(135deg,#9C82CC 0%,#7A5DB0 100%);color:#fff;font-family:'Rubik',sans-serif;font-size:15px;font-weight:700;cursor:pointer;}
 #mpEditSheet .mpe-cancel{width:100%;margin-top:8px;padding:11px;border:none;border-radius:14px;background:transparent;color:#8E839E;font-family:'Rubik',sans-serif;font-size:14px;font-weight:600;cursor:pointer;}
 
-/* diagonal member-color accent on home avatars */
-.mem-stripe{position:absolute;inset:0;border-radius:50%;pointer-events:none;opacity:.28;z-index:1;}
+/* diagonal member-color accent on home avatars — small corner tag */
+.mem-stripe{position:absolute;bottom:0;left:0;width:36%;height:36%;pointer-events:none;opacity:.72;z-index:1;clip-path:polygon(0 0,0 100%,100% 100%);}
 
 /* ── Color Picker Modal ─────────────────────────────────────────── */
 #mpColorPickerBg{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:3000;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s;}
@@ -1650,9 +1650,7 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 #mpDatePickerSheet{background:#fff;border-radius:28px 28px 0 0;padding:20px 20px 36px;width:100%;max-width:480px;transform:translateY(100%);transition:transform .3s cubic-bezier(.32,1.26,.56,.99);}
 #mpDatePickerBg.open #mpDatePickerSheet{transform:translateY(0);}
 .mdp-pill{width:38px;height:4px;border-radius:2px;background:#E0D8EE;margin:0 auto 14px;}
-.mdp-tabs{display:flex;background:#F3EEF9;border-radius:14px;padding:4px;margin-bottom:16px;gap:4px;}
-.mdp-tab{flex:1;padding:10px;border-radius:10px;border:none;font-size:14px;font-weight:600;color:#8B6FBF;background:transparent;cursor:pointer;transition:.15s;font-family:'Rubik',sans-serif;}
-.mdp-tab.active{background:#fff;color:#2A1F3D;box-shadow:0 2px 8px rgba(139,111,191,.14);}
+.mdp-heb-header{text-align:center;font-size:12px;font-weight:600;color:#845EC2;margin-bottom:10px;letter-spacing:.01em;}
 .mdp-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
 .mdp-nav-btn{width:38px;height:38px;border-radius:50%;background:#F3EEF9;border:none;cursor:pointer;font-size:18px;color:#6B5E80;display:flex;align-items:center;justify-content:center;}
 .mdp-nav-label{font-size:15px;font-weight:700;color:#2A1F3D;flex:1;text-align:center;}
@@ -1667,6 +1665,7 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 .mdp-day .mdp-heb{font-size:7.5px;color:#8E839E;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
 .mdp-day.selected .mdp-heb{color:rgba(255,255,255,.7);}
 .mdp-day.mdp-holiday{color:#E63946;}
+.mdp-day.mdp-shab>span{color:#845EC2;}
 #mdpGrid{font-family:'Rubik',sans-serif;}
 .mdp-confirm{width:100%;height:50px;border-radius:16px;background:linear-gradient(135deg,#9C82CC 0%,#7A5DB0 100%);color:#fff;font-size:15px;font-weight:700;border:none;cursor:pointer;font-family:'Rubik',sans-serif;}
 .mdp-cancel-btn{width:100%;height:44px;border-radius:14px;background:transparent;color:#8B6FBF;font-size:14px;font-weight:600;border:none;cursor:pointer;margin-top:6px;font-family:'Rubik',sans-serif;}
@@ -3567,10 +3566,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
 <div id="mpDatePickerBg">
   <div id="mpDatePickerSheet">
     <div class="mdp-pill"></div>
-    <div class="mdp-tabs">
-      <button class="mdp-tab active" id="mdpTabGreg" onclick="mdpSetTab('greg')">לועזי</button>
-      <button class="mdp-tab" id="mdpTabHeb" onclick="mdpSetTab('heb')">עברי</button>
-    </div>
+    <div class="mdp-heb-header" id="mdpHebHeader"></div>
     <div class="mdp-nav">
       <button class="mdp-nav-btn" onclick="mdpPrev()">‹</button>
       <div class="mdp-nav-label" id="mdpNavLabel"></div>
@@ -13977,7 +13973,7 @@ function _mpApplyStripe(memberId, color) {
   document.querySelectorAll(`[data-avatar-for="${memberId}"]`).forEach(el => {
     let s = el.querySelector('.mem-stripe');
     if (!s) { s = document.createElement('div'); s.className = 'mem-stripe'; el.appendChild(s); }
-    s.style.background = `radial-gradient(circle at 18% 82%, ${color} 0%, transparent 52%)`;
+    s.style.background = color;
   });
 }
 
@@ -14069,12 +14065,11 @@ const _H_HOLIDAYS={
   '3-6':{n:'שבועות',e:'📜'},'3-7':{n:'שבועות',e:'📜'},'5-9':{n:'תשעה באב',e:'😢'}
 };
 
-// ── Date Picker ──────────────────────────────────────────────────
-let _mdpField  = null;
-let _mdpTab    = 'greg';
-let _mdpYear   = 0;  // Gregorian year (greg mode) or Hebrew year (heb mode)
-let _mdpMonth  = 0;  // Gregorian month 1-12 (greg) or Hebrew month 1-13 (heb)
-let _mdpSel    = null; // {y,m,d} always Gregorian
+// ── Unified Date Picker (Gregorian + Hebrew side by side) ─────────
+let _mdpField = null;
+let _mdpYear  = 0;
+let _mdpMonth = 0;
+let _mdpSel   = null; // {y,m,d} Gregorian
 
 function openMpDatePicker(field) {
   _mdpField = field;
@@ -14089,9 +14084,7 @@ function openMpDatePicker(field) {
     _mdpSel = null;
     _mdpYear = today.getFullYear(); _mdpMonth = today.getMonth()+1;
   }
-  _mdpTab = 'greg';
-  _mdpSyncHebFromGreg();
-  mdpSetTab('greg');
+  _mdpRender();
   document.getElementById('mdpConfirmBtn').onclick = () => {
     if (_mdpSel) {
       const str = `${String(_mdpSel.d).padStart(2,'0')}.${String(_mdpSel.m).padStart(2,'0')}.${_mdpSel.y}`;
@@ -14107,103 +14100,54 @@ function openMpDatePicker(field) {
 function closeMpDatePicker() {
   document.getElementById('mpDatePickerBg').classList.remove('open');
 }
-function mdpSetTab(tab) {
-  _mdpTab = tab;
-  document.getElementById('mdpTabGreg').classList.toggle('active', tab==='greg');
-  document.getElementById('mdpTabHeb').classList.toggle('active', tab==='heb');
-  if (tab === 'heb') _mdpSyncHebFromGreg();
-  _mdpRender();
-}
-
-// State for Hebrew mode
-let _mdpHebYear = 0, _mdpHebMonth = 0;
-function _mdpSyncHebFromGreg() {
-  const jdn = _gToJdn(_mdpYear, _mdpMonth, 15);
-  const h = _jdnToH(jdn);
-  _mdpHebYear = h.y; _mdpHebMonth = h.m;
-}
-function _mdpHebPrevMonth() {
-  _mdpHebMonth--;
-  if (_mdpHebMonth < 1) {
-    _mdpHebYear--;
-    _mdpHebMonth = _hMonthsInYear(_mdpHebYear);
-  }
-  if (_mdpHebMonth === 7) { /* תשרי — already correct */ }
-}
-function _mdpHebNextMonth() {
-  _mdpHebMonth++;
-  if (_mdpHebMonth > _hMonthsInYear(_mdpHebYear)) {
-    _mdpHebYear++;
-    _mdpHebMonth = 7; // Next Hebrew year starts from Tishri? No, start from 1
-    _mdpHebMonth = 1;
-  }
-}
-
-function mdpPrev() {
-  if (_mdpTab === 'heb') { _mdpHebPrevMonth(); }
-  else { _mdpMonth--; if (_mdpMonth<1){_mdpMonth=12;_mdpYear--;} }
-  _mdpRender();
-}
-function mdpNext() {
-  if (_mdpTab === 'heb') { _mdpHebNextMonth(); }
-  else { _mdpMonth++; if (_mdpMonth>12){_mdpMonth=1;_mdpYear++;} }
-  _mdpRender();
-}
-
-function mdpSelect(gY, gM, gD) {
-  _mdpSel = { d:gD, m:gM, y:gY };
-  _mdpRender();
-}
+function mdpPrev() { _mdpMonth--; if(_mdpMonth<1){_mdpMonth=12;_mdpYear--;} _mdpRender(); }
+function mdpNext() { _mdpMonth++; if(_mdpMonth>12){_mdpMonth=1;_mdpYear++;} _mdpRender(); }
+function mdpSelect(gY,gM,gD) { _mdpSel={d:gD,m:gM,y:gY}; _mdpRender(); }
 
 function _mdpRender() {
+  const G_MONTHS = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
   const DAY_NAMES = ['א׳','ב׳','ג׳','ד׳','ה׳','ו׳','ש׳'];
-  const G_MONTHS  = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
   const today = new Date(); const tY=today.getFullYear(),tM=today.getMonth()+1,tD=today.getDate();
 
-  if (_mdpTab === 'greg') {
-    // ── Gregorian month ──
-    document.getElementById('mdpNavLabel').textContent = `${G_MONTHS[_mdpMonth-1]} ${_mdpYear}`;
-    const dim = new Date(_mdpYear, _mdpMonth, 0).getDate();
-    const firstDow = new Date(_mdpYear, _mdpMonth-1, 1).getDay();
-    let html = DAY_NAMES.map(n=>`<div class="mdp-dayname">${n}</div>`).join('');
-    for(let i=0;i<firstDow;i++) html+=`<div class="mdp-day empty"></div>`;
-    for(let d=1;d<=dim;d++){
-      const isT=(tY===_mdpYear&&tM===_mdpMonth&&tD===d);
-      const isS=_mdpSel&&_mdpSel.y===_mdpYear&&_mdpSel.m===_mdpMonth&&_mdpSel.d===d;
-      const hd=_jdnToH(_gToJdn(_mdpYear,_mdpMonth,d));
-      const hol=_H_HOLIDAYS[`${hd.m}-${hd.d}`];
-      const cls='mdp-day'+(isT?' today':'')+(isS?' selected':'')+(hol?' mdp-holiday':'');
-      const holHtml=hol?`<div class="mdp-heb" style="color:${isS?'rgba(255,255,255,.8)':'#E63946'}">${hol.e}</div>`
-                       :`<div class="mdp-heb">${_hDayLetters(hd.d)}</div>`;
-      html+=`<div class="${cls}" onclick="mdpSelect(${_mdpYear},${_mdpMonth},${d})">${d}${holHtml}</div>`;
-    }
-    document.getElementById('mdpGrid').innerHTML = html;
+  // Gregorian nav label
+  document.getElementById('mdpNavLabel').textContent = `${G_MONTHS[_mdpMonth-1]} ${_mdpYear}`;
 
-  } else {
-    // ── Hebrew month ──
-    const hY=_mdpHebYear, hM=_mdpHebMonth;
-    const dim=_hDaysInMonth(hY,hM);
-    const firstJdn=_hToJdn(hY,hM,1);
-    const firstG=_jdnToG(firstJdn);
-    const firstDow=new Date(firstG.y,firstG.m-1,firstG.d).getDay();
-    document.getElementById('mdpNavLabel').textContent = `${_hMonthName(hY,hM)} ${_hYearLetters(hY)}`;
-    let html = DAY_NAMES.map(n=>`<div class="mdp-dayname">${n}</div>`).join('');
-    for(let i=0;i<firstDow;i++) html+=`<div class="mdp-day empty"></div>`;
-    for(let hd=1;hd<=dim;hd++){
-      const jdn=_hToJdn(hY,hM,hd);
-      const g=_jdnToG(jdn);
-      const isT=(tY===g.y&&tM===g.m&&tD===g.d);
-      const isS=_mdpSel&&_mdpSel.y===g.y&&_mdpSel.m===g.m&&_mdpSel.d===g.d;
-      const hol=_H_HOLIDAYS[`${hM}-${hd}`];
-      const cls='mdp-day'+(isT?' today':'')+(isS?' selected':'')+(hol?' mdp-holiday':'');
-      const gLabel=`${g.d}/${g.m}`;
-      const holLine=hol?`<div class="mdp-heb" style="color:${isS?'rgba(255,255,255,.8)':'#E63946'}">${hol.e} ${hol.n}</div>`
-                       :`<div class="mdp-heb">${gLabel}</div>`;
-      const dayStyle=hol?'color:#E63946;font-weight:800;':'';
-      html+=`<div class="${cls}" style="${isS||isT?'':dayStyle}" onclick="mdpSelect(${g.y},${g.m},${g.d})"><span>${_hDayLetters(hd)}</span>${holLine}</div>`;
+  // Hebrew sub-header: show Hebrew month(s) covering this Gregorian month
+  const hFirst = _jdnToH(_gToJdn(_mdpYear,_mdpMonth,1));
+  const dim0   = new Date(_mdpYear,_mdpMonth,0).getDate();
+  const hLast  = _jdnToH(_gToJdn(_mdpYear,_mdpMonth,dim0));
+  const hebLabel = hFirst.m === hLast.m
+    ? `${_hMonthName(hFirst.y,hFirst.m)} ${_hYearLetters(hFirst.y)}`
+    : `${_hMonthName(hFirst.y,hFirst.m)} – ${_hMonthName(hLast.y,hLast.m)} ${_hYearLetters(hLast.y)}`;
+  document.getElementById('mdpHebHeader').textContent = hebLabel;
+
+  const firstDow = new Date(_mdpYear,_mdpMonth-1,1).getDay();
+  let html = DAY_NAMES.map(n=>`<div class="mdp-dayname">${n}</div>`).join('');
+  for(let i=0;i<firstDow;i++) html+=`<div class="mdp-day empty"></div>`;
+
+  for(let d=1;d<=dim0;d++){
+    const isT=(tY===_mdpYear&&tM===_mdpMonth&&tD===d);
+    const isS=_mdpSel&&_mdpSel.y===_mdpYear&&_mdpSel.m===_mdpMonth&&_mdpSel.d===d;
+    const hd = _jdnToH(_gToJdn(_mdpYear,_mdpMonth,d));
+    const hol = _H_HOLIDAYS[`${hd.m}-${hd.d}`];
+    const isShabat = new Date(_mdpYear,_mdpMonth-1,d).getDay()===6;
+    const cls = 'mdp-day'+(isT?' today':'')+(isS?' selected':'')+(hol?' mdp-holiday':'')+(isShabat&&!isS?' mdp-shab':'');
+    // bottom sub-line: holiday emoji OR Hebrew day letter
+    let sub;
+    if(hol) {
+      const subColor = isS ? 'rgba(255,255,255,.85)' : '#E63946';
+      sub = `<div class="mdp-heb" style="color:${subColor}">${hol.e}</div>`;
+    } else {
+      // Mark first of Hebrew month specially
+      const hebDayStr = hd.d===1 ? `<b>א׳ ${_hMonthName(hd.y,hd.m).slice(0,3)}</b>` : _hDayLetters(hd.d);
+      sub = `<div class="mdp-heb">${hebDayStr}</div>`;
     }
-    document.getElementById('mdpGrid').innerHTML = html;
+    const numStyle = (hol&&!isS) ? 'color:#E63946;' : (isShabat&&!isS) ? 'color:#845EC2;' : '';
+    html += `<div class="${cls}" onclick="mdpSelect(${_mdpYear},${_mdpMonth},${d})">
+      <span style="${numStyle}">${d}</span>${sub}
+    </div>`;
   }
+  document.getElementById('mdpGrid').innerHTML = html;
 }
 
 // ── Countdown tasks for birthday / anniversary ───────────────────
@@ -14242,9 +14186,9 @@ function _mpCreateCountdownTasks(memberId, field, dateStr) {
     const prefix = isAnniv ? `יום נישואין לאבא ואמא ${label}` : `יום הולדת ל${name} ${label}`;
     const ymd = `${taskDate.getFullYear()}-${String(taskDate.getMonth()+1).padStart(2,'0')}-${String(taskDate.getDate()).padStart(2,'0')}`;
 
-    const myId = DataAdapter.isFamily() ? DataAdapter.userId : currentUser;
-    const allIds = [...allMemberIds, 'dad','mom','dudi','yonatan'];
     allMemberIds.forEach(mid => {
+      const legId = _legacyIdForMemberId(mid) || mid;
+      // visibleTo only this member — so each person sees only their own reminder
       AppState.tasks.push({
         id: `_cd_${TAG}_${daysLeft}_${mid}_${Date.now()}_${Math.random().toString(36).slice(2)}`,
         title: prefix,
@@ -14252,10 +14196,9 @@ function _mpCreateCountdownTasks(memberId, field, dateStr) {
         date: ymd,
         mins: null,
         completed: false,
-        createdBy: myId,
-        assignedTo: _legacyIdForMemberId(mid) || mid,
+        assignedTo: legId,
         assignedToMemberId: mid,
-        visibleTo: allIds,
+        visibleTo: [legId, mid],
         viewOnly: true,
         noNotification: true,
         _countdownTag: TAG,
