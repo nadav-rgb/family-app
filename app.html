@@ -2822,7 +2822,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
     </div>
 
     <!-- Hero card — premium design with portrait -->
-    <div class="t-hero-card">
+    <div class="t-hero-card" onclick="openHeroCard()" ontouchend="openHeroCard();event.preventDefault()">
       <!-- Backdrop city scene -->
       <div class="t-hero-scene">
         <svg viewBox="0 0 240 230" preserveAspectRatio="xMidYMax slice" width="100%" height="100%">
@@ -8565,6 +8565,7 @@ function renderToday() {
 
   updateProgress();
   _maybeShowNotifPermBanner();
+  if (typeof _checkBellItems === 'function') _checkBellItems();
   // Re-paint all avatar slots (Today strip + t-share chips inside each task card)
   // with the latest photo/emoji from cache. Cheap — only touches tagged nodes.
   if (typeof _renderAllAvatars === 'function') _renderAllAvatars();
@@ -9788,24 +9789,17 @@ function _checkBellItems() {
 setInterval(_checkBellItems, 30 * 1000);
 _checkBellItems(); // initial check on load
 
-// ─── Hero card: touchend + click with live task lookup ───────────────────
-(function _wireHeroClick() {
-  const heroCard = document.querySelector('#s-today .t-hero-card');
-  if (!heroCard) return;
-  let _tapped = false;
-  function _onHeroTap(e) {
-    if (_tapped) return; // deduplicate touchend→click
-    _tapped = true;
-    setTimeout(() => { _tapped = false; }, 400);
-    e.preventDefault();
-    const tasks = activeTasks();
-    const next = tasks.find(t => !t.completed && t.mins != null)
-               || tasks.find(t => !t.completed);
-    if (next) openOptionsSheet(next);
-  }
-  heroCard.addEventListener('touchend', _onHeroTap, { passive: false });
-  heroCard.addEventListener('click', _onHeroTap);
-})();
+// ─── Hero card global handler (called via onclick/ontouchend in HTML) ────
+let _heroTapLock = false;
+function openHeroCard() {
+  if (_heroTapLock) return;
+  _heroTapLock = true;
+  setTimeout(() => { _heroTapLock = false; }, 500);
+  const tasks = activeTasks();
+  const next = tasks.find(t => !t.completed && t.mins != null)
+             || tasks.find(t => !t.completed);
+  if (next) openOptionsSheet(next);
+}
 
 // _maybeShowNotifPermBanner — show the soft "Enable notifications" banner
 // on the Today screen IFF permission is still 'default' AND user hasn't
