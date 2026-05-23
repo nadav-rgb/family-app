@@ -1518,9 +1518,9 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 #s-member-profile .mp-icon-btn svg{width:18px;height:18px}
 /* Profile section */
 #s-member-profile .mp-profile{position:relative;margin-top:6px;padding:14px 4px 6px;display:flex;align-items:center;justify-content:space-between;gap:14px;min-height:155px;}
-#s-member-profile .mp-name-wrap{flex:1 1 auto;text-align:center;padding-right:6px;}
+#s-member-profile .mp-name-wrap{flex:1 1 auto;text-align:right;padding-right:0;padding-left:6px;}
 #s-member-profile .mp-name{font-size:50px;font-weight:900;line-height:0.95;letter-spacing:-0.03em;color:var(--mp-ink);margin:0;cursor:pointer;}
-#s-member-profile .mp-subtitle{margin-top:12px;font-size:14px;font-weight:500;color:#5C5470;display:flex;align-items:center;justify-content:center;gap:5px;cursor:pointer;flex-wrap:wrap;}
+#s-member-profile .mp-subtitle{margin-top:12px;font-size:14px;font-weight:500;color:#5C5470;display:flex;align-items:center;justify-content:flex-start;gap:5px;cursor:pointer;flex-wrap:wrap;}
 #s-member-profile .mp-subtitle .mp-heart{color:var(--mp-purple)}
 #s-member-profile .mp-avatar-wrap{position:relative;width:116px;height:116px;flex:0 0 auto;margin-left:4px;}
 #s-member-profile .mp-avatar{width:116px;height:116px;border-radius:50%;background:radial-gradient(120% 120% at 30% 25%,#fff 0%,#FBF7FF 60%,#F2EAFB 100%);border:3px solid var(--mp-purple);box-shadow:0 10px 22px rgba(139,111,191,0.18),inset 0 2px 6px rgba(255,255,255,0.9);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:48px;}
@@ -1548,7 +1548,7 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 #s-member-profile .mp-color-card{margin-top:11px;background:#fff;border-radius:20px;padding:14px 16px;box-shadow:var(--mp-shadow);border:1px solid rgba(255,255,255,0.8);display:flex;align-items:center;justify-content:space-between;gap:10px;}
 #s-member-profile .mp-color-label{font-size:13px;font-weight:600;color:#6B5E80}
 #s-member-profile .mp-color-right{display:flex;align-items:center;gap:8px}
-#s-member-profile .mp-color-name{font-size:13px;font-weight:500;color:var(--mp-muted)}
+#s-member-profile .mp-color-name{display:none}
 #s-member-profile .mp-color-swatch{width:26px;height:26px;border-radius:50%;box-shadow:0 0 0 2px rgba(255,255,255,0.7);position:relative;cursor:pointer;border:none;}
 #s-member-profile .mp-color-swatch input[type=color]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;border-radius:50%;}
 /* Quote */
@@ -1622,6 +1622,52 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 #mpEditSheet .mpe-text:focus,#mpEditSheet .mpe-emoji:focus{border-color:#8B6FBF}
 #mpEditSheet .mpe-save{width:100%;margin-top:14px;padding:14px;border:none;border-radius:14px;background:linear-gradient(135deg,#9C82CC 0%,#7A5DB0 100%);color:#fff;font-family:'Rubik',sans-serif;font-size:15px;font-weight:700;cursor:pointer;}
 #mpEditSheet .mpe-cancel{width:100%;margin-top:8px;padding:11px;border:none;border-radius:14px;background:transparent;color:#8E839E;font-family:'Rubik',sans-serif;font-size:14px;font-weight:600;cursor:pointer;}
+
+/* diagonal member-color accent on home avatars */
+#s-today .t-av::before{content:'';position:absolute;inset:0;border-radius:50%;background:linear-gradient(-50deg,var(--mem-color,transparent) 0%,transparent 42%);opacity:.3;pointer-events:none;}
+
+/* ── Color Picker Modal ─────────────────────────────────────────── */
+#mpColorPickerBg{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:3000;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s;}
+#mpColorPickerBg.open{opacity:1;pointer-events:all;}
+#mpColorPickerSheet{background:#fff;border-radius:28px 28px 0 0;padding:22px 22px 40px;width:100%;max-width:480px;transform:translateY(100%);transition:transform .3s cubic-bezier(.32,1.26,.56,.99);}
+#mpColorPickerBg.open #mpColorPickerSheet{transform:translateY(0);}
+.mcp-pill{width:38px;height:4px;border-radius:2px;background:#E0D8EE;margin:0 auto 18px;}
+.mcp-title{font-size:16px;font-weight:700;color:#2A1F3D;text-align:center;margin-bottom:18px;}
+.mcp-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:18px;}
+.mcp-swatch{width:100%;aspect-ratio:1;border-radius:50%;cursor:pointer;border:3px solid transparent;transition:transform .15s,border-color .15s;box-shadow:0 2px 8px rgba(0,0,0,.14);}
+.mcp-swatch:active{transform:scale(.85);}
+.mcp-swatch.selected{border-color:#2A1F3D;transform:scale(1.15);}
+.mcp-custom-row{display:flex;align-items:center;gap:12px;margin-bottom:18px;}
+.mcp-custom-label{font-size:13px;font-weight:600;color:#6B5E80;flex:1;}
+.mcp-custom-swatch{width:36px;height:36px;border-radius:50%;cursor:pointer;border:2.5px solid #E0D8EE;overflow:hidden;position:relative;flex:0 0 auto;}
+.mcp-custom-swatch input[type=color]{position:absolute;inset:-6px;opacity:0;cursor:pointer;width:200%;height:200%;}
+.mcp-confirm{width:100%;height:50px;border-radius:16px;background:linear-gradient(135deg,#9C82CC 0%,#7A5DB0 100%);color:#fff;font-size:15px;font-weight:700;border:none;cursor:pointer;font-family:'Rubik',sans-serif;}
+.mcp-cancel{width:100%;height:44px;border-radius:14px;background:transparent;color:#8B6FBF;font-size:14px;font-weight:600;border:none;cursor:pointer;margin-top:6px;font-family:'Rubik',sans-serif;}
+
+/* ── Date Picker Modal ──────────────────────────────────────────── */
+#mpDatePickerBg{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:3000;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s;}
+#mpDatePickerBg.open{opacity:1;pointer-events:all;}
+#mpDatePickerSheet{background:#fff;border-radius:28px 28px 0 0;padding:20px 20px 36px;width:100%;max-width:480px;transform:translateY(100%);transition:transform .3s cubic-bezier(.32,1.26,.56,.99);}
+#mpDatePickerBg.open #mpDatePickerSheet{transform:translateY(0);}
+.mdp-pill{width:38px;height:4px;border-radius:2px;background:#E0D8EE;margin:0 auto 14px;}
+.mdp-tabs{display:flex;background:#F3EEF9;border-radius:14px;padding:4px;margin-bottom:16px;gap:4px;}
+.mdp-tab{flex:1;padding:10px;border-radius:10px;border:none;font-size:14px;font-weight:600;color:#8B6FBF;background:transparent;cursor:pointer;transition:.15s;font-family:'Rubik',sans-serif;}
+.mdp-tab.active{background:#fff;color:#2A1F3D;box-shadow:0 2px 8px rgba(139,111,191,.14);}
+.mdp-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.mdp-nav-btn{width:38px;height:38px;border-radius:50%;background:#F3EEF9;border:none;cursor:pointer;font-size:18px;color:#6B5E80;display:flex;align-items:center;justify-content:center;}
+.mdp-nav-label{font-size:15px;font-weight:700;color:#2A1F3D;flex:1;text-align:center;}
+.mdp-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:14px;}
+.mdp-dayname{font-size:10px;font-weight:600;color:#8E839E;text-align:center;padding:4px 0 6px;}
+.mdp-day{min-height:36px;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;font-size:14px;font-weight:600;color:#2A1F3D;transition:.12s;padding:2px 0;}
+.mdp-day:active{transform:scale(.85);}
+.mdp-day.empty{pointer-events:none;}
+.mdp-day.other{color:#C9C0D8;font-weight:400;}
+.mdp-day.today{background:#F3EEF9;}
+.mdp-day.selected{background:linear-gradient(135deg,#9C82CC,#7A5DB0);color:#fff;}
+.mdp-day .mdp-heb{font-size:8px;color:#8E839E;line-height:1.2;}
+.mdp-day.selected .mdp-heb{color:rgba(255,255,255,.7);}
+.mdp-confirm{width:100%;height:50px;border-radius:16px;background:linear-gradient(135deg,#9C82CC 0%,#7A5DB0 100%);color:#fff;font-size:15px;font-weight:700;border:none;cursor:pointer;font-family:'Rubik',sans-serif;}
+.mdp-cancel-btn{width:100%;height:44px;border-radius:14px;background:transparent;color:#8B6FBF;font-size:14px;font-weight:600;border:none;cursor:pointer;margin-top:6px;font-family:'Rubik',sans-serif;}
 
 /* ════════════════════════════════════════════════════════════════════
    SCREEN — CONFIRMATION  (Claude Design merge, step 5)
@@ -3378,7 +3424,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
   <div class="mp-scroll">
     <div class="mp-header">
       <button class="mp-icon-btn" id="mpBackBtn" aria-label="חזרה">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="transform:rotate(180deg)"><path d="m15 18-6-6 6-6"/></svg>
       </button>
       <button class="mp-icon-btn" aria-label="עוד">
         <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>
@@ -3391,6 +3437,12 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
       <span class="mp-c2">⭐</span>
       <span class="mp-cb1"></span>
       <span class="mp-cb2"></span>
+      <div class="mp-avatar-wrap">
+        <div class="mp-avatar" id="mpAvatarCircle"></div>
+        <button class="mp-pencil" id="mpPencilBtn" style="display:none" aria-label="עריכת תמונה">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4Z"/></svg>
+        </button>
+      </div>
       <div class="mp-name-wrap">
         <h1 class="mp-name" id="mpName" onclick="mpEditField('name')">—</h1>
         <div class="mp-subtitle" id="mpSubtitle" onclick="mpEditField('subtitle')">
@@ -3398,25 +3450,16 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
           <span class="mp-heart">💜</span>
         </div>
       </div>
-      <div class="mp-avatar-wrap">
-        <div class="mp-avatar" id="mpAvatarCircle"></div>
-        <button class="mp-pencil" id="mpPencilBtn" style="display:none" aria-label="עריכת תמונה">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4Z"/></svg>
-        </button>
-      </div>
     </div>
 
     <!-- Info cards: birthday [+ anniversary for parents] -->
     <div class="mp-info-row two-col" id="mpInfoRow"></div>
 
     <!-- Color row (self only) -->
-    <div class="mp-color-card" id="mpColorCard" style="display:none">
+    <div class="mp-color-card" id="mpColorCard" style="display:none" onclick="openMpColorPicker()">
       <span class="mp-color-label">🎨 צבע אישי</span>
       <div class="mp-color-right">
-        <span class="mp-color-name" id="mpColorName"></span>
-        <div class="mp-color-swatch" id="mpColorSwatch">
-          <input type="color" id="mpColorInput" title="בחר צבע אישי">
-        </div>
+        <div class="mp-color-swatch" id="mpColorSwatch" style="cursor:pointer"></div>
       </div>
     </div>
 
@@ -3498,6 +3541,42 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
     </div>
     <button class="mpe-save" id="mpeSaveBtn">שמור</button>
     <button class="mpe-cancel" onclick="closeMpEdit()">ביטול</button>
+  </div>
+</div>
+
+<!-- Color Picker Modal -->
+<div id="mpColorPickerBg">
+  <div id="mpColorPickerSheet">
+    <div class="mcp-pill"></div>
+    <div class="mcp-title">בחר צבע אישי</div>
+    <div class="mcp-grid" id="mcpGrid"></div>
+    <div class="mcp-custom-row">
+      <span class="mcp-custom-label">צבע מותאם אישית</span>
+      <div class="mcp-custom-swatch" id="mcpCustomSwatch">
+        <input type="color" id="mcpCustomInput" title="צבע חופשי">
+      </div>
+    </div>
+    <button class="mcp-confirm" id="mcpConfirmBtn">בחר</button>
+    <button class="mcp-cancel" onclick="closeMpColorPicker()">ביטול</button>
+  </div>
+</div>
+
+<!-- Date Picker Modal -->
+<div id="mpDatePickerBg">
+  <div id="mpDatePickerSheet">
+    <div class="mdp-pill"></div>
+    <div class="mdp-tabs">
+      <button class="mdp-tab active" id="mdpTabGreg" onclick="mdpSetTab('greg')">לועזי</button>
+      <button class="mdp-tab" id="mdpTabHeb" onclick="mdpSetTab('heb')">עברי</button>
+    </div>
+    <div class="mdp-nav">
+      <button class="mdp-nav-btn" onclick="mdpPrev()">‹</button>
+      <div class="mdp-nav-label" id="mdpNavLabel"></div>
+      <button class="mdp-nav-btn" onclick="mdpNext()">›</button>
+    </div>
+    <div class="mdp-grid" id="mdpGrid"></div>
+    <button class="mdp-confirm" id="mdpConfirmBtn">אישור</button>
+    <button class="mdp-cancel-btn" onclick="closeMpDatePicker()">ביטול</button>
   </div>
 </div>
 
@@ -8520,6 +8599,7 @@ function updateOtherDayBanner() {
 }
 
 function renderToday() {
+  if (typeof _mpApplyAllStripes === 'function') _mpApplyAllStripes();
   updateTodayTitle();
   updateDateBadge();
   updateOtherDayBanner();
@@ -13568,6 +13648,15 @@ function openMemberProfile(memberId, fromScreen) {
   goto('s-member-profile', 'txLeaveFade', 'txEnterFade');
 }
 
+// Apply all members' personal colors as diagonal stripes on home screen load
+function _mpApplyAllStripes() {
+  (_FAMILY_MEMBERS_SEED || []).forEach(seed => {
+    const live = (_familyMembersCache || []).find(c => c.memberId === seed.memberId);
+    const color = (live || seed).color;
+    if (color) _mpApplyStripe(seed.memberId, color);
+  });
+}
+
 function _mpGetMember(memberId) {
   const fromCache = (_familyMembersCache || []).find(m => m.memberId === memberId);
   const fromSeed  = (_FAMILY_MEMBERS_SEED || []).find(m => m.memberId === memberId);
@@ -13681,21 +13770,18 @@ function _renderMemberProfile() {
 
   // Color card — self only
   const colorCard = document.getElementById('mpColorCard');
+  const colorVal = m.color || '#8B6FBF';
+  // Apply personal color to the profile screen
+  document.getElementById('s-member-profile').style.setProperty('--mp-purple', colorVal);
+  document.getElementById('s-member-profile').style.setProperty('--mp-purple-deep', _mpDarken(colorVal, 0.15));
   if (isSelf) {
     colorCard.style.display = '';
-    const colorVal = m.color || '#8B6FBF';
     document.getElementById('mpColorSwatch').style.background = colorVal;
-    document.getElementById('mpColorInput').value = colorVal;
-    document.getElementById('mpColorName').textContent = colorVal;
-    document.getElementById('mpColorInput').oninput = e => {
-      const c = e.target.value;
-      document.getElementById('mpColorSwatch').style.background = c;
-      document.getElementById('mpColorName').textContent = c;
-      _mpSaveField(memberId, { color: c });
-    };
   } else {
     colorCard.style.display = 'none';
   }
+  // Apply diagonal stripe to home screen avatar
+  _mpApplyStripe(memberId, colorVal);
 
   // Quote
   const quoteEl = document.getElementById('mpQuoteText');
@@ -13774,14 +13860,18 @@ function _renderMpChips(about) {
 
 // ── Field editing ──────────────────────────────────────────────────
 function mpEditField(field) {
+  if (field === 'birthday' || field === 'anniversary') {
+    openMpDatePicker(field);
+    return;
+  }
   const m = _mpGetMember(_mpCurrentId);
   if (!m) return;
   _mpEditField  = field;
   _mpEditChipIdx = -1;
-  const labels = { name:'שם', subtitle:'תיאור', birthday:'יום הולדת (DD.MM.YYYY)', anniversary:'יום נישואין (DD.MM.YYYY)', quote:'ציטוט אישי' };
+  const labels = { name:'שם', subtitle:'תיאור', quote:'ציטוט אישי' };
   document.getElementById('mpeLabel').textContent   = labels[field] || field;
   document.getElementById('mpeInput').value         = m[field] || '';
-  document.getElementById('mpeInput').placeholder   = field === 'birthday' || field === 'anniversary' ? 'DD.MM.YYYY' : '';
+  document.getElementById('mpeInput').placeholder   = '';
   document.getElementById('mpeInput').style.display = '';
   document.getElementById('mpeChipRow').style.display = 'none';
   document.getElementById('mpeSaveBtn').onclick = () => {
@@ -13858,6 +13948,254 @@ function closeMpEdit() {
 document.getElementById('mpEditBg').addEventListener('click', e => {
   if (e.target === document.getElementById('mpEditBg')) closeMpEdit();
 });
+document.getElementById('mpColorPickerBg').addEventListener('click', e => {
+  if (e.target === document.getElementById('mpColorPickerBg')) closeMpColorPicker();
+});
+document.getElementById('mpDatePickerBg').addEventListener('click', e => {
+  if (e.target === document.getElementById('mpDatePickerBg')) closeMpDatePicker();
+});
+
+// ── Helper: darken hex color ─────────────────────────────────────
+function _mpDarken(hex, amt) {
+  const n = parseInt(hex.replace('#',''), 16);
+  let r = Math.max(0, ((n>>16)&0xff) - Math.round(amt*255));
+  let g = Math.max(0, ((n>>8)&0xff) - Math.round(amt*255));
+  let b = Math.max(0, (n&0xff) - Math.round(amt*255));
+  return '#' + [r,g,b].map(x=>x.toString(16).padStart(2,'0')).join('');
+}
+
+// ── Apply diagonal stripe to home-screen avatar ──────────────────
+function _mpApplyStripe(memberId, color) {
+  document.querySelectorAll(`[data-avatar-for="${memberId}"]`).forEach(el => {
+    el.style.setProperty('--mem-color', color || 'transparent');
+  });
+}
+
+// ── Color Picker ─────────────────────────────────────────────────
+const _MCP_PRESETS = [
+  '#FF6B6B','#FF8E53','#FFD93D','#A8E063','#6BCB77','#48CAE4',
+  '#4D96FF','#845EC2','#C77DFF','#F72585','#FB5607','#06D6A0',
+  '#3A86FF','#7209B7','#E63946','#118AB2','#FFB347','#B5838D'
+];
+let _mcpSelected = null;
+
+function openMpColorPicker() {
+  const m = _mpGetMember(_mpCurrentId);
+  _mcpSelected = m?.color || '#8B6FBF';
+  // Build grid
+  const grid = document.getElementById('mcpGrid');
+  grid.innerHTML = _MCP_PRESETS.map(c => `
+    <div class="mcp-swatch${c.toLowerCase()===_mcpSelected.toLowerCase()?' selected':''}"
+         style="background:${c}" data-color="${c}"
+         onclick="mcpSelectColor('${c}')"></div>
+  `).join('');
+  // Custom swatch
+  document.getElementById('mcpCustomSwatch').style.background = _mcpSelected;
+  document.getElementById('mcpCustomInput').value = _mcpSelected;
+  document.getElementById('mcpCustomInput').oninput = e => {
+    mcpSelectColor(e.target.value);
+    document.getElementById('mcpCustomSwatch').style.background = e.target.value;
+  };
+  document.getElementById('mcpConfirmBtn').onclick = () => {
+    if (_mcpSelected) {
+      _mpSaveField(_mpCurrentId, { color: _mcpSelected });
+      document.getElementById('mpColorSwatch').style.background = _mcpSelected;
+      document.getElementById('s-member-profile').style.setProperty('--mp-purple', _mcpSelected);
+      document.getElementById('s-member-profile').style.setProperty('--mp-purple-deep', _mpDarken(_mcpSelected, 0.15));
+      _mpApplyStripe(_mpCurrentId, _mcpSelected);
+    }
+    closeMpColorPicker();
+  };
+  document.getElementById('mpColorPickerBg').classList.add('open');
+}
+function mcpSelectColor(c) {
+  _mcpSelected = c;
+  document.querySelectorAll('.mcp-swatch').forEach(s => {
+    s.classList.toggle('selected', s.dataset.color?.toLowerCase() === c.toLowerCase());
+  });
+  document.getElementById('mcpCustomSwatch').style.background = c;
+}
+function closeMpColorPicker() {
+  document.getElementById('mpColorPickerBg').classList.remove('open');
+}
+
+// ── Hebrew Calendar (via Intl) ────────────────────────────────────
+function _hebDateStr(gYear, gMonth1, gDay) {
+  try {
+    const d = new Date(gYear, gMonth1-1, gDay);
+    const fmt = new Intl.DateTimeFormat('he-IL', {
+      calendar:'hebrew', day:'numeric', numberingSystem:'latn'
+    });
+    return fmt.format(d);
+  } catch(e) { return ''; }
+}
+function _hebMonthYear(gYear, gMonth1) {
+  try {
+    const d = new Date(gYear, gMonth1-1, 15);
+    const fmt = new Intl.DateTimeFormat('he-IL', {
+      calendar:'hebrew', month:'long', year:'numeric'
+    });
+    return fmt.format(d);
+  } catch(e) { return ''; }
+}
+// Return the Hebrew month/year string for a given Gregorian date
+function _hebMonthOf(gYear, gMonth1, gDay) {
+  try {
+    const d = new Date(gYear, gMonth1-1, gDay);
+    const fmt = new Intl.DateTimeFormat('he-IL', {
+      calendar:'hebrew', month:'long', year:'numeric'
+    });
+    return fmt.format(d);
+  } catch(e) { return ''; }
+}
+
+// ── Date Picker ──────────────────────────────────────────────────
+let _mdpField  = null;
+let _mdpTab    = 'greg';   // 'greg' | 'heb'
+let _mdpYear   = 0;
+let _mdpMonth  = 0;        // 1-based
+let _mdpSel    = null;     // {y,m,d} Gregorian
+
+function openMpDatePicker(field) {
+  _mdpField = field;
+  const m   = _mpGetMember(_mpCurrentId);
+  const cur = m?.[field];
+  const today = new Date();
+  if (cur && /^\d{2}\.\d{2}\.\d{4}$/.test(cur)) {
+    const parts = cur.split('.');
+    _mdpSel = { d:+parts[0], m:+parts[1], y:+parts[2] };
+    _mdpYear  = _mdpSel.y;
+    _mdpMonth = _mdpSel.m;
+  } else {
+    _mdpSel = null;
+    _mdpYear  = today.getFullYear();
+    _mdpMonth = today.getMonth() + 1;
+  }
+  _mdpTab = 'greg';
+  mdpSetTab('greg');
+  document.getElementById('mdpConfirmBtn').onclick = () => {
+    if (_mdpSel) {
+      const str = `${String(_mdpSel.d).padStart(2,'0')}.${String(_mdpSel.m).padStart(2,'0')}.${_mdpSel.y}`;
+      _mpSaveField(_mpCurrentId, { [_mdpField]: str });
+      _mpCreateCountdownTasks(_mpCurrentId, _mdpField, str);
+      closeMpDatePicker();
+      _renderMemberProfile();
+    } else {
+      closeMpDatePicker();
+    }
+  };
+  document.getElementById('mpDatePickerBg').classList.add('open');
+}
+function closeMpDatePicker() {
+  document.getElementById('mpDatePickerBg').classList.remove('open');
+}
+function mdpSetTab(tab) {
+  _mdpTab = tab;
+  document.getElementById('mdpTabGreg').classList.toggle('active', tab==='greg');
+  document.getElementById('mdpTabHeb').classList.toggle('active', tab==='heb');
+  _mdpRender();
+}
+function mdpPrev() {
+  _mdpMonth--;
+  if (_mdpMonth < 1) { _mdpMonth = 12; _mdpYear--; }
+  _mdpRender();
+}
+function mdpNext() {
+  _mdpMonth++;
+  if (_mdpMonth > 12) { _mdpMonth = 1; _mdpYear++; }
+  _mdpRender();
+}
+function _mdpRender() {
+  const DAY_NAMES_G = ['א','ב','ג','ד','ה','ו','ש'];
+  const MONTH_NAMES_G = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+  const today = new Date();
+  const isHeb = _mdpTab === 'heb';
+
+  // Nav label
+  if (isHeb) {
+    document.getElementById('mdpNavLabel').textContent = _hebMonthYear(_mdpYear, _mdpMonth);
+  } else {
+    document.getElementById('mdpNavLabel').textContent = `${MONTH_NAMES_G[_mdpMonth-1]} ${_mdpYear}`;
+  }
+
+  // Build day cells
+  const firstDay = new Date(_mdpYear, _mdpMonth-1, 1);
+  const daysInMonth = new Date(_mdpYear, _mdpMonth, 0).getDate();
+  // Sunday=0 offset for first day
+  let startOffset = firstDay.getDay(); // 0=Sun
+
+  let html = DAY_NAMES_G.map(n=>`<div class="mdp-dayname">${n}</div>`).join('');
+  // Empty cells before day 1
+  for (let i = 0; i < startOffset; i++) html += `<div class="mdp-day empty"></div>`;
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const isTod = (today.getFullYear()===_mdpYear && today.getMonth()+1===_mdpMonth && today.getDate()===d);
+    const isSel = _mdpSel && _mdpSel.y===_mdpYear && _mdpSel.m===_mdpMonth && _mdpSel.d===d;
+    const cls = ['mdp-day', isTod?'today':'', isSel?'selected':''].filter(Boolean).join(' ');
+    const hebStr = isHeb ? `<div class="mdp-heb">${_hebDateStr(_mdpYear,_mdpMonth,d)}</div>` : '';
+    html += `<div class="${cls}" onclick="mdpSelect(${d})">${d}${hebStr}</div>`;
+  }
+  document.getElementById('mdpGrid').innerHTML = html;
+}
+function mdpSelect(d) {
+  _mdpSel = { d, m:_mdpMonth, y:_mdpYear };
+  _mdpRender();
+}
+
+// ── Countdown tasks for birthday / anniversary ───────────────────
+function _mpCreateCountdownTasks(memberId, field, dateStr) {
+  if (!dateStr || !/^\d{2}\.\d{2}\.\d{4}$/.test(dateStr)) return;
+  const parts = dateStr.split('.');
+  const eventDay = +parts[0], eventMonth = +parts[1];
+  const today = new Date(); today.setHours(0,0,0,0);
+
+  // Find next occurrence of the event (this year or next)
+  let eventYear = today.getFullYear();
+  let eventDate = new Date(eventYear, eventMonth-1, eventDay);
+  if (eventDate < today) { eventYear++; eventDate = new Date(eventYear, eventMonth-1, eventDay); }
+
+  const diffDays = Math.round((eventDate - today) / 86400000);
+  if (diffDays > 60) return; // too far away, skip
+
+  const m = _mpGetMember(memberId);
+  const name = m?.name || '';
+  const isAnniv = field === 'anniversary';
+
+  // All member IDs to assign to
+  const allMemberIds = (_FAMILY_MEMBERS_SEED || []).map(x => x.memberId);
+
+  // Remove existing countdown tasks for this event this year
+  const TAG = `_countdown_${memberId}_${field}_${eventYear}`;
+  AppState.tasks = (AppState.tasks || []).filter(t => t._countdownTag !== TAG);
+
+  // Create 7 tasks (days T-7 to T-1) — only future ones
+  for (let daysLeft = 7; daysLeft >= 1; daysLeft--) {
+    const taskDate = new Date(eventDate);
+    taskDate.setDate(taskDate.getDate() - daysLeft);
+    if (taskDate < today) continue;
+
+    const label = daysLeft === 1 ? 'מחר!' : `בעוד ${daysLeft} ימים!`;
+    const prefix = isAnniv ? `יום נישואין לאבא ואמא ${label}` : `יום הולדת ל${name} ${label}`;
+    const ymd = `${taskDate.getFullYear()}-${String(taskDate.getMonth()+1).padStart(2,'0')}-${String(taskDate.getDate()).padStart(2,'0')}`;
+
+    allMemberIds.forEach(mid => {
+      AppState.tasks.push({
+        id: `_cd_${TAG}_${daysLeft}_${mid}_${Date.now()}_${Math.random()}`,
+        title: prefix,
+        emoji: isAnniv ? '💍' : '🎂',
+        date: ymd,
+        mins: null,
+        completed: false,
+        assignedToMemberId: mid,
+        viewOnly: true,
+        noNotification: true,
+        _countdownTag: TAG,
+        recurrence: { type:'none' }
+      });
+    });
+  }
+  saveState();
+}
 
 // ── Save to Firestore + local cache ───────────────────────────────
 async function _mpSaveField(memberId, updates) {
