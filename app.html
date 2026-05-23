@@ -8331,7 +8331,6 @@ function renderToday() {
   // Update hero card with first incomplete task (list already sorted by time)
   const nextTask = tasks.find(t => !t.completed && t.mins != null)
                 || tasks.find(t => !t.completed);
-  _heroCurrentTask = nextTask || null;
   const heroCard = document.querySelector('#s-today .t-hero-card');
   if (nextTask) {
     const now = new Date();
@@ -9681,10 +9680,17 @@ function _saveBellItems(items) {
   try { localStorage.setItem(BELL_KEY, JSON.stringify(items)); } catch(_) {}
 }
 
-// stage: 'before' | 'due' | 'overdue' | 'past'
+// stage: 'before' | 'due' | 'overdue-5' | 'overdue-10' | 'overdue-15'
 function _addBellItem(taskId, taskTitle, label, stage) {
   const items = _loadBellItems();
   const idx = items.findIndex(i => i.taskId === taskId);
+  if (idx >= 0 && items[idx].stage === stage) {
+    // same stage — update text but keep seen flag (avoid re-alerting on every poll)
+    items[idx].label = label;
+    items[idx].taskTitle = taskTitle;
+    _saveBellItems(items);
+    return;
+  }
   const item = { taskId, taskTitle, label, stage, seen: false, ts: Date.now() };
   if (idx >= 0) items.splice(idx, 1, item); else items.push(item);
   _saveBellItems(items);
@@ -9713,9 +9719,9 @@ function _renderBellList() {
     return;
   }
   list.innerHTML = items.slice().reverse().map(item => {
-    const dotCls = item.stage === 'before'  ? 'urgent'
-                 : item.stage === 'due'     ? 'warning'
-                 : item.stage === 'overdue' ? 'overdue' : 'past';
+    const dotCls = item.stage === 'before'                   ? 'urgent'
+                 : item.stage === 'due'                    ? 'warning'
+                 : (item.stage||'').startsWith('overdue')  ? 'overdue' : 'past';
     return `<div class="bell-item">
       <div class="bell-item-dot ${dotCls}"></div>
       <div class="bell-item-body">
@@ -9727,6 +9733,7 @@ function _renderBellList() {
 }
 
 function openBellPanel() {
+  _checkBellItems(); // refresh before showing
   _renderBellList();
   document.getElementById('bellBg').classList.add('open');
   // mark all as seen
@@ -9745,32 +9752,59 @@ document.getElementById('bellBg').addEventListener('click', e => { if (e.target 
 // init dot on load
 _updateBellDot();
 
-// ─── Wire _fireRealNotification to also feed the bell panel ──────────────
-const _origFireNotif = _fireRealNotification;
-_fireRealNotification = async function(title, body, tag, soundType) {
-  // derive taskId and stage from tag (format: task-<id>-<type>-<suffix>)
-  if (tag) {
-    const m = tag.match(/^task-(.+?)-(before|reminder|due|overdue)-/);
-    if (m) {
-      const taskId = m[1];
-      const rawStage = m[2];
-      const stage = soundType === 'due'      ? 'due'
-                  : rawStage === 'reminder' ? 'before'
-                  : rawStage;
-      _addBellItem(taskId, title, body, stage);
+// ─── Bell panel: poll tasks vs clock, works on both Capacitor and browser ──
+function _checkBellItems() {
+  const today = todayDate();
+  const now = new Date();
+  const nowMins = now.getHours() * 60 + now.getMinutes();
+  const isHe = AppState.lang !== 'en';
+  (AppState.tasks || []).forEach(task => {
+    if (task.completed) return;
+    if ((task.date || today) !== today) return;
+    if (task.mins == null) return;
+    const offset = task.reminderOffsetMinutes != null ? task.reminderOffsetMinutes : 10;
+    const delta = nowMins - task.mins;
+    let stage = null, label = null;
+    if (delta >= 15) {
+      stage = 'overdue-15';
+      label = isHe ? 'עברו 15 דקות מהמשימה' : '15 min overdue';
+    } else if (delta >= 10) {
+      stage = 'overdue-10';
+      label = isHe ? 'עברו 10 דקות מהמשימה' : '10 min overdue';
+    } else if (delta >= 5) {
+      stage = 'overdue-5';
+      label = isHe ? 'עברו 5 דקות מהמשימה' : '5 min overdue';
+    } else if (delta >= 0) {
+      stage = 'due';
+      label = isHe ? 'הגיע זמן המשימה' : 'Task is due now';
+    } else if (delta >= -offset) {
+      stage = 'before';
+      label = isHe ? `בעוד ${Math.abs(delta)} דקות` : `In ${Math.abs(delta)} min`;
     }
-  }
-  return _origFireNotif.call(this, title, body, tag, soundType);
-};
+    if (stage !== null) _addBellItem(String(task.id), task.title, label, stage);
+  });
+}
+// run every 30 s regardless of Capacitor
+setInterval(_checkBellItems, 30 * 1000);
+_checkBellItems(); // initial check on load
 
-// ─── Hero card: track current task + click to open options ───────────────
-let _heroCurrentTask = null;
+// ─── Hero card: touchend + click with live task lookup ───────────────────
 (function _wireHeroClick() {
   const heroCard = document.querySelector('#s-today .t-hero-card');
   if (!heroCard) return;
-  heroCard.addEventListener('click', () => {
-    if (_heroCurrentTask) openOptionsSheet(_heroCurrentTask);
-  });
+  let _tapped = false;
+  function _onHeroTap(e) {
+    if (_tapped) return; // deduplicate touchend→click
+    _tapped = true;
+    setTimeout(() => { _tapped = false; }, 400);
+    e.preventDefault();
+    const tasks = activeTasks();
+    const next = tasks.find(t => !t.completed && t.mins != null)
+               || tasks.find(t => !t.completed);
+    if (next) openOptionsSheet(next);
+  }
+  heroCard.addEventListener('touchend', _onHeroTap, { passive: false });
+  heroCard.addEventListener('click', _onHeroTap);
 })();
 
 // _maybeShowNotifPermBanner — show the soft "Enable notifications" banner
