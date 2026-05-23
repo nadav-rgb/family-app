@@ -1586,6 +1586,28 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 #s-member-profile .mp-chip{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:#3D2E5C;background:rgba(255,255,255,0.65);border-radius:14px;padding:7px 10px;border:1px solid rgba(255,255,255,0.7);cursor:pointer;}
 #s-member-profile .mp-chip .ce{font-size:16px;line-height:1}
 #s-member-profile .mp-chip .cx{font-size:10px;color:var(--mp-muted);margin-right:2px;}
+/* Avatar mode card (self only) */
+#s-member-profile .mp-av-card{margin-top:12px;background:#fff;border-radius:22px;padding:14px;box-shadow:var(--mp-shadow);border:1px solid rgba(255,255,255,0.8);}
+#s-member-profile .mp-av-head{text-align:right;margin-bottom:10px;}
+#s-member-profile .mp-av-title{font-size:15px;font-weight:800;color:var(--mp-ink);margin:0 0 2px;}
+#s-member-profile .mp-av-sub{font-size:10.5px;font-weight:500;color:var(--mp-muted);margin:0}
+#s-member-profile .mp-av-rows{display:flex;flex-direction:column;}
+#s-member-profile .mp-av-row{display:flex;align-items:center;gap:10px;padding:11px 2px;cursor:pointer;border-bottom:1px solid rgba(139,111,191,0.08);}
+#s-member-profile .mp-av-row:last-of-type{border-bottom:none}
+#s-member-profile .mp-av-row .chev{color:var(--mp-muted);flex:0 0 auto}
+#s-member-profile .mp-av-row .chev svg{width:13px;height:13px;display:block}
+#s-member-profile .mp-av-row .ico{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;flex:0 0 auto;box-shadow:inset 0 1px 0 rgba(255,255,255,0.5);}
+#s-member-profile .mp-av-row .ico svg{width:18px;height:18px}
+#s-member-profile .mp-av-row .ic-cam{background:#FFE0CB;color:#C25E2A}
+#s-member-profile .mp-av-row .ic-magic{background:#DFF3DD;color:#2E8C53}
+#s-member-profile .mp-av-row .ic-sparks{background:#E7DDF6;color:#6E47C9}
+#s-member-profile .mp-av-row .body{flex:1 1 auto;text-align:right;min-width:0;display:flex;flex-direction:column;gap:1px;}
+#s-member-profile .mp-av-row .t{font-size:13px;font-weight:700;color:var(--mp-ink);line-height:1.2}
+#s-member-profile .mp-av-row .s{font-size:10px;font-weight:500;color:var(--mp-muted);line-height:1.35}
+#s-member-profile .mp-av-row .av-dot{width:40px;height:40px;border-radius:50%;background:radial-gradient(120% 120% at 30% 25%,#F2EAFB 0%,#DDD0F5 60%,#C4B0E8 100%);box-shadow:0 3px 8px rgba(139,111,191,0.12),inset 0 1px 2px rgba(255,255,255,0.55);border:1.5px solid #fff;flex:0 0 auto;}
+#s-member-profile .mp-av-privacy{margin-top:12px;display:flex;align-items:center;justify-content:center;gap:7px;font-size:10.5px;color:var(--mp-muted);font-weight:500;text-align:center;}
+#s-member-profile .mp-av-privacy .lk{width:14px;height:14px;color:#7A5BE5;display:flex;align-items:center;justify-content:center;flex:0 0 auto;}
+#s-member-profile .mp-av-privacy .lk svg{width:13px;height:13px}
 /* Edit bottom sheet */
 #mpEditBg{position:fixed;inset:0;z-index:700;background:rgba(0,0,0,.38);display:none;align-items:flex-end;}
 #mpEditBg.open{display:flex;}
@@ -3420,6 +3442,38 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
       <div class="mp-stat"><span class="se">⭐</span><span class="sm"><div class="sn" id="mpStatPoints">0</div><div class="sl">נקודות<br>צברת</div></span></div>
     </div>
 
+    <!-- Avatar mode card (self only) -->
+    <div class="mp-av-card" id="mpAvatarCard" style="display:none">
+      <div class="mp-av-head">
+        <h2 class="mp-av-title">תמונות ודמויות</h2>
+        <p class="mp-av-sub">בחרו איך תוצגו באפליקציה</p>
+      </div>
+      <div class="mp-av-rows" id="mpAvatarRows">
+        <div class="mp-av-row" data-av="photo">
+          <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></span>
+          <div class="ico ic-cam"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2.5h6L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.4"/></svg></div>
+          <div class="body"><div class="t">השתמש בתמונה מקורית</div><div class="s">בחרו או צלמו תמונה אמיתית</div></div>
+          <div class="av-dot"></div>
+        </div>
+        <div class="mp-av-row" data-av="ai-from-photo">
+          <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></span>
+          <div class="ico ic-magic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19 18 6"/><path d="M14 4l1 2 2 1-2 1-1 2-1-2-2-1 2-1z"/><path d="M5 9l.7 1.4L7 11l-1.3.7L5 13l-.7-1.3L3 11l1.3-.6z"/></svg></div>
+          <div class="body"><div class="t">צור דמות AI מתמונה</div><div class="s">ניצור דמות מאיירת בהתאמה אישית</div></div>
+          <div class="av-dot"></div>
+        </div>
+        <div class="mp-av-row" data-av="ai-4-options">
+          <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></span>
+          <div class="ico ic-sparks"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4l1.6 3.4L17 9l-3.4 1.6L12 14l-1.6-3.4L7 9l3.4-1.6z"/><path d="M6 15l.8 1.6L8.5 17.5l-1.7.8L6 20l-.8-1.7L3.5 17.5l1.7-.8z"/></svg></div>
+          <div class="body"><div class="t">בחר מתוך 4 אפשרויות AI</div><div class="s">ניצור 4 דמויות מאיירות לבחירתכם</div></div>
+          <div class="av-dot"></div>
+        </div>
+      </div>
+      <div class="mp-av-privacy">
+        <span class="lk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>
+        <span>התמונות והדמויות מוצגות רק לכם ולא נשמרות בענן</span>
+      </div>
+    </div>
+
     <!-- About chips -->
     <div class="mp-about">
       <div class="mp-about-head">
@@ -4001,38 +4055,6 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
       <div class="info-pill">
         <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="11" x2="12" y2="17"/><circle cx="12" cy="7.5" r="0.6" fill="currentColor"/><circle cx="12" cy="12" r="9.5"/></svg></span>
         <span>השינויים יחולו גם במסך "משימה חדשה"</span>
-      </div>
-    </section>
-
-    <!-- תמונות ודמויות משפחה -->
-    <section class="section">
-      <div class="sec-head">
-        <h2 class="sec-title">תמונות ודמויות משפחה</h2>
-        <p class="sec-sub">בחרו איך יוצגו בני המשפחה באפליקציה</p>
-      </div>
-      <div class="avatar-rows" id="appr-avatars">
-        <div class="av-row" data-av="photo">
-          <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></span>
-          <div class="ico ic-cam"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2.5h6L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.4"/></svg></div>
-          <div class="body"><div class="t">השתמש בתמונה מקורית</div><div class="s">בחרו או צלמו תמונה אמיתית של בני המשפחה</div></div>
-          <div class="av-dot" aria-hidden="true"></div>
-        </div>
-        <div class="av-row" data-av="ai-from-photo">
-          <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></span>
-          <div class="ico ic-magic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19 18 6"/><path d="M14 4l1 2 2 1-2 1-1 2-1-2-2-1 2-1z"/><path d="M5 9l.7 1.4L7 11l-1.3.7L5 13l-.7-1.3L3 11l1.3-.6z"/></svg></div>
-          <div class="body"><div class="t">צור דמות AI מתמונה</div><div class="s">ניצור עבורכם דמות מאיירת בהתאמה אישית מתמונה שאתם מעלים</div></div>
-          <div class="av-dot" aria-hidden="true"></div>
-        </div>
-        <div class="av-row" data-av="ai-4-options">
-          <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></span>
-          <div class="ico ic-sparks"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4l1.6 3.4L17 9l-3.4 1.6L12 14l-1.6-3.4L7 9l3.4-1.6z"/><path d="M6 15l.8 1.6L8.5 17.5l-1.7.8L6 20l-.8-1.7L3.5 17.5l1.7-.8z"/></svg></div>
-          <div class="body"><div class="t">בחר מתוך 4 אפשרויות AI</div><div class="s">ניצור 4 דמויות מאיירות שונות לבחירתכם</div></div>
-          <div class="av-dot" aria-hidden="true"></div>
-        </div>
-      </div>
-      <div class="privacy-note">
-        <span class="lk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>
-        <span>התמונות והדמויות מוצגות רק לכם ולא נשמרות בענן</span>
       </div>
     </section>
 
@@ -13717,6 +13739,19 @@ function _renderMemberProfile() {
   // About chips
   document.getElementById('mpAboutTitle').textContent = 'כמה דברים על ' + (m.name || '');
   _renderMpChips(m.about || []);
+
+  // Avatar mode card — self only
+  const avCard = document.getElementById('mpAvatarCard');
+  avCard.style.display = isSelf ? '' : 'none';
+  if (isSelf) {
+    document.querySelectorAll('#mpAvatarRows .mp-av-row').forEach(row => {
+      row.onclick = () => {
+        AppState.avatarMode = row.dataset.av;
+        if (typeof saveAppearance === 'function') saveAppearance();
+        if (row.dataset.av === 'photo') AvatarFlow.open(memberId);
+      };
+    });
+  }
 
   // About add button
   document.getElementById('mpAboutAdd').style.display = '';
