@@ -9204,7 +9204,7 @@ function updateTodayTitle() {
 document.getElementById('calBtn').addEventListener('click', openCalDrawer);
 document.getElementById('tTitle').addEventListener('click', () => { if (!_devUiEnabled()) return; _diagTapCount++; clearTimeout(_diagTapTimer); _diagTapTimer = setTimeout(() => { _diagTapCount = 0; }, 2000); if (_diagTapCount >= 3) { _diagTapCount = 0; _showSyncDiag(); } });
 if (_urlDiag) _showSyncDiag();
-updateHeroPortrait();
+setTimeout(updateHeroPortrait, 0);
 document.getElementById('uswBg').addEventListener('click', e => { if (e.target === document.getElementById('uswBg')) closeUserSwitcher(); });
 document.getElementById('calBg').addEventListener('click', e => { if (e.target === document.getElementById('calBg')) closeCalDrawer(); });
 document.getElementById('calPrev').addEventListener('click', () => { calViewMonth--; if (calViewMonth < 0) { calViewMonth=11; calViewYear--; } renderCalGrid(); });
