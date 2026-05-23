@@ -9239,6 +9239,7 @@ function _loadNotifPrefs() {
     const raw = localStorage.getItem(NOTIF_PREFS_KEY);
     const saved = raw ? JSON.parse(raw) : {};
     return {
+      masterOn: saved.masterOn ?? true,
       defaultReminderMinutes: Array.isArray(saved.defaultReminderMinutes) ? saved.defaultReminderMinutes : [saved.defaultReminderMinutes ?? 10],
       overdueRemindersOn: saved.overdueRemindersOn ?? true,
       sounds: {
@@ -9248,7 +9249,7 @@ function _loadNotifPrefs() {
       },
     };
   } catch (_) {
-    return { defaultReminderMinutes: [10], overdueRemindersOn: true };
+    return { masterOn: true, defaultReminderMinutes: [10], overdueRemindersOn: true };
   }
 }
 
@@ -9268,11 +9269,12 @@ function renderNotifications() {
   if (!masterToggle) return;
 
   const prefs = _loadNotifPrefs();
-  const supported = _notifSupported();
+  const supported = _notifAvailable();
   const perm = _notifPermission();
 
-  // Master toggle state
-  const enabled = supported && perm === 'granted';
+  // Master toggle state — gated by both OS permission and the user's on/off preference
+  const permOk  = supported && perm === 'granted';
+  const enabled = permOk && prefs.masterOn !== false;
   masterToggle.checked = enabled;
 
   // Permission hint text
@@ -9280,10 +9282,10 @@ function renderNotifications() {
     permHint.textContent = 'הדפדפן שלך אינו תומך בהתראות';
     masterToggle.disabled = true;
   } else if (perm === 'denied') {
-    permHint.textContent = 'גישה נחסמה — אפשר בהגדרות הדפדפן';
+    permHint.textContent = _getCapLN() ? 'גישה נחסמה — אפשר בהגדרות המכשיר' : 'גישה נחסמה — אפשר בהגדרות הדפדפן';
     masterToggle.disabled = true;
-  } else if (perm === 'granted') {
-    permHint.textContent = 'התראות פעילות';
+  } else if (permOk) {
+    permHint.textContent = enabled ? 'התראות פעילות' : 'התראות כבויות';
     masterToggle.disabled = false;
   } else {
     permHint.textContent = 'לחץ כדי לאפשר התראות';
@@ -9317,13 +9319,21 @@ function renderNotifications() {
   newMaster.checked = enabled;
   newMaster.disabled = !supported || perm === 'denied';
   newMaster.addEventListener('change', async () => {
+    const p = _loadNotifPrefs();
     if (newMaster.checked) {
       const result = await _requestNotifPermission();
       if (result === 'granted') {
-        if (typeof _ensurePushSubscription === 'function') _ensurePushSubscription();
+        p.masterOn = true;
+        _saveNotifPrefs(p);
+        if (_getCapLN()) { if (typeof _capRescheduleAll === 'function') _capRescheduleAll(); }
+        else if (typeof _ensurePushSubscription === 'function') _ensurePushSubscription();
       }
-      renderNotifications();
+    } else {
+      p.masterOn = false;
+      _saveNotifPrefs(p);
+      if (_getCapLN() && typeof _capRescheduleAll === 'function') _capRescheduleAll();
     }
+    renderNotifications();
   });
 
   chips.forEach(chip => {
@@ -9481,10 +9491,24 @@ function renderNotifications() {
   }
 }
 
+let _capNotifPerm = 'default';
 function _notifSupported() { return 'Notification' in window; }
-function _notifPermission() { return _notifSupported() ? Notification.permission : 'unsupported'; }
+function _notifAvailable() { return _notifSupported() || !!_getCapLN(); }
+function _notifPermission() {
+  if (_getCapLN()) return _capNotifPerm;
+  return _notifSupported() ? Notification.permission : 'unsupported';
+}
 
 async function _requestNotifPermission() {
+  const ln = _getCapLN();
+  if (ln) {
+    try {
+      const r = await ln.requestPermissions();
+      _capNotifPerm = r?.display === 'granted' ? 'granted' : r?.display === 'denied' ? 'denied' : 'default';
+      AppLog.info('notif perm (native)', _capNotifPerm);
+    } catch (e) { AppLog.warn('capLN', 'requestPermissions failed', e.message || e); }
+    return _capNotifPerm;
+  }
   if (!_notifSupported()) return 'unsupported';
   if (Notification.permission !== 'default') return Notification.permission;
   try {
@@ -10103,6 +10127,7 @@ async function _capInit() {
   if (!ln) return;
   try {
     const result = await ln.requestPermissions();
+    _capNotifPerm = result?.display === 'granted' ? 'granted' : result?.display === 'denied' ? 'denied' : 'default';
     console.log('[capLN] permission result:', JSON.stringify(result));
     if (result?.display !== 'granted') {
       console.warn('[capLN] ⚠️ notification permission NOT granted — display:', result?.display);
@@ -10143,6 +10168,7 @@ async function _capInit() {
 async function _capScheduleTask(task) {
   const ln = _getCapLN();
   if (!ln) return;
+  if (_loadNotifPrefs().masterOn === false) return;
   const today = todayDate();
   if (task.completed || task.notify === false || task.deleted) return;
   if (!_taskNotifiesThisDevice(task)) return;
@@ -10233,6 +10259,15 @@ async function _capRescheduleAll() {
   console.log('[capLN] rescheduleAll — plugin available:', !!ln);
   if (!ln) return;
   try { await ln.removeAllDeliveredNotifications(); } catch (_) {}
+  if (_loadNotifPrefs().masterOn === false) {
+    try {
+      const pending = await ln.getPending();
+      const ids = (pending?.notifications || []).map(n => ({ id: n.id }));
+      if (ids.length) await ln.cancel({ notifications: ids });
+      console.log('[capLN] master off — cancelled', ids.length, 'pending');
+    } catch (e) { AppLog.warn('capLN', 'cancel-all failed', e.message || e); }
+    return;
+  }
   const today = todayDate();
   let count = 0;
   for (const task of AppState.tasks) {
