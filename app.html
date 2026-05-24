@@ -1496,6 +1496,60 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 #s-family-members .nav-item.active .underline{opacity:1;}
 
 /* ════════════════════════════════════════════════════════════════════
+   SCREEN — INVITE FAMILY MEMBER
+   Scoped under #s-invite-member
+═══════════════════════════════════════════════════════════════════════ */
+#s-invite-member{background:var(--page);display:flex;flex-direction:column;}
+#s-invite-member .status{flex:0 0 auto;padding:14px 26px 0;display:flex;align-items:center;justify-content:space-between;font-weight:700;font-size:15px;color:var(--ink);direction:ltr;}
+#s-invite-member .status .icons{display:flex;align-items:center;gap:6px;}
+#s-invite-member .app-header{flex:0 0 auto;padding:14px 18px 12px;display:grid;grid-template-columns:36px 1fr 36px;align-items:center;}
+#s-invite-member .back-btn{grid-column:1;width:36px;height:36px;border-radius:50%;background:#fff;border:1px solid #ECEEF2;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#1A2340;box-shadow:0 2px 8px rgba(20,30,60,.04);}
+#s-invite-member .back-btn svg{width:16px;height:16px;}
+#s-invite-member .app-title{grid-column:2;text-align:center;font-size:18px;font-weight:700;color:#1A2340;letter-spacing:-.01em;}
+#s-invite-member .scroll{flex:1 1 auto;overflow-y:auto;padding:6px 16px 32px;scrollbar-width:none;}
+#s-invite-member .scroll::-webkit-scrollbar{display:none;}
+#s-invite-member .hero{background:#fff;border-radius:22px;padding:22px 18px 20px;box-shadow:0 4px 14px rgba(20,30,60,.05),0 1px 3px rgba(20,30,60,.04);border:1px solid #F0F2F6;text-align:center;}
+#s-invite-member .hero-illu{width:128px;height:128px;border-radius:50%;margin:0 auto 14px;background:radial-gradient(120% 120% at 30% 25%,#F1FBFA 0%,#E6F8F6 70%,#DCF2F0 100%);border:1px solid #E1F4F1;display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:52px;}
+#s-invite-member .hero-title{font-size:19px;font-weight:800;color:#1A2340;letter-spacing:-.01em;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:10px;direction:rtl;}
+#s-invite-member .hero-sub{font-size:13px;font-weight:500;color:#8B95A8;line-height:1.65;max-width:300px;margin:0 auto;}
+#s-invite-member .code-card{margin-top:14px;background:#fff;border-radius:18px;padding:14px 16px;box-shadow:0 4px 14px rgba(20,30,60,.05);border:1px solid #F0F2F6;display:flex;align-items:center;justify-content:space-between;gap:12px;}
+#s-invite-member .code-left{display:flex;align-items:center;gap:12px;flex:1 1 auto;min-width:0;}
+#s-invite-member .code-icon{width:46px;height:46px;border-radius:12px;border:1.5px dashed #2EC4B6;background:#F2FBFA;display:flex;align-items:center;justify-content:center;color:#21A89C;flex:0 0 auto;}
+#s-invite-member .code-icon svg{width:22px;height:22px;}
+#s-invite-member .code-info{min-width:0;flex:1 1 auto;}
+#s-invite-member .code-info .lbl{font-size:12px;font-weight:500;color:#8B95A8;margin-bottom:2px;}
+#s-invite-member .code-info .val{font-size:22px;font-weight:800;color:#2EC4B6;letter-spacing:.04em;direction:ltr;text-align:right;line-height:1;white-space:nowrap;}
+#s-invite-member .copy-btn{flex:0 0 auto;display:inline-flex;align-items:center;gap:8px;background:#fff;color:#21A89C;border:1.5px solid #2EC4B6;border-radius:12px;padding:10px 14px;font-family:inherit;font-size:13.5px;font-weight:700;cursor:pointer;transition:transform .13s,opacity .13s;}
+#s-invite-member .copy-btn:active{transform:scale(.96);opacity:.85;}
+#s-invite-member .copy-btn svg{width:16px;height:16px;}
+#s-invite-member .section-label{margin-top:20px;padding:0 4px 12px;display:flex;align-items:center;justify-content:flex-end;gap:8px;font-size:15px;font-weight:700;color:#21A89C;}
+#s-invite-member .section-label svg{width:18px;height:18px;}
+#s-invite-member .share-list{display:flex;flex-direction:column;gap:10px;}
+#s-invite-member .share-row{background:#fff;border-radius:16px;padding:12px 14px 12px 10px;box-shadow:0 2px 8px rgba(20,30,60,.04);border:1px solid #F0F2F6;display:flex;align-items:center;gap:12px;cursor:pointer;transition:transform .13s;}
+#s-invite-member .share-row:active{transform:scale(.98);}
+#s-invite-member .share-row.whatsapp{background:#F4FBF0;border-color:#E5F3DC;}
+#s-invite-member .share-row.sms{background:#F0F4FB;border-color:#DDE6F3;}
+#s-invite-member .share-row.share{background:#F6F2FB;border-color:#E7DEF3;}
+#s-invite-member .share-row.link{background:#F4F5F8;border-color:#E4E6EC;}
+#s-invite-member .share-icon{flex:0 0 auto;width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;box-shadow:0 4px 10px rgba(0,0,0,.08);}
+#s-invite-member .share-icon svg{width:22px;height:22px;}
+#s-invite-member .share-icon.whatsapp{background:#25D366;}
+#s-invite-member .share-icon.sms{background:#3478F6;}
+#s-invite-member .share-icon.share{background:#7C5CD9;}
+#s-invite-member .share-icon.link{background:#7B8493;}
+#s-invite-member .share-body{flex:1 1 auto;text-align:right;min-width:0;}
+#s-invite-member .share-title{font-size:15px;font-weight:700;color:#1A2340;line-height:1.15;}
+#s-invite-member .share-sub{margin-top:3px;font-size:12px;font-weight:500;color:#8B95A8;line-height:1.3;}
+#s-invite-member .chev{flex:0 0 auto;color:#B6BCC9;display:flex;align-items:center;justify-content:center;padding-right:2px;}
+#s-invite-member .chev svg{width:14px;height:14px;}
+#s-invite-member .privacy{margin-top:18px;padding-top:16px;border-top:1px solid #ECEEF2;display:flex;align-items:center;gap:12px;}
+#s-invite-member .privacy-icon{flex:0 0 auto;width:36px;height:36px;border-radius:10px;background:#F2FBFA;color:#21A89C;display:flex;align-items:center;justify-content:center;}
+#s-invite-member .privacy-icon svg{width:20px;height:20px;}
+#s-invite-member .privacy-body{flex:1 1 auto;text-align:right;}
+#s-invite-member .privacy-title{font-size:14px;font-weight:700;color:#1A2340;line-height:1.15;}
+#s-invite-member .privacy-sub{margin-top:3px;font-size:12px;font-weight:500;color:#8B95A8;line-height:1.4;}
+
+/* ════════════════════════════════════════════════════════════════════
    SCREEN — MEMBER PROFILE
    Scoped under #s-member-profile.
 ═══════════════════════════════════════════════════════════════════════ */
@@ -3329,9 +3383,9 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
       </div>
     </div>
 
-    <!-- Add member (TODO: no destination yet — add-member flow not built) -->
-    <div class="add-card">
-      <button class="add-plus" type="button" aria-label="הוסף" data-todo="add-member">
+    <!-- Add member → invite screen -->
+    <div class="add-card" style="cursor:pointer;" onclick="goto('s-invite-member','txSlideIn','txSlideOut')">
+      <button class="add-plus" type="button" aria-label="הזמן" onclick="event.stopPropagation();goto('s-invite-member','txSlideIn','txSlideOut')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
       </button>
       <div class="add-text">
@@ -3385,6 +3439,140 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
         <span class="underline"></span>
       </button>
     </div>
+  </div>
+</div>
+
+<!-- ════ SCREEN: INVITE FAMILY MEMBER ════ -->
+<div class="app-screen" id="s-invite-member">
+  <div class="status">
+    <span class="time">10:30</span>
+    <span class="icons" aria-hidden="true">
+      <svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="0.8"/><rect x="4.5" y="5" width="3" height="6" rx="0.8"/><rect x="9" y="2.5" width="3" height="8.5" rx="0.8"/><rect x="13.5" y="0" width="3" height="11" rx="0.8"/></svg>
+      <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor"><path d="M8 12a1.4 1.4 0 1 0 0-2.8A1.4 1.4 0 0 0 8 12Zm-4-3.4a4.6 4.6 0 0 1 8 0l1.2-1.2a6.4 6.4 0 0 0-10.4 0Zm-2.4-2.4a8.4 8.4 0 0 1 12 0l1.2-1.2a10.2 10.2 0 0 0-14.4 0Z"/></svg>
+      <svg width="26" height="12" viewBox="0 0 26 12" fill="none"><rect x="0.5" y="0.5" width="22" height="11" rx="2.6" stroke="currentColor" opacity=".5"/><rect x="2" y="2" width="19" height="8" rx="1.6" fill="currentColor"/><rect x="23.5" y="4" width="2" height="4" rx="0.8" fill="currentColor" opacity=".5"/></svg>
+    </span>
+  </div>
+
+  <div class="app-header">
+    <button class="back-btn" type="button" aria-label="חזרה" onclick="goto('s-family-members','txSlideOut','txSlideIn')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+    </button>
+    <div class="app-title">הזמן בן משפחה</div>
+  </div>
+
+  <div class="scroll">
+
+    <!-- Hero -->
+    <div class="hero">
+      <div class="hero-illu" aria-hidden="true">✉️</div>
+      <div class="hero-title">
+        <span>הזמן את המשפחה שלך להצטרף</span>
+        <span aria-hidden="true">🎉</span>
+      </div>
+      <div class="hero-sub">
+        שלח הזמנה אישית.<br/>
+        בן המשפחה יקבל קישור הצטרפות, יוריד את האפליקציה (במידה ואיננה מותקנת במכשירו), ויצטרף למשפחה.
+      </div>
+    </div>
+
+    <!-- Family code card -->
+    <div class="code-card">
+      <div class="code-left">
+        <div class="code-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.2"/>
+            <path d="M3.5 17c.5-2.6 2.8-4.2 5.5-4.2s5 1.6 5.5 4.2"/>
+            <path d="M15 14.6c1.8 0 4.5 1 5 3.4"/>
+          </svg>
+        </div>
+        <div class="code-info">
+          <div class="lbl">קוד המשפחה שלכם</div>
+          <div class="val" id="inviteFamilyCode">YUPT7N</div>
+        </div>
+      </div>
+      <button class="copy-btn" type="button" onclick="inviteCopyCode(this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2.5"/><path d="M5 15V6.5A2.5 2.5 0 0 1 7.5 4H15"/></svg>
+        <span>העתק קוד</span>
+      </button>
+    </div>
+
+    <!-- Section label -->
+    <div class="section-label">
+      <span>בחר דרך לשליחת הזמנה</span>
+      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21.7 2.3a1 1 0 0 0-1-.2L2.7 8.5a1 1 0 0 0-.1 1.85l7.3 3.7 3.7 7.3a1 1 0 0 0 1.85-.1l6.4-18a1 1 0 0 0-.15-1ZM10.6 12.6 5.5 10l13.1-4.65Z"/></svg>
+    </div>
+
+    <!-- Share options -->
+    <div class="share-list">
+
+      <div class="share-row whatsapp" onclick="inviteViaWhatsApp()">
+        <div class="share-icon whatsapp" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.15-1.75-.86-2.02-.96-.27-.1-.47-.15-.66.15-.2.3-.76.96-.93 1.16-.17.2-.34.22-.64.07-.3-.15-1.27-.47-2.42-1.5-.9-.8-1.5-1.78-1.67-2.08-.17-.3-.02-.46.13-.61.13-.13.3-.34.45-.51.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.07-.15-.66-1.6-.9-2.18-.24-.57-.48-.49-.66-.5h-.56c-.2 0-.51.07-.78.37-.27.3-1.03 1-1.03 2.44s1.05 2.83 1.2 3.03c.15.2 2.07 3.16 5.03 4.43.7.3 1.25.48 1.68.62.7.22 1.34.19 1.84.12.56-.08 1.75-.71 2-1.4.25-.69.25-1.28.17-1.4-.08-.13-.27-.2-.57-.35ZM12 2C6.5 2 2 6.5 2 12c0 1.95.56 3.78 1.52 5.32L2 22l4.8-1.5A9.94 9.94 0 0 0 12 22c5.5 0 10-4.5 10-10S17.5 2 12 2Z"/></svg>
+        </div>
+        <div class="share-body">
+          <div class="share-title">שלח בוואטסאפ</div>
+          <div class="share-sub">יפתח וואטסאפ עם הודעה מוכנה לשליחה</div>
+        </div>
+        <div class="chev" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></div>
+      </div>
+
+      <div class="share-row sms" onclick="inviteViaSms()">
+        <div class="share-icon sms" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H8l-5 4V6a2 2 0 0 1 2-2Z"/><circle cx="8.5" cy="11" r="1.2" fill="#fff"/><circle cx="12" cy="11" r="1.2" fill="#fff"/><circle cx="15.5" cy="11" r="1.2" fill="#fff"/></svg>
+        </div>
+        <div class="share-body">
+          <div class="share-title">שלח ב‑SMS</div>
+          <div class="share-sub">יפתח הודעת SMS עם קישור ההצטרפות</div>
+        </div>
+        <div class="chev" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></div>
+      </div>
+
+      <div class="share-row share" onclick="inviteViaShare()">
+        <div class="share-icon share" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="6" cy="12" r="2.6" fill="currentColor"/>
+            <circle cx="17" cy="6.5" r="2.6" fill="currentColor"/>
+            <circle cx="17" cy="17.5" r="2.6" fill="currentColor"/>
+            <path d="m8.5 10.8 6-3.4"/><path d="m8.5 13.2 6 3.4"/>
+          </svg>
+        </div>
+        <div class="share-body">
+          <div class="share-title">שתף קישור</div>
+          <div class="share-sub">שתף בכל אפליקציה אחרת (אימייל, טלגרם ועוד)</div>
+        </div>
+        <div class="chev" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></div>
+      </div>
+
+      <div class="share-row link" onclick="inviteCopyLink(this)">
+        <div class="share-icon link" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10.6 13.4a4 4 0 0 0 5.66 0l3-3a4 4 0 1 0-5.66-5.66l-1.5 1.5"/>
+            <path d="M13.4 10.6a4 4 0 0 0-5.66 0l-3 3a4 4 0 1 0 5.66 5.66l1.5-1.5"/>
+          </svg>
+        </div>
+        <div class="share-body">
+          <div class="share-title">העתק קישור הזמנה</div>
+          <div class="share-sub">העתק את הקישור כדי לשתף בכל דרך שתרצה</div>
+        </div>
+        <div class="chev" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></div>
+      </div>
+
+    </div>
+
+    <!-- Privacy note -->
+    <div class="privacy">
+      <div class="privacy-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 3 4 6v6c0 4.5 3.4 8.5 8 9 4.6-.5 8-4.5 8-9V6Z"/>
+          <path d="m9 12 2.2 2.2L15.5 10"/>
+        </svg>
+      </div>
+      <div class="privacy-body">
+        <div class="privacy-title">פרטי ופרטיות</div>
+        <div class="privacy-sub">בן המשפחה ימלא בעצמו את פרטיו לאחר ההצטרפות.</div>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -5701,6 +5889,7 @@ function goto(toId, leaveKf, enterKf, onDone) {
     to.style.animation = '';
     busy = false;
     if (toId === 's-family-members' && typeof syncFamilyMemberColors === 'function') syncFamilyMemberColors();
+    if (toId === 's-invite-member' && typeof _inviteScreenEnter === 'function') _inviteScreenEnter();
     if (onDone) onDone();
   }, dur);
 }
@@ -13648,6 +13837,55 @@ function syncFamilyMemberColors() {
     const color = (live || seed)?.color || _MP_DEFAULT_COLORS[mid];
     if (color) dot.style.background = color;
   });
+}
+
+// ── Invite family member screen helpers ───────────────────────────
+function _inviteGetCode() {
+  return AppState.familyCode || 'YUPT7N';
+}
+function _inviteGetLink() {
+  const code = _inviteGetCode();
+  return `https://family-app-roan.vercel.app/join?code=${code}`;
+}
+function _inviteGetMessage() {
+  const code = _inviteGetCode();
+  const link = _inviteGetLink();
+  return `הצטרף למשפחה שלנו באפליקציה!\nקוד משפחה: ${code}\nקישור להצטרפות: ${link}`;
+}
+function inviteCopyCode(btn) {
+  navigator.clipboard.writeText(_inviteGetCode()).then(() => {
+    const span = btn.querySelector('span');
+    const orig = span.textContent;
+    span.textContent = 'הועתק ✓';
+    setTimeout(() => { span.textContent = orig; }, 1800);
+  }).catch(() => {});
+}
+function inviteCopyLink(row) {
+  navigator.clipboard.writeText(_inviteGetLink()).then(() => {
+    const sub = row.querySelector('.share-sub');
+    const orig = sub.textContent;
+    sub.textContent = 'הקישור הועתק ✓';
+    setTimeout(() => { sub.textContent = orig; }, 1800);
+  }).catch(() => {});
+}
+function inviteViaWhatsApp() {
+  const msg = encodeURIComponent(_inviteGetMessage());
+  window.open(`https://wa.me/?text=${msg}`, '_blank');
+}
+function inviteViaSms() {
+  const msg = encodeURIComponent(_inviteGetMessage());
+  window.open(`sms:?body=${msg}`, '_blank');
+}
+function inviteViaShare() {
+  if (navigator.share) {
+    navigator.share({ title: 'הצטרף למשפחה שלנו', text: _inviteGetMessage(), url: _inviteGetLink() }).catch(() => {});
+  } else {
+    inviteCopyLink(document.querySelector('#s-invite-member .share-row.share'));
+  }
+}
+function _inviteScreenEnter() {
+  const codeEl = document.getElementById('inviteFamilyCode');
+  if (codeEl) codeEl.textContent = _inviteGetCode();
 }
 
 function openMemberProfile(memberId, fromScreen) {
