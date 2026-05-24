@@ -1,0 +1,208 @@
+// AI avatar generation — Phase 0 (server only, isolated).
+// Takes a single cropped photo (raw binary body), returns up to 4 illustrated
+// options as an NDJSON stream (one line per option, revealed as it completes).
+//
+// Hard rules this endpoint obeys:
+//  - NEVER touches Firebase. The client uploads only the chosen image, via the
+//    existing Storage flow.
+//  - Cost protection is KV-backed and FAIL-SAFE: if KV is unavailable we refuse
+//    to generate (503) rather than risk unbounded OpenAI spend.
+//  - Streaming is an enhancement, not a dependency: the body is plain NDJSON, so
+//    a client that cannot read it incrementally can buffer the whole response and
+//    split on newlines with identical results.
+
+const OpenAI = require('openai');
+const kv     = require('./_lib/kv');
+
+const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+const IMAGE_MODEL      = process.env.OPENAI_IMAGE_MODEL || 'gpt-image-1';
+const FRICTION_TOKEN   = process.env.AVATAR_FRICTION_TOKEN || ''; // light friction, NOT security
+const PER_MEMBER_LIMIT = 3;      // successful generations per family member
+const OPTIONS_COUNT    = 4;      // options per generation
+const MAX_BYTES        = 4 * 1024 * 1024;
+const ALLOWED_TYPES    = new Set(['image/jpeg', 'image/png', 'image/webp']);
+const RL_WINDOW_SEC    = 60 * 60;
+const RL_MAX           = 30;     // generations per window, per family AND per ip
+const SLOT_TIMEOUT_MS  = 30000;
+
+// PLACEHOLDER — the real style-lock prompt is designed separately. The client
+// never sends prompt text; this constant is the single source of style truth.
+const LOCKED_STYLE_PROMPT =
+  'Illustrated avatar portrait of this person. PLACEHOLDER STYLE — final style-lock prompt pending.';
+
+async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-App-Friction');
+
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'POST') {
+    return res.status(405).json({ ok: false, reason: 'method_not_allowed' });
+  }
+
+  // Fail-safe: no KV ⇒ no quota enforcement ⇒ refuse rather than risk abuse.
+  if (!kv.configured()) {
+    console.warn('[avatar-gen] KV not configured — refusing (fail-safe)');
+    return res.status(503).json({ ok: false, reason: 'temporarily_unavailable' });
+  }
+
+  // Light friction only (the secret is visible in the client — not real auth).
+  if (FRICTION_TOKEN) {
+    const provided = req.headers['x-app-friction'];
+    if (provided !== FRICTION_TOKEN) {
+      return res.status(401).json({ ok: false, reason: 'forbidden' });
+    }
+  }
+
+  const familyId = String((req.query && req.query.familyId) || '').trim();
+  const memberId = String((req.query && req.query.memberId) || '').trim();
+  if (!familyId || !memberId) {
+    return res.status(400).json({ ok: false, reason: 'bad_input', detail: 'familyId and memberId required' });
+  }
+
+  const contentType = String(req.headers['content-type'] || '').split(';')[0].trim().toLowerCase();
+  if (!ALLOWED_TYPES.has(contentType)) {
+    return res.status(400).json({ ok: false, reason: 'bad_input', detail: 'unsupported content-type' });
+  }
+
+  let body;
+  try {
+    body = await readRawBody(req);
+  } catch (e) {
+    return res.status(400).json({ ok: false, reason: 'bad_input', detail: 'could not read body' });
+  }
+  if (!body || body.length === 0) {
+    return res.status(400).json({ ok: false, reason: 'bad_input', detail: 'empty body' });
+  }
+  if (body.length > MAX_BYTES) {
+    return res.status(400).json({ ok: false, reason: 'bad_input', detail: 'image too large' });
+  }
+
+  const ip = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim() || 'unknown';
+
+  // Abuse rate-limit + per-member quota read. Any KV failure here is fail-safe.
+  let used;
+  try {
+    const famRl = await checkAndBumpRate('rl:fam:' + familyId);
+    if (!famRl.ok) return res.status(429).json({ ok: false, reason: 'rate_limited', retryAfterSec: famRl.retryAfterSec });
+    const ipRl = await checkAndBumpRate('rl:ip:' + ip);
+    if (!ipRl.ok) return res.status(429).json({ ok: false, reason: 'rate_limited', retryAfterSec: ipRl.retryAfterSec });
+
+    const raw = await kv.get(quotaKey(familyId, memberId));
+    used = typeof raw === 'number' ? raw : 0;
+  } catch (e) {
+    console.error('[avatar-gen] KV error — refusing (fail-safe):', e.message);
+    return res.status(503).json({ ok: false, reason: 'temporarily_unavailable' });
+  }
+
+  if (used >= PER_MEMBER_LIMIT) {
+    return res.status(403).json({ ok: false, reason: 'limit_reached', remaining: 0, limit: PER_MEMBER_LIMIT });
+  }
+
+  // ── All gates passed. From here we stream; status is locked to 200. ──
+  const ext = contentType === 'image/png' ? 'png' : contentType === 'image/webp' ? 'webp' : 'jpg';
+  res.writeHead(200, {
+    'Content-Type': 'application/x-ndjson; charset=utf-8',
+    'Cache-Control': 'no-store',
+  });
+
+  const slots = [];
+  for (let slot = 0; slot < OPTIONS_COUNT; slot++) {
+    slots.push(
+      genWithRetry(body, contentType, ext)
+        .then(b64 => { writeLine(res, { type: 'image', slot, format: 'webp', b64 }); return true; })
+        .catch(err => { console.warn('[avatar-gen] slot', slot, 'failed:', err.message); writeLine(res, { type: 'slot_failed', slot }); return false; })
+    );
+  }
+
+  const settled  = await Promise.allSettled(slots);
+  const produced = settled.filter(r => r.status === 'fulfilled' && r.value === true).length;
+
+  // A generation counts ONLY if it yielded at least one usable image.
+  let remaining = PER_MEMBER_LIMIT - used;
+  if (produced >= 1) {
+    try {
+      await kv.set(quotaKey(familyId, memberId), used + 1);
+      remaining = PER_MEMBER_LIMIT - (used + 1);
+    } catch (e) {
+      console.error('[avatar-gen] quota increment failed (images already sent):', e.message);
+    }
+  }
+
+  console.log('[avatar-gen] family=' + familyId + ' member=' + memberId
+    + ' produced=' + produced + '/' + OPTIONS_COUNT + ' remaining=' + remaining);
+
+  writeLine(res, { type: 'done', produced, remaining, limit: PER_MEMBER_LIMIT });
+  res.end();
+}
+
+function quotaKey(familyId, memberId) {
+  return 'aigen:' + familyId + ':' + memberId;
+}
+
+// Sliding window via stored windowStart — no TTL needed, so kv.js stays untouched.
+async function checkAndBumpRate(key) {
+  const now = Date.now();
+  let rec = await kv.get(key);
+  if (!rec || typeof rec !== 'object' || (now - rec.windowStart) > RL_WINDOW_SEC * 1000) {
+    rec = { count: 0, windowStart: now };
+  }
+  if (rec.count >= RL_MAX) {
+    return { ok: false, retryAfterSec: Math.ceil((RL_WINDOW_SEC * 1000 - (now - rec.windowStart)) / 1000) };
+  }
+  rec.count += 1;
+  await kv.set(key, rec);
+  return { ok: true };
+}
+
+async function genWithRetry(buf, contentType, ext) {
+  try {
+    return await withTimeout(genOne(buf, contentType, ext), SLOT_TIMEOUT_MS);
+  } catch (e) {
+    return await withTimeout(genOne(buf, contentType, ext), SLOT_TIMEOUT_MS);
+  }
+}
+
+async function genOne(buf, contentType, ext) {
+  // Fresh File per call so a consumed stream is never reused across the 4 slots.
+  const file = await OpenAI.toFile(buf, 'source.' + ext, { type: contentType });
+  const result = await client.images.edit({
+    model:         IMAGE_MODEL,
+    image:         file,
+    prompt:        LOCKED_STYLE_PROMPT,
+    n:             1,
+    size:          '1024x1024',
+    quality:       'medium',
+    output_format: 'webp',
+    // input_fidelity: 'high',  // face-preservation lever — confirm during prompt design
+  });
+  const b64 = result && result.data && result.data[0] && result.data[0].b64_json;
+  if (!b64) throw new Error('no image in response');
+  return b64;
+}
+
+function withTimeout(promise, ms) {
+  let t;
+  const timeout = new Promise((_, reject) => { t = setTimeout(() => reject(new Error('slot timeout')), ms); });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(t));
+}
+
+function writeLine(res, obj) {
+  res.write(JSON.stringify(obj) + '\n');
+}
+
+async function readRawBody(req) {
+  if (Buffer.isBuffer(req.body)) return req.body;
+  if (req.body && req.body.type === 'Buffer' && Array.isArray(req.body.data)) {
+    return Buffer.from(req.body.data);
+  }
+  const chunks = [];
+  for await (const chunk of req) {
+    chunks.push(typeof chunk === 'string' ? Buffer.from(chunk, 'binary') : chunk);
+  }
+  return Buffer.concat(chunks);
+}
+
+module.exports = handler;
+module.exports.config = { maxDuration: 60 };
