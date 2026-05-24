@@ -167,7 +167,8 @@ async function parseWithOpenAI(transcript, context = {}) {
       { role: 'user',   content: userMsg },
     ],
     response_format: { type: 'json_object' },
-    max_tokens:      1024,
+    temperature:     0,
+    max_tokens:      640,
   });
 
   const raw = completion.choices[0]?.message?.content?.trim() || '{}';
