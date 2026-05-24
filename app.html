@@ -11212,7 +11212,9 @@ async function _loadFamilyMembersCache() {
     _familyMembersCache = snap.docs.map(d => d.data())
       .filter(m => IDENTITY_MEMBER_IDS.includes(m.memberId));
     console.log('[DA] members cache loaded:', _familyMembersCache.length);
+    try { localStorage.setItem(_MEMBER_CACHE_LS_KEY, JSON.stringify(_familyMembersCache)); } catch(e) {}
     if (typeof _renderAllAvatars === 'function') _renderAllAvatars();
+    if (typeof _mpApplyAllStripes === 'function') _mpApplyAllStripes();
   } catch (e) {
     AppLog.warn('DA', 'loadMembersCache failed', e.message || e);
   }
@@ -11631,9 +11633,20 @@ function _renderAllAvatars() {
 }
 
 // Bootstrap: wire flow + initial render on DOM ready.
+// Pre-fill cache from localStorage so photos show instantly on every launch.
+const _MEMBER_CACHE_LS_KEY = 'fam_members_cache_v1';
 function _initAvatarSystem() {
   _wireAvatarFlow();
+  try {
+    const raw = localStorage.getItem(_MEMBER_CACHE_LS_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length) _familyMembersCache = parsed;
+    }
+  } catch(e) {}
   _renderAllAvatars();
+  // Defer stripe application until all script blocks are loaded
+  setTimeout(() => { if (typeof _mpApplyAllStripes === 'function') _mpApplyAllStripes(); }, 0);
 }
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', _initAvatarSystem);
