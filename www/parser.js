@@ -632,11 +632,21 @@
     const base = (typeof window !== 'undefined' && window.Capacitor)
       ? 'https://family-app-roan.vercel.app'
       : '';
-    const res = await fetch(base + '/api/parse-tasks', {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ transcript: text, lang, date, time }),
-    });
+    // Bound the wait: if the network/LLM is slow, abort and let the caller
+    // fall back to the instant local parser instead of hanging.
+    const ctrl = new AbortController();
+    const to   = setTimeout(() => ctrl.abort(), 6000);
+    let res;
+    try {
+      res = await fetch(base + '/api/parse-tasks', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ transcript: text, lang, date, time }),
+        signal:  ctrl.signal,
+      });
+    } finally {
+      clearTimeout(to);
+    }
 
     if (!res.ok) throw new Error('API ' + res.status);
     return res.json();
