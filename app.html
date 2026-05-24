@@ -4747,19 +4747,18 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
 <div id="deleteModalBg">
   <div id="deleteSheet">
     <div class="psh-pill"></div>
-    <div class="psh-title" style="color:#C0392B">מחיקת נתוני אפליקציה</div>
+    <div class="psh-title" style="color:#C0392B" id="delTitle">מחיקת נתוני אפליקציה</div>
     <div class="del-warning">
-      <div class="del-w-title">⚠️ פעולה בלתי הפיכה</div>
-      <div class="del-w-body">כל המשימות וההגדרות יימחקו והאפליקציה תאופס במכשיר זה. במכשירים אחרים הכל ממשיך כרגיל. ניתן לשחזר את הנתונים מהענן תוך 72 שעות באמצעות כפתור השחזור.</div>
+      <div class="del-w-title" id="delWarnTitle">⚠️ פעולה בלתי הפיכה</div>
+      <div class="del-w-body" id="delWarnBody">המשך כדי לאמת את זהותך לפני מחיקת כל הנתונים.</div>
     </div>
     <div class="del-steps">
       <div class="del-step"><div class="del-step-num" id="delStep1Num">1</div><div class="del-step-txt">אימות קוד גישה</div></div>
-      <div class="del-step"><div class="del-step-num" id="delStep2Num">2</div><div class="del-step-txt">אימות טביעת אצבע</div></div>
-      <div class="del-step"><div class="del-step-num" id="delStep3Num">3</div><div class="del-step-txt">אישור סופי ומחיקה</div></div>
+      <div class="del-step"><div class="del-step-num" id="delStep2Num">2</div><div class="del-step-txt">אימות ביומטרי</div></div>
+      <div class="del-step"><div class="del-step-num" id="delStep3Num">3</div><div class="del-step-txt">אישור ומחיקה</div></div>
     </div>
-    <button class="del-cta" id="delCtaBtn" onclick="deleteDataNextStep()">המשך לאימות</button>
-    <div class="del-recovery">לאחר 72 שעות ימחק גם מהענן • ניתן לשחזור עד אז</div>
-    <button class="psh-cancel" onclick="closeDeleteModal()">ביטול</button>
+    <button class="del-cta" id="delCtaBtn" onclick="deleteDataNextStep()">המשך לאימות קוד גישה</button>
+    <button class="psh-cancel" id="delCancelBtn" onclick="closeDeleteModal()">ביטול</button>
   </div>
 </div>
 
@@ -14256,8 +14255,10 @@ function _pinSubmit() {
     if (_pinBuffer === _pinFirst) {
       AppState.accessPin = _pinBuffer;
       try { saveState(); } catch(_) {}
+      const cb = _pinOnSuccess;       // capture before closePinModal nulls it
       closePinModal();
-      _showToast('קוד גישה נשמר ✓');
+      if (cb) { cb(); }               // e.g. continue the delete flow
+      else _showToast('קוד גישה נשמר ✓');
     } else {
       _pinBuffer = ''; _pinFirst = '';  _pinMode = 'setup';
       document.getElementById('pinSheetSub').textContent = 'הקודים לא תאמו — נסה שוב';
@@ -14376,10 +14377,8 @@ async function bioAuthenticate(method) {
       st.textContent = 'אומת ✓';
       setTimeout(() => {
         closeBioModal();
-        _deleteStep = 3; _updateDeleteSteps();
-        const cta = document.getElementById('delCtaBtn');
-        cta.textContent = 'מחק את כל הנתונים';
-        cta.style.background = 'linear-gradient(135deg,#ff3b30,#c0392b)';
+        _deleteStep = 2; _updateDeleteSteps();
+        _setDeleteCta();
       }, 900);
     } else {
       AppState.quickAccess = method;
@@ -14411,14 +14410,39 @@ document.addEventListener('click', function (e) {
   tgt.classList.remove('open');
 });
 
-var _deleteStep = 0;
+var _deleteStep = 0;          // 0 intro · 1 code-done · 2 bio-done
+var _pinSetupForDelete = false;
+
+function _setDeleteCta() {
+  const cta  = document.getElementById('delCtaBtn');
+  const warn = document.getElementById('delWarnBody');
+  const wt   = document.getElementById('delWarnTitle');
+  if (!cta) return;
+  if (_deleteStep === 0) {
+    cta.textContent = 'המשך לאימות קוד גישה'; cta.style.background = '';
+    if (wt)   wt.textContent = '⚠️ פעולה בלתי הפיכה';
+    if (warn) warn.textContent = 'המשך כדי לאמת את זהותך לפני מחיקת כל הנתונים.';
+  } else if (_deleteStep === 1) {
+    cta.textContent = 'המשך לאימות ביומטרי'; cta.style.background = '';
+    if (wt)   wt.textContent = '✓ הקוד אומת';
+    if (warn) warn.textContent = 'כעת נדרש אימות ביומטרי אמיתי — טביעת אצבע או זיהוי פנים של המכשיר.';
+  } else if (_deleteStep === 2) {
+    cta.textContent = 'מחק נתוני אפליקציה';
+    cta.style.background = 'linear-gradient(135deg,#ff3b30,#c0392b)';
+    if (wt)   wt.textContent = '⚠️ מחיקה סופית';
+    if (warn) warn.textContent = 'כל המשימות, ההגדרות, החיבור למשפחה וקוד המשפחה יימחקו והאפליקציה תתאפס לחלוטין (כמו מצב התחלתי). ניתן לשחזר מהענן עד 72 שעות מרגע המחיקה.';
+  }
+}
 function openDeleteDataFlow() {
-  _deleteStep = 0;
+  _deleteStep = 0; _pinSetupForDelete = false;
   _updateDeleteSteps();
-  document.getElementById('delCtaBtn').textContent = AppState.accessPin ? 'המשך לאימות קוד' : 'המשך לאימות';
+  _setDeleteCta();
   document.getElementById('deleteModalBg').classList.add('open');
 }
-function closeDeleteModal() { document.getElementById('deleteModalBg').classList.remove('open'); }
+function closeDeleteModal() {
+  document.getElementById('deleteModalBg').classList.remove('open');
+  _deleteStep = 0; _pinSetupForDelete = false;
+}
 function _updateDeleteSteps() {
   for (let i=1;i<=3;i++) {
     const el = document.getElementById('delStep'+i+'Num');
@@ -14427,67 +14451,64 @@ function _updateDeleteSteps() {
 }
 function deleteDataNextStep() {
   if (_deleteStep === 0) {
+    // ── Step 1: access code ──
+    _pinBuffer = '';
+    const onCode = () => { _deleteStep = 1; _updateDeleteSteps(); _setDeleteCta(); };
     if (AppState.accessPin) {
-      // Step 1: verify the access code (only meaningful when one is set —
-      // otherwise any code would "pass", which is misleading).
-      _deleteStep = 1; _updateDeleteSteps();
-      _pinBuffer = ''; _pinMode = 'delete';
-      _pinOnSuccess = () => { _deleteStep = 2; _updateDeleteSteps(); _proceedDeleteStep2(); };
+      _pinMode = 'delete'; _pinSetupForDelete = false; _pinOnSuccess = onCode;
       document.getElementById('pinSheetTitle').textContent = 'אימות קוד גישה';
-      document.getElementById('pinSheetSub').textContent = 'הכנס את קוד הגישה שלך';
-      _pinUpdateDots();
-      document.getElementById('pinModalBg').classList.add('open');
+      document.getElementById('pinSheetSub').textContent   = 'הכנס את קוד הגישה שלך';
     } else {
-      // No access code configured → straight to biometric verification.
-      _deleteStep = 2; _updateDeleteSteps();
-      _proceedDeleteStep2();
+      // No code yet → set one (enter twice) before continuing.
+      _pinMode = 'setup'; _pinFirst = ''; _pinSetupForDelete = true; _pinOnSuccess = onCode;
+      document.getElementById('pinSheetTitle').textContent = 'בחר קוד גישה';
+      document.getElementById('pinSheetSub').textContent   = 'בחר קוד בן 4 ספרות לאישור המחיקה';
     }
-  } else if (_deleteStep === 2) {
+    _pinUpdateDots();
+    document.getElementById('pinModalBg').classList.add('open');
+  } else if (_deleteStep === 1) {
+    // ── Step 2: real biometric ──
     _proceedDeleteStep2();
-  } else if (_deleteStep === 3) {
+  } else if (_deleteStep === 2) {
+    // ── Step 3: execute ──
     _executeDeleteData();
   }
 }
 function _proceedDeleteStep2() {
-  // Step 2: real biometric verification (reuses the chooser sheet)
   _bioPurpose = 'delete';
-  document.getElementById('bioSheetTitle').textContent = 'אימות לפני מחיקה';
-  document.getElementById('bioSheetSub').textContent   = 'אמת את זהותך כדי להמשיך';
+  document.getElementById('bioSheetTitle').textContent = 'אימות ביומטרי';
+  document.getElementById('bioSheetSub').textContent   = 'בחר זיהוי פנים או טביעת אצבע';
   _bioResetSheet();
   document.getElementById('bioModalBg').classList.add('open');
 }
 function _executeDeleteData() {
-  // Factory reset of THIS device. Tasks/settings are wiped locally, but the
-  // family connection is retained for 72h so the cloud copy can be restored.
   closeDeleteModal();
-  // Stop the realtime listener so the cloud copy doesn't immediately re-sync
-  // the data back onto this freshly-wiped device.
   try { if (typeof _rtUnsubscribe === 'function') { _rtUnsubscribe(); _rtUnsubscribe = null; } } catch(_) {}
   try {
-    // Retain: member photos + the family session (so restore can re-pull).
-    const keep = ['fam_members_cache_v1',
-      'family-app-da-mode','family-app-da-family-id','family-app-da-user-id',
-      'family-app-my-member-id','family-app-lang'];
-    const kept = {};
-    keep.forEach(k => { try { const v = localStorage.getItem(k); if (v != null) kept[k] = v; } catch(_) {} });
-    localStorage.clear();
-    Object.keys(kept).forEach(k => { try { localStorage.setItem(k, kept[k]); } catch(_) {} });
-    localStorage.setItem('family-app-deleted-at', String(Date.now()));
-    // Reset in-memory state (factory defaults)
-    AppState.tasks = []; AppState.previewTasks = [];
-    AppState.recurringCompletions = {}; AppState.recurringExclusions = {};
-    AppState.accessPin = null;
-    try { saveState(); } catch(_) {}
+    // Hidden recovery blob — survives the wipe so cloud restore works for 72h,
+    // even though the family connection itself is fully cleared (factory state).
+    const recovery = {
+      at: Date.now(),
+      mode:     localStorage.getItem('family-app-da-mode'),
+      familyId: localStorage.getItem('family-app-da-family-id'),
+      userId:   localStorage.getItem('family-app-da-user-id'),
+      memberId: localStorage.getItem('family-app-my-member-id'),
+    };
+    const photos = localStorage.getItem('fam_members_cache_v1');
+    localStorage.clear();                                  // wipe EVERYTHING
+    if (photos) { try { localStorage.setItem('fam_members_cache_v1', photos); } catch(_) {} }
+    localStorage.setItem('family-app-recovery', JSON.stringify(recovery));
+    localStorage.setItem('family-app-deleted-at', String(recovery.at));
+    try { localStorage.setItem(LANG_KEY, 'he'); } catch(_) {}
   } catch(_) {}
-  _showToast('הנתונים נמחקו ואופסו · שחזור זמין 72 שעות');
-  try { renderToday(); } catch(_) {}
-  try { _updateRecoveryBanner(); } catch(_) {}
-  setTimeout(() => goto('s-today','txLeaveFade','txEnterFade'), 700);
+  _showToast('הנתונים נמחקו והמערכת אופסה');
+  // Reload into a clean, family-less factory state (recovery banner shows there).
+  setTimeout(() => location.reload(), 800);
 }
 
-// ── 72h cloud recovery after a factory reset ─────────────────────
+// ── 72h cloud recovery (works even though family session was wiped) ───
 function _recoveryDeletedAt() { const v = +(localStorage.getItem('family-app-deleted-at') || 0); return v > 0 ? v : 0; }
-function _recoveryActive()    { const t = _recoveryDeletedAt(); return t > 0 && (Date.now() - t) < 72*3600*1000; }
+function _recoveryActive()    { const ts = _recoveryDeletedAt(); return ts > 0 && (Date.now() - ts) < 72*3600*1000; }
 function _updateRecoveryBanner() {
   const host = document.getElementById('s-today');
   if (!host) return;
@@ -14495,28 +14516,32 @@ function _updateRecoveryBanner() {
   if (_recoveryActive()) {
     if (!b) { b = document.createElement('div'); b.id = 'recoveryBanner'; b.className = 'recovery-banner'; host.appendChild(b); }
     const hoursLeft = Math.max(0, Math.ceil((72*3600*1000 - (Date.now() - _recoveryDeletedAt())) / 3600000));
-    b.innerHTML = `<div class="rb-txt">הנתונים נמחקו ואופסו · ניתן לשחזר מהענן עוד ${hoursLeft} שעות</div>
-      <button class="rb-btn" type="button" onclick="_restoreFromCloud()">שחזר נתונים מהענן</button>`;
+    b.innerHTML = `<div class="rb-txt">הנתונים נמחקו והמערכת אופסה · שחזור מהענן זמין עוד ${hoursLeft} שעות</div>
+      <button class="rb-btn" type="button" onclick="_restoreFromCloud()">שחזור נתונים מהענן</button>`;
     b.style.display = '';
   } else if (b) {
     b.style.display = 'none';
-    if (_recoveryDeletedAt() && !_recoveryActive()) { try { localStorage.removeItem('family-app-deleted-at'); } catch(_) {} }
+    if (_recoveryDeletedAt() && !_recoveryActive()) {
+      try { localStorage.removeItem('family-app-deleted-at'); localStorage.removeItem('family-app-recovery'); } catch(_) {}
+    }
   }
 }
-async function _restoreFromCloud() {
-  _showToast('משחזר נתונים מהענן…');
+function _restoreFromCloud() {
   try {
-    if (typeof _daLoadTasksFromCloud === 'function') await _daLoadTasksFromCloud();
-    try { localStorage.removeItem('family-app-deleted-at'); } catch(_) {}
-    // Resume realtime sync.
-    if (DataAdapter.isFamily() && typeof _daStartListener === 'function') _daStartListener();
-    try { saveState(); } catch(_) {}
-    renderToday();
-    _updateRecoveryBanner();
-    _showToast('הנתונים שוחזרו ✓');
-  } catch (e) {
-    _showToast('שחזור נכשל — נסה שוב');
-  }
+    const raw = localStorage.getItem('family-app-recovery');
+    if (raw) {
+      const r = JSON.parse(raw);
+      if (r.mode)     localStorage.setItem('family-app-da-mode', r.mode);
+      if (r.familyId) localStorage.setItem('family-app-da-family-id', r.familyId);
+      if (r.userId)   localStorage.setItem('family-app-da-user-id', r.userId);
+      if (r.memberId) localStorage.setItem('family-app-my-member-id', r.memberId);
+    }
+    localStorage.removeItem('family-app-deleted-at');
+    localStorage.removeItem('family-app-recovery');
+  } catch(_) {}
+  _showToast('משחזר מהענן… טוען מחדש');
+  // Reload boots back into family mode and the listener re-pulls the cloud copy.
+  setTimeout(() => location.reload(), 700);
 }
 function _showToast(msg) {
   const t = document.getElementById('notifToast');
