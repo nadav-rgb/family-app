@@ -14270,26 +14270,32 @@ function closeBioModal() {
 // and 'unsupported' when WebAuthn is unavailable on this platform.
 async function _triggerPlatformBiometric() {
   // Native Android/iOS: real BiometricPrompt (fingerprint / face) via plugin.
+  // The plugin registers natively as "BiometricAuthNative" and the actual
+  // bridge method is internalAuthenticate (the JS wrapper just calls it).
+  // We don't bundle the plugin's JS, so obtain the proxy via registerPlugin.
   const Cap = window.Capacitor;
-  const BA  = Cap && Cap.Plugins && Cap.Plugins.BiometricAuth;
-  if (BA && typeof Cap.isNativePlatform === 'function' && Cap.isNativePlatform()) {
+  let BA = null;
+  if (Cap && typeof Cap.isNativePlatform === 'function' && Cap.isNativePlatform()) {
+    try { BA = (Cap.registerPlugin && Cap.registerPlugin('BiometricAuthNative')) || (Cap.Plugins && Cap.Plugins.BiometricAuthNative); }
+    catch (_) { BA = Cap.Plugins && Cap.Plugins.BiometricAuthNative; }
+  }
+  if (BA) {
     try {
-      await BA.authenticate({
+      await BA.internalAuthenticate({
         reason: 'אימות זהות',
         androidTitle: 'אימות ביומטרי',
         androidSubtitle: 'אמת באמצעות טביעת אצבע או זיהוי פנים',
-        androidConfirmationRequired: false,
-        allowDeviceCredential: true,   // fall back to device PIN/pattern if no biometric
         cancelTitle: 'ביטול',
+        allowDeviceCredential: true,   // fall back to device PIN/pattern if no biometric
       });
       return true;
     } catch (err) {
-      // biometryNotAvailable / biometryNotEnrolled → let caller proceed gracefully
-      const code = (err && err.code) || '';
-      if (code === 'biometryNotAvailable' || code === 'biometryNotEnrolled' || code === 'noDeviceCredential') {
+      const code = String((err && (err.code || err.message)) || '');
+      // No biometry enrolled / no hardware → let caller proceed gracefully.
+      if (/notAvailable|notEnrolled|passcodeNotSet|noDeviceCredential|no ?hardware/i.test(code)) {
         return 'unsupported';
       }
-      return false; // userCancel / authenticationFailed
+      return false; // userCancel / authenticationFailed → block
     }
   }
   // Web (Vercel browser): WebAuthn platform authenticator.
@@ -14368,7 +14374,7 @@ var _deleteStep = 0;
 function openDeleteDataFlow() {
   _deleteStep = 0;
   _updateDeleteSteps();
-  document.getElementById('delCtaBtn').textContent = 'המשך לאימות קוד';
+  document.getElementById('delCtaBtn').textContent = AppState.accessPin ? 'המשך לאימות קוד' : 'המשך לאימות';
   document.getElementById('deleteModalBg').classList.add('open');
 }
 function closeDeleteModal() { document.getElementById('deleteModalBg').classList.remove('open'); }
@@ -14380,14 +14386,21 @@ function _updateDeleteSteps() {
 }
 function deleteDataNextStep() {
   if (_deleteStep === 0) {
-    // Step 1: PIN verification
-    _deleteStep = 1; _updateDeleteSteps();
-    _pinBuffer = ''; _pinMode = 'delete';
-    _pinOnSuccess = () => { _deleteStep = 2; _updateDeleteSteps(); _proceedDeleteStep2(); };
-    document.getElementById('pinSheetTitle').textContent = 'אימות קוד גישה';
-    document.getElementById('pinSheetSub').textContent = 'הכנס את קוד הגישה שלך';
-    _pinUpdateDots();
-    document.getElementById('pinModalBg').classList.add('open');
+    if (AppState.accessPin) {
+      // Step 1: verify the access code (only meaningful when one is set —
+      // otherwise any code would "pass", which is misleading).
+      _deleteStep = 1; _updateDeleteSteps();
+      _pinBuffer = ''; _pinMode = 'delete';
+      _pinOnSuccess = () => { _deleteStep = 2; _updateDeleteSteps(); _proceedDeleteStep2(); };
+      document.getElementById('pinSheetTitle').textContent = 'אימות קוד גישה';
+      document.getElementById('pinSheetSub').textContent = 'הכנס את קוד הגישה שלך';
+      _pinUpdateDots();
+      document.getElementById('pinModalBg').classList.add('open');
+    } else {
+      // No access code configured → straight to biometric verification.
+      _deleteStep = 2; _updateDeleteSteps();
+      _proceedDeleteStep2();
+    }
   } else if (_deleteStep === 2) {
     _proceedDeleteStep2();
   } else if (_deleteStep === 3) {
