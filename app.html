@@ -89,6 +89,26 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 .mic-ov{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:34px;height:34px;pointer-events:none;z-index:6;}
 .mic-ov svg{width:100%;height:100%;}
 
+/* ── Ambient warm halo behind the active mic (wraps heart/star/classic/blob) ── */
+.mic-aura{position:absolute;inset:-6px;border-radius:50%;pointer-events:none;z-index:0;opacity:0;
+  background:radial-gradient(circle, rgba(255,150,90,.32) 0%, rgba(255,120,80,.12) 42%, transparent 68%);
+  transition:opacity .55s ease;will-change:transform,opacity;}
+#micZone.rec .mic-aura{opacity:1;animation:auraBreath 2.4s ease-in-out infinite;}
+@keyframes auraBreath{0%,100%{transform:scale(1);opacity:.78;}50%{transform:scale(1.09);opacity:1;}}
+/* Processing: halo warms + holds */
+#micZone.processing .mic-aura{opacity:1;animation:auraBreath 1.8s ease-in-out infinite;
+  background:radial-gradient(circle, rgba(255,150,90,.42) 0%, rgba(255,110,60,.16) 46%, transparent 70%);}
+
+/* ── Processing particle ring — ambient intelligence, not a spinner ── */
+.mic-particles{position:absolute;inset:0;z-index:1;pointer-events:none;opacity:0;transition:opacity .4s ease;}
+.mic-particles i{position:absolute;top:50%;left:50%;width:6px;height:6px;margin:-3px;border-radius:50%;
+  background:radial-gradient(circle,#ffe0c0,#ff7a3c);box-shadow:0 0 7px rgba(255,130,70,.7);
+  transform:rotate(var(--a)) translateY(-94px);}
+.mic-particles i:nth-child(3n){width:4px;height:4px;margin:-2px;opacity:.7;}
+.mic-particles i:nth-child(2n){transform:rotate(var(--a)) translateY(-82px);}
+#micZone.processing .mic-particles{opacity:1;animation:auraSpin 3.4s linear infinite;}
+@keyframes auraSpin{to{transform:rotate(360deg);}}
+
 .zone-heart{position:relative;width:150px;height:140px;}
 .mic-zone.recede .mwrap:not(.off){transform:scale(.92);opacity:.45;}
 .btn-heart{width:150px;height:140px;cursor:pointer;position:relative;animation:heartIdle 2.2s ease-in-out infinite;filter:drop-shadow(0 10px 30px rgba(255,92,138,.42));}
@@ -164,10 +184,12 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 .v-type-row{text-align:center;flex-shrink:0;animation:fadeUp .4s ease .28s both;}
 .v-rec-actions{display:flex;gap:14px;justify-content:center;align-items:center;min-height:40px;flex-shrink:0;opacity:0;pointer-events:none;transition:opacity .2s ease;}
 .v-rec-actions.show{opacity:1;pointer-events:auto;}
-.v-act-btn{display:inline-flex;align-items:center;gap:6px;border:none;border-radius:99px;padding:8px 20px;font-family:'Nunito',sans-serif;font-size:13px;font-weight:800;cursor:pointer;transition:background .15s,transform .1s;}
+.v-act-btn{display:inline-flex;align-items:center;gap:7px;border:none;border-radius:99px;padding:10px 20px;font-family:'Nunito',sans-serif;font-size:13.5px;font-weight:800;cursor:pointer;transition:background .15s,transform .1s,box-shadow .15s;}
 .v-act-btn:active{transform:scale(.95);}
-.v-act-pause{background:rgba(255,112,51,.13);color:#c96b28;}
-.v-act-cancel{background:rgba(180,50,50,.09);color:#b03030;}
+/* Retry = primary recovery action: clear, warm, present (not destructive-red) */
+.v-act-cancel{background:linear-gradient(135deg,rgba(255,150,90,.18),rgba(255,110,70,.12));color:#cf6326;border:1.5px solid rgba(255,130,80,.45);box-shadow:0 4px 13px rgba(255,120,70,.14);}
+/* Pause = quiet, secondary */
+.v-act-pause{background:none;color:#a8917f;border:1px solid rgba(168,145,127,.34);font-weight:600;padding:10px 17px;}
 .v-type-toggle{display:inline-block;font-size:14px;font-weight:800;color:#e07c3a;cursor:pointer;padding:6px 0;letter-spacing:.01em;border-bottom:1.5px solid rgba(224,124,58,.3);transition:opacity .15s;}
 .v-type-toggle:active{opacity:.6;}
 .v-type-area{display:none;flex-direction:column;gap:10px;background:linear-gradient(148deg,rgba(255,210,220,.48) 0%,rgba(255,185,130,.26) 42%,rgba(255,250,243,.96) 100%);border-radius:28px;padding:16px 20px 14px;box-shadow:0 6px 32px rgba(255,100,70,.1),0 2px 10px rgba(255,155,90,.08),inset 0 1px 0 rgba(255,255,255,.72);margin:0 16px;}
@@ -199,6 +221,8 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 @keyframes vThinkDot{0%,80%,100%{opacity:.25;transform:translateY(0);}40%{opacity:1;transform:translateY(-2px);}}
 .v-type-inp.thinking{opacity:.55;pointer-events:none;}
 .ltxt{font-size:15px;font-weight:700;color:#9e8878;transition:color .3s;}
+.ltxt.listening{color:#c2632e;font-weight:700;}
+.ltxt-sub{display:block;font-size:11px;font-weight:600;color:#bda28f;margin-top:4px;letter-spacing:.2px;}
 .ltxt.active{color:#e07c3a;}
 .ltxt.done{color:#34c759;}
 .ltxt.organizing{color:#e07c3a;animation:orgPulse .65s ease-in-out infinite;}
@@ -2139,9 +2163,9 @@ body.text-large .phone{font-size:17px}
 .cal-go-btn{display:none;width:100%;margin-top:16px;padding:13px;border:none;border-radius:14px;background:linear-gradient(135deg,#ff8a4c,#e07c3a);color:#fff;font-family:'Nunito',sans-serif;font-weight:900;font-size:15px;cursor:pointer;box-shadow:0 6px 18px rgba(224,124,58,.34);}
 .cal-go-btn:active{transform:scale(.98);}
 /* 9. Voice recording mode selector */
-.v-mode-row{display:flex;gap:9px;justify-content:center;margin:12px auto 0;}
-.v-mode-btn{display:inline-flex;align-items:center;gap:6px;border:1.5px solid rgba(224,124,58,.3);background:#fffaf5;color:#9e6a3a;font-family:'Nunito',sans-serif;font-weight:800;font-size:12.5px;padding:8px 15px;border-radius:999px;cursor:pointer;transition:all .15s;box-shadow:0 2px 8px rgba(160,90,30,.06);}
-.v-mode-btn.sel{background:linear-gradient(135deg,#ff8a4c,#e07c3a);color:#fff;border-color:transparent;box-shadow:0 4px 14px rgba(224,124,58,.32);}
+.v-mode-row{display:flex;gap:0;justify-content:center;width:max-content;margin:12px auto 0;padding:5px;background:rgba(255,255,255,.55);border:1px solid rgba(255,255,255,.72);border-radius:999px;box-shadow:0 6px 18px rgba(180,110,70,.12),inset 0 1px 0 rgba(255,255,255,.8);backdrop-filter:blur(8px);}
+.v-mode-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:none;background:none;color:#a8856b;font-family:'Nunito',sans-serif;font-weight:800;font-size:13px;padding:9px 20px;border-radius:999px;cursor:pointer;box-shadow:none;transition:color .2s,background .25s,box-shadow .25s;letter-spacing:.2px;}
+.v-mode-btn.sel{background:linear-gradient(135deg,#ff9d5e,#ff6f3c);color:#fff;box-shadow:0 4px 12px rgba(255,110,60,.4);}
 .v-mode-btn svg{width:15px;height:15px;}
 #s-voice.no-captions #speechBubble{display:none!important;}
 /* 3. Biometric option rows */
@@ -2962,15 +2986,17 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
   <div class="v-mode-row" id="vModeRow">
     <button class="v-mode-btn sel" id="vModeCaptions" type="button" onclick="setVoiceCaptions(true)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><line x1="7" y1="11" x2="11" y2="11"/><line x1="14" y1="11" x2="17" y2="11"/><line x1="7" y1="15" x2="13" y2="15"/></svg>
-      עם כתוביות
+      עם טקסט
     </button>
     <button class="v-mode-btn" id="vModeQuick" type="button" onclick="setVoiceCaptions(false)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-      הקלטה מהירה
+      מהיר
     </button>
   </div>
   <div class="sp-lg"></div>
   <div class="mic-zone" id="micZone">
+    <div class="mic-aura" id="micAura"></div>
+    <div class="mic-particles" id="micParticles"><i style="--a:0deg"></i><i style="--a:30deg"></i><i style="--a:60deg"></i><i style="--a:90deg"></i><i style="--a:120deg"></i><i style="--a:150deg"></i><i style="--a:180deg"></i><i style="--a:210deg"></i><i style="--a:240deg"></i><i style="--a:270deg"></i><i style="--a:300deg"></i><i style="--a:330deg"></i></div>
     <div class="mwrap" id="wrap-heart">
       <div class="zone-heart">
         <div class="btn-heart" id="btn-heart">
@@ -3003,12 +3029,12 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
     <div class="sb-dots"><span></span><span></span><span></span></div>
   </div>
   <div class="listen-sec">
-    <div class="ltxt" id="ltxt">לחץ לדיבור</div>
+    <div class="ltxt" id="ltxt">לחצו ודברו אליי</div>
     <div class="wdots" id="wdots"><div class="wd wd1"></div><div class="wd wd2"></div><div class="wd wd3"></div><div class="wd wd4"></div><div class="wd wd5"></div></div>
   </div>
   <div class="v-rec-actions" id="vRecActions">
+    <button class="v-act-btn v-act-cancel" id="vCancelBtn" type="button">↺ הקלטה מחדש</button>
     <button class="v-act-btn v-act-pause" id="vPauseBtn" type="button">⏸ השהה</button>
-    <button class="v-act-btn v-act-cancel" id="vCancelBtn" type="button">✕ התחל מחדש</button>
   </div>
   <div class="v-type-row" id="vTypeRow">
     <div class="v-type-toggle" id="vTypeToggle">או הקלד במקום</div>
@@ -5455,7 +5481,9 @@ document.querySelectorAll('#appr-avatars .av-row').forEach(function(r) {
 const I18N = {
   en: {
     voice_eyebrow:'✨ Voice Input', voice_prompt:'Tell me what needs<br>to happen today',
-    voice_back:'Today', voice_listening:'Listening…', voice_tap:'Tap to speak',
+    voice_back:'Today', voice_listening:'Listening…', voice_tap:'Tap and talk to me',
+    voice_listen_active:'Listening to you…', voice_tap_finish:'Tap to finish',
+    voice_organizing_sub:'One moment, getting it right',
     voice_stop:'✋ Tap to stop', voice_type_toggle:'Or type it instead',
     voice_type_helper:"Write freely — we'll organize it for you",
     voice_type_btn:'Organize my day ✨', voice_type_btn_thinking:'Organizing your day',
@@ -5463,7 +5491,7 @@ const I18N = {
     voice_mic_denied:'🎤 Microphone access denied',
     voice_mic_denied_hint:'Allow microphone in your browser settings and try again',
     voice_not_supported:'Voice not supported — use typing ↓',
-    voice_organizing:'Organizing your day ✨',
+    voice_organizing:'Organizing your day…',
     voice_err_network:'🌐 No connection — check internet and try again',
     voice_err_audio:'🎤 Microphone issue — check your device and try again',
     voice_err_lang:'Language not supported — try typing instead',
@@ -5531,8 +5559,10 @@ const I18N = {
     add_more:'+ Add more',
   },
   he: {
-    voice_eyebrow:'✨ קלט קולי', voice_prompt:'ספר לי מה<br>צריך לקרות היום',
-    voice_back:'היום', voice_listening:'מאזין…', voice_tap:'לחץ לדיבור',
+    voice_eyebrow:'✨ קלט קולי', voice_prompt:'ספרו לי מה<br>צריך לקרות היום',
+    voice_back:'היום', voice_listening:'מאזין…', voice_tap:'לחצו ודברו אליי',
+    voice_listen_active:'מקשיב לך…', voice_tap_finish:'הקישו לסיום',
+    voice_organizing_sub:'רגע, אני מבין מה חשוב',
     voice_stop:'✋ לחץ לעצירה', voice_type_toggle:'או הקלד במקום',
     voice_type_helper:'כתוב בחופשיות — נסדר עבורך',
     voice_type_btn:'סדר לי את היום ✨', voice_type_btn_thinking:'מסדר לך את היום',
@@ -5540,7 +5570,7 @@ const I18N = {
     voice_mic_denied:'🎤 אין גישה למיקרופון',
     voice_mic_denied_hint:'אפשר גישה למיקרופון בהגדרות הדפדפן ונסה שוב',
     voice_not_supported:'זיהוי קולי לא נתמך — השתמש בהקלדה ↓',
-    voice_organizing:'מסדר את היום ✨',
+    voice_organizing:'מסדר לך את היום…',
     voice_err_network:'🌐 אין חיבור לאינטרנט — נסה שוב',
     voice_err_audio:'🎤 בעיה במיקרופון — בדוק חיבור ונסה שוב',
     voice_err_lang:'השפה לא נתמכת — אפשר להקליד במקום',
@@ -6477,8 +6507,8 @@ function showBubble(text) {
   sbBubble.classList.remove('fading');
   // Restore live "Tap to stop" label even if a silence/warning color was
   // applied earlier — new transcript means user is still speaking.
-  ltxt.textContent   = t('voice_stop');
-  ltxt.className     = 'ltxt v-stop-hint';
+  ltxt.innerHTML     = t('voice_listen_active') + '<span class="ltxt-sub">' + t('voice_tap_finish') + '</span>';
+  ltxt.className     = 'ltxt listening';
   ltxt.style.opacity = '';
   ltxt.style.color   = '';
   // Mirror transcript into add-sheet bubble when in add mode
@@ -7753,6 +7783,7 @@ function vCancel() {
   _stopKeepAlive(); _clearMaxRecTimers(); _stopSilencePoll();
   clearTimeout(vTimer); clearTimeout(_restartTimer);
   zone.classList.remove('rec');
+  zone.classList.remove('processing');
   wdots.classList.remove('on');
   if (recognition) { try { recognition.abort(); } catch(_) {} }
   vTranscript = ''; vCarryOver = ''; vSessionFinal = '';
@@ -8022,8 +8053,9 @@ async function vOrganize() {
     return;
   }
 
-  ltxt.textContent = t('voice_organizing');
+  ltxt.innerHTML = t('voice_organizing') + '<span class="ltxt-sub">' + t('voice_organizing_sub') + '</span>';
   ltxt.className = 'ltxt organizing';
+  zone.classList.add('processing');
 
   AppLog.group('parsing started');
   AppLog.info('text', spokenText);
@@ -8125,6 +8157,7 @@ async function vOrganize() {
   _vOrganizerBusy = false;
   setTimeout(() => {
     zone.classList.remove('rec');
+    zone.classList.remove('processing');
     ltxt.className = 'ltxt';
     document.getElementById('dpSub').style.color = '';
     document.getElementById('dpSub').textContent = t('dp_sub');
