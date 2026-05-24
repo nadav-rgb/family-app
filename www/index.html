@@ -11626,7 +11626,15 @@ async function _fbLinkAuthToMember(authUid) {
         console.log('[Auth] localUserId:', DataAdapter.userId);
         console.log('[Auth] authUid:', authUid);
         console.log('[Auth] familyId:', DataAdapter.familyId || '(none)');
-        _fbLinkAuthToMember(authUid).catch(() => {});
+        _fbLinkAuthToMember(authUid)
+          .catch(() => {})
+          .then(() => {
+            // Auth → Listener race fix: the boot-time _daStartListener() can run
+            // before anonymous auth completes, so its listen is denied and never
+            // establishes. Re-start it here now that auth is ready and the member
+            // doc is linked, so tasks load without a manual kick.
+            if (DataAdapter.isFamily()) _daStartListener();
+          });
       })
       .catch(e => {
         const code = e.code || '';
