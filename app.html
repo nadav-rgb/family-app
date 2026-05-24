@@ -530,15 +530,19 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 #s-today .t-tasks{padding:0 20px;display:flex;flex-direction:column;gap:10px;animation:fadeUp .4s ease .22s both;}
 /* ── Home progress card (Claude Design merge — Home.html) ─────────────── */
 #s-today .t-prog{display:none !important;} /* replaced by hm-progress-card */
-#s-today .hm-progress-card{margin:0 20px 14px;border-radius:19px;background:linear-gradient(135deg,#FEF3E6 0%,#F5DFCA 100%);padding:11px 14px;display:flex;align-items:stretch;gap:11px;position:relative;box-shadow:0 10px 30px rgba(229,98,26,0.10),0 2px 8px rgba(160,90,30,0.06);overflow:hidden;animation:fadeUp .4s ease .14s both;}
-#s-today .hm-progress-card::after{content:"";position:absolute;inset:0;border-radius:19px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.6);pointer-events:none;}
+#s-today .hm-progress-card{margin:0 20px 16px;border-radius:24px;background:linear-gradient(135deg,#FFF6EC 0%,#F8E4CE 55%,#F2D5B6 100%);padding:0;display:flex;align-items:stretch;gap:0;position:relative;min-height:184px;box-shadow:0 18px 42px -14px rgba(216,120,44,.30),0 5px 16px -8px rgba(160,90,30,.16),inset 0 1px 0 rgba(255,255,255,.72);overflow:hidden;animation:fadeUp .42s cubic-bezier(.23,1,.32,1) .14s both;}
+#s-today .hm-progress-card::after{content:"";position:absolute;inset:0;border-radius:24px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.6);pointer-events:none;z-index:3;}
 #s-today .hm-spark{position:absolute;border-radius:50%;background:radial-gradient(circle,#fff 0%,rgba(255,255,255,0) 70%);box-shadow:0 0 8px rgba(255,255,255,0.9);}
 #s-today .hm-spark.s1{width:5px;height:5px;top:30px;right:38%;opacity:.9}
 #s-today .hm-spark.s2{width:3px;height:3px;top:14px;right:52%;opacity:.8}
-#s-today .hm-placeholder{flex:0 0 28%;border-radius:13px;background:linear-gradient(160deg,#FBE5D2 0%,#F1D2B7 100%);box-shadow:inset 0 1px 0 rgba(255,255,255,0.5);}
-#s-today .hm-text{flex:1 1 auto;text-align:right;display:flex;flex-direction:column;gap:5px;}
-#s-today .hm-text h2{margin:0;font-size:15px;font-weight:900;line-height:1.2;letter-spacing:-0.01em;color:#1A0F08;display:flex;align-items:center;justify-content:flex-start;gap:5px;flex-wrap:wrap;}
-#s-today .hm-lead{color:#7A6354;font-size:10px;font-weight:500;line-height:1.4;}
+#s-today .hm-placeholder{flex:0 0 45%;align-self:stretch;position:relative;border-radius:0;overflow:hidden;background:linear-gradient(160deg,#FBE5D2 0%,#F1D2B7 100%);-webkit-mask-image:linear-gradient(to right,#000 60%,rgba(0,0,0,0) 100%);mask-image:linear-gradient(to right,#000 60%,rgba(0,0,0,0) 100%);}
+#s-today .hm-placeholder .hm-portrait-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center top;display:block;}
+#s-today .hm-placeholder .hm-portrait-emoji{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding-right:16%;font-size:76px;line-height:1;filter:drop-shadow(0 6px 14px rgba(160,90,30,.18));}
+#s-today .hm-placeholder::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(to right,rgba(255,246,236,0) 48%,rgba(248,228,206,.6) 100%),linear-gradient(180deg,rgba(255,250,242,.16) 0%,rgba(255,250,242,0) 32%);}
+@media (prefers-reduced-motion:reduce){#s-today .hm-progress-card{animation:none;}}
+#s-today .hm-text{flex:1 1 auto;text-align:right;display:flex;flex-direction:column;gap:7px;padding:18px 18px 16px 10px;position:relative;z-index:2;}
+#s-today .hm-text h2{margin:0;font-size:17px;font-weight:900;line-height:1.2;letter-spacing:-0.01em;color:#1A0F08;display:flex;align-items:center;justify-content:flex-start;gap:5px;flex-wrap:wrap;}
+#s-today .hm-lead{color:#7A6354;font-size:11px;font-weight:500;line-height:1.45;}
 #s-today .hm-progress-box{margin-top:auto;background:#fff;border-radius:10px;padding:6px 8px 8px;box-shadow:0 2px 8px rgba(160,90,30,0.06);}
 #s-today .hm-prog-label{font-size:9px;font-weight:700;color:#1A0F08;text-align:right;margin-bottom:5px;}
 #s-today .hm-prog-label .hm-pct{color:#FF7A3D;font-weight:900;}
@@ -3210,7 +3214,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
           <div class="hm-prog-track"><div class="hm-prog-fill" id="hmProgFill"></div></div>
         </div>
       </div>
-      <div class="hm-placeholder" aria-hidden="true"></div>
+      <div class="hm-placeholder" id="hmPortrait" aria-hidden="true"></div>
     </div>
 
     <!-- Hero card — premium design with portrait -->
@@ -13227,6 +13231,58 @@ function updateHomProgress() {
 
   /* inject icon boxes into rendered task cards */
   _hmInjectIconBoxes();
+  updateHmPortrait();
+}
+
+// ── Hero portrait — next-task owner, blended into the progress card ──
+// Future: drop bespoke cream home-scene illustrations into HM_SCENE_BY_MEMBER
+// (or member.avatarVariants[{kind:'scene'|'hero',url}]) and they light up here.
+var HM_SCENE_BY_MEMBER = {};
+function _hmSceneUrlForMember(memberId){
+  if (!memberId) return '';
+  if (HM_SCENE_BY_MEMBER[memberId]) return HM_SCENE_BY_MEMBER[memberId];
+  var list = (typeof _familyMembersCache !== 'undefined' && _familyMembersCache) ? _familyMembersCache
+           : (typeof _FAMILY_MEMBERS_SEED !== 'undefined' ? _FAMILY_MEMBERS_SEED : []);
+  var m = (list || []).find(function(x){ return x.memberId === memberId; });
+  if (m && Array.isArray(m.avatarVariants)){
+    var v = m.avatarVariants.find(function(av){ return av && (av.kind==='scene'||av.kind==='hero') && av.url; });
+    if (v) return v.url;
+  }
+  return '';
+}
+function updateHmPortrait(){
+  var box = document.getElementById('hmPortrait');
+  if (!box) return;
+  var tasks = (typeof activeTasks === 'function') ? activeTasks() : [];
+  var nextTask = tasks.find(function(t){ return !t.completed && t.mins != null; })
+              || tasks.find(function(t){ return !t.completed; });
+  if (!nextTask){
+    if (box.dataset.hmKey !== '__none__'){ box.dataset.hmKey = '__none__'; box.innerHTML = ''; box.setAttribute('aria-hidden','true'); }
+    return;
+  }
+  var m    = (typeof resolveMember === 'function') ? resolveMember(nextTask) : null;
+  var name = (m && m.name) || (typeof _taskDisplayName === 'function' ? _taskDisplayName(nextTask) : '');
+  var esc  = (typeof _escAttr === 'function') ? _escAttr
+           : function(s){ return String(s==null?'':s).replace(/[&"<>]/g,function(c){ return {'&':'&amp;','"':'&quot;','<':'&lt;','>':'&gt;'}[c]; }); };
+  var sceneUrl = m ? _hmSceneUrlForMember(m.memberId) : '';
+  var av = m && m.avatar;
+  var key, html;
+  if (sceneUrl){
+    key = 'scene:' + sceneUrl;
+    html = '<img class="hm-portrait-img" src="' + esc(sceneUrl) + '" alt="' + esc(name) + '" decoding="async">';
+  } else if (av && (av.type === 'photo' || av.type === 'ai-photo') && av.url){
+    key = 'photo:' + av.url;
+    html = '<img class="hm-portrait-img" src="' + esc(av.url) + '" alt="' + esc(name) + '" loading="lazy" decoding="async">';
+  } else {
+    var em = (av && av.value) || '👤';
+    key = 'emoji:' + em;
+    html = '<span class="hm-portrait-emoji" role="img" aria-label="' + esc(name) + '">' + em + '</span>';
+  }
+  key += '|' + name;
+  if (box.dataset.hmKey === key) return;
+  box.dataset.hmKey = key;
+  box.innerHTML = html;
+  box.removeAttribute('aria-hidden');
 }
 
 // React to task list changes without touching existing render functions
