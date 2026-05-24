@@ -2102,19 +2102,22 @@ body.text-small .phone{font-size:13px}
 body.text-large .phone{font-size:17px}
 
 /* ════ User review fixes (batch) ════ */
-/* 1. Bottom nav buttons fill the white bar */
-.bottom-nav{justify-content:space-around!important;}
-.bottom-nav .nav-item{flex:1 1 0!important;width:auto!important;font-size:12px!important;gap:5px!important;padding:3px 0!important;}
-.bottom-nav .nav-item svg{width:24px!important;height:24px!important;}
-.bottom-nav .nav-item .underline{width:20px!important;height:2.5px!important;}
+/* 1. Bottom-nav buttons styled as the home-screen floating icon cards (hm-cal/hm-bell) */
+.bottom-nav{justify-content:center!important;gap:16px!important;}
+.bottom-nav .nav-item{flex:0 0 auto!important;width:40px!important;height:40px!important;border-radius:11px!important;background:#fff!important;box-shadow:0 4px 16px rgba(160,90,30,0.08)!important;border:1px solid rgba(255,255,255,0.6)!important;gap:0!important;padding:0!important;}
+.bottom-nav .nav-item svg{width:19px!important;height:19px!important;}
+.bottom-nav .nav-item span{display:none!important;}
 /* 2. PIN keypad must read left-to-right (1 2 3 / 4 5 6 …) even in RTL */
 .pin-keypad{direction:ltr;}
 /* 5. PIN/Bio sheets must stack ABOVE the delete-data modal */
 #pinModalBg,#bioModalBg{z-index:960!important;}
 /* 7. Unify every back arrow to the notifications / family-members circle style */
-.back-btn,.td-back{width:36px!important;height:36px!important;border-radius:50%!important;background:#fff!important;border:1px solid rgba(160,90,30,.12)!important;box-shadow:0 2px 8px rgba(160,90,30,.08)!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;padding:0!important;gap:0!important;color:#1A0F08!important;}
-.back-btn svg,.td-back svg{width:18px!important;height:18px!important;}
+.back-btn,.td-back,.back{width:36px!important;height:36px!important;border-radius:50%!important;background:var(--card-bg,#fff)!important;border:1px solid rgba(255,255,255,0.7)!important;box-shadow:var(--card-shadow,0 2px 8px rgba(160,90,30,.08))!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;padding:0!important;gap:0!important;color:var(--ink,#1A0F08)!important;}
+.back-btn svg,.td-back svg,.back svg{width:18px!important;height:18px!important;}
 .back-btn span{display:none!important;}
+/* 5b. Calendar "go to selected date" button */
+.cal-go-btn{display:none;width:100%;margin-top:16px;padding:13px;border:none;border-radius:14px;background:linear-gradient(135deg,#ff8a4c,#e07c3a);color:#fff;font-family:'Nunito',sans-serif;font-weight:900;font-size:15px;cursor:pointer;box-shadow:0 6px 18px rgba(224,124,58,.34);}
+.cal-go-btn:active{transform:scale(.98);}
 /* 9. Voice recording mode selector */
 .v-mode-row{display:flex;gap:9px;justify-content:center;margin:12px auto 0;}
 .v-mode-btn{display:inline-flex;align-items:center;gap:6px;border:1.5px solid rgba(224,124,58,.3);background:#fffaf5;color:#9e6a3a;font-family:'Nunito',sans-serif;font-weight:800;font-size:12.5px;padding:8px 15px;border-radius:999px;cursor:pointer;transition:all .15s;box-shadow:0 2px 8px rgba(160,90,30,.06);}
@@ -2131,7 +2134,7 @@ body.text-large .phone{font-size:17px}
 .bio-opt .bio-opt-s{font-size:11.5px;color:#9E8878;margin-top:2px;}
 /* 6. Hebrew sub-line inside the home calendar cells */
 .cal-day .cal-heb{font-size:8px;font-weight:700;line-height:1;margin-top:1px;color:#b89a86;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.cal-day.cal-hol .cal-heb{color:#E63946;}
+.cal-day.cal-hol .cal-heb{color:#E63946;white-space:normal;overflow:visible;font-size:6.8px;line-height:1.05;max-width:96%;text-align:center;}
 .cal-day.selected .cal-heb{color:rgba(255,255,255,.82)!important;}
 .cal-heb-header{text-align:center;font-size:11px;font-weight:800;color:#c47a3a;margin:-8px 0 12px;letter-spacing:.2px;}
 
@@ -5083,6 +5086,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
       <button class="cal-nav-btn" id="calNext">›</button>
     </div>
     <div class="cal-grid" id="calGrid"></div>
+    <button class="cal-go-btn" id="calGoBtn" type="button" onclick="calGoToSelected()">עבור לתאריך הנבחר</button>
   </div>
 </div>
 
@@ -8879,7 +8883,13 @@ function updateOtherDayBanner() {
   ctx.style.display = 'block';
 }
 
+// Entry slide-in animation plays on screen-entry renders only. In-place
+// re-renders (data sync, undo, completion, date change) set this false first
+// so the list never re-animates / "jumps".
+let _todayAnimateEntry = true;
 function renderToday() {
+  const _animEntryThisRender = _todayAnimateEntry;
+  _todayAnimateEntry = false;
   if (typeof _mpApplyAllStripes === 'function') _mpApplyAllStripes();
   updateTodayTitle();
   updateDateBadge();
@@ -9148,8 +9158,7 @@ function renderToday() {
       }
     }
 
-    el.style.animationDelay = `${i * 68}ms`;
-    el.classList.add('entering');
+    if (_animEntryThisRender) { el.style.animationDelay = `${i * 68}ms`; el.classList.add('entering'); }
     if (canEditCommitted) attachSwipeDelete(el, t, 'today');
     categorizeShoppingTitle(t);
     summarizeAgendaTitle(t);
@@ -9786,14 +9795,25 @@ document.getElementById('tTasks').addEventListener('click', e => {
 
 // ─── Calendar drawer ──────────────────────────────────────────────
 let calViewYear, calViewMonth;
+let _calSelDate = null; // pending selection — applied only on "go to date"
 // CAL_MONTHS and CAL_DAYS are now computed from I18N at render time (see renderCalGrid)
 
 function openCalDrawer() {
   const sel    = new Date(activeDate + 'T00:00:00');
   calViewYear  = sel.getFullYear();
   calViewMonth = sel.getMonth();
+  _calSelDate  = activeDate;
   renderCalGrid();
+  const go = document.getElementById('calGoBtn');
+  if (go) go.style.display = 'none';
   document.getElementById('calBg').classList.add('open');
+}
+function calGoToSelected() {
+  if (!_calSelDate) return;
+  activeDate = _calSelDate;
+  closeCalDrawer();
+  updateDateBadge();
+  renderToday();
 }
 
 function closeCalDrawer() {
@@ -9873,19 +9893,19 @@ function renderCalGrid() {
       const [gy, gm, gd] = dateStr.split('-').map(Number);
       const hd  = _jdnToH(_gToJdn(gy, gm, gd));
       const hol = _H_HOLIDAYS[`${hd.m}-${hd.d}`];
-      if (hol) { hebSub = hol.e; el.classList.add('cal-hol'); }
+      if (hol) { hebSub = hol.n; el.classList.add('cal-hol'); el.title = `${hol.e} ${hol.n}`; }
       else     { hebSub = hd.d === 1 ? `א׳ ${_hMonthName(hd.y, hd.m).slice(0,3)}` : _hDayLetters(hd.d); }
     } catch (_) {}
     el.innerHTML = `<span>${num}</span>${hebSub ? `<span class="cal-heb">${hebSub}</span>` : ''}`;
     if (other)              el.classList.add('other-month');
     if (dateStr === today)  el.classList.add('is-today');
-    if (dateStr === activeDate) el.classList.add('selected');
+    if (dateStr === (_calSelDate || activeDate)) el.classList.add('selected');
     if (taskDates.has(dateStr)) el.classList.add('has-tasks');
     el.addEventListener('click', () => {
-      activeDate = dateStr;
-      closeCalDrawer();
-      updateDateBadge();
-      renderToday();
+      _calSelDate = dateStr;
+      renderCalGrid();
+      const go = document.getElementById('calGoBtn');
+      if (go) go.style.display = 'block';
     });
     grid.appendChild(el);
   };
@@ -14146,8 +14166,9 @@ function _pinSubmit() {
   } else if (_pinMode === 'delete') {
     const saved = AppState.accessPin;
     if (!saved || _pinBuffer === saved) {
+      const cb = _pinOnSuccess;          // capture before closePinModal nulls it
       closePinModal();
-      if (_pinOnSuccess) { _pinOnSuccess(); _pinOnSuccess = null; }
+      if (cb) cb();
     } else {
       _pinBuffer = '';
       document.getElementById('pinSheetSub').textContent = 'קוד שגוי — נסה שוב';
@@ -14171,6 +14192,7 @@ function _bioResetSheet() {
   document.getElementById('bioOpts').style.display = '';
   const st = document.getElementById('bioStatusTxt');
   st.style.display = 'none'; st.textContent = ''; st.style.color = '';
+  st.style.fontSize = ''; st.style.fontWeight = ''; st.style.lineHeight = ''; st.style.padding = '';
 }
 function openBiometricSetup() {
   _bioPurpose = 'setup';
@@ -14219,8 +14241,9 @@ async function bioAuthenticate(method) {
   const res = await _triggerPlatformBiometric();
 
   if (res === true || res === 'unsupported') {
-    st.style.color = '#34a853';
     if (_bioPurpose === 'delete') {
+      st.style.color = '#34a853';
+      st.style.fontSize = ''; st.style.fontWeight = '';
       st.textContent = 'אומת ✓';
       setTimeout(() => {
         closeBioModal();
@@ -14228,12 +14251,18 @@ async function bioAuthenticate(method) {
         const cta = document.getElementById('delCtaBtn');
         cta.textContent = 'מחק את כל הנתונים';
         cta.style.background = 'linear-gradient(135deg,#ff3b30,#c0392b)';
-      }, 650);
+      }, 900);
     } else {
       AppState.quickAccess = method;
       try { saveState(); } catch (_) {}
-      st.textContent = 'גישה מהירה הופעלה ✓';
-      setTimeout(() => { closeBioModal(); _showToast('גישה מהירה הופעלה ✓'); }, 800);
+      const label = method === 'face' ? 'זיהוי הפנים' : 'טביעת האצבע';
+      st.style.color = '#1A0F08';
+      st.style.fontSize = '16px';
+      st.style.fontWeight = '800';
+      st.style.lineHeight = '1.45';
+      st.style.padding = '0 22px';
+      st.innerHTML = `🔒 הגישה המהירה הופעלה<br>${label} נלקחת מתוך הנתונים<br>השמורים במכשיר שלך בלבד`;
+      setTimeout(() => { closeBioModal(); _showToast('גישה מהירה הופעלה ✓'); }, 5000);
     }
   } else {
     st.style.color = '#e0392b';
