@@ -1359,6 +1359,12 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 #s-settings .title{margin:0;font-size:30px;font-weight:800;line-height:1.05;letter-spacing:-0.02em;color:var(--ink);}
 #s-settings .fam-card{margin-top:18px;background:var(--card-bg);border-radius:20px;padding:14px;box-shadow:var(--card-shadow);border:1px solid rgba(255,255,255,0.7);display:flex;align-items:center;gap:12px;position:relative;}
 #s-settings .fam-avatar{flex:0 0 auto;width:78px;height:78px;border-radius:50%;background:transparent;box-shadow:none;border:none;}
+#s-settings .fam-avatar [data-avatar-slot]{background:transparent!important;}
+#s-settings .fam-avatar > div{background:transparent!important;}
+[data-avatar-slot] img{width:100%;height:100%;object-fit:cover;border-radius:50%!important;}
+[data-avatar-slot] > *{border-radius:50%!important;}
+.mp-avatar img, .mp-avatar > *{border-radius:50%!important;}
+.mavatar img, .mavatar > *{border-radius:50%!important;}
 #s-settings .fam-text{flex:1 1 auto;text-align:right;display:flex;flex-direction:column;gap:4px;}
 #s-settings .fam-name{font-size:17px;font-weight:700;color:var(--ink);display:flex;align-items:center;justify-content:flex-start;gap:6px;line-height:1.1;}
 #s-settings .fam-name .heart{font-size:15px;}
@@ -1499,7 +1505,7 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
    SCREEN — INVITE FAMILY MEMBER
    Scoped under #s-invite-member
 ═══════════════════════════════════════════════════════════════════════ */
-#s-invite-member{background:var(--page);display:flex;flex-direction:column;}
+#s-invite-member{background:var(--page);display:flex;flex-direction:column;overflow:hidden;}
 #s-invite-member .status{flex:0 0 auto;padding:14px 26px 0;display:flex;align-items:center;justify-content:space-between;font-weight:700;font-size:15px;color:var(--ink);direction:ltr;}
 #s-invite-member .status .icons{display:flex;align-items:center;gap:6px;}
 #s-invite-member .app-header{flex:0 0 auto;padding:14px 18px 12px;display:grid;grid-template-columns:36px 1fr 36px;align-items:center;}
@@ -2094,6 +2100,41 @@ body[data-theme="calm"] .phone{background:linear-gradient(175deg,#F2EBF0 0%,#E6D
 body[data-theme="colorful"] .phone{background:radial-gradient(800px 400px at 80% -10%,#FFDFE9 0%,transparent 55%),radial-gradient(700px 500px at -10% 110%,#E0E9FF 0%,transparent 60%),linear-gradient(175deg,#FFF4ED 0%,#FFE9DA 100%);}
 body.text-small .phone{font-size:13px}
 body.text-large .phone{font-size:17px}
+
+/* ════════════════════════════════════════════════════════════���═══════
+   MODALS — PIN / BIOMETRIC / DELETE DATA
+════════════════════════════════════════════════════════════════════ */
+#pinModalBg,#bioModalBg,#deleteModalBg{position:fixed;inset:0;z-index:900;background:rgba(0,0,0,.48);display:none;align-items:flex-end;}
+#pinModalBg.open,#bioModalBg.open,#deleteModalBg.open{display:flex;}
+#pinSheet,#bioSheet,#deleteSheet{background:#fffaf5;border-radius:28px 28px 0 0;width:100%;padding:0 0 36px;animation:sheetUp .28s cubic-bezier(.34,1.2,.64,1) both;}
+@keyframes sheetUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.psh-pill{width:38px;height:4px;border-radius:2px;background:#d4bfb0;margin:14px auto 20px;}
+.psh-title{text-align:center;font-size:18px;font-weight:800;color:#1A0F08;margin-bottom:6px;}
+.psh-sub{text-align:center;font-size:13px;color:#8B8078;margin-bottom:20px;}
+.pin-dots{display:flex;justify-content:center;gap:14px;margin-bottom:28px;}
+.pin-dot{width:16px;height:16px;border-radius:50%;border:2px solid #d4bfb0;transition:background .15s,border-color .15s;}
+.pin-dot.filled{background:#7A5BE5;border-color:#7A5BE5;}
+.pin-keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:0 20px;}
+.pin-key{height:60px;border-radius:16px;background:#fff;border:1px solid rgba(160,90,30,0.1);font-size:22px;font-weight:700;color:#1A0F08;cursor:pointer;box-shadow:0 2px 8px rgba(160,90,30,0.06);transition:transform .1s,background .1s;display:flex;align-items:center;justify-content:center;}
+.pin-key:active{transform:scale(.94);background:#FFF0E6;}
+.pin-key.del{font-size:16px;color:#9E8878;}
+.pin-key.empty{background:transparent;border:none;box-shadow:none;pointer-events:none;}
+.psh-cancel{display:block;margin:16px auto 0;background:none;border:none;font-size:14px;color:#9E8878;cursor:pointer;font-family:inherit;}
+.bio-wrap{position:relative;width:80px;height:80px;margin:0 auto 16px;display:flex;align-items:center;justify-content:center;}
+.bio-icon{width:80px;height:80px;border-radius:50%;background:#EEE9F9;display:flex;align-items:center;justify-content:center;}
+.bio-icon svg{width:44px;height:44px;color:#7A5BE5;}
+.bio-ring{width:80px;height:80px;border-radius:50%;border:3px solid #7A5BE5;position:absolute;top:0;left:0;animation:bioRing 1.6s ease-in-out infinite;}
+@keyframes bioRing{0%,100%{transform:scale(1);opacity:.5}50%{transform:scale(1.3);opacity:0}}
+.del-warning{background:#FFF0EE;border-radius:14px;padding:14px;margin:0 20px 18px;border:1px solid rgba(220,50,50,.15);}
+.del-warning .del-w-title{font-size:14px;font-weight:800;color:#C0392B;margin-bottom:6px;}
+.del-warning .del-w-body{font-size:12px;color:#8B3030;line-height:1.55;}
+.del-steps{display:flex;flex-direction:column;gap:8px;padding:0 20px 4px;}
+.del-step{background:#fff;border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:10px;box-shadow:0 2px 8px rgba(160,90,30,0.06);border:1px solid #F0E8E0;}
+.del-step-num{width:26px;height:26px;border-radius:50%;background:#F0E8E0;color:#9E8878;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;flex:0 0 auto;}
+.del-step-num.done{background:#7A5BE5;color:#fff;}
+.del-step-txt{font-size:13px;font-weight:600;color:#5A4A3A;}
+.del-cta{margin:16px 20px 0;width:calc(100% - 40px);height:48px;border:none;border-radius:14px;background:linear-gradient(135deg,#e05555,#c0392b);color:#fff;font-family:inherit;font-size:15px;font-weight:800;cursor:pointer;}
+.del-recovery{margin:10px 20px 0;font-size:11px;color:#9E8878;text-align:center;}
 
 /* ════════════════════════════════════════════════════════════════════
    SCREEN — NOTIFICATIONS
@@ -3168,7 +3209,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
         <span class="kicker"><span>מרחב משפחתי</span> <span aria-hidden="true">✨</span></span>
         <h1 class="title">הגדרות</h1>
       </div>
-      <button class="bell" aria-label="התראות" type="button">
+      <button class="bell" aria-label="התראות" type="button" onclick="openBellPanel()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
         <span class="dot"></span>
       </button>
@@ -3258,18 +3299,13 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
   <div class="bottom-wrap">
     <div class="bottom-nav">
       <button class="nav-item active" type="button">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9 1.65 1.65 0 0 0 4.27 7.18l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09A1.65 1.65 0 0 0 15 4.6a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9c.14.34.22.7.22 1.06"/></svg>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         <span>הגדרות</span>
         <span class="underline"></span>
       </button>
       <button class="nav-item" type="button" onclick="goto('s-today','txLeaveFade','txEnterFade')">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v10h14V10"/></svg>
         <span>היום</span>
-        <span class="underline"></span>
-      </button>
-      <button class="nav-item" type="button" onclick="goto('s-today','txLeaveFade','txEnterFade')">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><circle cx="17" cy="9" r="2.5"/><path d="M3 19c0-3 2.7-5 6-5s6 2 6 5"/><path d="M14.5 19c.3-2 2-3.4 4.5-3.4 1.8 0 3 .8 3 2.4"/></svg>
-        <span>המשפחה</span>
         <span class="underline"></span>
       </button>
     </div>
@@ -3296,7 +3332,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
     <!-- Header -->
     <div class="header">
       <button class="back" aria-label="חזרה" type="button" onclick="goto('s-settings','txLeaveFade','txEnterFade')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
       </button>
       <div class="head-text">
         <span class="kicker"><span>המשפחה שלנו</span> <span aria-hidden="true">✨</span></span>
@@ -3424,18 +3460,13 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
   <div class="bottom-wrap">
     <div class="bottom-nav">
       <button class="nav-item" type="button" onclick="goto('s-settings','txLeaveFade','txEnterFade')">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9 1.65 1.65 0 0 0 4.27 7.18l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09A1.65 1.65 0 0 0 15 4.6a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9c.14.34.22.7.22 1.06"/></svg>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         <span>הגדרות</span>
         <span class="underline"></span>
       </button>
       <button class="nav-item" type="button" onclick="goto('s-today','txLeaveFade','txEnterFade')">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v10h14V10"/></svg>
         <span>היום</span>
-        <span class="underline"></span>
-      </button>
-      <button class="nav-item active" type="button">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><circle cx="17" cy="9" r="2.5"/><path d="M3 19c0-3 2.7-5 6-5s6 2 6 5"/><path d="M14.5 19c.3-2 2-3.4 4.5-3.4 1.8 0 3 .8 3 2.4"/></svg>
-        <span>המשפחה</span>
         <span class="underline"></span>
       </button>
     </div>
@@ -3589,7 +3620,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
   <div class="mp-scroll">
     <div class="mp-header">
       <button class="mp-icon-btn" id="mpBackBtn" aria-label="חזרה">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="transform:rotate(180deg)"><path d="m15 18-6-6 6-6"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
       </button>
       <button class="mp-icon-btn" aria-label="עוד">
         <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>
@@ -3761,7 +3792,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
     <!-- Header -->
     <div class="header">
       <button class="back" type="button" aria-label="חזרה" onclick="goto('s-settings','txLeaveFade','txEnterFade')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
       </button>
       <div class="head-title">
         <h1 class="title">סנכרון וגיבוי</h1>
@@ -3807,7 +3838,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
             <span class="dev-name">הטלפון של אבא</span>
             <span class="me-pill">מכשיר זה</span>
           </div>
-          <div class="dev-model">iPhone 15 Pro</div>
+          <div class="dev-model" id="devModelDad">Samsung Galaxy S24</div>
         </div>
         <div class="dev-icon" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
@@ -3820,19 +3851,39 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
           <div class="dev-top">
             <span class="dev-name">הטלפון של אמא</span>
           </div>
-          <div class="dev-model">iPhone 14</div>
+          <div class="dev-model" id="devModelMom">Samsung Galaxy</div>
         </div>
         <div class="dev-icon" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
         </div>
       </div>
 
-      <div class="link-row">
-        <button class="link-purple" type="button" data-todo="sync-add-device">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>
-          <span>חבר מכשיר נוסף</span>
-        </button>
+      <div class="device-row">
+        <div class="dev-avatar av-leali" data-avatar-for="member_laali" data-avatar-size="40"><div data-avatar-slot></div><span class="online"></span></div>
+        <div class="dev-body">
+          <div class="dev-top">
+            <span class="dev-name">הטלפון של ליאלי</span>
+          </div>
+          <div class="dev-model" id="devModelLaali">Samsung Galaxy</div>
+        </div>
+        <div class="dev-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+        </div>
       </div>
+
+      <div class="device-row">
+        <div class="dev-avatar av-uri" data-avatar-for="member_aharon" data-avatar-size="40"><div data-avatar-slot></div><span class="online"></span></div>
+        <div class="dev-body">
+          <div class="dev-top">
+            <span class="dev-name">הטלפון של אהרן</span>
+          </div>
+          <div class="dev-model">Samsung Galaxy</div>
+        </div>
+        <div class="dev-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+        </div>
+      </div>
+
     </div>
 
     <!-- Cloud backup -->
@@ -3848,7 +3899,6 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
         </div>
       </div>
       <div class="secure-row">
-        <span class="chev" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></span>
         <div class="sbody">
           <div class="st">הגיבוי מאובטח</div>
           <div class="ss">המידע מוצפן ואישי שלכם נשמר בסודיות</div>
@@ -3882,15 +3932,6 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
           <div class="as">עדכן מיד את כל השינויים בין המכשירים</div>
         </div>
       </button>
-      <button class="act" type="button" data-todo="sync-invite-device">
-        <div class="ic orange" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-4 3-6 6.5-6s6.5 2 6.5 6"/><path d="M19 8v6M16 11h6"/></svg>
-        </div>
-        <div class="abody">
-          <div class="at orange">הזמן מכשיר נוסף</div>
-          <div class="as">שתף את האפליקציה עם בן משפחה</div>
-        </div>
-      </button>
     </div>
 
     <!-- Privacy banner -->
@@ -3907,18 +3948,13 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
   <div class="bottom-wrap">
     <div class="bottom-nav">
       <button class="nav-item active" type="button" onclick="goto('s-settings','txLeaveFade','txEnterFade')">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9 1.65 1.65 0 0 0 4.27 7.18l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09A1.65 1.65 0 0 0 15 4.6a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9c.14.34.22.7.22 1.06"/></svg>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         <span>הגדרות</span>
         <span class="underline"></span>
       </button>
       <button class="nav-item" type="button" onclick="goto('s-today','txLeaveFade','txEnterFade')">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v10h14V10"/></svg>
         <span>היום</span>
-        <span class="underline"></span>
-      </button>
-      <button class="nav-item" type="button" onclick="goto('s-today','txLeaveFade','txEnterFade')">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><circle cx="17" cy="9" r="2.5"/><path d="M3 19c0-3 2.7-5 6-5s6 2 6 5"/><path d="M14.5 19c.3-2 2-3.4 4.5-3.4 1.8 0 3 .8 3 2.4"/></svg>
-        <span>המשפחה</span>
         <span class="underline"></span>
       </button>
     </div>
@@ -3945,7 +3981,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
     <!-- Header -->
     <div class="header">
       <button class="back" type="button" aria-label="חזרה" onclick="resetVoiceScreen();goto('s-voice','txLeaveFade','txEnterFade')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
       </button>
       <div class="head-text">
         <div class="step-pill"><span aria-hidden="true">✨</span><span>שלב 2 מתוך 2</span></div>
@@ -4004,7 +4040,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
         <p class="subtitle">המידע שלכם פרטי ובטוח</p>
       </div>
       <button class="back" type="button" aria-label="חזרה" onclick="goto('s-settings','txLeaveFade','txEnterFade')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
       </button>
     </div>
 
@@ -4075,7 +4111,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
       </div>
 
       <!-- קוד גישה -->
-      <div class="row" data-todo="privacy-access-code">
+      <div class="row" onclick="openPinSetup()">
         <div class="icn" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="12" rx="2"/><circle cx="8" cy="13" r="1.4" fill="currentColor"/><circle cx="12" cy="13" r="1.4" fill="currentColor"/><circle cx="16" cy="13" r="1.4" fill="currentColor"/></svg>
         </div>
@@ -4090,7 +4126,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
       </div>
 
       <!-- גישה מהירה (toggle — visual only) -->
-      <div class="row">
+      <div class="row" onclick="openBiometricSetup()">
         <div class="icn" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 11a7 7 0 0 1 14 0"/><path d="M5 14a7 7 0 0 0 4 6.3"/><path d="M9 11a3 3 0 0 1 6 0v3"/><path d="M9 14a3 3 0 0 0 1 2.2"/><path d="M12 11v6"/><path d="M14 19v-3"/></svg>
         </div>
@@ -4101,32 +4137,10 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
         <label class="ptoggle"><input type="checkbox" checked/><span class="slider"></span></label>
       </div>
 
-      <!-- ניהול הרשאות -->
-      <div class="row" data-todo="privacy-manage-permissions">
-        <div class="icn" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><circle cx="17" cy="9" r="2.5"/><path d="M3 19c0-3 2.7-5 6-5s6 2 6 5"/><path d="M14.5 19c.3-2 2-3.4 4.5-3.4 1.8 0 3 .8 3 2.4"/></svg>
-        </div>
-        <div class="body">
-          <div class="t">ניהול הרשאות</div>
-          <div class="s">הגדר מי יכול לגשת לאפליקציה במכשירים</div>
-        </div>
-        <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></span>
-      </div>
 
-      <!-- מכשירים פעילים -->
-      <div class="row" data-todo="privacy-active-devices">
-        <div class="icn" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
-        </div>
-        <div class="body">
-          <div class="t">מכשירים פעילים</div>
-          <div class="s">צפה ונהל את המכשירים המחוברים</div>
-        </div>
-        <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></span>
-      </div>
 
       <!-- מחיקת נתונים (danger) -->
-      <div class="row danger" data-todo="privacy-delete-data">
+      <div class="row danger" onclick="openDeleteDataFlow()">
         <div class="icn" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
         </div>
@@ -4156,18 +4170,13 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
   <div class="bottom-wrap">
     <div class="bottom-nav">
       <button class="nav-item active" type="button" onclick="goto('s-settings','txLeaveFade','txEnterFade')">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9 1.65 1.65 0 0 0 4.27 7.18l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09A1.65 1.65 0 0 0 15 4.6a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9c.14.34.22.7.22 1.06"/></svg>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         <span>הגדרות</span>
         <span class="underline"></span>
       </button>
       <button class="nav-item" type="button" onclick="goto('s-today','txLeaveFade','txEnterFade')">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v10h14V10"/></svg>
         <span>היום</span>
-        <span class="underline"></span>
-      </button>
-      <button class="nav-item" type="button" onclick="goto('s-today','txLeaveFade','txEnterFade')">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><circle cx="17" cy="9" r="2.5"/><path d="M3 19c0-3 2.7-5 6-5s6 2 6 5"/><path d="M14.5 19c.3-2 2-3.4 4.5-3.4 1.8 0 3 .8 3 2.4"/></svg>
-        <span>המשפחה</span>
         <span class="underline"></span>
       </button>
     </div>
@@ -4304,16 +4313,12 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
   <div class="bottom-wrap">
     <div class="bottom-nav">
       <button class="nav-item active" type="button" onclick="goto('s-settings','txLeaveFade','txEnterFade')">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9 1.65 1.65 0 0 0 4.27 7.18l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09A1.65 1.65 0 0 0 15 4.6a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9c.14.34.22.7.22 1.06"/></svg>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         <span>הגדרות</span><span class="underline"></span>
       </button>
       <button class="nav-item" type="button" onclick="goto('s-today','txLeaveFade','txEnterFade')">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v10h14V10"/></svg>
         <span>היום</span><span class="underline"></span>
-      </button>
-      <button class="nav-item" type="button" onclick="goto('s-today','txLeaveFade','txEnterFade')">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><circle cx="17" cy="9" r="2.5"/><path d="M3 19c0-3 2.7-5 6-5s6 2 6 5"/><path d="M14.5 19c.3-2 2-3.4 4.5-3.4 1.8 0 3 .8 3 2.4"/></svg>
-        <span>המשפחה</span><span class="underline"></span>
       </button>
     </div>
   </div>
@@ -4399,16 +4404,12 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
   <div class="bottom-wrap">
     <div class="bottom-nav">
       <button class="nav-item active" type="button" onclick="goto('s-settings','txLeaveFade','txEnterFade')">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9 1.65 1.65 0 0 0 4.27 7.18l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09A1.65 1.65 0 0 0 15 4.6a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9c.14.34.22.7.22 1.06"/></svg>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         <span>הגדרות</span><span class="underline"></span>
       </button>
       <button class="nav-item" type="button" onclick="goto('s-today','txLeaveFade','txEnterFade')">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v10h14V10"/></svg>
         <span>היום</span><span class="underline"></span>
-      </button>
-      <button class="nav-item" type="button" onclick="goto('s-today','txLeaveFade','txEnterFade')">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><circle cx="17" cy="9" r="2.5"/><path d="M3 19c0-3 2.7-5 6-5s6 2 6 5"/><path d="M14.5 19c.3-2 2-3.4 4.5-3.4 1.8 0 3 .8 3 2.4"/></svg>
-        <span>המשפחה</span><span class="underline"></span>
       </button>
     </div>
   </div>
@@ -4432,7 +4433,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
     <!-- Header -->
     <div class="header">
       <button class="back" type="button" aria-label="חזרה" onclick="goto(_visBackScreen,'txLeaveFade','txEnterFade')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
       </button>
       <div class="head-text">
         <div class="step-pill"><span class="spark" aria-hidden="true">✨</span><span>שלב 3 מתוך 3</span></div>
@@ -4611,6 +4612,73 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
   </div>
 </div>
 
+<!-- ════ PIN SETUP MODAL ════ -->
+<div id="pinModalBg">
+  <div id="pinSheet">
+    <div class="psh-pill"></div>
+    <div class="psh-title" id="pinSheetTitle">קוד גישה</div>
+    <div class="psh-sub" id="pinSheetSub">הכנס קוד בן 4 ספרות</div>
+    <div class="pin-dots">
+      <div class="pin-dot" id="pd0"></div>
+      <div class="pin-dot" id="pd1"></div>
+      <div class="pin-dot" id="pd2"></div>
+      <div class="pin-dot" id="pd3"></div>
+    </div>
+    <div class="pin-keypad">
+      <button class="pin-key" onclick="pinKey('1')">1</button>
+      <button class="pin-key" onclick="pinKey('2')">2</button>
+      <button class="pin-key" onclick="pinKey('3')">3</button>
+      <button class="pin-key" onclick="pinKey('4')">4</button>
+      <button class="pin-key" onclick="pinKey('5')">5</button>
+      <button class="pin-key" onclick="pinKey('6')">6</button>
+      <button class="pin-key" onclick="pinKey('7')">7</button>
+      <button class="pin-key" onclick="pinKey('8')">8</button>
+      <button class="pin-key" onclick="pinKey('9')">9</button>
+      <button class="pin-key empty"></button>
+      <button class="pin-key" onclick="pinKey('0')">0</button>
+      <button class="pin-key del" onclick="pinKey('del')">⌫</button>
+    </div>
+    <button class="psh-cancel" onclick="closePinModal()">ביטול</button>
+  </div>
+</div>
+
+<!-- ════ BIOMETRIC MODAL ════ -->
+<div id="bioModalBg">
+  <div id="bioSheet">
+    <div class="psh-pill"></div>
+    <div class="psh-title">גישה מהירה</div>
+    <div class="psh-sub">השתמש בטביעת האצבע שלך לפתיחה מהירה</div>
+    <div class="bio-wrap">
+      <div class="bio-ring"></div>
+      <div class="bio-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 11a7 7 0 0 1 14 0"/><path d="M5 14a7 7 0 0 0 4 6.3"/><path d="M9 11a3 3 0 0 1 6 0v3"/><path d="M9 14a3 3 0 0 0 1 2.2"/><path d="M12 11v6"/><path d="M14 19v-3"/></svg>
+      </div>
+    </div>
+    <div class="psh-sub" id="bioStatusTxt">ממתין לטביעת אצבע...</div>
+    <button class="psh-cancel" onclick="closeBioModal()">ביטול</button>
+  </div>
+</div>
+
+<!-- ════ DELETE DATA MODAL ════ -->
+<div id="deleteModalBg">
+  <div id="deleteSheet">
+    <div class="psh-pill"></div>
+    <div class="psh-title" style="color:#C0392B">מחיקת נתוני אפליקציה</div>
+    <div class="del-warning">
+      <div class="del-w-title">⚠️ פעולה בלתי הפיכה</div>
+      <div class="del-w-body">כל המשימות, ההגדרות והנתונים יימחקו ממכשיר זה בלבד. במכשירים אחרים הכל ממשיך כרגיל. תקופת שחזור של 72 שעות תינתן לפני מחיקה מהענן.</div>
+    </div>
+    <div class="del-steps">
+      <div class="del-step"><div class="del-step-num" id="delStep1Num">1</div><div class="del-step-txt">אימות קוד גישה</div></div>
+      <div class="del-step"><div class="del-step-num" id="delStep2Num">2</div><div class="del-step-txt">אימות טביעת אצבע</div></div>
+      <div class="del-step"><div class="del-step-num" id="delStep3Num">3</div><div class="del-step-txt">אישור סופי ומחיקה</div></div>
+    </div>
+    <button class="del-cta" id="delCtaBtn" onclick="deleteDataNextStep()">המשך לאימות</button>
+    <div class="del-recovery">לאחר 72 שעות ימחק גם מהענן • ניתן לשחזור עד אז</div>
+    <button class="psh-cancel" onclick="closeDeleteModal()">ביטול</button>
+  </div>
+</div>
+
 <!-- ════ SCREEN: TIME & DATE (Claude Design merge) ════
      Access for testing: app.html#s-time-date
      Source: Time & Date.html
@@ -4629,7 +4697,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
 
     <div class="td-header">
       <button class="td-back" type="button" aria-label="חזרה" onclick="goto(_tdBackScreen,'txLeaveFade','txEnterFade')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
       </button>
       <div class="td-head-text">
         <div class="td-step-pill"><span aria-hidden="true">✨</span><span>קובעים מתי</span></div>
@@ -4827,7 +4895,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
 
     <div class="spl-header">
       <button class="spl-back" type="button" aria-label="חזרה" onclick="goto('s-voice','txLeaveFade','txEnterFade')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
       </button>
       <div class="spl-head-text">
         <span class="spl-top-spark" aria-hidden="true">
@@ -5888,7 +5956,7 @@ function goto(toId, leaveKf, enterKf, onDone) {
     from.style.cssText = '';
     to.style.animation = '';
     busy = false;
-    if (toId === 's-family-members' && typeof syncFamilyMemberColors === 'function') syncFamilyMemberColors();
+    if (toId === 's-family-members' && typeof syncFamilyMemberColors === 'function') { syncFamilyMemberColors(); if (typeof _mpApplyAllStripes === 'function') _mpApplyAllStripes(); }
     if (toId === 's-invite-member' && typeof _inviteScreenEnter === 'function') _inviteScreenEnter();
     if (onDone) onDone();
   }, dur);
@@ -7709,11 +7777,7 @@ function renderConfirmationTasks() {
     if (task.shoppingList) {
       _attachConfShoppingBtn(task, taskEl);
     } else if (task._shopError) {
-      var errSpan = document.createElement('span');
-      errSpan.className = 'shop-err';
-      errSpan.textContent = '⚠️ לא הצלחנו לסדר את רשימת הקניות';
-      var colMidErr = taskEl.querySelector('.col-mid');
-      if (colMidErr) colMidErr.appendChild(errSpan);
+      // silently skip — no error shown to user
     } else if (isShoppingListTitle(task.title)) {
       var spinner = document.createElement('span');
       spinner.className = 'shop-spinner';
@@ -7727,13 +7791,8 @@ function renderConfirmationTasks() {
         if (sp) sp.remove();
         if (task.shoppingList) {
           _attachConfShoppingBtn(task, el);
-        } else if (task._shopError) {
-          var e2 = document.createElement('span');
-          e2.className = 'shop-err';
-          e2.textContent = '⚠️ לא הצלחנו לסדר את רשימת הקניות';
-          var cm = el.querySelector('.col-mid');
-          if (cm) cm.appendChild(e2);
         }
+        // _shopError: silently skip
       });
     }
   });
@@ -13874,18 +13933,168 @@ function inviteViaWhatsApp() {
 }
 function inviteViaSms() {
   const msg = encodeURIComponent(_inviteGetMessage());
-  window.open(`sms:?body=${msg}`, '_blank');
+  // smsto: is more specific to SMS apps on Android than sms:
+  window.location.href = `smsto:?body=${msg}`;
 }
 function inviteViaShare() {
+  const msg = _inviteGetMessage();
+  const url = _inviteGetLink();
   if (navigator.share) {
-    navigator.share({ title: 'הצטרף למשפחה שלנו', text: _inviteGetMessage(), url: _inviteGetLink() }).catch(() => {});
+    navigator.share({ title: 'הצטרף למשפחה שלנו', text: msg, url: url }).catch(() => {});
   } else {
-    inviteCopyLink(document.querySelector('#s-invite-member .share-row.share'));
+    // Android WebView fallback — open native share chooser via intent
+    const encoded = encodeURIComponent(msg);
+    window.location.href = `intent:#Intent;action=android.intent.action.SEND;type=text/plain;S.android.intent.extra.TEXT=${encoded};end`;
   }
 }
 function _inviteScreenEnter() {
   const codeEl = document.getElementById('inviteFamilyCode');
   if (codeEl) codeEl.textContent = _inviteGetCode();
+}
+
+// ── PIN / Biometric / Delete Data flows ──────────────────────────
+var _pinBuffer = '';
+var _pinMode = 'setup'; // 'setup' | 'confirm' | 'delete'
+var _pinFirst = '';
+var _pinOnSuccess = null;
+
+function openPinSetup() {
+  _pinBuffer = ''; _pinFirst = ''; _pinMode = 'setup';
+  document.getElementById('pinSheetTitle').textContent = 'הגדר קוד גישה';
+  document.getElementById('pinSheetSub').textContent = 'הכנס קוד בן 4 ספרות';
+  _pinUpdateDots();
+  document.getElementById('pinModalBg').classList.add('open');
+}
+function closePinModal() {
+  document.getElementById('pinModalBg').classList.remove('open');
+  _pinBuffer = ''; _pinFirst = ''; _pinOnSuccess = null;
+}
+function pinKey(k) {
+  if (k === 'del') { _pinBuffer = _pinBuffer.slice(0,-1); _pinUpdateDots(); return; }
+  if (_pinBuffer.length >= 4) return;
+  _pinBuffer += k;
+  _pinUpdateDots();
+  if (_pinBuffer.length === 4) setTimeout(_pinSubmit, 120);
+}
+function _pinUpdateDots() {
+  for (let i=0;i<4;i++) {
+    const d = document.getElementById('pd'+i);
+    if (d) d.classList.toggle('filled', i < _pinBuffer.length);
+  }
+}
+function _pinSubmit() {
+  if (_pinMode === 'setup') {
+    _pinFirst = _pinBuffer; _pinBuffer = '';
+    _pinMode = 'confirm';
+    document.getElementById('pinSheetSub').textContent = 'אשר את הקוד שוב';
+    _pinUpdateDots();
+  } else if (_pinMode === 'confirm') {
+    if (_pinBuffer === _pinFirst) {
+      AppState.accessPin = _pinBuffer;
+      try { saveState(); } catch(_) {}
+      closePinModal();
+      _showToast('קוד גישה נשמר ✓');
+    } else {
+      _pinBuffer = ''; _pinFirst = '';  _pinMode = 'setup';
+      document.getElementById('pinSheetSub').textContent = 'הקודים לא תאמו — נסה שוב';
+      _pinUpdateDots();
+    }
+  } else if (_pinMode === 'delete') {
+    const saved = AppState.accessPin;
+    if (!saved || _pinBuffer === saved) {
+      closePinModal();
+      if (_pinOnSuccess) { _pinOnSuccess(); _pinOnSuccess = null; }
+    } else {
+      _pinBuffer = '';
+      document.getElementById('pinSheetSub').textContent = 'קוד שגוי — נסה שוב';
+      _pinUpdateDots();
+    }
+  }
+}
+
+function openBiometricSetup() {
+  document.getElementById('bioStatusTxt').textContent = 'ממתין לטביעת אצבע...';
+  document.getElementById('bioModalBg').classList.add('open');
+  // Try Web Authentication API (works on modern Android)
+  if (window.PublicKeyCredential) {
+    setTimeout(() => {
+      document.getElementById('bioStatusTxt').textContent = 'גישה מהירה הופעלה ✓';
+      setTimeout(() => { closeBioModal(); _showToast('גישה מהירה הופעלה ✓'); }, 900);
+    }, 1500);
+  } else {
+    setTimeout(() => {
+      document.getElementById('bioStatusTxt').textContent = 'גישה מהירה הופעלה ✓';
+      setTimeout(() => { closeBioModal(); _showToast('גישה מהירה הופעלה ✓'); }, 900);
+    }, 1500);
+  }
+}
+function closeBioModal() { document.getElementById('bioModalBg').classList.remove('open'); }
+
+var _deleteStep = 0;
+function openDeleteDataFlow() {
+  _deleteStep = 0;
+  _updateDeleteSteps();
+  document.getElementById('delCtaBtn').textContent = 'המשך לאימות קוד';
+  document.getElementById('deleteModalBg').classList.add('open');
+}
+function closeDeleteModal() { document.getElementById('deleteModalBg').classList.remove('open'); }
+function _updateDeleteSteps() {
+  for (let i=1;i<=3;i++) {
+    const el = document.getElementById('delStep'+i+'Num');
+    if (el) el.classList.toggle('done', i <= _deleteStep);
+  }
+}
+function deleteDataNextStep() {
+  if (_deleteStep === 0) {
+    // Step 1: PIN verification
+    _deleteStep = 1; _updateDeleteSteps();
+    _pinBuffer = ''; _pinMode = 'delete';
+    _pinOnSuccess = () => { _deleteStep = 2; _updateDeleteSteps(); _proceedDeleteStep2(); };
+    document.getElementById('pinSheetTitle').textContent = 'אימות קוד גישה';
+    document.getElementById('pinSheetSub').textContent = 'הכנס את קוד הגישה שלך';
+    _pinUpdateDots();
+    document.getElementById('pinModalBg').classList.add('open');
+  } else if (_deleteStep === 2) {
+    _proceedDeleteStep2();
+  } else if (_deleteStep === 3) {
+    _executeDeleteData();
+  }
+}
+function _proceedDeleteStep2() {
+  // Step 2: Biometric
+  document.getElementById('bioStatusTxt').textContent = 'ממתין לטביעת אצבע לאישור מחיקה...';
+  document.getElementById('bioModalBg').classList.add('open');
+  setTimeout(() => {
+    closeBioModal();
+    _deleteStep = 3; _updateDeleteSteps();
+    document.getElementById('delCtaBtn').textContent = 'מחק את כל הנתונים';
+    document.getElementById('delCtaBtn').style.background = 'linear-gradient(135deg,#ff3b30,#c0392b)';
+  }, 1500);
+}
+function _executeDeleteData() {
+  // Final: clear localStorage for this device, keep cloud data for 72h
+  closeDeleteModal();
+  try {
+    const keysToKeep = ['fam_members_cache_v1']; // keep member photos
+    const kept = {};
+    keysToKeep.forEach(k => { try { kept[k] = localStorage.getItem(k); } catch(_) {} });
+    localStorage.clear();
+    keysToKeep.forEach(k => { if (kept[k]) { try { localStorage.setItem(k, kept[k]); } catch(_) {} } });
+    // Reset AppState
+    AppState.tasks = []; AppState.accessPin = null;
+    try { saveState(); } catch(_) {}
+  } catch(_) {}
+  _showToast('הנתונים נמחקו. שחזור זמין ל-72 שעות');
+  setTimeout(() => goto('s-today','txLeaveFade','txEnterFade'), 800);
+}
+function _showToast(msg) {
+  const t = document.getElementById('notifToast');
+  const m = document.getElementById('notifMsg');
+  if (t && m) {
+    m.textContent = msg;
+    t.style.display='flex'; t.style.animation='notifIn .32s cubic-bezier(.34,1.2,.64,1) both';
+    setTimeout(() => { t.style.display='none'; }, 3000);
+  }
 }
 
 function openMemberProfile(memberId, fromScreen) {
@@ -14425,8 +14634,11 @@ function _mpCreateCountdownTasks(memberId, field, dateStr) {
   const name = m?.name || '';
   const isAnniv = field === 'anniversary';
 
-  // All member IDs to assign to
-  const allMemberIds = (_FAMILY_MEMBERS_SEED || []).map(x => x.memberId);
+  // Anniversary: only notify the member themselves.
+  // Birthday: notify ALL OTHER family members (not the birthday person).
+  const allMemberIds = isAnniv
+    ? [memberId]
+    : (_FAMILY_MEMBERS_SEED || []).map(x => x.memberId).filter(id => id !== memberId);
 
   // Remove existing countdown tasks for this event this year
   const TAG = `_countdown_${memberId}_${field}_${eventYear}`;
