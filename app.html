@@ -8977,7 +8977,9 @@ function renderToday() {
     el.dataset.recurring   = _showRecur ? 'true' : 'false';
     el.dataset.recur       = _showRecur ? _recType : 'none';
     el.dataset.recurrenceid = t.recurrenceId || '';
-    if (!t.visibleTo) t.visibleTo = _defaultVisibleToIds();
+    if (!t.visibleTo) t.visibleTo = _isCountdownTask(t)
+      ? (t.assignedTo ? [t.assignedTo, t.assignedToMemberId].filter(Boolean) : [])  // countdown: never default to everyone
+      : _defaultVisibleToIds();
     if (!t.notifyTo)  t.notifyTo  = [DataAdapter.isFamily() && t.assignedToMemberId ? t.assignedToMemberId : _taskLegacyAssigneeId(t)];
     if (t.reminderOffsetMinutes === undefined) t.reminderOffsetMinutes = 10;
     const realTForEdit = t.isRecurring ? (AppState.tasks.find(rt => rt.id === t.recurrenceId) || t) : t;
@@ -11242,6 +11244,7 @@ async function _daLoadTasksFromCloud() {
     // Rule 2: local-only tasks are never touched — loop above only adds/updates
 
     if (changed) {
+      try { _migrateCountdownVisibility(); } catch (_) {}
       saveState();
       renderToday();
       _capRescheduleAll().catch(() => {});
@@ -11338,6 +11341,7 @@ function _daStartListener() {
       if (removedIgnored > 0) console.log('[RT] removed ignored count=' + removedIgnored);
 
       if (mergedCount > 0) {
+        try { _migrateCountdownVisibility(); } catch (_) {}
         saveState();
         renderToday();
         _capRescheduleAll().catch(() => {});
@@ -12596,6 +12600,7 @@ async function _loadFamilyMembers() {
 // to hard-reload (or the SW will catch up on next visit).
 console.log('%c[Family App] build: rt-hero-portrait-diag-2026-05-14', 'background:#ff5e14;color:#fff;padding:3px 8px;border-radius:6px;font-weight:bold');
 loadState();
+try { _migrateCountdownVisibility(); } catch (e) { console.warn('countdown migration (init) failed', e); }
 loadAppearance();
 applyAppearance();
 renderAppearance();
@@ -14864,6 +14869,71 @@ function _mdpRender() {
   document.getElementById('mdpGrid').innerHTML = html;
 }
 
+// ── Countdown task identity + visibility migration ────────────────
+// A task is a birthday/anniversary countdown reminder ONLY if it carries
+// one of these unambiguous signals. Regular tasks never match — so the
+// migration below can never touch a normal task.
+function _isCountdownTask(t) {
+  if (!t) return false;
+  if (t._countdownTag) return true;
+  if (t.emoji === '💍' || t.emoji === '🎂') return true;
+  const ti = String(t.title || '');
+  return /^יום נישואין/.test(ti) || /^יום הולדת ל/.test(ti);
+}
+function _isAnnivCountdown(t) {
+  return t.emoji === '💍'
+    || /^יום נישואין/.test(String(t.title || ''))
+    || /anniversary/.test(String(t._countdownTag || ''));
+}
+// visibleTo ids (legacy + member) for every parent in the family.
+function _parentVisibleIds() {
+  const ids = [];
+  (_FAMILY_MEMBERS_SEED || []).filter(m => m.role === 'parent').forEach(m => {
+    ids.push(m.memberId);
+    const leg = _legacyIdForMemberId(m.memberId);
+    if (leg) ids.push(leg);
+  });
+  return ids;
+}
+// One-time, idempotent cleanup of legacy countdown reminders that were
+// stored with a too-broad visibleTo (so e.g. a child wrongly saw the
+// parents' anniversary). Anniversary → both parents only; birthday →
+// its single recipient. Exact duplicates are collapsed. Regular tasks
+// are never touched (guarded by _isCountdownTask).
+function _migrateCountdownVisibility() {
+  if (!Array.isArray(AppState.tasks)) return;
+  let changed = false;
+  const parents = _parentVisibleIds();
+  const seen = new Set();
+  const kept = [];
+  for (const t of AppState.tasks) {
+    if (!_isCountdownTask(t)) { kept.push(t); continue; }
+    const anniv    = _isAnnivCountdown(t);
+    const ownerKey = anniv ? 'anniv' : (t.assignedToMemberId || t.assignedTo || '?');
+    const key      = `${t.title}|${t.date}|${ownerKey}`;
+    if (seen.has(key)) { changed = true; continue; }   // drop duplicate copy
+    seen.add(key);
+    const cur = Array.isArray(t.visibleTo) ? t.visibleTo.slice() : [];
+    if (anniv) {
+      const want = parents.slice();
+      if (cur.slice().sort().join(',') !== want.slice().sort().join(',')) {
+        t.visibleTo = want; t.viewOnly = true; t.noNotification = true; changed = true;
+      }
+    } else {
+      const owner    = t.assignedToMemberId;
+      const ownerLeg = t.assignedTo || _legacyIdForMemberId(owner);
+      if (owner || ownerLeg) {
+        const want = [ownerLeg, owner].filter(Boolean);
+        if (cur.length !== want.length || cur.slice().sort().join(',') !== want.slice().sort().join(',')) {
+          t.visibleTo = want; t.viewOnly = true; t.noNotification = true; changed = true;
+        }
+      }
+    }
+    kept.push(t);
+  }
+  if (changed) { AppState.tasks = kept; try { saveState(); } catch (_) {} }
+}
+
 // ── Countdown tasks for birthday / anniversary ───────────────────
 function _mpCreateCountdownTasks(memberId, field, dateStr) {
   if (!dateStr || !/^\d{2}\.\d{2}\.\d{4}$/.test(dateStr)) return;
@@ -14883,17 +14953,20 @@ function _mpCreateCountdownTasks(memberId, field, dateStr) {
   const name = m?.name || '';
   const isAnniv = field === 'anniversary';
 
-  // Anniversary: only notify the member themselves.
-  // Birthday: notify ALL OTHER family members (not the birthday person).
-  const allMemberIds = isAnniv
-    ? [memberId]
-    : (_FAMILY_MEMBERS_SEED || []).map(x => x.memberId).filter(id => id !== memberId);
+  // Anniversary: one SHARED reminder for both parents only (each parent sees
+  //   it once; children never see it).
+  // Birthday: one personal copy per OTHER family member (not the birthday person).
+  const birthdayRecipients = (_FAMILY_MEMBERS_SEED || [])
+    .map(x => x.memberId).filter(id => id !== memberId);
+
+  const _cdCreatedBy   = (typeof DataAdapter !== 'undefined' && DataAdapter.userId)     || null;
+  const _cdCreatedByM  = (typeof DataAdapter !== 'undefined' && DataAdapter.myMemberId) || null;
 
   // Remove existing countdown tasks for this event this year
   const TAG = `_countdown_${memberId}_${field}_${eventYear}`;
   AppState.tasks = (AppState.tasks || []).filter(t => t._countdownTag !== TAG);
 
-  // Create 7 tasks (days T-7 to T-1) — only future ones
+  // Create 7 reminders (days T-7 to T-1) — only future ones
   for (let daysLeft = 7; daysLeft >= 1; daysLeft--) {
     const taskDate = new Date(eventDate);
     taskDate.setDate(taskDate.getDate() - daysLeft);
@@ -14903,25 +14976,28 @@ function _mpCreateCountdownTasks(memberId, field, dateStr) {
     const prefix = isAnniv ? `יום נישואין לאבא ואמא ${label}` : `יום הולדת ל${name} ${label}`;
     const ymd = `${taskDate.getFullYear()}-${String(taskDate.getMonth()+1).padStart(2,'0')}-${String(taskDate.getDate()).padStart(2,'0')}`;
 
-    allMemberIds.forEach(mid => {
-      const legId = _legacyIdForMemberId(mid) || mid;
-      // visibleTo only this member — so each person sees only their own reminder
+    if (isAnniv) {
       AppState.tasks.push({
-        id: `_cd_${TAG}_${daysLeft}_${mid}_${Date.now()}_${Math.random().toString(36).slice(2)}`,
-        title: prefix,
-        emoji: isAnniv ? '💍' : '🎂',
-        date: ymd,
-        mins: null,
-        completed: false,
-        assignedTo: legId,
-        assignedToMemberId: mid,
-        visibleTo: [legId, mid],
-        viewOnly: true,
-        noNotification: true,
-        _countdownTag: TAG,
-        recurrence: { type:'none' }
+        id: `_cd_${TAG}_${daysLeft}_anniv_${Date.now()}_${Math.random().toString(36).slice(2)}`,
+        title: prefix, emoji: '💍', date: ymd, mins: null, completed: false,
+        assignedTo: null, assignedToMemberId: null,
+        createdBy: _cdCreatedBy, createdByMemberId: _cdCreatedByM,
+        visibleTo: _parentVisibleIds(),     // both parents only
+        viewOnly: true, noNotification: true, _countdownTag: TAG, recurrence: { type:'none' }
       });
-    });
+    } else {
+      birthdayRecipients.forEach(mid => {
+        const legId = _legacyIdForMemberId(mid) || mid;
+        AppState.tasks.push({
+          id: `_cd_${TAG}_${daysLeft}_${mid}_${Date.now()}_${Math.random().toString(36).slice(2)}`,
+          title: prefix, emoji: '🎂', date: ymd, mins: null, completed: false,
+          assignedTo: legId, assignedToMemberId: mid,
+          createdBy: _cdCreatedBy, createdByMemberId: _cdCreatedByM,
+          visibleTo: [legId, mid],          // only this recipient
+          viewOnly: true, noNotification: true, _countdownTag: TAG, recurrence: { type:'none' }
+        });
+      });
+    }
   }
   saveState();
 }
