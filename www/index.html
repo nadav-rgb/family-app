@@ -2102,11 +2102,26 @@ body.text-small .phone{font-size:13px}
 body.text-large .phone{font-size:17px}
 
 /* ════ User review fixes (batch) ════ */
-/* 1. Bottom-nav buttons styled as the home-screen floating icon cards (hm-cal/hm-bell) */
-.bottom-nav{justify-content:center!important;gap:16px!important;}
-.bottom-nav .nav-item{flex:0 0 auto!important;width:40px!important;height:40px!important;border-radius:11px!important;background:#fff!important;box-shadow:0 4px 16px rgba(160,90,30,0.08)!important;border:1px solid rgba(255,255,255,0.6)!important;gap:0!important;padding:0!important;}
-.bottom-nav .nav-item svg{width:19px!important;height:19px!important;}
-.bottom-nav .nav-item span{display:none!important;}
+/* 1. Bottom nav = the home-screen floating pill (t-nav), with labels, no + */
+.bottom-wrap{pointer-events:none!important;background:none!important;border:none!important;box-shadow:none!important;}
+.bottom-nav{
+  position:absolute!important;left:12px!important;right:12px!important;bottom:16px!important;
+  height:68px!important;padding:0 14px!important;gap:0!important;
+  background:#fffcf9!important;border:none!important;border-top:none!important;border-radius:26px!important;
+  box-shadow:0 16px 36px -14px rgba(140,80,20,.2),0 4px 12px -6px rgba(140,80,20,.1),inset 0 1px 0 rgba(255,255,255,.95)!important;
+  display:flex!important;align-items:center!important;justify-content:space-around!important;
+  backdrop-filter:none!important;-webkit-backdrop-filter:none!important;pointer-events:auto!important;
+}
+.bottom-nav .nav-item{
+  flex:1 1 0!important;width:auto!important;height:auto!important;
+  background:none!important;border:none!important;box-shadow:none!important;border-radius:0!important;
+  display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:3px!important;
+  color:#c4ae9f!important;font-size:10.5px!important;font-weight:600!important;padding:0!important;
+}
+.bottom-nav .nav-item span{display:block!important;}
+.bottom-nav .nav-item .underline{display:none!important;}
+.bottom-nav .nav-item.active{color:#e07c3a!important;}
+.bottom-nav .nav-item svg{width:22px!important;height:22px!important;}
 /* 2. PIN keypad must read left-to-right (1 2 3 / 4 5 6 …) even in RTL */
 .pin-keypad{direction:ltr;}
 /* 5. PIN/Bio sheets must stack ABOVE the delete-data modal */
@@ -2115,6 +2130,11 @@ body.text-large .phone{font-size:17px}
 .back-btn,.td-back,.back{width:36px!important;height:36px!important;border-radius:50%!important;background:var(--card-bg,#fff)!important;border:1px solid rgba(255,255,255,0.7)!important;box-shadow:var(--card-shadow,0 2px 8px rgba(160,90,30,.08))!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;padding:0!important;gap:0!important;color:var(--ink,#1A0F08)!important;}
 .back-btn svg,.td-back svg,.back svg{width:18px!important;height:18px!important;}
 .back-btn span{display:none!important;}
+/* Recovery banner after factory reset */
+#s-today .recovery-banner{position:absolute;left:12px;right:12px;top:64px;z-index:40;background:linear-gradient(135deg,#fff3e9,#ffe6d3);border:1px solid rgba(224,124,58,.3);border-radius:18px;padding:13px 15px;display:flex;flex-direction:column;gap:9px;box-shadow:0 8px 22px rgba(160,90,30,.14);}
+#s-today .recovery-banner .rb-txt{font-size:12.5px;font-weight:700;color:#9e5a2a;line-height:1.4;text-align:center;}
+#s-today .recovery-banner .rb-btn{border:none;border-radius:12px;padding:11px;background:linear-gradient(135deg,#ff8a4c,#e07c3a);color:#fff;font-family:'Nunito',sans-serif;font-weight:900;font-size:14px;cursor:pointer;box-shadow:0 5px 14px rgba(224,124,58,.32);}
+#s-today .recovery-banner .rb-btn:active{transform:scale(.98);}
 /* 5b. Calendar "go to selected date" button */
 .cal-go-btn{display:none;width:100%;margin-top:16px;padding:13px;border:none;border-radius:14px;background:linear-gradient(135deg,#ff8a4c,#e07c3a);color:#fff;font-family:'Nunito',sans-serif;font-weight:900;font-size:15px;cursor:pointer;box-shadow:0 6px 18px rgba(224,124,58,.34);}
 .cal-go-btn:active{transform:scale(.98);}
@@ -4079,16 +4099,16 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
 
     <!-- Header -->
     <div class="header">
-      <div class="head-icon" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><rect x="10" y="11" width="4" height="5" rx="1"/><path d="M11 11V9.5a1 1 0 1 1 2 0V11"/></svg>
-      </div>
+      <button class="back" type="button" aria-label="חזרה" onclick="goto('s-settings','txLeaveFade','txEnterFade')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+      </button>
       <div class="head-title">
         <h1 class="title">פרטיות ואבטחה</h1>
         <p class="subtitle">המידע שלכם פרטי ובטוח</p>
       </div>
-      <button class="back" type="button" aria-label="חזרה" onclick="goto('s-settings','txLeaveFade','txEnterFade')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-      </button>
+      <div class="head-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><rect x="10" y="11" width="4" height="5" rx="1"/><path d="M11 11V9.5a1 1 0 1 1 2 0V11"/></svg>
+      </div>
     </div>
 
     <!-- Hero -->
@@ -4246,7 +4266,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
   <div class="scroll">
     <div class="header">
       <button class="back" type="button" aria-label="חזרה" onclick="goto('s-settings','txLeaveFade','txEnterFade')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
       </button>
       <div class="head-title">
         <h1 class="title">מראה האפליקציה</h1>
@@ -4727,7 +4747,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
     <div class="psh-title" style="color:#C0392B">מחיקת נתוני אפליקציה</div>
     <div class="del-warning">
       <div class="del-w-title">⚠️ פעולה בלתי הפיכה</div>
-      <div class="del-w-body">כל המשימות, ההגדרות והנתונים יימחקו ממכשיר זה בלבד. במכשירים אחרים הכל ממשיך כרגיל. תקופת שחזור של 72 שעות תינתן לפני מחיקה מהענן.</div>
+      <div class="del-w-body">כל המשימות וההגדרות יימחקו והאפליקציה תאופס במכשיר זה. במכשירים אחרים הכל ממשיך כרגיל. ניתן לשחזר את הנתונים מהענן תוך 72 שעות באמצעות כפתור השחזור.</div>
     </div>
     <div class="del-steps">
       <div class="del-step"><div class="del-step-num" id="delStep1Num">1</div><div class="del-step-txt">אימות קוד גישה</div></div>
@@ -12616,10 +12636,13 @@ _applyLang();
 _capInit().then(() => _capRescheduleAll()).catch(() => {});
 if (DataAdapter.isFamily()) {
   _loadFamilyMembersCache();
-  _daStartListener();
+  // While in the 72h post-reset recovery window, do NOT auto-sync — the wipe
+  // must persist until the user explicitly restores from the cloud.
+  if (!_recoveryActive()) _daStartListener();
   _bootstrapFamilyMembers();
   _checkDeviceSetup();
 }
+try { _updateRecoveryBanner(); } catch (e) { console.warn('recovery banner failed', e); }
 if (activeTasks().length > 0) {
   renderToday();
   document.getElementById('s-voice').classList.remove('active');
@@ -14215,6 +14238,30 @@ function closeBioModal() {
 // Resolves true on a successful user-verification, false if cancelled/failed,
 // and 'unsupported' when WebAuthn is unavailable on this platform.
 async function _triggerPlatformBiometric() {
+  // Native Android/iOS: real BiometricPrompt (fingerprint / face) via plugin.
+  const Cap = window.Capacitor;
+  const BA  = Cap && Cap.Plugins && Cap.Plugins.BiometricAuth;
+  if (BA && typeof Cap.isNativePlatform === 'function' && Cap.isNativePlatform()) {
+    try {
+      await BA.authenticate({
+        reason: 'אימות זהות',
+        androidTitle: 'אימות ביומטרי',
+        androidSubtitle: 'אמת באמצעות טביעת אצבע או זיהוי פנים',
+        androidConfirmationRequired: false,
+        allowDeviceCredential: true,   // fall back to device PIN/pattern if no biometric
+        cancelTitle: 'ביטול',
+      });
+      return true;
+    } catch (err) {
+      // biometryNotAvailable / biometryNotEnrolled → let caller proceed gracefully
+      const code = (err && err.code) || '';
+      if (code === 'biometryNotAvailable' || code === 'biometryNotEnrolled' || code === 'noDeviceCredential') {
+        return 'unsupported';
+      }
+      return false; // userCancel / authenticationFailed
+    }
+  }
+  // Web (Vercel browser): WebAuthn platform authenticator.
   if (!window.PublicKeyCredential || !navigator.credentials || !navigator.credentials.create) {
     return 'unsupported';
   }
@@ -14231,7 +14278,6 @@ async function _triggerPlatformBiometric() {
     }});
     return true;
   } catch (err) {
-    // NotAllowedError = user cancelled / no enrolled biometric matched.
     if (err && (err.name === 'NotSupportedError' || err.name === 'SecurityError')) return 'unsupported';
     return false;
   }
@@ -14326,20 +14372,66 @@ function _proceedDeleteStep2() {
   document.getElementById('bioModalBg').classList.add('open');
 }
 function _executeDeleteData() {
-  // Final: clear localStorage for this device, keep cloud data for 72h
+  // Factory reset of THIS device. Tasks/settings are wiped locally, but the
+  // family connection is retained for 72h so the cloud copy can be restored.
   closeDeleteModal();
+  // Stop the realtime listener so the cloud copy doesn't immediately re-sync
+  // the data back onto this freshly-wiped device.
+  try { if (typeof _rtUnsubscribe === 'function') { _rtUnsubscribe(); _rtUnsubscribe = null; } } catch(_) {}
   try {
-    const keysToKeep = ['fam_members_cache_v1']; // keep member photos
+    // Retain: member photos + the family session (so restore can re-pull).
+    const keep = ['fam_members_cache_v1',
+      'family-app-da-mode','family-app-da-family-id','family-app-da-user-id',
+      'family-app-my-member-id','family-app-lang'];
     const kept = {};
-    keysToKeep.forEach(k => { try { kept[k] = localStorage.getItem(k); } catch(_) {} });
+    keep.forEach(k => { try { const v = localStorage.getItem(k); if (v != null) kept[k] = v; } catch(_) {} });
     localStorage.clear();
-    keysToKeep.forEach(k => { if (kept[k]) { try { localStorage.setItem(k, kept[k]); } catch(_) {} } });
-    // Reset AppState
-    AppState.tasks = []; AppState.accessPin = null;
+    Object.keys(kept).forEach(k => { try { localStorage.setItem(k, kept[k]); } catch(_) {} });
+    localStorage.setItem('family-app-deleted-at', String(Date.now()));
+    // Reset in-memory state (factory defaults)
+    AppState.tasks = []; AppState.previewTasks = [];
+    AppState.recurringCompletions = {}; AppState.recurringExclusions = {};
+    AppState.accessPin = null;
     try { saveState(); } catch(_) {}
   } catch(_) {}
-  _showToast('הנתונים נמחקו. שחזור זמין ל-72 שעות');
-  setTimeout(() => goto('s-today','txLeaveFade','txEnterFade'), 800);
+  _showToast('הנתונים נמחקו ואופסו · שחזור זמין 72 שעות');
+  try { renderToday(); } catch(_) {}
+  try { _updateRecoveryBanner(); } catch(_) {}
+  setTimeout(() => goto('s-today','txLeaveFade','txEnterFade'), 700);
+}
+
+// ── 72h cloud recovery after a factory reset ─────────────────────
+function _recoveryDeletedAt() { const v = +(localStorage.getItem('family-app-deleted-at') || 0); return v > 0 ? v : 0; }
+function _recoveryActive()    { const t = _recoveryDeletedAt(); return t > 0 && (Date.now() - t) < 72*3600*1000; }
+function _updateRecoveryBanner() {
+  const host = document.getElementById('s-today');
+  if (!host) return;
+  let b = document.getElementById('recoveryBanner');
+  if (_recoveryActive()) {
+    if (!b) { b = document.createElement('div'); b.id = 'recoveryBanner'; b.className = 'recovery-banner'; host.appendChild(b); }
+    const hoursLeft = Math.max(0, Math.ceil((72*3600*1000 - (Date.now() - _recoveryDeletedAt())) / 3600000));
+    b.innerHTML = `<div class="rb-txt">הנתונים נמחקו ואופסו · ניתן לשחזר מהענן עוד ${hoursLeft} שעות</div>
+      <button class="rb-btn" type="button" onclick="_restoreFromCloud()">שחזר נתונים מהענן</button>`;
+    b.style.display = '';
+  } else if (b) {
+    b.style.display = 'none';
+    if (_recoveryDeletedAt() && !_recoveryActive()) { try { localStorage.removeItem('family-app-deleted-at'); } catch(_) {} }
+  }
+}
+async function _restoreFromCloud() {
+  _showToast('משחזר נתונים מהענן…');
+  try {
+    if (typeof _daLoadTasksFromCloud === 'function') await _daLoadTasksFromCloud();
+    try { localStorage.removeItem('family-app-deleted-at'); } catch(_) {}
+    // Resume realtime sync.
+    if (DataAdapter.isFamily() && typeof _daStartListener === 'function') _daStartListener();
+    try { saveState(); } catch(_) {}
+    renderToday();
+    _updateRecoveryBanner();
+    _showToast('הנתונים שוחזרו ✓');
+  } catch (e) {
+    _showToast('שחזור נכשל — נסה שוב');
+  }
 }
 function _showToast(msg) {
   const t = document.getElementById('notifToast');
