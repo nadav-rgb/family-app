@@ -2154,16 +2154,19 @@ body.text-large .phone{font-size:17px}
 .bio-opt .bio-opt-s{font-size:11.5px;color:#9E8878;margin-top:2px;}
 /* 6. Hebrew sub-line inside the home calendar cells */
 .cal-day .cal-heb{font-size:8px;font-weight:700;line-height:1;margin-top:1px;color:#b89a86;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.cal-day.cal-hol .cal-heb{color:#E63946;white-space:normal;overflow:visible;font-size:6.8px;line-height:1.05;max-width:96%;text-align:center;}
-.cal-day.selected .cal-heb{color:rgba(255,255,255,.82)!important;}
+.cal-day .cal-hol-name{font-size:6px;font-weight:800;line-height:1.02;color:#E63946;white-space:normal;text-align:center;max-width:98%;margin-top:0.5px;}
+.cal-day.cal-hol .cal-heb{font-size:7px;}
+.cal-day.selected .cal-heb,.cal-day.selected .cal-hol-name{color:rgba(255,255,255,.85)!important;}
 .cal-heb-header{text-align:center;font-size:11px;font-weight:800;color:#c47a3a;margin:-8px 0 12px;letter-spacing:.2px;}
 
 /* ════════════════════════════════════════════════════════════���═══════
    MODALS — PIN / BIOMETRIC / DELETE DATA
 ════════════════════════════════════════════════════════════════════ */
-#pinModalBg,#bioModalBg,#deleteModalBg{position:fixed;inset:0;z-index:900;background:rgba(0,0,0,.48);display:none;align-items:flex-end;}
-#pinModalBg.open,#bioModalBg.open,#deleteModalBg.open{display:flex;}
-#pinSheet,#bioSheet,#deleteSheet{background:#fffaf5;border-radius:28px 28px 0 0;width:100%;padding:0 0 36px;animation:sheetUp .28s cubic-bezier(.34,1.2,.64,1) both;}
+#pinModalBg,#bioModalBg,#deleteModalBg,#calTypeModalBg{position:fixed;inset:0;z-index:900;background:rgba(0,0,0,.48);display:none;align-items:flex-end;}
+#pinModalBg.open,#bioModalBg.open,#deleteModalBg.open,#calTypeModalBg.open{display:flex;}
+#calTypeModalBg{z-index:965;}
+#pinSheet,#bioSheet,#deleteSheet,#calTypeSheet{background:#fffaf5;border-radius:28px 28px 0 0;width:100%;padding:0 0 36px;animation:sheetUp .28s cubic-bezier(.34,1.2,.64,1) both;}
+.bio-opt .bio-opt-ic{font-size:24px;}
 @keyframes sheetUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
 .psh-pill{width:38px;height:4px;border-radius:2px;background:#d4bfb0;margin:14px auto 20px;}
 .psh-title{text-align:center;font-size:18px;font-weight:800;color:#1A0F08;margin-bottom:6px;}
@@ -4757,6 +4760,32 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
     <button class="del-cta" id="delCtaBtn" onclick="deleteDataNextStep()">המשך לאימות</button>
     <div class="del-recovery">לאחר 72 שעות ימחק גם מהענן • ניתן לשחזור עד אז</div>
     <button class="psh-cancel" onclick="closeDeleteModal()">ביטול</button>
+  </div>
+</div>
+
+<!-- ════ YEARLY REMINDER CALENDAR CHOICE ════ -->
+<div id="calTypeModalBg">
+  <div id="calTypeSheet">
+    <div class="psh-pill"></div>
+    <div class="psh-title">תזכורת שנתית</div>
+    <div class="psh-sub" id="calTypeSub">באיזה לוח שנה להזכיר בכל שנה?</div>
+    <div class="bio-opts">
+      <div class="bio-opt" onclick="chooseYearlyCal('hebrew')">
+        <div class="bio-opt-ic">🕎</div>
+        <div>
+          <div class="bio-opt-t">לפי התאריך העברי</div>
+          <div class="bio-opt-s" id="calTypeHebPreview">יחזור על אותו תאריך עברי בכל שנה</div>
+        </div>
+      </div>
+      <div class="bio-opt" onclick="chooseYearlyCal('gregorian')">
+        <div class="bio-opt-ic">📅</div>
+        <div>
+          <div class="bio-opt-t">לפי התאריך הלועזי</div>
+          <div class="bio-opt-s" id="calTypeGregPreview">יחזור על אותו תאריך לועזי בכל שנה</div>
+        </div>
+      </div>
+    </div>
+    <button class="psh-cancel" onclick="closeCalTypeModal()">ביטול</button>
   </div>
 </div>
 
@@ -9909,16 +9938,18 @@ function renderCalGrid() {
   const addDay = (num, dateStr, other) => {
     const el = document.createElement('div');
     el.className = 'cal-day';
-    // Hebrew sub-line (day letters or holiday)
-    let hebSub = '';
+    // Hebrew date (always) + holiday name (on holidays)
+    let hebDay = '', holName = '';
     try {
       const [gy, gm, gd] = dateStr.split('-').map(Number);
       const hd  = _jdnToH(_gToJdn(gy, gm, gd));
+      hebDay = hd.d === 1 ? `א׳ ${_hMonthName(hd.y, hd.m).slice(0,3)}` : _hDayLetters(hd.d);
       const hol = _H_HOLIDAYS[`${hd.m}-${hd.d}`];
-      if (hol) { hebSub = hol.n; el.classList.add('cal-hol'); el.title = `${hol.e} ${hol.n}`; }
-      else     { hebSub = hd.d === 1 ? `א׳ ${_hMonthName(hd.y, hd.m).slice(0,3)}` : _hDayLetters(hd.d); }
+      if (hol) { holName = hol.n; el.classList.add('cal-hol'); el.title = `${hol.e} ${hol.n}`; }
     } catch (_) {}
-    el.innerHTML = `<span>${num}</span>${hebSub ? `<span class="cal-heb">${hebSub}</span>` : ''}`;
+    el.innerHTML = `<span>${num}</span>`
+      + (hebDay  ? `<span class="cal-heb">${hebDay}</span>` : '')
+      + (holName ? `<span class="cal-hol-name">${holName}</span>` : '');
     if (other)              el.classList.add('other-month');
     if (dateStr === today)  el.classList.add('is-today');
     if (dateStr === (_calSelDate || activeDate)) el.classList.add('selected');
@@ -14326,7 +14357,7 @@ async function bioAuthenticate(method) {
 document.addEventListener('click', function (e) {
   const tgt = e.target;
   if (!tgt || !tgt.id || !tgt.classList || !tgt.classList.contains('open')) return;
-  const OVERLAYS = ['pinModalBg','bioModalBg','deleteModalBg','calBg','bellBg','styleBg','uswBg','shareBg','mpDatePickerBg'];
+  const OVERLAYS = ['pinModalBg','bioModalBg','deleteModalBg','calTypeModalBg','calBg','bellBg','styleBg','uswBg','shareBg','mpDatePickerBg'];
   if (OVERLAYS.indexOf(tgt.id) === -1) return;
   if (tgt.id === 'bioModalBg')       { closeBioModal(); return; }
   if (tgt.id === 'mpDatePickerBg' && typeof closeMpDatePicker === 'function') { closeMpDatePicker(); return; }
@@ -14900,10 +14931,10 @@ function openMpDatePicker(field) {
     if (_mdpSel) {
       const str = `${String(_mdpSel.d).padStart(2,'0')}.${String(_mdpSel.m).padStart(2,'0')}.${_mdpSel.y}`;
       _mpSaveField(_mpCurrentId, { [_mdpField]: str });
-      _mpCreateCountdownTasks(_mpCurrentId, _mdpField, str);
       closeMpDatePicker();
-      _renderMemberProfile();
-      setTimeout(renderToday, 100);
+      // Ask which calendar the yearly reminder should follow, THEN build the
+      // countdown tasks (the choice changes how the next occurrence is found).
+      openYearlyCalChoice(_mpCurrentId, _mdpField, str);
     } else { closeMpDatePicker(); }
   };
   document.getElementById('mpDatePickerBg').classList.add('open');
@@ -14911,6 +14942,33 @@ function openMpDatePicker(field) {
 function closeMpDatePicker() {
   document.getElementById('mpDatePickerBg').classList.remove('open');
 }
+
+// ── Yearly reminder: Hebrew vs Gregorian calendar choice ──────────
+var _yclPending = null; // { memberId, field, dateStr }
+function openYearlyCalChoice(memberId, field, dateStr) {
+  _yclPending = { memberId, field, dateStr };
+  try {
+    const p  = dateStr.split('.');
+    const he = _jdnToH(_gToJdn(+p[2], +p[1], +p[0]));
+    const hp = document.getElementById('calTypeHebPreview');
+    const gp = document.getElementById('calTypeGregPreview');
+    if (hp) hp.textContent = `כל שנה ב־${_hDayLetters(he.d)} ${_hMonthName(he.y, he.m)} (תזכורת שבוע לפני)`;
+    if (gp) gp.textContent = `כל שנה ב־${p[0]}.${p[1]} (תזכורת שבוע לפני)`;
+  } catch (_) {}
+  document.getElementById('calTypeModalBg').classList.add('open');
+}
+function _yclApply(type) {
+  const pend = _yclPending; _yclPending = null;
+  document.getElementById('calTypeModalBg').classList.remove('open');
+  if (!pend) return;
+  _mpSaveField(pend.memberId, { [pend.field + 'Cal']: type });
+  _mpCreateCountdownTasks(pend.memberId, pend.field, pend.dateStr, type);
+  if (typeof _renderMemberProfile === 'function') _renderMemberProfile();
+  setTimeout(renderToday, 100);
+}
+function chooseYearlyCal(type)  { _yclApply(type === 'hebrew' ? 'hebrew' : 'gregorian'); }
+function closeCalTypeModal()    { _yclApply('gregorian'); }   // cancel → default civil date
+
 function mdpPrev() { _mdpMonth--; if(_mdpMonth<1){_mdpMonth=12;_mdpYear--;} _mdpRender(); }
 function mdpNext() { _mdpMonth++; if(_mdpMonth>12){_mdpMonth=1;_mdpYear++;} _mdpRender(); }
 function mdpSelect(gY,gM,gD) { _mdpSel={d:gD,m:gM,y:gY}; _mdpRender(); }
@@ -15027,16 +15085,34 @@ function _migrateCountdownVisibility() {
 }
 
 // ── Countdown tasks for birthday / anniversary ───────────────────
-function _mpCreateCountdownTasks(memberId, field, dateStr) {
+function _mpCreateCountdownTasks(memberId, field, dateStr, calTypeOverride) {
   if (!dateStr || !/^\d{2}\.\d{2}\.\d{4}$/.test(dateStr)) return;
   const parts = dateStr.split('.');
-  const eventDay = +parts[0], eventMonth = +parts[1];
+  const eventDay = +parts[0], eventMonth = +parts[1], eventYr0 = +parts[2];
   const today = new Date(); today.setHours(0,0,0,0);
 
-  // Find next occurrence of the event (this year or next)
-  let eventYear = today.getFullYear();
-  let eventDate = new Date(eventYear, eventMonth-1, eventDay);
-  if (eventDate < today) { eventYear++; eventDate = new Date(eventYear, eventMonth-1, eventDay); }
+  // Recurrence calendar: 'hebrew' anchors the yearly reminder to the Hebrew
+  // date; 'gregorian' (default) to the civil date.
+  const calType = calTypeOverride || ((_mpGetMember(memberId) || {})[field + 'Cal']) || 'gregorian';
+
+  // Find the next occurrence (this cycle or next).
+  let eventDate;
+  if (calType === 'hebrew') {
+    const he   = _jdnToH(_gToJdn(eventYr0, eventMonth, eventDay)); // Hebrew m/d of the event
+    const todH = _jdnToH(_gToJdn(today.getFullYear(), today.getMonth()+1, today.getDate()));
+    const occ = (hy) => {
+      const dim = _hDaysInMonth(hy, he.m);
+      const g = _jdnToG(_hToJdn(hy, he.m, Math.min(he.d, dim))); // clamp 30→29 where needed
+      return new Date(g.y, g.m-1, g.d);
+    };
+    eventDate = occ(todH.y);
+    if (eventDate < today) eventDate = occ(todH.y + 1);
+  } else {
+    let ey = today.getFullYear();
+    eventDate = new Date(ey, eventMonth-1, eventDay);
+    if (eventDate < today) eventDate = new Date(ey+1, eventMonth-1, eventDay);
+  }
+  const eventYear = eventDate.getFullYear();
 
   const diffDays = Math.round((eventDate - today) / 86400000);
   if (diffDays > 60) return; // too far away, skip
