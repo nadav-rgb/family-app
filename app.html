@@ -3302,7 +3302,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
 
     <!-- Members selector -->
     <div class="members-card" id="settingsMembers">
-      <div class="member active" data-id="aba">
+      <div class="member" data-id="aba">
         <div class="ava-circle av-aba" data-avatar-for="member_dad" data-avatar-size="56">
           <div data-avatar-slot style="position:absolute;inset:0;border-radius:inherit;overflow:hidden;"></div>
           <span class="badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg></span>
@@ -4550,7 +4550,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
       </div>
 
       <div class="vis-avatars-row" id="visSeeRow">
-        <button class="vis-ava-frame orange active" data-id="aba" type="button">
+        <button class="vis-ava-frame orange" data-id="aba" type="button">
           <div class="vis-ava-circle av-aba" data-avatar-for="member_dad" data-avatar-size="48" style="position:relative;overflow:hidden;"><div data-avatar-slot style="position:absolute;inset:0;border-radius:inherit;"></div></div>
           <span class="vis-badge orange"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg></span>
           <div class="vis-ava-name">אבא</div>
@@ -4604,7 +4604,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
       </div>
 
       <div class="vis-avatars-row" id="visNotifyRow">
-        <button class="vis-ava-frame orange active" data-id="aba" type="button">
+        <button class="vis-ava-frame orange" data-id="aba" type="button">
           <div class="vis-ava-circle av-aba" data-avatar-for="member_dad" data-avatar-size="48" style="position:relative;overflow:hidden;"><div data-avatar-slot style="position:absolute;inset:0;border-radius:inherit;"></div></div>
           <span class="vis-badge orange"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg></span>
           <div class="vis-ava-name">אבא</div>
@@ -5773,6 +5773,19 @@ function _defaultVisibleToIds() {
   return (DataAdapter.isFamily() ? _FAMILY_MEMBERS_SEED.map(m => m.memberId) : ALL_MEMBER_IDS)
     .filter(v => v !== undefined && v !== null && v !== '');
 }
+// Highlight the Settings "this device is …" card member that matches this
+// device's identity (DataAdapter.myMemberId). Matches on each member's
+// data-avatar-for (member_dad/mom/laali/aharon) so it is independent of the
+// card's data-id scheme. If no identity is set, nothing is highlighted.
+function _syncSettingsDeviceMember() {
+  const card = document.getElementById('settingsMembers');
+  if (!card) return;
+  const myId = DataAdapter.myMemberId;
+  card.querySelectorAll('.member').forEach(el => {
+    const memId = el.querySelector('[data-avatar-for]')?.getAttribute('data-avatar-for') || null;
+    el.classList.toggle('active', !!myId && memId === myId);
+  });
+}
 function _requireDeviceMemberForTaskCreation() {
   if (!DataAdapter.isFamily() || DataAdapter.myMemberId) return true;
   console.warn('[Identity] Cannot create task before selecting this device member');
@@ -6105,6 +6118,7 @@ function goto(toId, leaveKf, enterKf, onDone) {
     to.style.animation = '';
     busy = false;
     if (toId === 's-family-members' && typeof syncFamilyMemberColors === 'function') { syncFamilyMemberColors(); if (typeof _mpApplyAllStripes === 'function') _mpApplyAllStripes(); }
+    if (toId === 's-settings' && typeof _syncSettingsDeviceMember === 'function') _syncSettingsDeviceMember();
     if (toId === 's-invite-member' && typeof _inviteScreenEnter === 'function') _inviteScreenEnter();
     if (onDone) onDone();
   }, dur);
@@ -12722,6 +12736,7 @@ if (DataAdapter.isFamily()) {
   _checkDeviceSetup();
 }
 try { _updateRecoveryBanner(); } catch (e) { console.warn('recovery banner failed', e); }
+try { _syncSettingsDeviceMember(); } catch (e) { console.warn('settings device member sync failed', e); }
 if (activeTasks().length > 0) {
   renderToday();
   document.getElementById('s-voice').classList.remove('active');
@@ -13215,7 +13230,7 @@ function _tdBuildCalGrid(year, month, selDate) {
 }
 
 // ── #s-visibility globals ──────────────────────────────────────────
-var _visPerformer      = 'aba';
+var _visPerformer      = null;
 var _visSeeFilter      = 'custom';
 var _visNotifyFilter   = 'custom';
 var _visMemberNames    = {aba:'אבא', ima:'אמא', leali:'ליאלי', aharon:'אהרן'};
@@ -13330,6 +13345,24 @@ function _visUpdateReminderRow() {
 // Maps the visibility-screen IDs (aba/ima/leali/aharon) to canonical memberIds
 // so we can wire the same renderAvatarHTML / _refreshAvatarUI pipeline.
 var _VIS_TO_MEMBER_ID = { aba:'member_dad', ima:'member_mom', leali:'member_laali', aharon:'member_aharon' };
+var _MEMBER_TO_VIS    = { member_dad:'aba', member_mom:'ima', member_laali:'leali', member_aharon:'aharon' };
+
+// Resolve which vis-screen id (aba/ima/leali/aharon) owns a task, by priority:
+// assignedToMemberId → createdByMemberId → assignedTo(legacy) → createdBy(legacy)
+// → this device's myMemberId. Returns null if nothing resolves (no hardcoded
+// 'aba' fallback) so no avatar is wrongly highlighted.
+function _resolveTaskOwnerVisId(t) {
+  if (!t) {
+    var myId0 = DataAdapter.myMemberId;
+    return (myId0 && _MEMBER_TO_VIS[myId0]) || null;
+  }
+  if (t.assignedToMemberId && _MEMBER_TO_VIS[t.assignedToMemberId]) return _MEMBER_TO_VIS[t.assignedToMemberId];
+  if (t.createdByMemberId  && _MEMBER_TO_VIS[t.createdByMemberId])  return _MEMBER_TO_VIS[t.createdByMemberId];
+  if (t.assignedTo && _LEGACY_TO_VIS[t.assignedTo]) return _LEGACY_TO_VIS[t.assignedTo];
+  if (t.createdBy && !String(t.createdBy).includes('-') && _LEGACY_TO_VIS[t.createdBy]) return _LEGACY_TO_VIS[t.createdBy];
+  var myId = DataAdapter.myMemberId;
+  return (myId && _MEMBER_TO_VIS[myId]) || null;
+}
 
 function _visUpdateHero() {
   var bigAva   = document.getElementById('visHeroBigAva');
@@ -13338,7 +13371,7 @@ function _visUpdateHero() {
   var viewers  = document.getElementById('visHeroViewers');
 
   if (bigAva) {
-    bigAva.className = 'vis-hero-big-ava av-' + _visPerformer;
+    bigAva.className = 'vis-hero-big-ava' + (_visPerformer ? ' av-' + _visPerformer : '');
     var perfMemberId = _VIS_TO_MEMBER_ID[_visPerformer];
     if (perfMemberId) {
       bigAva.setAttribute('data-avatar-for', perfMemberId);
@@ -13403,8 +13436,7 @@ function _visIdAliases(visId) {
 function renderVisibility() {
   var editing = AppState._editingTask;
   var t = editing || (AppState.previewTasks && AppState.previewTasks[0]);
-  var rawAssignee = t && t.assignedTo;
-  _visPerformer = _LEGACY_TO_VIS[rawAssignee] || rawAssignee || 'aba';
+  _visPerformer = _resolveTaskOwnerVisId(t);
 
   if (editing) {
     var visStored = Array.isArray(editing.visibleTo) ? editing.visibleTo.map(String) : [];
