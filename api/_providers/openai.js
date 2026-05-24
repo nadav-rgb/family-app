@@ -161,7 +161,7 @@ async function parseWithOpenAI(transcript, context = {}) {
   ].filter(Boolean).join('\n');
 
   const completion = await client.chat.completions.create({
-    model:           process.env.OPENAI_MODEL || 'gpt-4o-mini',
+    model:           process.env.OPENAI_PARSE_MODEL || process.env.OPENAI_MODEL || 'gpt-4o-mini',
     messages:        [
       { role: 'system', content: SYSTEM_PROMPT },
       { role: 'user',   content: userMsg },

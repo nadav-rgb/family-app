@@ -58,7 +58,7 @@ module.exports = async function handler(req, res) {
 
   try {
     const completion = await client.chat.completions.create({
-      model:           process.env.OPENAI_MODEL || 'gpt-4o-mini',
+      model:           process.env.OPENAI_SUMMARY_MODEL || process.env.OPENAI_MODEL || 'gpt-4o-mini',
       messages:        [
         { role: 'system', content: SYSTEM_PROMPT },
         { role: 'user',   content: `User's task title (extract structure FAITHFULLY, do not paraphrase): "${title}"` },
