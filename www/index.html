@@ -745,7 +745,7 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 .t-share-avs{flex:1 1 auto;display:flex;align-items:center;gap:9px;justify-content:flex-start;min-width:0;flex-wrap:wrap;}
 .t-share-av{position:relative;flex:0 0 auto;display:flex;flex-direction:column;align-items:center;}
 .t-share-circle{width:22px;height:22px;border-radius:50%;background:radial-gradient(120% 120% at 30% 25%,#ffffff 0%,#FBF4EB 60%,#EFE3D2 100%);border:1px solid rgba(255,255,255,0.85);box-shadow:0 2px 5px rgba(160,90,30,0.10),0 1px 2px rgba(160,90,30,0.06),inset 0 1px 2px rgba(255,255,255,0.95);}
-.t-share-av.owner .t-share-circle{width:32px;height:32px;border:2px solid #FF7A3D;box-shadow:0 3px 8px rgba(229,98,26,0.22),inset 0 1px 2px rgba(255,255,255,0.95);}
+.t-share-av.owner .t-share-circle{width:36px;height:36px;border:2px solid #FF7A3D;box-shadow:0 3px 8px rgba(229,98,26,0.22),inset 0 1px 2px rgba(255,255,255,0.95);}
 .t-share-bell{position:absolute;bottom:-2px;left:-3px;width:13px;height:13px;border-radius:50%;background:#EFE3D2;color:#9E8878;font-size:8px;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(160,90,30,0.12),0 0 0 1.5px #fff;line-height:1;}
 .t-share-av.owner .t-share-bell{width:15px;height:15px;font-size:9px;bottom:-2px;left:-3px;}
 /* Subtle "more options" hint added before the arrow so the user knows
@@ -5793,6 +5793,44 @@ function _taskDisplayName(task) {
   return resolved.name || personLabel(task.person);
 }
 
+// ── Task CREATOR resolution (who created the task) ───────────────
+function _taskCreatorMemberId(task) {
+  if (task && task.createdByMemberId) return task.createdByMemberId;
+  // Legacy: createdBy may be a legacy id (dad/mom/…), not a dynamic uuid.
+  if (task && task.createdBy && !String(task.createdBy).includes('-')) {
+    return _memberIdForLegacyId(task.createdBy) || null;
+  }
+  return null;
+}
+function _taskCreatorLegacyId(task) {
+  const mid = _taskCreatorMemberId(task);
+  if (mid) return _legacyIdForMemberId(mid) || null;
+  if (task && task.createdBy && !String(task.createdBy).includes('-')) return task.createdBy;
+  return null;
+}
+function _taskCreatorName(task) {
+  const mid = _taskCreatorMemberId(task);
+  if (mid) {
+    const c = (_familyMembersCache || []).find(m => m.memberId === mid);
+    if (c && c.name) return c.name;
+    const s = (_FAMILY_MEMBERS_SEED || []).find(m => m.memberId === mid);
+    if (s && s.name) return s.name;
+  }
+  const leg = _taskCreatorLegacyId(task);
+  if (leg) { const h = (typeof t === 'function') ? t('family_' + leg) : null; if (h && h !== 'family_' + leg) return h; }
+  return _taskDisplayName(task); // fallback — never empty
+}
+function _taskCreatorColor(task) {
+  const mid = _taskCreatorMemberId(task);
+  if (mid) {
+    const c = (_familyMembersCache || []).find(m => m.memberId === mid)
+           || (_FAMILY_MEMBERS_SEED || []).find(m => m.memberId === mid);
+    if (c && c.color) return c.color;
+    if (typeof _MP_DEFAULT_COLORS !== 'undefined' && _MP_DEFAULT_COLORS[mid]) return _MP_DEFAULT_COLORS[mid];
+  }
+  return null;
+}
+
 function openUserSwitcher() {
   const bg = document.getElementById('uswBg');
   const rows = document.getElementById('uswRows');
@@ -9041,19 +9079,22 @@ function renderToday() {
           <div class="t-ck ${t.completed?'ck-done':isNx?'ck-nxt':'ck-open'}">${t.completed?'<span style="color:white;font-size:14px;font-weight:900;">✓</span>':''}</div>
           <div class="t-tcol"><div class="t-ttime${isNx&&!t.completed?' ora':''}${t.mins==null?' empty':''}">${m2t(t.mins) || '__:__'}</div><div class="t-tampm">${ampm(t.mins)}</div></div>
           <div class="t-tvline"></div>
-          <div class="t-tbody"><div class="t-ttitle">${t.subItems?.mainTitle || t.title}</div><div class="t-tchip"><span class="t-dot" style="background:${p.color}"></span>${_taskDisplayName(t)}</div></div>
+          <div class="t-tbody"><div class="t-ttitle">${t.subItems?.mainTitle || t.title}</div><div class="t-tchip"><span class="t-dot" style="background:${_taskCreatorColor(t) || p.color}"></span>${_taskCreatorName(t)}</div></div>
           <div class="t-miniav" style="background:${p.bg}">${taskAvImg(t)}</div>
           <div class="t-bell${_taskShowsActiveBell(t)?'':' off'}">${_taskShowsActiveBell(t)?'🔔':'🔕'}</div>
         </div>
         <div class="t-share">
           <div class="t-share-avs">${(() => {
-            const ownerId = _taskLegacyAssigneeId(t);
+            const ownerId    = _taskLegacyAssigneeId(t);
+            const creatorLeg = _taskCreatorLegacyId(t);
+            const emphId     = creatorLeg || ownerId;   // emphasize the CREATOR
             const visIds  = Array.isArray(t.visibleTo) ? t.visibleTo.slice() : [];
             const notifyIds = new Set((Array.isArray(t.notifyTo) ? t.notifyTo : []).map(String));
             const notifyOn = t.notify !== false;
             const seen = new Set();
             const ordered = [];
-            if (ownerId) { ordered.push(ownerId); seen.add(String(ownerId)); }
+            if (emphId)  { ordered.push(emphId);  seen.add(String(emphId)); }
+            if (ownerId && !seen.has(String(ownerId))) { ordered.push(ownerId); seen.add(String(ownerId)); }
             visIds.forEach(id => {
               if (id == null) return;
               const legacy = _legacyIdForMemberId(id) || String(id);
@@ -9069,14 +9110,14 @@ function renderToday() {
               return out;
             };
             return ordered.map(id => {
-              const isOwner = String(id) === String(ownerId);
+              const isOwner = String(id) === String(emphId);   // emphasized = creator
               let hasBell = false;
               if (notifyOn) {
                 for (const a of idAliases(id)) { if (notifyIds.has(a)) { hasBell = true; break; } }
               }
               // Resolve legacy id → memberId so renderAvatarHTML can paint photos.
               const memId  = _memberIdForLegacyId(id) || (String(id).startsWith('member_') ? id : null);
-              const size   = isOwner ? 32 : 22;
+              const size   = isOwner ? 36 : 22;
               const avAttr = memId
                 ? ` data-avatar-for="${memId}" data-avatar-size="${size}"`
                 : '';
