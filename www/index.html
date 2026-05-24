@@ -220,6 +220,27 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 .v-type-btn.thinking .v-think-dots i:nth-child(3){animation-delay:.3s;}
 @keyframes vThinkDot{0%,80%,100%{opacity:.25;transform:translateY(0);}40%{opacity:1;transform:translateY(-2px);}}
 .v-type-inp.thinking{opacity:.55;pointer-events:none;}
+
+/* ── Typing mode: premium polish + magical processing state (Aura × Hearth) ── */
+.v-type-area{transition:box-shadow .3s ease;}
+#s-voice .v-type-area:focus-within{box-shadow:0 10px 34px rgba(255,110,60,.16),0 2px 12px rgba(255,150,90,.12),inset 0 1px 0 rgba(255,255,255,.85),0 0 0 1.5px rgba(255,140,80,.28);}
+/* Waiting/processing state inside the type card */
+.v-type-proc{display:none;flex-direction:column;align-items:center;padding:10px 0 8px;animation:fadeUp .35s ease both;}
+.v-type-area.processing{align-items:center;}
+.v-type-area.processing .v-type-inp,
+.v-type-area.processing .v-type-helper,
+.v-type-area.processing .v-type-btn,
+.v-type-area.processing .v-voice-back{display:none;}
+.v-type-area.processing .v-type-proc{display:flex;}
+.vtp-orb{position:relative;width:128px;height:128px;margin:2px auto 14px;}
+.vtp-orb::before{content:"";position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle, rgba(255,150,90,.42) 0%, rgba(255,110,60,.15) 46%, transparent 70%);animation:auraBreath 1.8s ease-in-out infinite;}
+.vtp-core{position:absolute;top:50%;left:50%;width:46px;height:46px;margin:-23px 0 0 -23px;border-radius:50%;background:radial-gradient(circle at 38% 32%,#ffd9b8 0%,#ff9d5e 45%,#ff6f3c 100%);box-shadow:0 8px 22px rgba(255,110,60,.4),inset 0 -5px 12px rgba(200,70,30,.3),inset 0 4px 10px rgba(255,255,255,.45);}
+.vtp-particles{position:absolute;inset:0;animation:auraSpin 3.4s linear infinite;}
+.vtp-particles i{position:absolute;top:50%;left:50%;width:6px;height:6px;margin:-3px;border-radius:50%;background:radial-gradient(circle,#ffe0c0,#ff7a3c);box-shadow:0 0 7px rgba(255,130,70,.7);transform:rotate(var(--a)) translateY(-58px);}
+.vtp-particles i:nth-child(2n){transform:rotate(var(--a)) translateY(-50px);}
+.vtp-particles i:nth-child(3n){width:4px;height:4px;margin:-2px;opacity:.7;}
+.vtp-title{font-size:17px;font-weight:700;color:#c2632e;text-align:center;animation:orgPulse .9s ease-in-out infinite;}
+.vtp-sub{font-size:12px;font-weight:600;color:#bda28f;text-align:center;margin-top:5px;}
 .ltxt{font-size:15px;font-weight:700;color:#9e8878;transition:color .3s;}
 .ltxt.listening{color:#c2632e;font-weight:700;}
 .ltxt-sub{display:block;font-size:11px;font-weight:600;color:#bda28f;margin-top:4px;letter-spacing:.2px;}
@@ -3043,6 +3064,11 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
       <div class="v-type-helper" id="vTypeHelper">כתוב בחופשיות — אנחנו נסדר לך</div>
       <button class="v-type-btn" id="vTypeBtn" disabled>סדר לי את היום ✨</button>
       <div class="v-voice-back" id="vVoiceBack">🎙 חזור לדיבור</div>
+      <div class="v-type-proc" id="vTypeProc">
+        <div class="vtp-orb"><div class="vtp-core"></div><div class="vtp-particles"><i style="--a:0deg"></i><i style="--a:30deg"></i><i style="--a:60deg"></i><i style="--a:90deg"></i><i style="--a:120deg"></i><i style="--a:150deg"></i><i style="--a:180deg"></i><i style="--a:210deg"></i><i style="--a:240deg"></i><i style="--a:270deg"></i><i style="--a:300deg"></i><i style="--a:330deg"></i></div></div>
+        <div class="vtp-title" id="vtpTitle">מסדר לך את היום…</div>
+        <div class="vtp-sub" id="vtpSub">רגע, אני מבין מה חשוב</div>
+      </div>
     </div>
   </div>
   <div class="sp"></div>
@@ -6133,6 +6159,11 @@ function goto(toId, leaveKf, enterKf, onDone) {
     if (onDone) onDone();
     return;
   }
+  // Leaving the voice screen → stop any live recording so its restart loop
+  // (and the recurring system earcon) doesn't keep running in the background.
+  if (from && from.id === 's-voice' && toId !== 's-voice' && typeof _haltVoice === 'function') {
+    _haltVoice();
+  }
   busy = true;
   const to   = document.getElementById(toId);
   const dur  = 440;
@@ -6171,6 +6202,57 @@ function _getAudio() {
   if (_audioCtx.state === 'suspended') _audioCtx.resume();
   return _audioCtx;
 }
+
+// ─── Recording sound effects (file-based) ─────────────────────────
+// Plays sounds/rec-start.mp3 and sounds/rec-stop.mp3 through the same
+// AudioContext that holds the recording session, so they don't fight
+// Chrome's session sounds. Decoded once and cached. If the files are
+// missing or fail to decode, playback is silently skipped (no fallback
+// beep — the synthesized tones were rejected; silence is preferable).
+const _sfxBuffers = {};      // { start: AudioBuffer, stop: AudioBuffer }
+let _sfxLoading = null;      // promise guard so we only load once
+function _loadSfx() {
+  if (_sfxLoading) return _sfxLoading;
+  const files = { start: 'sounds/rec-start.mp3', stop: 'sounds/rec-stop.mp3' };
+  _sfxLoading = (async () => {
+    const ctx = _getAudio();
+    await Promise.all(Object.keys(files).map(async (key) => {
+      try {
+        const res = await fetch(files[key], { cache: 'force-cache' });
+        if (!res.ok) return;
+        const arr = await res.arrayBuffer();
+        _sfxBuffers[key] = await ctx.decodeAudioData(arr);
+      } catch (_) { /* missing/undecodable → silent */ }
+    }));
+  })();
+  return _sfxLoading;
+}
+// Native Android audio bridge (defined in MainActivity). Null on web/Vercel.
+function _recAudio() { try { return window.RecAudio || null; } catch (_) { return null; } }
+// Mute/unmute the Android recognizer earcons during the continuous listen loop.
+function _sfxMute(on) {
+  const r = _recAudio();
+  if (r && r.setMuted) { try { r.setMuted(!!on); } catch (_) {} }
+}
+function _playSfx(key) {
+  const file = key === 'start' ? 'rec-start' : 'rec-stop';
+  // On Android, play through the native bridge on the ALARM stream so the sound
+  // is heard even while STREAM_MUSIC is muted (to kill the recognizer earcons).
+  const r = _recAudio();
+  if (r && r.play) { try { r.play(file); return; } catch (_) {} }
+  // Web fallback (Vercel / browser): play via WebAudio buffer.
+  try {
+    const buf = _sfxBuffers[key];
+    if (!buf) { _loadSfx(); return; }
+    const ctx = _getAudio();
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    src.connect(ctx.destination);
+    src.start();
+  } catch (_) {}
+}
+// Preload on the first user gesture (gives an unlocked AudioContext for decode).
+window.addEventListener('pointerdown', () => { _loadSfx(); }, { once: true });
 function _silentPing() {
   try {
     const ctx = _getAudio();
@@ -6210,10 +6292,65 @@ function _tone(freq, offset, dur, vol) {
     osc.stop(ctx.currentTime + offset + dur + 0.02);
   } catch(_) {}
 }
-// Two rising tones = recording started
-function _beepStart() { _tone(620, 0, 0.09, 0.2); _tone(880, 0.1, 0.12, 0.18); }
-// Two falling tones = recording stopped by user
-function _beepStop()  { _tone(880, 0, 0.09, 0.2); _tone(580, 0.1, 0.14, 0.16); }
+// _note — a soft, warm single note with a gentle attack (no click) and a
+// smooth bell-like decay. Layers a quiet octave-up harmonic for a "cute",
+// rounded timbre. Used by the recording start/stop chimes below.
+function _note(freq, offset, dur, vol) {
+  try {
+    const ctx = _getAudio();
+    const t0  = ctx.currentTime + offset;
+    // Fundamental
+    const osc = ctx.createOscillator();
+    const g   = ctx.createGain();
+    osc.type  = 'sine';
+    osc.frequency.setValueAtTime(freq, t0);
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(vol, t0 + 0.018);   // soft attack → no pop
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);  // gentle decay
+    osc.connect(g); g.connect(ctx.destination);
+    osc.start(t0); osc.stop(t0 + dur + 0.03);
+    // Quiet shimmer one octave up — adds warmth/sparkle without harshness
+    const osc2 = ctx.createOscillator();
+    const g2   = ctx.createGain();
+    osc2.type  = 'sine';
+    osc2.frequency.setValueAtTime(freq * 2, t0);
+    g2.gain.setValueAtTime(0.0001, t0);
+    g2.gain.exponentialRampToValueAtTime(vol * 0.28, t0 + 0.02);
+    g2.gain.exponentialRampToValueAtTime(0.0001, t0 + dur * 0.85);
+    osc2.connect(g2); g2.connect(ctx.destination);
+    osc2.start(t0); osc2.stop(t0 + dur + 0.03);
+  } catch(_) {}
+}
+// Recording start/stop — play the user-provided sound files.
+function _beepStart() { _playSfx('start'); }
+function _beepStop()  { _playSfx('stop');  }
+
+// _haltVoice — fully stop any active recording WITHOUT organizing. Used when
+// the user leaves the voice screen or backgrounds the app, so the continuous
+// speech-recognition restart loop (and its per-cycle system earcon) cannot
+// keep running — and "chasing" the user — after they've moved on.
+function _haltVoice() {
+  if (!vListening && !vPaused && !_pendingOrganize) return;  // nothing active
+  _pendingOrganize = false;
+  vListening = false;
+  vPaused    = false;
+  _sfxMute(false);
+  _stopKeepAlive(); _clearMaxRecTimers(); _stopSilencePoll();
+  clearTimeout(vTimer); clearTimeout(_restartTimer);
+  if (recognition) { try { recognition.abort(); } catch(_) {} }
+  if (zone)  zone.classList.remove('rec', 'processing');
+  if (wdots) wdots.classList.remove('on');
+  if (sbBubble) sbBubble.classList.remove('bubble-live');
+  const ra = document.getElementById('vRecActions'); if (ra) ra.classList.remove('show');
+  const pb = document.getElementById('vPauseBtn');   if (pb) pb.textContent = '⏸ השהה';
+  try { hideBubble(true); } catch(_) {}
+  if (ltxt) { ltxt.className = 'ltxt'; ltxt.textContent = t('voice_tap'); }
+  AppLog.info('voice', 'halted (left screen / backgrounded)');
+}
+// Stop recording the moment the app is backgrounded or hidden.
+document.addEventListener('visibilitychange', () => { if (document.hidden) _haltVoice(); });
+window.addEventListener('pagehide', _haltVoice);
+window.addEventListener('blur', () => { if (document.hidden) _haltVoice(); });
 
 // ─── Speech Recognition ───────────────────────────────────────────
 const SpeechAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -6355,6 +6492,7 @@ function _recStart() {
 function _onRecFatal(message) {
   vListening = false;
   _pendingOrganize = false;
+  _sfxMute(false);
   _stopKeepAlive();
   _clearMaxRecTimers();
   _stopSilencePoll();
@@ -6679,6 +6817,7 @@ if (SpeechAPI) {
 
 document.getElementById('vTypeToggle').addEventListener('click', () => {
   if (vListening) {
+    _sfxMute(false);
     _stopKeepAlive(); _clearMaxRecTimers(); _stopSilencePoll();
     _pendingOrganize = false;
     clearTimeout(_restartTimer); clearTimeout(vTimer);
@@ -6810,6 +6949,11 @@ function vTypeBtnThinkingOn() {
   btn.disabled = true;
   btn.innerHTML = `<span>${t('voice_type_btn_thinking')}</span><span class="v-think-dots"><i></i><i></i><i></i></span>`;
   if (inp) { inp.classList.add('thinking'); inp.setAttribute('contenteditable','false'); }
+  // Magical waiting state — the type card morphs into the same warm
+  // glow + particle motif as the voice processing screen.
+  const tt = document.getElementById('vtpTitle'); if (tt) tt.textContent = t('voice_organizing');
+  const ts = document.getElementById('vtpSub');   if (ts) ts.textContent = t('voice_organizing_sub');
+  const area = document.getElementById('vTypeArea'); if (area) area.classList.add('processing');
 }
 function vTypeBtnThinkingOff() {
   const btn = document.getElementById('vTypeBtn');
@@ -6821,6 +6965,7 @@ function vTypeBtnThinkingOff() {
   const has = inp ? !!_getInpText(inp).trim() : false;
   btn.disabled = !has;
   if (inp) { inp.classList.remove('thinking'); inp.setAttribute('contenteditable','true'); }
+  const area = document.getElementById('vTypeArea'); if (area) area.classList.remove('processing');
 }
 
 function vTypeSubmit() {
@@ -6880,6 +7025,7 @@ const MIC_STYLE_KEY = 'family-app-mic-style';
 function switchMode(m) {
   if (m === vMode) return;
   if (vListening) {
+    _sfxMute(false);
     _stopKeepAlive(); _clearMaxRecTimers(); _stopSilencePoll();
     _pendingOrganize = false;
     clearTimeout(_restartTimer); clearTimeout(vTimer);
@@ -7676,6 +7822,7 @@ function vStart() {
   _lastProcessedTranscript = '';
   _lastBurstLen            = 0;   // fresh threshold reference per session
   _lastBurstAt             = 0;
+  _sfxMute(true);   // silence Android recognizer earcons for the whole session
   _beepStart();
   _startKeepAlive();
   vListening    = true;
@@ -7706,6 +7853,7 @@ function vStart() {
 }
 
 function vStop(userInitiated = true) {
+  _sfxMute(false);   // restore device audio; earcons no longer needed
   _stopKeepAlive();
   _clearMaxRecTimers();
   _stopSilencePoll();
@@ -7750,6 +7898,7 @@ function vPause() {
   _pendingOrganize = false;
   vListening = false;
   vPaused    = true;
+  _sfxMute(false);
   _stopKeepAlive(); _clearMaxRecTimers(); _stopSilencePoll();
   clearTimeout(vTimer); clearTimeout(_restartTimer);
   zone.classList.remove('rec');
@@ -7763,6 +7912,7 @@ function vResume() {
   if (!vPaused) return;
   vPaused    = false;
   vListening = true;
+  _sfxMute(true);
   zone.classList.add('rec');
   wdots.classList.add('on');
   if (recognition) {
@@ -7780,6 +7930,7 @@ function vCancel() {
   _pendingOrganize = false;
   vListening = false;
   vPaused    = false;
+  _sfxMute(false);
   _stopKeepAlive(); _clearMaxRecTimers(); _stopSilencePoll();
   clearTimeout(vTimer); clearTimeout(_restartTimer);
   zone.classList.remove('rec');
@@ -12828,6 +12979,7 @@ function _atdStartRec() {
   if (!addMode) return;
   _lastBurstLen = 0;   // fresh threshold reference per session
   _lastBurstAt  = 0;
+  _sfxMute(true);   // silence Android recognizer earcons for the whole session
   _beepStart();
   _startKeepAlive();
   vListening = true;
@@ -12845,6 +12997,7 @@ function _atdStartRec() {
 
 function _atdStopAndOrganize() {
   if (!addMode) return;
+  _sfxMute(false);
   _stopKeepAlive();
   _clearMaxRecTimers();
   _beepStop();
