@@ -20,15 +20,15 @@ const IMAGE_MODEL      = process.env.OPENAI_IMAGE_MODEL || 'gpt-image-1.5';
 // A/B test allowlist. Only these may be selected via ?model=… ; anything else
 // (including garbage) falls back to IMAGE_MODEL so production can't be broken.
 // gpt-image-1 is the only one guaranteed to exist; the others are probes — if
-// the API doesn't support them the slot fails cleanly with slot_failed.detail.
+// the API doesn't support them the slot fails cleanly (slot_failed).
 const ALLOWED_MODELS   = new Set(['gpt-image-1', 'gpt-image-1.5', 'gpt-image-2']);
 const FRICTION_TOKEN   = process.env.AVATAR_FRICTION_TOKEN || ''; // light friction, NOT security
-const PER_MEMBER_LIMIT = 50;     // TEMP QA: raised from 3 for gpt-image-1.5 testing — REVERT before release
+const PER_MEMBER_LIMIT = 3;      // successful generations per family member
 const OPTIONS_COUNT    = 4;      // options per generation
 const MAX_BYTES        = 4 * 1024 * 1024;
 const ALLOWED_TYPES    = new Set(['image/jpeg', 'image/png', 'image/webp']);
 const RL_WINDOW_SEC    = 60 * 60;
-const RL_MAX           = 300;    // TEMP QA: raised from 30 so QA isn't rate-limited before the quota — REVERT before release
+const RL_MAX           = 30;     // generations per window, per family AND per ip
 const SLOT_TIMEOUT_MS  = 45000;  // high input_fidelity is slower than the old 30s budget
 
 // Locked style prompts. The client NEVER sends prompt text; this array is the
@@ -411,7 +411,7 @@ async function handler(req, res) {
     slots.push(
       genWithRetry(body, contentType, ext, style.prompt, model)
         .then(b64 => { writeLine(res, { type: 'image', slot, style: style.id, model, format: 'webp', b64 }); return true; })
-        .catch(err => { console.warn('[avatar-gen] slot', slot, 'model', model, 'failed:', err.status, err.code, err.message); writeLine(res, { type: 'slot_failed', slot, style: style.id, model, detail: (err && err.message) || 'unknown', status: err && err.status, code: err && err.code }); return false; })
+        .catch(err => { console.warn('[avatar-gen] slot', slot, 'model', model, 'failed:', err.message); writeLine(res, { type: 'slot_failed', slot, style: style.id, model }); return false; })
     );
   }
 
