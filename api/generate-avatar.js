@@ -86,60 +86,73 @@ anime, pixar, disney, 3D render, fake skin, over realism, distorted face, giant 
   },
   {
     id: 'cute_premium_character',
-    prompt: `Transform the uploaded photo into an adorable premium cute cinematic character illustration.
+    prompt: `Edit the uploaded photo.
 
-CRITICAL:
-Identity must remain recognizable.
-The real person should still clearly look like themselves.
+CRITICAL RULE:
+The real person must remain EXACTLY the same person.
 
-Preserve:
-- facial structure
-- smile
-- beard
-- glasses
-- hairstyle
-- age
+This is an identity-locked image edit.
+
+DO NOT redesign the face.
+
+DO NOT reinterpret the person.
+
+DO NOT create a new character.
+
+DO NOT change facial geometry.
+
+Treat the uploaded image as locked reference material.
+
+Preserve EXACTLY:
+- facial proportions
+- smile shape
+- tooth shape
+- eye shape
+- eye distance
+- eyebrow shape
+- beard shape
+- beard density
+- glasses shape
+- forehead size
+- skin tone
+- face width
+- jaw structure
+- facial asymmetry
 - emotional expression
+- head angle
 
-STYLE:
-Strong stylization is encouraged.
+The result must clearly look like the exact same real person.
 
-Create a premium cute illustration with:
+STYLE TRANSFORMATION ONLY:
 
-slightly larger expressive eyes,
-soft rounded facial warmth,
-beautiful polished rendering,
-high-end Japanese-inspired family illustration,
-gentle magical realism,
-playful premium charm.
+Apply a premium cute cinematic illustrated style ON TOP of the existing photo.
 
 The style should feel:
 adorable,
 premium,
 heartwarming,
-joyful,
+beautiful,
+soft,
 magical,
-beautiful.
+warm.
 
-Visual references:
-premium animated family illustration,
-high-end modern illustrated portrait,
-soft cinematic glow,
-cute but elegant character design.
-
-BACKGROUND:
-Keep the same original environment and transform it into the same cute illustrated world.
+Visual direction:
+high-end premium illustration,
+gentle magical realism,
+soft premium lighting,
+warm cinematic atmosphere,
+beautiful polished finish.
 
 IMPORTANT:
-Not anime.
-Not chibi.
-Not childish.
+Keep realism high.
 
-The result should feel:
-“WOW, this is so cute.”
+The person must still immediately be recognizable.
+
+The reaction should be:
+“Wow, this is literally me.”
 
 Negative prompt:
-cheap anime, chibi, giant eyes, childish cartoon, disney, pixar clone, distorted face, fake identity, ugly proportions.`,
+new face, different person, disney clone, pixar clone, enlarged eyes, larger eyes, giant eyes, cartoon face, altered smile, altered facial structure, ugly AI face, fake beard, distorted identity, exaggerated proportions`,
   },
   {
     id: 'dreamy_magical_realism',
