@@ -16,7 +16,7 @@ const kv     = require('./_lib/kv');
 
 const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-const IMAGE_MODEL      = process.env.OPENAI_IMAGE_MODEL || 'gpt-image-1';
+const IMAGE_MODEL      = process.env.OPENAI_IMAGE_MODEL || 'gpt-image-1.5';
 // A/B test allowlist. Only these may be selected via ?model=… ; anything else
 // (including garbage) falls back to IMAGE_MODEL so production can't be broken.
 // gpt-image-1 is the only one guaranteed to exist; the others are probes — if
