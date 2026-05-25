@@ -2721,6 +2721,16 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
 .mp-av-variant img{width:100%;height:100%;object-fit:cover;display:block;}
 .mp-av-variant.active{border-color:#7C3AED;box-shadow:0 0 0 3px rgba(124,58,237,.2);}
 .mp-av-variant.active::after{content:'✓';position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#7C3AED;color:#fff;font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;}
+/* Variant lightbox — enlarged preview */
+.avlb-bg{position:absolute;inset:0;z-index:960;background:rgba(15,8,4,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:24px;pointer-events:none;opacity:0;transition:opacity .2s ease;}
+.avlb-bg.open{opacity:1;pointer-events:auto;}
+.avlb-close{position:absolute;top:calc(14px + env(safe-area-inset-top,0));left:14px;width:42px;height:42px;border-radius:50%;border:none;background:rgba(255,255,255,.16);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+.avlb-close svg{width:20px;height:20px;}
+.avlb-stage{width:min(88vw,500px);max-height:72vh;border-radius:24px;overflow:hidden;box-shadow:0 18px 50px rgba(0,0,0,.5);}
+.avlb-stage img{width:100%;height:100%;object-fit:contain;display:block;}
+.avlb-use{padding:15px 28px;border-radius:18px;border:none;font-family:inherit;font-size:15px;font-weight:900;color:#fff;background:linear-gradient(95deg,#7C3AED,#C026D3);box-shadow:0 8px 22px rgba(124,58,237,.4);cursor:pointer;transition:transform .14s,opacity .14s;}
+.avlb-use:active{transform:scale(.97);}
+.avlb-use:disabled{opacity:.5;cursor:default;}
 
 /* ════ AI AVATAR LANDING (Claude-design page, scoped) ════ */
 .ail-bg{position:absolute;inset:0;z-index:947;background:linear-gradient(180deg,#FDF0E9 0%,#FBEFE8 45%,#FAEAE0 100%);pointer-events:none;opacity:0;transition:opacity .25s ease;overflow-y:auto;-webkit-overflow-scrolling:touch;}
@@ -5479,6 +5489,15 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
       <span>התמונה שלך פרטית ומוצפנת. רק אתה רואה אותה.</span>
     </div>
   </div>
+</div>
+
+<!-- ════ AVATAR VARIANT LIGHTBOX — enlarged preview + set active ════ -->
+<div class="avlb-bg" id="avLightbox">
+  <button class="avlb-close" id="avlbClose" type="button" aria-label="סגור">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>
+  </button>
+  <div class="avlb-stage"><img id="avlbImg" alt=""></div>
+  <button class="avlb-use" id="avlbUse" type="button">השתמש בתמונה זו</button>
 </div>
 
 <!-- ════ OPTIONS MINI-SHEET — "אפשרויות נוספות" ════ -->
@@ -12162,7 +12181,10 @@ async function _uploadAvatarBlob(blob, memberId) {
   const familyId = DataAdapter.familyId;
   if (!memberId) throw new Error('No memberId — cannot upload');
   const ts       = Date.now();
-  const path     = 'families/' + familyId + '/avatars/' + memberId + '-' + ts + '.jpg';
+  // Random suffix so parallel uploads (e.g. saving all 4 AI options at once)
+  // can't collide on the same Date.now() path and overwrite each other.
+  const rnd      = Math.random().toString(36).slice(2, 8);
+  const path     = 'families/' + familyId + '/avatars/' + memberId + '-' + ts + '-' + rnd + '.jpg';
   const ref      = _storage.ref(path);
   const meta     = { contentType: blob.type || 'image/jpeg' };
   const bucket   = (_storage.app && _storage.app.options && _storage.app.options.storageBucket) || '(unknown)';
@@ -12729,7 +12751,7 @@ const AvatarFlow = {
       const img = document.createElement('img');
       img.alt = ''; img.loading = 'lazy'; img.src = o.url;
       cell.appendChild(img);
-      cell.addEventListener('click', () => this.useVariant(memberId, o.url, o.style));
+      cell.addEventListener('click', () => this.openVariantLightbox(memberId, o.url, o.style));
       grid.appendChild(cell);
     });
     wrap.style.display = '';
@@ -12750,6 +12772,25 @@ const AvatarFlow = {
       console.error('[Avatar] useVariant failed', e);
       alert('החלפה נכשלה: ' + (e.message || e));
     }
+  },
+  // Enlarged preview of a saved option, with a button to set it active.
+  openVariantLightbox(memberId, url, style) {
+    this._lbMember = memberId; this._lbUrl = url; this._lbStyle = style;
+    document.getElementById('avlbImg').src = url;
+    const m = (typeof _familyMembersCache !== 'undefined' ? _familyMembersCache : []).find(x => x.memberId === memberId);
+    const isActive = !!(m && m.avatar && m.avatar.url === url);
+    const useBtn = document.getElementById('avlbUse');
+    useBtn.disabled = isActive;
+    useBtn.textContent = isActive ? 'התמונה הפעילה' : 'השתמש בתמונה זו';
+    document.getElementById('avLightbox').classList.add('open');
+  },
+  closeVariantLightbox() {
+    document.getElementById('avLightbox').classList.remove('open');
+  },
+  async useFromLightbox() {
+    const memberId = this._lbMember, url = this._lbUrl, style = this._lbStyle;
+    this.closeVariantLightbox();
+    if (memberId && url) await this.useVariant(memberId, url, style);
   },
   async useOriginal() {
     // Full diagnostic snapshot — read localStorage DIRECTLY (bypass DataAdapter),
@@ -12918,6 +12959,9 @@ function _wireAvatarFlow() {
   document.getElementById('avchoiceCancel').addEventListener('click', () => AvatarFlow.cancelChoice());
   document.getElementById('avchoiceUse').addEventListener('click', () => AvatarFlow.useOriginal());
   document.getElementById('avchoiceAI').addEventListener('click', () => AvatarFlow.enterAIFromChoice());
+  document.getElementById('avlbClose').addEventListener('click', () => AvatarFlow.closeVariantLightbox());
+  document.getElementById('avLightbox').addEventListener('click', e => { if (e.target.id === 'avLightbox') AvatarFlow.closeVariantLightbox(); });
+  document.getElementById('avlbUse').addEventListener('click', () => AvatarFlow.useFromLightbox());
   console.log('[Avatar] flow wired');
 }
 
