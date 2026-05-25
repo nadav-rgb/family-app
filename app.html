@@ -12249,6 +12249,11 @@ async function _saveMemberAvatar(memberId, avatar) {
   if (cached) cached.avatar = avatar;
 }
 
+// Crop output sent to the avatar pipeline (and saved). A/B input-quality test:
+// higher res + lower compression gives the image model more facial detail.
+const AVATAR_AI_CROP_SIZE    = 1024;
+const AVATAR_AI_JPEG_QUALITY = 0.95;
+
 // ─── Avatar flow controller (1A) ─────────────────────────────────
 // State machine: idle → sheet → pick → crop → choice → upload → save → render
 const AvatarFlow = {
@@ -12418,12 +12423,12 @@ const AvatarFlow = {
     if (!this.cropper) { console.warn('[Avatar] confirmCrop: no cropper'); return; }
     const tStart = performance.now();
     const canvas = this.cropper.getCroppedCanvas({
-      width: 512, height: 512,
+      width: AVATAR_AI_CROP_SIZE, height: AVATAR_AI_CROP_SIZE,
       imageSmoothingEnabled: true, imageSmoothingQuality: 'high',
     });
-    const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.88));
+    const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', AVATAR_AI_JPEG_QUALITY));
     console.log('[Avatar] crop done +' + Math.round(performance.now() - tStart)
-      + 'ms out=512x512 size=' + blob.size + 'B');
+      + 'ms out=' + AVATAR_AI_CROP_SIZE + 'x' + AVATAR_AI_CROP_SIZE + ' q=' + AVATAR_AI_JPEG_QUALITY + ' size=' + blob.size + 'B');
     this.blob = blob;
     this._teardownCropper();
     document.getElementById('avcropBg').classList.remove('open');

@@ -17,6 +17,11 @@ const kv     = require('./_lib/kv');
 const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 const IMAGE_MODEL      = process.env.OPENAI_IMAGE_MODEL || 'gpt-image-1';
+// A/B test allowlist. Only these may be selected via ?model=… ; anything else
+// (including garbage) falls back to IMAGE_MODEL so production can't be broken.
+// gpt-image-1 is the only one guaranteed to exist; the others are probes — if
+// the API doesn't support them the slot fails cleanly with slot_failed.detail.
+const ALLOWED_MODELS   = new Set(['gpt-image-1', 'gpt-image-1.5', 'gpt-image-2']);
 const FRICTION_TOKEN   = process.env.AVATAR_FRICTION_TOKEN || ''; // light friction, NOT security
 const PER_MEMBER_LIMIT = 3;      // successful generations per family member
 const OPTIONS_COUNT    = 4;      // options per generation
@@ -341,6 +346,11 @@ async function handler(req, res) {
     return res.status(403).json({ ok: false, reason: 'limit_reached', remaining: 0, limit: PER_MEMBER_LIMIT });
   }
 
+  // A/B model probe: ?model=… , allowlisted, default-safe.
+  const requestedModel = String((req.query && req.query.model) || '').trim();
+  const model = ALLOWED_MODELS.has(requestedModel) ? requestedModel : IMAGE_MODEL;
+  console.log('[avatar-gen] model requested=' + (requestedModel || '(none)') + ' resolved=' + model);
+
   // ── All gates passed. From here we stream; status is locked to 200. ──
   const ext = contentType === 'image/png' ? 'png' : contentType === 'image/webp' ? 'webp' : 'jpg';
   res.writeHead(200, {
@@ -348,13 +358,16 @@ async function handler(req, res) {
     'Cache-Control': 'no-store',
   });
 
+  // Tell the client which model actually ran (helps the A/B comparison).
+  writeLine(res, { type: 'meta', model });
+
   const slots = [];
   for (let slot = 0; slot < OPTIONS_COUNT; slot++) {
     const style = LOCKED_STYLE_PROMPTS[slot];
     slots.push(
-      genWithRetry(body, contentType, ext, style.prompt)
-        .then(b64 => { writeLine(res, { type: 'image', slot, style: style.id, format: 'webp', b64 }); return true; })
-        .catch(err => { console.warn('[avatar-gen] slot', slot, 'failed:', err.status, err.code, err.message); writeLine(res, { type: 'slot_failed', slot, style: style.id, detail: (err && err.message) || 'unknown', status: err && err.status, code: err && err.code }); return false; })
+      genWithRetry(body, contentType, ext, style.prompt, model)
+        .then(b64 => { writeLine(res, { type: 'image', slot, style: style.id, model, format: 'webp', b64 }); return true; })
+        .catch(err => { console.warn('[avatar-gen] slot', slot, 'model', model, 'failed:', err.status, err.code, err.message); writeLine(res, { type: 'slot_failed', slot, style: style.id, model, detail: (err && err.message) || 'unknown', status: err && err.status, code: err && err.code }); return false; })
     );
   }
 
@@ -375,7 +388,7 @@ async function handler(req, res) {
   console.log('[avatar-gen] family=' + familyId + ' member=' + memberId
     + ' produced=' + produced + '/' + OPTIONS_COUNT + ' remaining=' + remaining);
 
-  writeLine(res, { type: 'done', produced, remaining, limit: PER_MEMBER_LIMIT });
+  writeLine(res, { type: 'done', produced, remaining, limit: PER_MEMBER_LIMIT, model });
   res.end();
 }
 
@@ -398,19 +411,19 @@ async function checkAndBumpRate(key) {
   return { ok: true };
 }
 
-async function genWithRetry(buf, contentType, ext, prompt) {
+async function genWithRetry(buf, contentType, ext, prompt, model) {
   try {
-    return await withTimeout(genOne(buf, contentType, ext, prompt), SLOT_TIMEOUT_MS);
+    return await withTimeout(genOne(buf, contentType, ext, prompt, model), SLOT_TIMEOUT_MS);
   } catch (e) {
-    return await withTimeout(genOne(buf, contentType, ext, prompt), SLOT_TIMEOUT_MS);
+    return await withTimeout(genOne(buf, contentType, ext, prompt, model), SLOT_TIMEOUT_MS);
   }
 }
 
-async function genOne(buf, contentType, ext, prompt) {
+async function genOne(buf, contentType, ext, prompt, model) {
   // Fresh File per call so a consumed stream is never reused across the 4 slots.
   const file = await OpenAI.toFile(buf, 'source.' + ext, { type: contentType });
   const result = await client.images.edit({
-    model:         IMAGE_MODEL,
+    model:         model || IMAGE_MODEL,
     image:         file,
     prompt:        prompt,
     n:             1,
