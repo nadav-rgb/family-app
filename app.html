@@ -12625,7 +12625,15 @@ const AvatarFlow = {
       console.error('[Avatar] AI stream error', e);
     }
 
-    // Done. If at least one image rendered, allow selection + save; else allow retry.
+    // Stream ended (done, or the function hit its time budget and the
+    // connection closed). Any slot still showing a spinner will never resolve,
+    // so mark it failed instead of leaving it spinning forever.
+    this._STYLE_ORDER.forEach(s => {
+      const el = this._slotEl(s);
+      if (el && !el.querySelector('img') && !el.querySelector('.err')) this._failGenCard(s);
+    });
+
+    // If at least one image rendered, allow selection + save; else allow retry.
     const any = this._STYLE_ORDER.some(s => { const el = this._slotEl(s); return el && el.querySelector('img'); });
     this._setAIState(any ? 'done' : 'ready');
   },
@@ -12654,6 +12662,9 @@ const AvatarFlow = {
       const avatar = { type: 'ai-photo', url, style: this._selectedStyle };
       await _saveMemberAvatar(this.memberId, avatar);
       const nodeCount = _refreshAvatarUI(this.memberId, avatar);
+      // The home hero portrait renders separately (key-cached) and isn't covered
+      // by _refreshAvatarUI — refresh it so it doesn't keep showing the old image.
+      if (typeof updateHmPortrait === 'function') updateHmPortrait();
       console.log('[Avatar] AI avatar saved style=' + this._selectedStyle + ' nodes=' + nodeCount);
       this.closeAILanding();
     } catch (e) {
