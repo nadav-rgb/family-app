@@ -12291,6 +12291,28 @@ const AvatarFlow = {
     this._aiDirect = false;
   },
   startAIFromLanding() {
+    // Self-healing: in-memory DataAdapter can lose family state after a WebView
+    // restart / stale module while localStorage still holds it. Restore before guard.
+    const lsFamilyId = localStorage.getItem('family-app-da-family-id');
+    const lsMode     = localStorage.getItem('family-app-da-mode');
+    const lsUserId   = localStorage.getItem('family-app-da-user-id');
+    if (!DataAdapter.isFamily() && lsFamilyId && lsMode === 'family') {
+      console.warn('[Avatar] startAIFromLanding: DataAdapter out of sync — recovering from localStorage');
+      DataAdapter.familyId = lsFamilyId;
+      DataAdapter.mode     = 'family';
+      if (lsUserId) DataAdapter.userId = lsUserId;
+    }
+    console.log('[Avatar DIAG]', {
+      isFamily: DataAdapter.isFamily?.(),
+      familyId: DataAdapter.familyId,
+      mode: DataAdapter.mode,
+      userId: DataAdapter.userId,
+      myMemberId: DataAdapter.myMemberId,
+      lsFamilyId,
+      lsMode,
+      lsUserId,
+      currentUser: (typeof AppState !== 'undefined' ? AppState?.currentUser : undefined),
+    });
     if (!DataAdapter.isFamily()) { alert('לא ניתן ליצור — המכשיר לא במצב משפחה.'); return; }
     this._aiDirect = true;
     const member = _FAMILY_MEMBERS_SEED.find(m => m.memberId === this.memberId)
