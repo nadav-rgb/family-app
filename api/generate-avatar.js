@@ -23,12 +23,12 @@ const IMAGE_MODEL      = process.env.OPENAI_IMAGE_MODEL || 'gpt-image-1.5';
 // the API doesn't support them the slot fails cleanly with slot_failed.detail.
 const ALLOWED_MODELS   = new Set(['gpt-image-1', 'gpt-image-1.5', 'gpt-image-2']);
 const FRICTION_TOKEN   = process.env.AVATAR_FRICTION_TOKEN || ''; // light friction, NOT security
-const PER_MEMBER_LIMIT = 3;      // successful generations per family member
+const PER_MEMBER_LIMIT = 50;     // TEMP QA: raised from 3 for gpt-image-1.5 testing — REVERT before release
 const OPTIONS_COUNT    = 4;      // options per generation
 const MAX_BYTES        = 4 * 1024 * 1024;
 const ALLOWED_TYPES    = new Set(['image/jpeg', 'image/png', 'image/webp']);
 const RL_WINDOW_SEC    = 60 * 60;
-const RL_MAX           = 30;     // generations per window, per family AND per ip
+const RL_MAX           = 300;    // TEMP QA: raised from 30 so QA isn't rate-limited before the quota — REVERT before release
 const SLOT_TIMEOUT_MS  = 45000;  // high input_fidelity is slower than the old 30s budget
 
 // Locked style prompts. The client NEVER sends prompt text; this array is the
