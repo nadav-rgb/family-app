@@ -2710,6 +2710,17 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
 .ail-card-image .spin{position:absolute;top:50%;left:50%;width:30px;height:30px;margin:-15px 0 0 -15px;border-radius:50%;border:3px solid rgba(124,58,237,.2);border-top-color:#7C3AED;animation:avgenSpin .8s linear infinite;z-index:3;}
 .ail-card-image > img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;z-index:2;}
 .ail-card-image .err{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:8px;font-size:11px;font-weight:700;color:#a05a30;text-align:center;line-height:1.35;background:#f7ece4;z-index:3;}
+/* "הגרסאות שלי" — saved AI variants gallery in the avatar settings card */
+.mp-av-variants{margin-top:14px;padding-top:14px;border-top:1px solid rgba(160,90,30,.10);}
+.mp-av-variants-head{margin-bottom:10px;}
+.mp-av-variants-title{font-size:14px;font-weight:900;color:#1c110a;margin:0;}
+.mp-av-variants-sub{font-size:11.5px;font-weight:600;color:#9e8878;margin:2px 0 0;}
+.mp-av-variants-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+.mp-av-variant{position:relative;aspect-ratio:1;border-radius:14px;overflow:hidden;border:2px solid transparent;cursor:pointer;background:#f4e8dc;transition:border-color .15s,transform .12s;}
+.mp-av-variant:active{transform:scale(.96);}
+.mp-av-variant img{width:100%;height:100%;object-fit:cover;display:block;}
+.mp-av-variant.active{border-color:#7C3AED;box-shadow:0 0 0 3px rgba(124,58,237,.2);}
+.mp-av-variant.active::after{content:'✓';position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#7C3AED;color:#fff;font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;}
 
 /* ════ AI AVATAR LANDING (Claude-design page, scoped) ════ */
 .ail-bg{position:absolute;inset:0;z-index:947;background:linear-gradient(180deg,#FDF0E9 0%,#FBEFE8 45%,#FAEAE0 100%);pointer-events:none;opacity:0;transition:opacity .25s ease;overflow-y:auto;-webkit-overflow-scrolling:touch;}
@@ -3883,6 +3894,13 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
           <div class="body"><div class="t">צור דמות AI מתמונה</div><div class="s">ניצור דמות מאיירת בהתאמה אישית</div></div>
           <div class="av-dot"></div>
         </div>
+      </div>
+      <div class="mp-av-variants" id="mpVariants" style="display:none">
+        <div class="mp-av-variants-head">
+          <h3 class="mp-av-variants-title">הגרסאות שלי</h3>
+          <p class="mp-av-variants-sub">לחצו כדי להחליף את התמונה הפעילה</p>
+        </div>
+        <div class="mp-av-variants-grid" id="mpVariantsGrid"></div>
       </div>
       <div class="mp-av-privacy">
         <span class="lk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>
@@ -12206,17 +12224,22 @@ async function _uploadAvatarBlob(blob, memberId) {
 }
 
 // Save avatar to member doc in Firestore.
-async function _saveMemberAvatar(memberId, avatar) {
+async function _saveMemberAvatar(memberId, avatar, options) {
   const tStart = performance.now();
   if (!_db || !DataAdapter.isFamily()) throw new Error('Firestore not ready');
   const ref = _db.collection('families').doc(DataAdapter.familyId)
                  .collection('members').doc(memberId);
-  await ref.set({ avatar }, { merge: true });
+  // avatarOptions = the last generated AI set (switchable). Only written when a
+  // fresh set was generated; switching between options leaves it untouched.
+  // NOTE: distinct from avatarVariants (scene/hero) used by the home portrait.
+  const payload = options !== undefined ? { avatar, avatarOptions: options } : { avatar };
+  await ref.set(payload, { merge: true });
   console.log('[Avatar] firestore save +' + Math.round(performance.now() - tStart)
-    + 'ms memberId=' + memberId + ' type=' + avatar.type);
+    + 'ms memberId=' + memberId + ' type=' + avatar.type
+    + (options !== undefined ? ' options=' + options.length : ''));
   // Refresh in-memory cache so render uses new avatar immediately.
   const cached = _familyMembersCache.find(m => m.memberId === memberId);
-  if (cached) cached.avatar = avatar;
+  if (cached) { cached.avatar = avatar; if (options !== undefined) cached.avatarOptions = options; }
 }
 
 // Crop output sent to the avatar pipeline (and saved). A/B input-quality test:
@@ -12499,6 +12522,7 @@ const AvatarFlow = {
   _resetGenCards() {
     this._selectedStyle = null;
     this._selectedB64 = null;
+    this._genResults = {};   // style → b64 of every produced image (for saving all 4)
     this._STYLE_ORDER.forEach(style => {
       const card = document.querySelector('#aiLandingBg .ail-card[data-style="' + style + '"]');
       if (card) card.classList.remove('selected');
@@ -12516,6 +12540,8 @@ const AvatarFlow = {
   _fillGenCard(style, b64) {
     const el = this._slotEl(style);
     if (!el) return;
+    if (!this._genResults) this._genResults = {};
+    this._genResults[style] = b64;
     this._clearSlot(el);
     const img = document.createElement('img');
     img.alt = '';
@@ -12657,10 +12683,18 @@ const AvatarFlow = {
     if (cta) cta.disabled = true;
     if (lbl) lbl.textContent = 'שומר…';
     try {
-      const blob   = await (await fetch('data:image/webp;base64,' + this._selectedB64)).blob();
-      const url    = await _uploadAvatarBlob(blob, this.memberId);
-      const avatar = { type: 'ai-photo', url, style: this._selectedStyle };
-      await _saveMemberAvatar(this.memberId, avatar);
+      // Upload every produced image (not just the selected one) so all of them
+      // are saved as switchable options. Order follows _STYLE_ORDER.
+      const results = this._genResults || {};
+      const styles  = this._STYLE_ORDER.filter(s => results[s]);
+      const options = await Promise.all(styles.map(async s => {
+        const b   = await (await fetch('data:image/webp;base64,' + results[s])).blob();
+        const url = await _uploadAvatarBlob(b, this.memberId);
+        return { url, style: s };
+      }));
+      const active = options.find(o => o.style === this._selectedStyle) || options[0];
+      const avatar = { type: 'ai-photo', url: active.url, style: active.style };
+      await _saveMemberAvatar(this.memberId, avatar, options);
       const nodeCount = _refreshAvatarUI(this.memberId, avatar);
       // The home hero portrait and the member-profile avatar circle render via
       // separate paths not covered by _refreshAvatarUI — refresh them too so
@@ -12669,13 +12703,52 @@ const AvatarFlow = {
       if (typeof _renderMemberProfile === 'function' && typeof _mpCurrentId !== 'undefined' && _mpCurrentId === this.memberId) {
         _renderMemberProfile();
       }
-      console.log('[Avatar] AI avatar saved style=' + this._selectedStyle + ' nodes=' + nodeCount);
+      console.log('[Avatar] AI avatar saved active=' + avatar.style + ' options=' + options.length + ' nodes=' + nodeCount);
       this.closeAILanding();
     } catch (e) {
       console.error('[Avatar] AI save failed', e);
       alert('שמירה נכשלה:\n' + (e.code ? '[' + e.code + '] ' : '') + (e.message || e));
       if (lbl) lbl.textContent = 'שמור תמונה';
       if (cta) cta.disabled = false;
+    }
+  },
+  // Render the saved AI options gallery ("הגרסאות שלי") in the avatar card.
+  _renderAvatarVariants(memberId) {
+    const wrap = document.getElementById('mpVariants');
+    const grid = document.getElementById('mpVariantsGrid');
+    if (!wrap || !grid) return;
+    const m = (typeof _familyMembersCache !== 'undefined' ? _familyMembersCache : []).find(x => x.memberId === memberId)
+           || _FAMILY_MEMBERS_SEED.find(x => x.memberId === memberId);
+    const opts = (m && Array.isArray(m.avatarOptions)) ? m.avatarOptions.filter(o => o && o.url) : [];
+    if (!opts.length) { wrap.style.display = 'none'; grid.innerHTML = ''; return; }
+    const activeUrl = m && m.avatar && m.avatar.url;
+    grid.innerHTML = '';
+    opts.forEach(o => {
+      const cell = document.createElement('div');
+      cell.className = 'mp-av-variant' + (o.url === activeUrl ? ' active' : '');
+      const img = document.createElement('img');
+      img.alt = ''; img.loading = 'lazy'; img.src = o.url;
+      cell.appendChild(img);
+      cell.addEventListener('click', () => this.useVariant(memberId, o.url, o.style));
+      grid.appendChild(cell);
+    });
+    wrap.style.display = '';
+  },
+  // Switch the active avatar to a previously-saved option — no regeneration.
+  async useVariant(memberId, url, style) {
+    const m = (typeof _familyMembersCache !== 'undefined' ? _familyMembersCache : []).find(x => x.memberId === memberId);
+    if (m && m.avatar && m.avatar.url === url) return; // already active
+    const avatar = { type: 'ai-photo', url, style };
+    try {
+      await _saveMemberAvatar(memberId, avatar); // no options arg → keeps avatarOptions
+      _refreshAvatarUI(memberId, avatar);
+      if (typeof updateHmPortrait === 'function') updateHmPortrait();
+      if (typeof _renderMemberProfile === 'function' && typeof _mpCurrentId !== 'undefined' && _mpCurrentId === memberId) _renderMemberProfile();
+      else this._renderAvatarVariants(memberId);
+      console.log('[Avatar] switched to variant style=' + style);
+    } catch (e) {
+      console.error('[Avatar] useVariant failed', e);
+      alert('החלפה נכשלה: ' + (e.message || e));
     }
   },
   async useOriginal() {
@@ -15398,6 +15471,14 @@ function _renderMemberProfile() {
   const pencil = document.getElementById('mpPencilBtn');
   pencil.style.display = isSelf ? 'flex' : 'none';
   pencil.onclick = () => AvatarFlow.open(memberId);
+
+  // Saved AI options gallery ("הגרסאות שלי") — self only
+  if (isSelf) {
+    AvatarFlow._renderAvatarVariants(memberId);
+  } else {
+    const vWrap = document.getElementById('mpVariants');
+    if (vWrap) vWrap.style.display = 'none';
+  }
 
   // Info row: birthday always + anniversary for parents only
   const infoRow = document.getElementById('mpInfoRow');
