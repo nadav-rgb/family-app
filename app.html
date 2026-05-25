@@ -12302,7 +12302,7 @@ const AvatarFlow = {
       DataAdapter.mode     = 'family';
       if (lsUserId) DataAdapter.userId = lsUserId;
     }
-    console.log('[Avatar DIAG]', {
+    const _diag = {
       isFamily: DataAdapter.isFamily?.(),
       familyId: DataAdapter.familyId,
       mode: DataAdapter.mode,
@@ -12312,8 +12312,14 @@ const AvatarFlow = {
       lsMode,
       lsUserId,
       currentUser: (typeof AppState !== 'undefined' ? AppState?.currentUser : undefined),
-    });
-    if (!DataAdapter.isFamily()) { alert('לא ניתן ליצור — המכשיר לא במצב משפחה.'); return; }
+      build: 'f3f9992+diag',
+    };
+    console.log('[Avatar DIAG]', _diag);
+    if (!DataAdapter.isFamily()) {
+      // TEMP DIAGNOSTIC: surface the runtime state on-device (mobile PWA has no console).
+      alert('לא ניתן ליצור — המכשיר לא במצב משפחה.\n\n[DIAG]\n' + JSON.stringify(_diag, null, 2));
+      return;
+    }
     this._aiDirect = true;
     const member = _FAMILY_MEMBERS_SEED.find(m => m.memberId === this.memberId)
                 || _familyMembersCache.find(m => m.memberId === this.memberId);

@@ -22,7 +22,7 @@
 // Bump this version on every meaningful release. The activate handler
 // drops any cache whose name doesn't match, so users on a stale cache
 // will get fresh HTML/assets on next visit.
-const CACHE_NAME = 'family-app-v19-multi-device-push-fix-2026-05-20';
+const CACHE_NAME = 'family-app-v20-avatar-ai-diag-2026-05-25';
 const SHELL_FILES = [
   '/app.html',
   '/manifest.json',
