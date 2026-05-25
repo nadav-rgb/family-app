@@ -146,14 +146,16 @@ beautiful,
 soft,
 magical,
 warm,
-playful.
+playful,
+charming,
+full of personality.
 
 GENTLE CUTE LIFT (very subtle — must NOT change facial geometry):
 - slightly more expressive, lively eyes (sparkle and warmth only — do NOT change eye shape, size, or spacing)
 - a slightly warmer feeling in the smile (without changing the smile shape)
 - soft cheek warmth
-- playful premium charm
-- a warm, joyful "Mahane Yehuda" cute vibe
+- playful premium charm and a little extra personality
+- a warm, joyful, lovable "Mahane Yehuda" cute vibe
 
 Visual direction:
 high-end premium illustration,
@@ -167,7 +169,7 @@ Keep realism high.
 The person must still immediately be recognizable.
 
 The reaction should be:
-"Wow, this is literally me — but adorable."
+"This is me — but the cutest version of myself."
 
 Negative prompt:
 new face, different person, disney clone, pixar clone, chibi, cartoon kid, enlarged eyes, larger eyes, giant eyes, cartoon face, altered smile, altered facial structure, ugly AI face, fake beard, distorted identity, exaggerated proportions.`,
@@ -218,29 +220,29 @@ warm,
 dreamy,
 heartwarming,
 premium,
-emotionally uplifting.
+emotionally uplifting,
+crisp and clear.
 
 Visual direction:
-soft cinematic glow,
-beautiful natural light,
-dreamy atmosphere,
-warm magical softness,
-premium depth,
-gentle highlights,
-soft elegant realism.
+rich cinematic glow,
+clean magical light,
+vibrant premium depth,
+beautiful natural light with gentle highlights,
+clear and sharp focus on the face,
+elegant polished realism.
 
 BACKGROUND:
-Keep the same real environment, transformed into a softer, dreamier, cinematic version of itself.
+Keep the same real environment, elevated into a clean, luminous, cinematic version of itself.
 
 IMPORTANT:
-Keep realism high — this is real life made more beautiful, NOT fantasy, NOT cartoon, NOT anime.
+Keep realism high and the image CLEAR — this is real life made more beautiful, NOT foggy, NOT hazy, NOT washed out, NOT cartoon, NOT anime.
 The person must still immediately be recognizable.
 
 The reaction should be:
 "Wow, reality but more beautiful."
 
 Negative prompt:
-new face, different person, distorted identity, altered facial structure, altered smile, enlarged eyes, giant eyes, anime, cartoon, pixar, fantasy costume, sci-fi, creepy lighting, dark horror, comic book, fake skin.`,
+new face, different person, distorted identity, altered facial structure, altered smile, enlarged eyes, giant eyes, haze, fog, washed out, low contrast, blurry, muddy, anime, cartoon, pixar, fantasy costume, sci-fi, creepy lighting, dark horror, comic book, fake skin.`,
   },
   {
     id: 'tropical_fantasy_adventure',
