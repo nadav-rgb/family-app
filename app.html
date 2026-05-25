@@ -2698,6 +2698,27 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
 .avchoice-btn.ai[disabled]{cursor:not-allowed;opacity:.7;}
 .avchoice-btn.ai .soon-pill{font-size:10px;font-weight:900;padding:2px 8px;border-radius:99px;background:rgba(117,96,192,.18);color:#7560c0;letter-spacing:.3px;}
 .avchoice-btn.cancel{background:transparent;color:#9e8878;font-weight:700;font-size:13px;padding:10px;margin-top:4px;}
+
+/* ─── Avatar AI generation results modal (Phase 1) ─── */
+.avgen-bg{position:absolute;inset:0;z-index:946;background:rgba(20,10,5,.92);display:flex;flex-direction:column;pointer-events:none;opacity:0;transition:opacity .22s ease;}
+.avgen-bg.open{opacity:1;pointer-events:auto;}
+.avgen-hdr{flex:0 0 auto;padding:18px 18px 10px;color:#fff;text-align:center;}
+.avgen-hdr .t{font-size:15px;font-weight:900;letter-spacing:.2px;}
+.avgen-hdr .s{font-size:11.5px;font-weight:600;color:rgba(255,255,255,.62);margin-top:4px;}
+.avgen-grid{flex:1 1 auto;min-height:0;overflow-y:auto;display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:6px 18px 14px;}
+.avgen-card{position:relative;border-radius:18px;overflow:hidden;background:rgba(255,255,255,.07);border:2px solid transparent;aspect-ratio:1;display:flex;align-items:center;justify-content:center;transition:border-color .18s,transform .14s;}
+.avgen-card.selected{border-color:#ff9a4e;box-shadow:0 0 0 3px rgba(255,154,78,.32);}
+.avgen-card .label{position:absolute;top:8px;right:8px;left:8px;font-size:10.5px;font-weight:800;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.6);text-align:center;pointer-events:none;z-index:2;}
+.avgen-card img{width:100%;height:100%;object-fit:cover;display:block;cursor:pointer;}
+.avgen-card .spin{width:34px;height:34px;border-radius:50%;border:3px solid rgba(255,255,255,.25);border-top-color:#ff9a4e;animation:avgenSpin .8s linear infinite;}
+@keyframes avgenSpin{to{transform:rotate(360deg);}}
+.avgen-card .err{padding:10px;font-size:12px;font-weight:700;color:rgba(255,255,255,.78);text-align:center;line-height:1.4;}
+.avgen-foot{flex:0 0 auto;padding:12px 18px calc(18px + env(safe-area-inset-bottom,0)) 18px;display:flex;gap:10px;}
+.avgen-btn{flex:1;padding:14px;border-radius:14px;border:none;font-family:inherit;font-size:14px;font-weight:900;cursor:pointer;transition:transform .14s,opacity .14s;touch-action:manipulation;}
+.avgen-btn:active{transform:scale(.97);}
+.avgen-btn.cancel{background:rgba(255,255,255,.14);color:#fff;}
+.avgen-btn.ok{background:linear-gradient(135deg,#ff9a4e,#ff5e14);color:#fff;box-shadow:0 5px 16px rgba(255,94,20,.32);}
+.avgen-btn:disabled{opacity:.5;cursor:not-allowed;}
 </style>
 <!-- cropper.js (local vendor — no CDN dependency for Capacitor/offline) -->
 <link rel="stylesheet" href="vendor/cropper.min.css">
@@ -5322,11 +5343,29 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
     <div class="avchoice-ttl">איך להשתמש בתמונה?</div>
     <div class="avchoice-row">
       <button class="avchoice-btn primary" id="avchoiceUse" type="button">השתמש בתמונה הזו</button>
-      <button class="avchoice-btn ai" id="avchoiceAI" type="button" disabled title="בקרוב">
-        ✨ צור דמות AI <span class="soon-pill">בקרוב</span>
+      <button class="avchoice-btn ai" id="avchoiceAI" type="button">
+        ✨ צור גרסה מעוצבת
       </button>
       <button class="avchoice-btn cancel" id="avchoiceCancel" type="button">ביטול</button>
     </div>
+  </div>
+</div>
+
+<!-- ════ AVATAR AI RESULTS MODAL (Phase 1) ════ -->
+<div class="avgen-bg" id="avgenBg">
+  <div class="avgen-hdr">
+    <div class="t">בחרו גרסה מעוצבת</div>
+    <div class="s">4 סגנונות נוצרים מהתמונה שלכם…</div>
+  </div>
+  <div class="avgen-grid" id="avgenGrid">
+    <div class="avgen-card" data-style="warm_illustrated_storybook"><div class="label">ספר סיפורים מצויר</div><div class="spin"></div></div>
+    <div class="avgen-card" data-style="cute_premium_character"><div class="label">דמות חמודה</div><div class="spin"></div></div>
+    <div class="avgen-card" data-style="dreamy_magical_realism"><div class="label">ריאליזם חלומי</div><div class="spin"></div></div>
+    <div class="avgen-card" data-style="tropical_fantasy_adventure"><div class="label">הרפתקה טרופית</div><div class="spin"></div></div>
+  </div>
+  <div class="avgen-foot">
+    <button class="avgen-btn cancel" id="avgenCancel" type="button">ביטול</button>
+    <button class="avgen-btn ok" id="avgenSave" type="button" disabled>שמור תמונה</button>
   </div>
 </div>
 
@@ -12222,6 +12261,166 @@ const AvatarFlow = {
     this.blob = null;
     console.log('[Avatar] choice cancelled');
   },
+
+  // ── Phase 1: AI styled-avatar generation ──
+  // Fixed card order. Index === slot index in the endpoint's loop.
+  _STYLE_ORDER: ['warm_illustrated_storybook', 'cute_premium_character', 'dreamy_magical_realism', 'tropical_fantasy_adventure'],
+
+  _cardFor(style) {
+    return document.querySelector('.avgen-card[data-style="' + style + '"]');
+  },
+  _resetGenCards() {
+    this._selectedStyle = null;
+    this._selectedB64 = null;
+    document.getElementById('avgenSave').disabled = true;
+    this._STYLE_ORDER.forEach(style => {
+      const card = this._cardFor(style);
+      if (!card) return;
+      card.classList.remove('selected');
+      const label = card.querySelector('.label');
+      card.innerHTML = '';
+      if (label) card.appendChild(label);
+      const spin = document.createElement('div');
+      spin.className = 'spin';
+      card.appendChild(spin);
+    });
+  },
+  _fillGenCard(style, b64) {
+    const card = this._cardFor(style);
+    if (!card) return;
+    const label = card.querySelector('.label');
+    card.innerHTML = '';
+    if (label) card.appendChild(label);
+    const img = document.createElement('img');
+    img.alt = '';
+    img.src = 'data:image/webp;base64,' + b64;
+    img.addEventListener('click', () => this._selectGen(style, b64));
+    card.appendChild(img);
+  },
+  _failGenCard(style) {
+    const card = this._cardFor(style);
+    if (!card) return;
+    const label = card.querySelector('.label');
+    card.innerHTML = '';
+    if (label) card.appendChild(label);
+    const err = document.createElement('div');
+    err.className = 'err';
+    err.textContent = 'לא הצלחנו ליצור את הסגנון הזה';
+    card.appendChild(err);
+  },
+  _selectGen(style, b64) {
+    this._selectedStyle = style;
+    this._selectedB64 = b64;
+    this._STYLE_ORDER.forEach(s => {
+      const card = this._cardFor(s);
+      if (card) card.classList.toggle('selected', s === style);
+    });
+    document.getElementById('avgenSave').disabled = false;
+  },
+  cancelGen() {
+    document.getElementById('avgenBg').classList.remove('open');
+    this._unlock();
+    this.blob = null;
+    this._selectedStyle = null;
+    this._selectedB64 = null;
+    console.log('[Avatar] AI generation cancelled');
+  },
+
+  async useAI() {
+    if (!this.blob) { console.warn('[Avatar] useAI: blob is null'); return; }
+    if (!this.memberId) { console.warn('[Avatar] useAI: memberId is null'); return; }
+    if (!DataAdapter.isFamily()) { alert('לא ניתן ליצור — המכשיר לא במצב משפחה.'); return; }
+    const familyId = DataAdapter.familyId;
+    const memberId = this.memberId;
+
+    // choice → results modal
+    document.getElementById('avchoiceBg').classList.remove('open');
+    this._resetGenCards();
+    document.getElementById('avgenBg').classList.add('open');
+    this._lock();
+
+    const qs = '?familyId=' + encodeURIComponent(familyId) + '&memberId=' + encodeURIComponent(memberId);
+    let res;
+    try {
+      res = await fetch('/api/generate-avatar' + qs, {
+        method: 'POST',
+        headers: { 'Content-Type': 'image/jpeg' },
+        body: this.blob,
+      });
+    } catch (e) {
+      console.error('[Avatar] AI fetch failed', e);
+      this._STYLE_ORDER.forEach(s => this._failGenCard(s));
+      return;
+    }
+    if (!res.ok || !res.body) {
+      console.error('[Avatar] AI bad response status=' + res.status);
+      let reason = '';
+      try { reason = (await res.json()).reason || ''; } catch (_) {}
+      this._STYLE_ORDER.forEach(s => this._failGenCard(s));
+      if (reason === 'limit_reached') alert('הגעתם למכסת היצירות לחבר משפחה זה.');
+      else if (reason === 'rate_limited') alert('יותר מדי בקשות. נסו שוב מאוחר יותר.');
+      else if (reason === 'temporarily_unavailable') alert('השירות אינו זמין כרגע. נסו שוב מאוחר יותר.');
+      return;
+    }
+
+    // Read NDJSON line by line.
+    const reader  = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buf = '';
+    try {
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        let nl;
+        while ((nl = buf.indexOf('\n')) >= 0) {
+          const line = buf.slice(0, nl).trim();
+          buf = buf.slice(nl + 1);
+          if (line) this._handleGenLine(line);
+        }
+      }
+      if (buf.trim()) this._handleGenLine(buf.trim());
+    } catch (e) {
+      console.error('[Avatar] AI stream error', e);
+    }
+  },
+  _handleGenLine(line) {
+    let msg;
+    try { msg = JSON.parse(line); } catch (_) { return; }
+    if (msg.type === 'image') {
+      const b64 = msg.b64 || msg.imageBase64;
+      if (msg.style && b64) this._fillGenCard(msg.style, b64);
+    } else if (msg.type === 'slot_failed') {
+      if (msg.style) this._failGenCard(msg.style);
+    } else if (msg.type === 'done') {
+      console.log('[Avatar] AI done produced=' + msg.produced + ' remaining=' + msg.remaining);
+    }
+  },
+  async saveGen() {
+    if (!this._selectedB64) { console.warn('[Avatar] saveGen: nothing selected'); return; }
+    if (!_storage) { alert('Storage לא מוכן. רענן את הדף.'); return; }
+    const btn = document.getElementById('avgenSave');
+    btn.disabled = true; btn.textContent = 'שומר…';
+    try {
+      const blob   = await (await fetch('data:image/webp;base64,' + this._selectedB64)).blob();
+      const url    = await _uploadAvatarBlob(blob, this.memberId);
+      const avatar = { type: 'ai-photo', url, style: this._selectedStyle };
+      await _saveMemberAvatar(this.memberId, avatar);
+      const nodeCount = _refreshAvatarUI(this.memberId, avatar);
+      console.log('[Avatar] AI avatar saved style=' + this._selectedStyle + ' nodes=' + nodeCount);
+      document.getElementById('avgenBg').classList.remove('open');
+      this._unlock();
+      this.blob = null;
+      this._selectedStyle = null;
+      this._selectedB64 = null;
+    } catch (e) {
+      console.error('[Avatar] AI save failed', e);
+      alert('שמירה נכשלה:\n' + (e.code ? '[' + e.code + '] ' : '') + (e.message || e));
+    } finally {
+      btn.textContent = 'שמור תמונה';
+      btn.disabled = !this._selectedB64;
+    }
+  },
   async useOriginal() {
     // Full diagnostic snapshot — read localStorage DIRECTLY (bypass DataAdapter),
     // compare against DataAdapter properties, and check cache state.
@@ -12388,6 +12587,9 @@ function _wireAvatarFlow() {
   document.getElementById('avcropOk').addEventListener('click', () => AvatarFlow.confirmCrop());
   document.getElementById('avchoiceCancel').addEventListener('click', () => AvatarFlow.cancelChoice());
   document.getElementById('avchoiceUse').addEventListener('click', () => AvatarFlow.useOriginal());
+  document.getElementById('avchoiceAI').addEventListener('click', () => AvatarFlow.useAI());
+  document.getElementById('avgenCancel').addEventListener('click', () => AvatarFlow.cancelGen());
+  document.getElementById('avgenSave').addEventListener('click', () => AvatarFlow.saveGen());
   console.log('[Avatar] flow wired');
 }
 
