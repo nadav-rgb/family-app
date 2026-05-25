@@ -24,7 +24,7 @@ const MAX_BYTES        = 4 * 1024 * 1024;
 const ALLOWED_TYPES    = new Set(['image/jpeg', 'image/png', 'image/webp']);
 const RL_WINDOW_SEC    = 60 * 60;
 const RL_MAX           = 30;     // generations per window, per family AND per ip
-const SLOT_TIMEOUT_MS  = 30000;
+const SLOT_TIMEOUT_MS  = 45000;  // high input_fidelity is slower than the old 30s budget
 
 // Locked style prompts. The client NEVER sends prompt text; this array is the
 // single source of style truth. One entry per slot — slot index === style index.
@@ -402,7 +402,7 @@ async function genOne(buf, contentType, ext, prompt) {
     prompt:        prompt,
     n:             1,
     size:          '1024x1024',
-    quality:       'high',
+    quality:       'medium',   // 'high' doubled latency and blew past the slot/function timeouts
     output_format: 'webp',
     input_fidelity: 'high',  // preserve face/identity — closes the chat-vs-API gap
   });
@@ -434,4 +434,4 @@ async function readRawBody(req) {
 }
 
 module.exports = handler;
-module.exports.config = { maxDuration: 60 };
+module.exports.config = { maxDuration: 120 };
