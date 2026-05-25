@@ -402,9 +402,9 @@ async function genOne(buf, contentType, ext, prompt) {
     prompt:        prompt,
     n:             1,
     size:          '1024x1024',
-    quality:       'medium',
+    quality:       'high',
     output_format: 'webp',
-    // input_fidelity: 'high',  // face-preservation lever — confirm during prompt design
+    input_fidelity: 'high',  // preserve face/identity — closes the chat-vs-API gap
   });
   const b64 = result && result.data && result.data[0] && result.data[0].b64_json;
   if (!b64) throw new Error('no image in response');
