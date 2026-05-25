@@ -37,60 +37,6 @@ const SLOT_TIMEOUT_MS  = 45000;  // high input_fidelity is slower than the old 3
 const LOCKED_STYLE_PROMPTS = [
   {
     id: 'warm_illustrated_storybook',
-    prompt: `Transform the uploaded photo into a premium warm illustrated family storybook artwork.
-
-IMPORTANT:
-Preserve identity perfectly.
-The people must remain highly recognizable and faithful to the original image.
-
-Preserve:
-- face identity
-- facial structure
-- beard
-- smile
-- glasses
-- hairstyle
-- skin tone
-- age
-- emotional expression
-
-STYLE FREEDOM:
-You ARE encouraged to stylize strongly.
-
-Transform the image into a rich hand-painted storybook illustration.
-
-Style references:
-premium illustrated children’s books,
-warm watercolor,
-soft gouache painting,
-gentle brush texture,
-emotional family illustration.
-
-Visual style:
-soft painterly texture,
-warm natural light,
-organic brush strokes,
-beautiful depth,
-cozy emotional atmosphere.
-
-Make the image feel:
-warm,
-loving,
-nostalgic,
-authentic,
-heartwarming.
-
-BACKGROUND:
-Keep the same real environment, but artistically repaint it beautifully in the same illustrated language.
-
-IMPORTANT:
-This should clearly look like an artistic illustration, not a photo filter.
-
-Negative prompt:
-anime, pixar, disney, 3D render, fake skin, over realism, distorted face, giant eyes, plastic texture.`,
-  },
-  {
-    id: 'cute_premium_character',
     prompt: `Edit the uploaded photo.
 
 CRITICAL RULE:
@@ -99,11 +45,8 @@ The real person must remain EXACTLY the same person.
 This is an identity-locked image edit.
 
 DO NOT redesign the face.
-
 DO NOT reinterpret the person.
-
 DO NOT create a new character.
-
 DO NOT change facial geometry.
 
 Treat the uploaded image as locked reference material.
@@ -130,6 +73,69 @@ The result must clearly look like the exact same real person.
 
 STYLE TRANSFORMATION ONLY:
 
+Apply a premium warm illustrated portrait style ON TOP of the existing photo.
+
+The style should feel:
+warm,
+loving,
+nostalgic,
+authentic,
+heartwarming.
+
+Visual direction:
+premium illustrated portrait feel,
+soft painterly texture (subtle and controlled),
+gentle warm brushwork,
+warm natural light,
+cozy emotional atmosphere,
+beautiful depth.
+
+BACKGROUND:
+Keep the same real environment, gently repainted in the same warm illustrated language.
+
+IMPORTANT:
+This should read as a premium illustrated portrait — warm and painterly, but controlled (not heavy watercolor "paint melting"). Identity preservation comes first: the face must remain the exact same recognizable person, painted, never redesigned or melted into someone else.
+
+Negative prompt:
+new face, different person, distorted identity, altered facial structure, altered smile, enlarged eyes, giant eyes, heavy watercolor bleed, paint melting, anime, pixar, disney, 3D render, plastic texture, fake skin.`,
+  },
+  {
+    id: 'cute_premium_character',
+    prompt: `Edit the uploaded photo.
+
+CRITICAL RULE:
+The real person must remain EXACTLY the same person.
+
+This is an identity-locked image edit.
+
+DO NOT redesign the face.
+DO NOT reinterpret the person.
+DO NOT create a new character.
+DO NOT change facial geometry.
+
+Treat the uploaded image as locked reference material.
+
+Preserve EXACTLY:
+- facial proportions
+- smile shape
+- tooth shape
+- eye shape
+- eye distance
+- eyebrow shape
+- beard shape
+- beard density
+- glasses shape
+- forehead size
+- skin tone
+- face width
+- jaw structure
+- facial asymmetry
+- head angle
+
+The result must clearly look like the exact same real person.
+
+STYLE TRANSFORMATION ONLY:
+
 Apply a premium cute cinematic illustrated style ON TOP of the existing photo.
 
 The style should feel:
@@ -139,7 +145,15 @@ heartwarming,
 beautiful,
 soft,
 magical,
-warm.
+warm,
+playful.
+
+GENTLE CUTE LIFT (very subtle — must NOT change facial geometry):
+- slightly more expressive, lively eyes (sparkle and warmth only — do NOT change eye shape, size, or spacing)
+- a slightly warmer feeling in the smile (without changing the smile shape)
+- soft cheek warmth
+- playful premium charm
+- a warm, joyful "Mahane Yehuda" cute vibe
 
 Visual direction:
 high-end premium illustration,
@@ -150,50 +164,55 @@ beautiful polished finish.
 
 IMPORTANT:
 Keep realism high.
-
 The person must still immediately be recognizable.
 
 The reaction should be:
-“Wow, this is literally me.”
+"Wow, this is literally me — but adorable."
 
 Negative prompt:
-new face, different person, disney clone, pixar clone, enlarged eyes, larger eyes, giant eyes, cartoon face, altered smile, altered facial structure, ugly AI face, fake beard, distorted identity, exaggerated proportions`,
+new face, different person, disney clone, pixar clone, chibi, cartoon kid, enlarged eyes, larger eyes, giant eyes, cartoon face, altered smile, altered facial structure, ugly AI face, fake beard, distorted identity, exaggerated proportions.`,
   },
   {
     id: 'dreamy_magical_realism',
-    prompt: `Transform the uploaded photo into a premium dreamy magical realism portrait.
+    prompt: `Edit the uploaded photo.
 
-CRITICAL:
-Identity preservation is extremely important.
+CRITICAL RULE:
+The real person must remain EXACTLY the same person.
 
-The real person must remain highly recognizable.
+This is an identity-locked image edit.
 
-Preserve:
-- facial structure
-- smile
-- beard
-- glasses
-- hairstyle
-- age
+DO NOT redesign the face.
+DO NOT reinterpret the person.
+DO NOT create a new character.
+DO NOT change facial geometry.
+
+Treat the uploaded image as locked reference material.
+
+Preserve EXACTLY:
+- facial proportions
+- smile shape
+- tooth shape
+- eye shape
+- eye distance
+- eyebrow shape
+- beard shape
+- beard density
+- glasses shape
+- forehead size
 - skin tone
+- face width
+- jaw structure
+- facial asymmetry
 - emotional expression
+- head angle
 
-STYLE:
-Strong beauty stylization is encouraged.
+The result must clearly look like the exact same real person.
 
-Create a dreamy premium magical realism aesthetic.
+STYLE TRANSFORMATION ONLY:
 
-Visual style:
-soft cinematic glow,
-beautiful natural light,
-dreamy atmosphere,
-warm magical softness,
-premium depth,
-gentle highlights,
-soft elegant realism,
-subtle enchanted feeling.
+Apply a premium dreamy magical-realism style ON TOP of the existing photo.
 
-The image should feel:
+The style should feel:
 beautiful,
 warm,
 dreamy,
@@ -201,64 +220,69 @@ heartwarming,
 premium,
 emotionally uplifting.
 
-IMPORTANT:
-This is NOT fantasy cosplay.
-This is NOT cartoon.
-This is NOT anime.
-
-The person should still look real — just in an elevated magical version of reality.
+Visual direction:
+soft cinematic glow,
+beautiful natural light,
+dreamy atmosphere,
+warm magical softness,
+premium depth,
+gentle highlights,
+soft elegant realism.
 
 BACKGROUND:
-Keep the same real environment, but transform it into a softer, dreamier, cinematic version of itself.
+Keep the same real environment, transformed into a softer, dreamier, cinematic version of itself.
 
-The result should feel:
-“Wow, reality but more beautiful.”
+IMPORTANT:
+Keep realism high — this is real life made more beautiful, NOT fantasy, NOT cartoon, NOT anime.
+The person must still immediately be recognizable.
+
+The reaction should be:
+"Wow, reality but more beautiful."
 
 Negative prompt:
-anime, cartoon, pixar, fantasy costume, sci-fi, creepy lighting, dark horror, comic book, ugly face, fake skin, distorted identity.`,
+new face, different person, distorted identity, altered facial structure, altered smile, enlarged eyes, giant eyes, anime, cartoon, pixar, fantasy costume, sci-fi, creepy lighting, dark horror, comic book, fake skin.`,
   },
   {
     id: 'tropical_fantasy_adventure',
-    prompt: `Transform the uploaded photo into a beautiful tropical fantasy adventure portrait.
+    prompt: `Edit the uploaded photo.
 
-CRITICAL:
-Identity preservation is extremely important.
+CRITICAL RULE:
+The real person must remain EXACTLY the same person.
 
-The person must remain highly recognizable.
+This is an identity-locked image edit.
 
-Preserve:
-- facial structure
-- smile
-- beard
-- glasses
-- hairstyle
-- age
+DO NOT redesign the face.
+DO NOT reinterpret the person.
+DO NOT create a new character.
+DO NOT change facial geometry.
+
+Treat the uploaded image as locked reference material.
+
+Preserve EXACTLY:
+- facial proportions
+- smile shape
+- tooth shape
+- eye shape
+- eye distance
+- eyebrow shape
+- beard shape
+- beard density
+- glasses shape
+- forehead size
 - skin tone
+- face width
+- jaw structure
+- facial asymmetry
 - emotional expression
+- head angle
 
-STYLE:
-Creative transformation is encouraged.
+The result must clearly look like the exact same real person.
 
-Create an adventurous premium tropical fantasy atmosphere.
+STYLE TRANSFORMATION ONLY:
 
-Visual style:
-beautiful tropical island,
-warm cinematic sunset,
-palm trees,
-turquoise ocean,
-golden light,
-soft magical realism,
-playful tropical details,
-premium cinematic travel vibe.
+Apply a premium tropical fantasy adventure style ON TOP of the existing photo.
 
-You may creatively add:
-palm trees,
-tropical birds,
-gentle animals in the background,
-small playful details,
-warm paradise atmosphere.
-
-The image should feel:
+The style should feel:
 joyful,
 beautiful,
 fun,
@@ -266,14 +290,32 @@ magical,
 vacation-like,
 uplifting.
 
+Visual direction:
+beautiful tropical island,
+warm cinematic sunset,
+turquoise ocean,
+golden light,
+soft magical realism,
+premium cinematic travel vibe.
+
+BACKGROUND (you may creatively add, AROUND the person only — never on or touching the face):
+palm trees,
+turquoise ocean and golden sunset,
+a playful monkey,
+a cute squirrel,
+tropical birds,
+funny premium vacation details,
+small playful paradise magic.
+
 IMPORTANT:
+Add the tropical world AROUND the person — do NOT alter the person's face, head, or identity.
 The person must still clearly look like themselves.
 
 The result should feel:
-“Wow, I’m on a dream island.”
+"Wow, I'm on a dream island!"
 
 Negative prompt:
-cheap photoshop look, ugly AI face, distorted identity, creepy animals, dark horror, low quality CGI, unrealistic proportions.`,
+new face, different person, distorted identity, altered facial structure, altered smile, enlarged eyes, giant eyes, cheap photoshop look, ugly AI face, creepy animals, dark horror, low quality CGI.`,
   },
 ];
 
