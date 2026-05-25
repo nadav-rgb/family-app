@@ -2731,6 +2731,14 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
 .avlb-use{padding:15px 28px;border-radius:18px;border:none;font-family:inherit;font-size:15px;font-weight:900;color:#fff;background:linear-gradient(95deg,#7C3AED,#C026D3);box-shadow:0 8px 22px rgba(124,58,237,.4);cursor:pointer;transition:transform .14s,opacity .14s;}
 .avlb-use:active{transform:scale(.97);}
 .avlb-use:disabled{opacity:.5;cursor:default;}
+.avlb-nav{position:absolute;top:50%;transform:translateY(-50%);width:44px;height:44px;border-radius:50%;border:none;background:rgba(255,255,255,.16);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:2;}
+.avlb-nav svg{width:22px;height:22px;}
+.avlb-nav:active{background:rgba(255,255,255,.28);}
+.avlb-prev{right:14px;}
+.avlb-next{left:14px;}
+.avlb-dots{display:flex;gap:8px;}
+.avlb-dots .dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.3);transition:background .15s,transform .15s;}
+.avlb-dots .dot.on{background:#fff;transform:scale(1.25);}
 
 /* ════ AI AVATAR LANDING (Claude-design page, scoped) ════ */
 .ail-bg{position:absolute;inset:0;z-index:947;background:linear-gradient(180deg,#FDF0E9 0%,#FBEFE8 45%,#FAEAE0 100%);pointer-events:none;opacity:0;transition:opacity .25s ease;overflow-y:auto;-webkit-overflow-scrolling:touch;}
@@ -5496,7 +5504,14 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
   <button class="avlb-close" id="avlbClose" type="button" aria-label="סגור">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>
   </button>
-  <div class="avlb-stage"><img id="avlbImg" alt=""></div>
+  <button class="avlb-nav avlb-prev" id="avlbPrev" type="button" aria-label="הקודם">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 6 9 12 15 18"/></svg>
+  </button>
+  <div class="avlb-stage" id="avlbStage"><img id="avlbImg" alt=""></div>
+  <button class="avlb-nav avlb-next" id="avlbNext" type="button" aria-label="הבא">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+  </button>
+  <div class="avlb-dots" id="avlbDots"></div>
   <button class="avlb-use" id="avlbUse" type="button">השתמש בתמונה זו</button>
 </div>
 
@@ -12743,11 +12758,13 @@ const AvatarFlow = {
            || _FAMILY_MEMBERS_SEED.find(x => x.memberId === memberId);
     const opts = (m && Array.isArray(m.avatarOptions)) ? m.avatarOptions.filter(o => o && o.url) : [];
     if (!opts.length) { wrap.style.display = 'none'; grid.innerHTML = ''; return; }
-    const activeUrl = m && m.avatar && m.avatar.url;
+    // Match the active option by style (always unique per slot), not by url —
+    // older saved sets can share a url from a past upload-path collision.
+    const activeStyle = m && m.avatar && m.avatar.style;
     grid.innerHTML = '';
     opts.forEach(o => {
       const cell = document.createElement('div');
-      cell.className = 'mp-av-variant' + (o.url === activeUrl ? ' active' : '');
+      cell.className = 'mp-av-variant' + (activeStyle && o.style === activeStyle ? ' active' : '');
       const img = document.createElement('img');
       img.alt = ''; img.loading = 'lazy'; img.src = o.url;
       cell.appendChild(img);
@@ -12759,7 +12776,7 @@ const AvatarFlow = {
   // Switch the active avatar to a previously-saved option — no regeneration.
   async useVariant(memberId, url, style) {
     const m = (typeof _familyMembersCache !== 'undefined' ? _familyMembersCache : []).find(x => x.memberId === memberId);
-    if (m && m.avatar && m.avatar.url === url) return; // already active
+    if (m && m.avatar && m.avatar.style === style && m.avatar.url === url) return; // already active
     const avatar = { type: 'ai-photo', url, style };
     try {
       await _saveMemberAvatar(memberId, avatar); // no options arg → keeps avatarOptions
@@ -12773,16 +12790,51 @@ const AvatarFlow = {
       alert('החלפה נכשלה: ' + (e.message || e));
     }
   },
-  // Enlarged preview of a saved option, with a button to set it active.
+  // Enlarged preview of the saved options — swipe / arrows to flip through all.
   openVariantLightbox(memberId, url, style) {
-    this._lbMember = memberId; this._lbUrl = url; this._lbStyle = style;
-    document.getElementById('avlbImg').src = url;
     const m = (typeof _familyMembersCache !== 'undefined' ? _familyMembersCache : []).find(x => x.memberId === memberId);
-    const isActive = !!(m && m.avatar && m.avatar.url === url);
+    const opts = (m && Array.isArray(m.avatarOptions)) ? m.avatarOptions.filter(o => o && o.url) : [];
+    if (!opts.length) return;
+    this._lbMember = memberId;
+    this._lbOptions = opts;
+    let idx = opts.findIndex(o => o.style === style && o.url === url);
+    if (idx < 0) idx = opts.findIndex(o => o.style === style);
+    if (idx < 0) idx = opts.findIndex(o => o.url === url);
+    this._lbIndex = idx < 0 ? 0 : idx;
+    this._renderLightbox();
+    document.getElementById('avLightbox').classList.add('open');
+  },
+  _renderLightbox() {
+    const opts = this._lbOptions || [];
+    if (!opts.length) return;
+    const o = opts[this._lbIndex];
+    this._lbUrl = o.url; this._lbStyle = o.style;
+    document.getElementById('avlbImg').src = o.url;
+    const m = (typeof _familyMembersCache !== 'undefined' ? _familyMembersCache : []).find(x => x.memberId === this._lbMember);
+    const activeStyle = m && m.avatar && m.avatar.style;
+    const isActive = !!(activeStyle && o.style === activeStyle);
     const useBtn = document.getElementById('avlbUse');
     useBtn.disabled = isActive;
     useBtn.textContent = isActive ? 'התמונה הפעילה' : 'השתמש בתמונה זו';
-    document.getElementById('avLightbox').classList.add('open');
+    // Dots
+    const dots = document.getElementById('avlbDots');
+    if (dots) {
+      dots.innerHTML = '';
+      opts.forEach((_, i) => {
+        const d = document.createElement('span');
+        d.className = 'dot' + (i === this._lbIndex ? ' on' : '');
+        dots.appendChild(d);
+      });
+    }
+    const multi = opts.length > 1;
+    const prev = document.getElementById('avlbPrev'); if (prev) prev.style.display = multi ? '' : 'none';
+    const next = document.getElementById('avlbNext'); if (next) next.style.display = multi ? '' : 'none';
+  },
+  _lbStep(dir) {
+    const opts = this._lbOptions || [];
+    if (opts.length < 2) return;
+    this._lbIndex = (this._lbIndex + dir + opts.length) % opts.length;
+    this._renderLightbox();
   },
   closeVariantLightbox() {
     document.getElementById('avLightbox').classList.remove('open');
@@ -12962,6 +13014,21 @@ function _wireAvatarFlow() {
   document.getElementById('avlbClose').addEventListener('click', () => AvatarFlow.closeVariantLightbox());
   document.getElementById('avLightbox').addEventListener('click', e => { if (e.target.id === 'avLightbox') AvatarFlow.closeVariantLightbox(); });
   document.getElementById('avlbUse').addEventListener('click', () => AvatarFlow.useFromLightbox());
+  document.getElementById('avlbPrev').addEventListener('click', () => AvatarFlow._lbStep(-1));
+  document.getElementById('avlbNext').addEventListener('click', () => AvatarFlow._lbStep(1));
+  // Swipe left/right on the enlarged image to flip through the options.
+  (function(){
+    const lb = document.getElementById('avLightbox');
+    let x0 = null, y0 = null;
+    lb.addEventListener('touchstart', e => { const t = e.changedTouches[0]; x0 = t.clientX; y0 = t.clientY; }, { passive: true });
+    lb.addEventListener('touchend', e => {
+      if (x0 === null) return;
+      const t = e.changedTouches[0];
+      const dx = t.clientX - x0, dy = t.clientY - y0;
+      x0 = null;
+      if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy)) AvatarFlow._lbStep(dx < 0 ? 1 : -1);
+    }, { passive: true });
+  })();
   console.log('[Avatar] flow wired');
 }
 
