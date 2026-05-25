@@ -341,7 +341,7 @@ async function handler(req, res) {
     slots.push(
       genWithRetry(body, contentType, ext, style.prompt)
         .then(b64 => { writeLine(res, { type: 'image', slot, style: style.id, format: 'webp', b64 }); return true; })
-        .catch(err => { console.warn('[avatar-gen] slot', slot, 'failed:', err.message); writeLine(res, { type: 'slot_failed', slot, style: style.id }); return false; })
+        .catch(err => { console.warn('[avatar-gen] slot', slot, 'failed:', err.status, err.code, err.message); writeLine(res, { type: 'slot_failed', slot, style: style.id, detail: (err && err.message) || 'unknown', status: err && err.status, code: err && err.code }); return false; })
     );
   }
 
