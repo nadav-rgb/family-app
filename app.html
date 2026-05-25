@@ -2699,26 +2699,17 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
 .avchoice-btn.ai .soon-pill{font-size:10px;font-weight:900;padding:2px 8px;border-radius:99px;background:rgba(117,96,192,.18);color:#7560c0;letter-spacing:.3px;}
 .avchoice-btn.cancel{background:transparent;color:#9e8878;font-weight:700;font-size:13px;padding:10px;margin-top:4px;}
 
-/* ─── Avatar AI generation results modal (Phase 1) ─── */
-.avgen-bg{position:absolute;inset:0;z-index:946;background:rgba(20,10,5,.92);display:flex;flex-direction:column;pointer-events:none;opacity:0;transition:opacity .22s ease;}
-.avgen-bg.open{opacity:1;pointer-events:auto;}
-.avgen-hdr{flex:0 0 auto;padding:18px 18px 10px;color:#fff;text-align:center;}
-.avgen-hdr .t{font-size:15px;font-weight:900;letter-spacing:.2px;}
-.avgen-hdr .s{font-size:11.5px;font-weight:600;color:rgba(255,255,255,.62);margin-top:4px;}
-.avgen-grid{flex:1 1 auto;min-height:0;overflow-y:auto;display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:6px 18px 14px;}
-.avgen-card{position:relative;border-radius:18px;overflow:hidden;background:rgba(255,255,255,.07);border:2px solid transparent;aspect-ratio:1;display:flex;align-items:center;justify-content:center;transition:border-color .18s,transform .14s;}
-.avgen-card.selected{border-color:#ff9a4e;box-shadow:0 0 0 3px rgba(255,154,78,.32);}
-.avgen-card .label{position:absolute;top:8px;right:8px;left:8px;font-size:10.5px;font-weight:800;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.6);text-align:center;pointer-events:none;z-index:2;}
-.avgen-card img{width:100%;height:100%;object-fit:cover;display:block;cursor:pointer;}
-.avgen-card .spin{width:34px;height:34px;border-radius:50%;border:3px solid rgba(255,255,255,.25);border-top-color:#ff9a4e;animation:avgenSpin .8s linear infinite;}
+/* ─── AI results rendered inside the landing-page gallery cards ─── */
 @keyframes avgenSpin{to{transform:rotate(360deg);}}
-.avgen-card .err{padding:10px;font-size:12px;font-weight:700;color:rgba(255,255,255,.78);text-align:center;line-height:1.4;}
-.avgen-foot{flex:0 0 auto;padding:12px 18px calc(18px + env(safe-area-inset-bottom,0)) 18px;display:flex;gap:10px;}
-.avgen-btn{flex:1;padding:14px;border-radius:14px;border:none;font-family:inherit;font-size:14px;font-weight:900;cursor:pointer;transition:transform .14s,opacity .14s;touch-action:manipulation;}
-.avgen-btn:active{transform:scale(.97);}
-.avgen-btn.cancel{background:rgba(255,255,255,.14);color:#fff;}
-.avgen-btn.ok{background:linear-gradient(135deg,#ff9a4e,#ff5e14);color:#fff;box-shadow:0 5px 16px rgba(255,94,20,.32);}
-.avgen-btn:disabled{opacity:.5;cursor:not-allowed;}
+.ail-up-placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;}
+.ail-upload-box.has-photo{border-style:solid;border-color:#7C3AED;padding:0;overflow:hidden;background:#fff;}
+.ail-upload-box > img{width:100%;height:100%;object-fit:cover;display:block;border-radius:26px;}
+.ail-card{cursor:default;}
+.ail-card.selectable{cursor:pointer;}
+.ail-card.selected{outline:3px solid #7C3AED;outline-offset:2px;box-shadow:0 0 0 4px rgba(124,58,237,.18),0 4px 14px rgba(180,120,90,.08);}
+.ail-card-image .spin{position:absolute;top:50%;left:50%;width:30px;height:30px;margin:-15px 0 0 -15px;border-radius:50%;border:3px solid rgba(124,58,237,.2);border-top-color:#7C3AED;animation:avgenSpin .8s linear infinite;z-index:3;}
+.ail-card-image > img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;z-index:2;}
+.ail-card-image .err{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:8px;font-size:11px;font-weight:700;color:#a05a30;text-align:center;line-height:1.35;background:#f7ece4;z-index:3;}
 
 /* ════ AI AVATAR LANDING (Claude-design page, scoped) ════ */
 .ail-bg{position:absolute;inset:0;z-index:947;background:linear-gradient(180deg,#FDF0E9 0%,#FBEFE8 45%,#FAEAE0 100%);pointer-events:none;opacity:0;transition:opacity .25s ease;overflow-y:auto;-webkit-overflow-scrolling:touch;}
@@ -3890,12 +3881,6 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
           <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></span>
           <div class="ico ic-magic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19 18 6"/><path d="M14 4l1 2 2 1-2 1-1 2-1-2-2-1 2-1z"/><path d="M5 9l.7 1.4L7 11l-1.3.7L5 13l-.7-1.3L3 11l1.3-.6z"/></svg></div>
           <div class="body"><div class="t">צור דמות AI מתמונה</div><div class="s">ניצור דמות מאיירת בהתאמה אישית</div></div>
-          <div class="av-dot"></div>
-        </div>
-        <div class="mp-av-row" data-av="ai-4-options">
-          <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></span>
-          <div class="ico ic-sparks"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4l1.6 3.4L17 9l-3.4 1.6L12 14l-1.6-3.4L7 9l3.4-1.6z"/><path d="M6 15l.8 1.6L8.5 17.5l-1.7.8L6 20l-.8-1.7L3.5 17.5l1.7-.8z"/></svg></div>
-          <div class="body"><div class="t">בחר מתוך 4 אפשרויות AI</div><div class="s">ניצור 4 דמויות מאיירות לבחירתכם</div></div>
           <div class="av-dot"></div>
         </div>
       </div>
@@ -5396,23 +5381,6 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
   </div>
 </div>
 
-<!-- ════ AVATAR AI RESULTS MODAL (Phase 1) ════ -->
-<div class="avgen-bg" id="avgenBg">
-  <div class="avgen-hdr">
-    <div class="t">בחרו גרסה מעוצבת</div>
-    <div class="s">4 סגנונות נוצרים מהתמונה שלכם…</div>
-  </div>
-  <div class="avgen-grid" id="avgenGrid">
-    <div class="avgen-card" data-style="warm_illustrated_storybook"><div class="label">ספר סיפורים מצויר</div><div class="spin"></div></div>
-    <div class="avgen-card" data-style="cute_premium_character"><div class="label">דמות חמודה</div><div class="spin"></div></div>
-    <div class="avgen-card" data-style="dreamy_magical_realism"><div class="label">ריאליזם חלומי</div><div class="spin"></div></div>
-    <div class="avgen-card" data-style="tropical_fantasy_adventure"><div class="label">הרפתקה טרופית</div><div class="spin"></div></div>
-  </div>
-  <div class="avgen-foot">
-    <button class="avgen-btn cancel" id="avgenCancel" type="button">ביטול</button>
-    <button class="avgen-btn ok" id="avgenSave" type="button" disabled>שמור תמונה</button>
-  </div>
-</div>
 
 <!-- ════ AI AVATAR LANDING (entry screen for "צור דמות AI מתמונה") ════ -->
 <div class="ail-bg" id="aiLandingBg">
@@ -5435,17 +5403,19 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
     </div>
 
     <div class="ail-upload-wrap">
-      <div class="ail-upload-box" onclick="AvatarFlow.startAIFromLanding()">
-        <svg class="ail-camera" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
-        <span class="ail-uplabel">התמונה שלך</span>
+      <div class="ail-upload-box" id="ailUploadBox" onclick="AvatarFlow.onUploadBoxClick()">
+        <span class="ail-up-placeholder">
+          <svg class="ail-camera" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+          <span class="ail-uplabel">התמונה שלך</span>
+        </span>
       </div>
       <div class="ail-handwritten">התמונה שלך
         <svg class="ail-arrow" width="78" height="32" viewBox="0 0 78 32" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 24 C 14 8, 38 4, 60 14" stroke="#2D2A32" stroke-width="1.8" stroke-linecap="round" fill="none"/><path d="M60 14 L 52 7 L 53 16 Z" fill="#2D2A32" stroke="#2D2A32" stroke-width="1.4" stroke-linejoin="round"/></svg>
       </div>
     </div>
 
-    <button class="ail-cta" type="button" onclick="AvatarFlow.startAIFromLanding()">
-      <span>צור גרסה מעוצבת</span><span class="ail-sparkle">✨</span>
+    <button class="ail-cta" id="ailCta" type="button" onclick="AvatarFlow.onCtaClick()">
+      <span id="ailCtaLabel">צור גרסה מעוצבת</span><span class="ail-sparkle">✨</span>
     </button>
 
     <div class="ail-section">
@@ -5459,25 +5429,25 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
 
     <div class="ail-cards">
       <div class="ail-grid">
-        <div class="ail-card">
+        <div class="ail-card" data-style="warm_illustrated_storybook">
           <div class="ail-card-image"><span class="ail-badge pink">1</span></div>
           <h3 class="ail-card-title">Warm Illustrated Storybook</h3>
           <p class="ail-card-desc">איור חם ומצויר בסגנון ספר ילדים</p>
           <svg class="ail-card-heart" viewBox="0 0 24 24"><path d="M12 21s-7.5-4.5-9.5-9.2C1.1 8.3 3.4 5 6.7 5c1.9 0 3.5 1 4.3 2.4l1 1.6 1-1.6C13.8 6 15.4 5 17.3 5c3.3 0 5.6 3.3 4.2 6.8C19.5 16.5 12 21 12 21z" fill="#F25C8D"/></svg>
         </div>
-        <div class="ail-card">
+        <div class="ail-card" data-style="cute_premium_character">
           <div class="ail-card-image"><span class="ail-badge purple">2</span></div>
           <h3 class="ail-card-title">Cute Premium Character</h3>
           <p class="ail-card-desc">דמות מתוקה וסגנון אנימציה איכותי</p>
           <svg class="ail-card-heart" viewBox="0 0 24 24"><path d="M12 21s-7.5-4.5-9.5-9.2C1.1 8.3 3.4 5 6.7 5c1.9 0 3.5 1 4.3 2.4l1 1.6 1-1.6C13.8 6 15.4 5 17.3 5c3.3 0 5.6 3.3 4.2 6.8C19.5 16.5 12 21 12 21z" fill="#F25C8D"/></svg>
         </div>
-        <div class="ail-card">
+        <div class="ail-card" data-style="dreamy_magical_realism">
           <div class="ail-card-image"><span class="ail-badge blue">3</span></div>
           <h3 class="ail-card-title">Dreamy Magical Realism</h3>
           <p class="ail-card-desc">תאורה קסומה וריאליזם חלומי</p>
           <svg class="ail-card-heart" viewBox="0 0 24 24"><path d="M12 21s-7.5-4.5-9.5-9.2C1.1 8.3 3.4 5 6.7 5c1.9 0 3.5 1 4.3 2.4l1 1.6 1-1.6C13.8 6 15.4 5 17.3 5c3.3 0 5.6 3.3 4.2 6.8C19.5 16.5 12 21 12 21z" fill="#F25C8D"/></svg>
         </div>
-        <div class="ail-card">
+        <div class="ail-card" data-style="tropical_fantasy_adventure">
           <div class="ail-card-image"><span class="ail-badge green">4</span></div>
           <h3 class="ail-card-title">Tropical Fantasy Adventure</h3>
           <p class="ail-card-desc">הרפתקה טרופית באי קסום</p>
@@ -12296,38 +12266,96 @@ const AvatarFlow = {
     this._unlock();
   },
 
-  // ── AI landing screen (entry for "צור דמות AI מתמונה") ──
+  // ── AI landing screen (single AI surface: pick → show photo → generate into
+  //    the 4 gallery cards → select one → save). State machine in _aiState:
+  //    'empty' | 'ready' | 'generating' | 'done'. ──
   openAILanding(memberId) {
     if (!memberId) { console.warn('[Avatar] openAILanding without memberId'); return; }
     this.memberId = memberId;
-    this._aiDirect = false;
+    this.blob = null;
+    this._selectedStyle = null;
+    this._selectedB64 = null;
+    this._clearUploadPhoto();
+    this._resetGenCards();
+    this._setAIState('empty');
     document.getElementById('aiLandingBg').classList.add('open');
     console.log('[Avatar] AI landing open memberId=' + memberId);
   },
   closeAILanding() {
     document.getElementById('aiLandingBg').classList.remove('open');
+    this.blob = null;
+    this._selectedStyle = null;
+    this._selectedB64 = null;
     this._aiDirect = false;
+    this._aiState = 'empty';
+    this._revokeUrls();
   },
-  startAIFromLanding() {
-    // Self-healing: in-memory DataAdapter can lose family state after a WebView
-    // restart / stale module while localStorage still holds it. Restore before guard.
-    const lsFamilyId = localStorage.getItem('family-app-da-family-id');
-    const lsMode     = localStorage.getItem('family-app-da-mode');
-    const lsUserId   = localStorage.getItem('family-app-da-user-id');
-    if (!DataAdapter.isFamily() && lsFamilyId && lsMode === 'family') {
-      console.warn('[Avatar] startAIFromLanding: DataAdapter out of sync — recovering from localStorage');
-      DataAdapter.familyId = lsFamilyId;
-      DataAdapter.mode     = 'family';
-      if (lsUserId) DataAdapter.userId = lsUserId;
-    }
-    if (!DataAdapter.isFamily()) { alert('לא ניתן ליצור — המכשיר לא במצב משפחה.'); return; }
-    this._aiDirect = true;
+  // Open the landing page with the already-cropped photo shown, ready to generate.
+  // Used both after picking from the landing page and from the pencil→AI choice.
+  showAILandingWithPhoto() {
+    this._aiDirect = false;
+    this._setUploadPhoto(this.blob);
+    this._resetGenCards();
+    this._setAIState('ready');
+    document.getElementById('aiLandingBg').classList.add('open');
+  },
+  // Entry from the pencil → choice modal → "עיצוב AI".
+  enterAIFromChoice() {
+    document.getElementById('avchoiceBg').classList.remove('open');
+    this._unlock();
+    this.showAILandingWithPhoto();
+  },
+  onUploadBoxClick() {
+    if (this._aiState === 'generating') return;
+    this._openPickSheet();
+  },
+  onCtaClick() {
+    if (this._aiState === 'generating') return;
+    if (this._aiState === 'done') { this.saveSelected(); return; }
+    if (!this.blob) { this._openPickSheet(); return; }
+    this.startGen();
+  },
+  _openPickSheet() {
+    this._aiDirect = true; // so confirmCrop returns to the landing page with the photo
     const member = _FAMILY_MEMBERS_SEED.find(m => m.memberId === this.memberId)
                 || _familyMembersCache.find(m => m.memberId === this.memberId);
     document.getElementById('avshTitle').textContent = 'צור דמות AI — ' + (member?.name || '');
     document.getElementById('avshRemove').style.display = 'none';
     document.getElementById('avshBg').classList.add('open');
     this._lock();
+  },
+  _setUploadPhoto(blob) {
+    const box = document.getElementById('ailUploadBox');
+    if (!box || !blob) return;
+    const url = URL.createObjectURL(blob);
+    this._objUrls.push(url);
+    box.querySelectorAll('img').forEach(n => n.remove());
+    const ph = box.querySelector('.ail-up-placeholder');
+    if (ph) ph.style.display = 'none';
+    const img = document.createElement('img');
+    img.alt = '';
+    img.src = url;
+    box.appendChild(img);
+    box.classList.add('has-photo');
+  },
+  _clearUploadPhoto() {
+    const box = document.getElementById('ailUploadBox');
+    if (!box) return;
+    box.querySelectorAll('img').forEach(n => n.remove());
+    const ph = box.querySelector('.ail-up-placeholder');
+    if (ph) ph.style.display = '';
+    box.classList.remove('has-photo');
+  },
+  _setAIState(state) {
+    this._aiState = state;
+    const cta = document.getElementById('ailCta');
+    const lbl = document.getElementById('ailCtaLabel');
+    const selectable = state === 'done';
+    document.querySelectorAll('#aiLandingBg .ail-card').forEach(c => c.classList.toggle('selectable', selectable));
+    if (!cta || !lbl) return;
+    if (state === 'generating') { lbl.textContent = 'יוצר…'; cta.disabled = true; }
+    else if (state === 'done')  { lbl.textContent = 'שמור תמונה'; cta.disabled = !this._selectedB64; }
+    else                        { lbl.textContent = 'צור גרסה מעוצבת'; cta.disabled = false; }
   },
   pick(source) {
     console.log('[Avatar] pick source=' + source);
@@ -12418,8 +12446,7 @@ const AvatarFlow = {
     this._unlock();
     this._revokeUrls();
     if (this._aiDirect) {
-      this.closeAILanding();
-      this.useAI();
+      this.showAILandingWithPhoto();
     } else {
       this._showChoice(blob);
     }
@@ -12448,79 +12475,72 @@ const AvatarFlow = {
   // Fixed card order. Index === slot index in the endpoint's loop.
   _STYLE_ORDER: ['warm_illustrated_storybook', 'cute_premium_character', 'dreamy_magical_realism', 'tropical_fantasy_adventure'],
 
-  _cardFor(style) {
-    return document.querySelector('.avgen-card[data-style="' + style + '"]');
+  // The result slot for a style = the .ail-card-image inside that gallery card.
+  _slotEl(style) {
+    return document.querySelector('#aiLandingBg .ail-card[data-style="' + style + '"] .ail-card-image');
+  },
+  _clearSlot(el) {
+    if (el) el.querySelectorAll('img, .spin, .err').forEach(n => n.remove());
   },
   _resetGenCards() {
     this._selectedStyle = null;
     this._selectedB64 = null;
-    document.getElementById('avgenSave').disabled = true;
     this._STYLE_ORDER.forEach(style => {
-      const card = this._cardFor(style);
-      if (!card) return;
-      card.classList.remove('selected');
-      const label = card.querySelector('.label');
-      card.innerHTML = '';
-      if (label) card.appendChild(label);
-      const spin = document.createElement('div');
-      spin.className = 'spin';
-      card.appendChild(spin);
+      const card = document.querySelector('#aiLandingBg .ail-card[data-style="' + style + '"]');
+      if (card) card.classList.remove('selected');
+      this._clearSlot(this._slotEl(style));
     });
   },
+  _spinGenCard(style) {
+    const el = this._slotEl(style);
+    if (!el) return;
+    this._clearSlot(el);
+    const spin = document.createElement('div');
+    spin.className = 'spin';
+    el.appendChild(spin);
+  },
   _fillGenCard(style, b64) {
-    const card = this._cardFor(style);
-    if (!card) return;
-    const label = card.querySelector('.label');
-    card.innerHTML = '';
-    if (label) card.appendChild(label);
+    const el = this._slotEl(style);
+    if (!el) return;
+    this._clearSlot(el);
     const img = document.createElement('img');
     img.alt = '';
     img.src = 'data:image/webp;base64,' + b64;
     img.addEventListener('click', () => this._selectGen(style, b64));
-    card.appendChild(img);
+    el.appendChild(img);
   },
   _failGenCard(style) {
-    const card = this._cardFor(style);
-    if (!card) return;
-    const label = card.querySelector('.label');
-    card.innerHTML = '';
-    if (label) card.appendChild(label);
+    const el = this._slotEl(style);
+    if (!el) return;
+    this._clearSlot(el);
     const err = document.createElement('div');
     err.className = 'err';
     err.textContent = 'לא הצלחנו ליצור את הסגנון הזה';
-    card.appendChild(err);
+    el.appendChild(err);
   },
   _selectGen(style, b64) {
+    if (this._aiState !== 'done') return; // selectable only after generation finishes
     this._selectedStyle = style;
     this._selectedB64 = b64;
     this._STYLE_ORDER.forEach(s => {
-      const card = this._cardFor(s);
+      const card = document.querySelector('#aiLandingBg .ail-card[data-style="' + s + '"]');
       if (card) card.classList.toggle('selected', s === style);
     });
-    document.getElementById('avgenSave').disabled = false;
-  },
-  cancelGen() {
-    document.getElementById('avgenBg').classList.remove('open');
-    this._unlock();
-    this.blob = null;
-    this._selectedStyle = null;
-    this._selectedB64 = null;
-    this._aiDirect = false;
-    console.log('[Avatar] AI generation cancelled');
+    const cta = document.getElementById('ailCta');
+    if (cta) cta.disabled = false;
   },
 
-  async useAI() {
-    if (!this.blob) { console.warn('[Avatar] useAI: blob is null'); return; }
-    if (!this.memberId) { console.warn('[Avatar] useAI: memberId is null'); return; }
+  async startGen() {
+    if (!this.blob) { this._openPickSheet(); return; }
+    if (!this.memberId) { console.warn('[Avatar] startGen: memberId is null'); return; }
 
-    // Self-healing (same as useOriginal): the in-memory DataAdapter can lose
-    // family state after a WebView restart / stale module instance, while
-    // localStorage still holds the source of truth. Restore before the guard.
+    // Self-healing: in-memory DataAdapter can lose family state after a WebView
+    // restart / stale module while localStorage still holds the source of truth.
     const lsFamilyId = localStorage.getItem('family-app-da-family-id');
     const lsMode     = localStorage.getItem('family-app-da-mode');
     const lsUserId   = localStorage.getItem('family-app-da-user-id');
     if (!DataAdapter.isFamily() && lsFamilyId && lsMode === 'family') {
-      console.warn('[Avatar] useAI: DataAdapter out of sync with localStorage — recovering');
+      console.warn('[Avatar] startGen: DataAdapter out of sync — recovering from localStorage');
       DataAdapter.familyId = lsFamilyId;
       DataAdapter.mode     = 'family';
       if (lsUserId) DataAdapter.userId = lsUserId;
@@ -12529,41 +12549,33 @@ const AvatarFlow = {
     const familyId = DataAdapter.familyId;
     const memberId = this.memberId;
 
-    // choice → results modal
-    document.getElementById('avchoiceBg').classList.remove('open');
-    this._resetGenCards();
-    document.getElementById('avgenBg').classList.add('open');
-    this._lock();
+    this._selectedStyle = null;
+    this._selectedB64 = null;
+    this._STYLE_ORDER.forEach(s => this._spinGenCard(s));
+    this._setAIState('generating');
 
     const qs = '?familyId=' + encodeURIComponent(familyId) + '&memberId=' + encodeURIComponent(memberId);
     // On native (Capacitor) the page origin is https://localhost, so a relative
     // /api path can't reach the serverless function. Point at the Vercel host.
-    // CORS is open on the endpoint (Access-Control-Allow-Origin: *).
     const _isNative = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
     const _apiBase  = _isNative ? 'https://family-app-roan.vercel.app' : '';
-    // TEMP A/B probe: ?avatarModel=… on the page URL passes through to the API
-    // as &model=… (server allowlists it; absent → server default gpt-image-1).
+    // TEMP A/B probe: ?avatarModel=… on the page URL passes through as &model=…
     let _modelQs = '';
     try {
       const m = new URLSearchParams(window.location.search).get('avatarModel');
       if (m) _modelQs = '&model=' + encodeURIComponent(m);
     } catch (_) {}
     const reqUrl = _apiBase + '/api/generate-avatar' + qs + _modelQs;
-    console.log('[Avatar] useAI guard passed — familyId=' + familyId
-      + ' memberId=' + memberId
-      + ' myMemberId=' + (DataAdapter && DataAdapter.myMemberId)
-      + ' native=' + _isNative
-      + ' url=' + reqUrl);
+    console.log('[Avatar] startGen — familyId=' + familyId + ' memberId=' + memberId
+      + ' native=' + _isNative + ' url=' + reqUrl);
+
     let res;
     try {
-      res = await fetch(reqUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'image/jpeg' },
-        body: this.blob,
-      });
+      res = await fetch(reqUrl, { method: 'POST', headers: { 'Content-Type': 'image/jpeg' }, body: this.blob });
     } catch (e) {
       console.error('[Avatar] AI fetch failed', e);
       this._STYLE_ORDER.forEach(s => this._failGenCard(s));
+      this._setAIState('ready');
       return;
     }
     if (!res.ok || !res.body) {
@@ -12574,6 +12586,7 @@ const AvatarFlow = {
       if (reason === 'limit_reached') alert('הגעתם למכסת היצירות לחבר משפחה זה.');
       else if (reason === 'rate_limited') alert('יותר מדי בקשות. נסו שוב מאוחר יותר.');
       else if (reason === 'temporarily_unavailable') alert('השירות אינו זמין כרגע. נסו שוב מאוחר יותר.');
+      this._setAIState('ready');
       return;
     }
 
@@ -12597,6 +12610,10 @@ const AvatarFlow = {
     } catch (e) {
       console.error('[Avatar] AI stream error', e);
     }
+
+    // Done. If at least one image rendered, allow selection + save; else allow retry.
+    const any = this._STYLE_ORDER.some(s => { const el = this._slotEl(s); return el && el.querySelector('img'); });
+    this._setAIState(any ? 'done' : 'ready');
   },
   _handleGenLine(line) {
     let msg;
@@ -12610,11 +12627,13 @@ const AvatarFlow = {
       console.log('[Avatar] AI done produced=' + msg.produced + ' remaining=' + msg.remaining);
     }
   },
-  async saveGen() {
-    if (!this._selectedB64) { console.warn('[Avatar] saveGen: nothing selected'); return; }
+  async saveSelected() {
+    if (!this._selectedB64) { console.warn('[Avatar] saveSelected: nothing selected'); return; }
     if (!_storage) { alert('Storage לא מוכן. רענן את הדף.'); return; }
-    const btn = document.getElementById('avgenSave');
-    btn.disabled = true; btn.textContent = 'שומר…';
+    const cta = document.getElementById('ailCta');
+    const lbl = document.getElementById('ailCtaLabel');
+    if (cta) cta.disabled = true;
+    if (lbl) lbl.textContent = 'שומר…';
     try {
       const blob   = await (await fetch('data:image/webp;base64,' + this._selectedB64)).blob();
       const url    = await _uploadAvatarBlob(blob, this.memberId);
@@ -12622,18 +12641,12 @@ const AvatarFlow = {
       await _saveMemberAvatar(this.memberId, avatar);
       const nodeCount = _refreshAvatarUI(this.memberId, avatar);
       console.log('[Avatar] AI avatar saved style=' + this._selectedStyle + ' nodes=' + nodeCount);
-      document.getElementById('avgenBg').classList.remove('open');
-      this._unlock();
-      this.blob = null;
-      this._selectedStyle = null;
-      this._selectedB64 = null;
-      this._aiDirect = false;
+      this.closeAILanding();
     } catch (e) {
       console.error('[Avatar] AI save failed', e);
       alert('שמירה נכשלה:\n' + (e.code ? '[' + e.code + '] ' : '') + (e.message || e));
-    } finally {
-      btn.textContent = 'שמור תמונה';
-      btn.disabled = !this._selectedB64;
+      if (lbl) lbl.textContent = 'שמור תמונה';
+      if (cta) cta.disabled = false;
     }
   },
   async useOriginal() {
@@ -12802,9 +12815,7 @@ function _wireAvatarFlow() {
   document.getElementById('avcropOk').addEventListener('click', () => AvatarFlow.confirmCrop());
   document.getElementById('avchoiceCancel').addEventListener('click', () => AvatarFlow.cancelChoice());
   document.getElementById('avchoiceUse').addEventListener('click', () => AvatarFlow.useOriginal());
-  document.getElementById('avchoiceAI').addEventListener('click', () => AvatarFlow.useAI());
-  document.getElementById('avgenCancel').addEventListener('click', () => AvatarFlow.cancelGen());
-  document.getElementById('avgenSave').addEventListener('click', () => AvatarFlow.saveGen());
+  document.getElementById('avchoiceAI').addEventListener('click', () => AvatarFlow.enterAIFromChoice());
   console.log('[Avatar] flow wired');
 }
 
