@@ -12662,9 +12662,13 @@ const AvatarFlow = {
       const avatar = { type: 'ai-photo', url, style: this._selectedStyle };
       await _saveMemberAvatar(this.memberId, avatar);
       const nodeCount = _refreshAvatarUI(this.memberId, avatar);
-      // The home hero portrait renders separately (key-cached) and isn't covered
-      // by _refreshAvatarUI — refresh it so it doesn't keep showing the old image.
+      // The home hero portrait and the member-profile avatar circle render via
+      // separate paths not covered by _refreshAvatarUI — refresh them too so
+      // they don't keep showing the old image until the next navigation.
       if (typeof updateHmPortrait === 'function') updateHmPortrait();
+      if (typeof _renderMemberProfile === 'function' && typeof _mpCurrentId !== 'undefined' && _mpCurrentId === this.memberId) {
+        _renderMemberProfile();
+      }
       console.log('[Avatar] AI avatar saved style=' + this._selectedStyle + ' nodes=' + nodeCount);
       this.closeAILanding();
     } catch (e) {
