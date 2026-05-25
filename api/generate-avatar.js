@@ -26,10 +26,238 @@ const RL_WINDOW_SEC    = 60 * 60;
 const RL_MAX           = 30;     // generations per window, per family AND per ip
 const SLOT_TIMEOUT_MS  = 30000;
 
-// PLACEHOLDER — the real style-lock prompt is designed separately. The client
-// never sends prompt text; this constant is the single source of style truth.
-const LOCKED_STYLE_PROMPT =
-  'Illustrated avatar portrait of this person. PLACEHOLDER STYLE — final style-lock prompt pending.';
+// Locked style prompts. The client NEVER sends prompt text; this array is the
+// single source of style truth. One entry per slot — slot index === style index.
+// Order is load-bearing: it maps 1:1 to the slot loop below.
+const LOCKED_STYLE_PROMPTS = [
+  {
+    id: 'warm_illustrated_storybook',
+    prompt: `Transform the uploaded photo into a premium warm illustrated family storybook artwork.
+
+IMPORTANT:
+Preserve identity perfectly.
+The people must remain highly recognizable and faithful to the original image.
+
+Preserve:
+- face identity
+- facial structure
+- beard
+- smile
+- glasses
+- hairstyle
+- skin tone
+- age
+- emotional expression
+
+STYLE FREEDOM:
+You ARE encouraged to stylize strongly.
+
+Transform the image into a rich hand-painted storybook illustration.
+
+Style references:
+premium illustrated children’s books,
+warm watercolor,
+soft gouache painting,
+gentle brush texture,
+emotional family illustration.
+
+Visual style:
+soft painterly texture,
+warm natural light,
+organic brush strokes,
+beautiful depth,
+cozy emotional atmosphere.
+
+Make the image feel:
+warm,
+loving,
+nostalgic,
+authentic,
+heartwarming.
+
+BACKGROUND:
+Keep the same real environment, but artistically repaint it beautifully in the same illustrated language.
+
+IMPORTANT:
+This should clearly look like an artistic illustration, not a photo filter.
+
+Negative prompt:
+anime, pixar, disney, 3D render, fake skin, over realism, distorted face, giant eyes, plastic texture.`,
+  },
+  {
+    id: 'cute_premium_character',
+    prompt: `Transform the uploaded photo into an adorable premium cute cinematic character illustration.
+
+CRITICAL:
+Identity must remain recognizable.
+The real person should still clearly look like themselves.
+
+Preserve:
+- facial structure
+- smile
+- beard
+- glasses
+- hairstyle
+- age
+- emotional expression
+
+STYLE:
+Strong stylization is encouraged.
+
+Create a premium cute illustration with:
+
+slightly larger expressive eyes,
+soft rounded facial warmth,
+beautiful polished rendering,
+high-end Japanese-inspired family illustration,
+gentle magical realism,
+playful premium charm.
+
+The style should feel:
+adorable,
+premium,
+heartwarming,
+joyful,
+magical,
+beautiful.
+
+Visual references:
+premium animated family illustration,
+high-end modern illustrated portrait,
+soft cinematic glow,
+cute but elegant character design.
+
+BACKGROUND:
+Keep the same original environment and transform it into the same cute illustrated world.
+
+IMPORTANT:
+Not anime.
+Not chibi.
+Not childish.
+
+The result should feel:
+“WOW, this is so cute.”
+
+Negative prompt:
+cheap anime, chibi, giant eyes, childish cartoon, disney, pixar clone, distorted face, fake identity, ugly proportions.`,
+  },
+  {
+    id: 'dreamy_magical_realism',
+    prompt: `Transform the uploaded photo into a premium dreamy magical realism portrait.
+
+CRITICAL:
+Identity preservation is extremely important.
+
+The real person must remain highly recognizable.
+
+Preserve:
+- facial structure
+- smile
+- beard
+- glasses
+- hairstyle
+- age
+- skin tone
+- emotional expression
+
+STYLE:
+Strong beauty stylization is encouraged.
+
+Create a dreamy premium magical realism aesthetic.
+
+Visual style:
+soft cinematic glow,
+beautiful natural light,
+dreamy atmosphere,
+warm magical softness,
+premium depth,
+gentle highlights,
+soft elegant realism,
+subtle enchanted feeling.
+
+The image should feel:
+beautiful,
+warm,
+dreamy,
+heartwarming,
+premium,
+emotionally uplifting.
+
+IMPORTANT:
+This is NOT fantasy cosplay.
+This is NOT cartoon.
+This is NOT anime.
+
+The person should still look real — just in an elevated magical version of reality.
+
+BACKGROUND:
+Keep the same real environment, but transform it into a softer, dreamier, cinematic version of itself.
+
+The result should feel:
+“Wow, reality but more beautiful.”
+
+Negative prompt:
+anime, cartoon, pixar, fantasy costume, sci-fi, creepy lighting, dark horror, comic book, ugly face, fake skin, distorted identity.`,
+  },
+  {
+    id: 'tropical_fantasy_adventure',
+    prompt: `Transform the uploaded photo into a beautiful tropical fantasy adventure portrait.
+
+CRITICAL:
+Identity preservation is extremely important.
+
+The person must remain highly recognizable.
+
+Preserve:
+- facial structure
+- smile
+- beard
+- glasses
+- hairstyle
+- age
+- skin tone
+- emotional expression
+
+STYLE:
+Creative transformation is encouraged.
+
+Create an adventurous premium tropical fantasy atmosphere.
+
+Visual style:
+beautiful tropical island,
+warm cinematic sunset,
+palm trees,
+turquoise ocean,
+golden light,
+soft magical realism,
+playful tropical details,
+premium cinematic travel vibe.
+
+You may creatively add:
+palm trees,
+tropical birds,
+gentle animals in the background,
+small playful details,
+warm paradise atmosphere.
+
+The image should feel:
+joyful,
+beautiful,
+fun,
+magical,
+vacation-like,
+uplifting.
+
+IMPORTANT:
+The person must still clearly look like themselves.
+
+The result should feel:
+“Wow, I’m on a dream island.”
+
+Negative prompt:
+cheap photoshop look, ugly AI face, distorted identity, creepy animals, dark horror, low quality CGI, unrealistic proportions.`,
+  },
+];
 
 async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -109,10 +337,11 @@ async function handler(req, res) {
 
   const slots = [];
   for (let slot = 0; slot < OPTIONS_COUNT; slot++) {
+    const style = LOCKED_STYLE_PROMPTS[slot];
     slots.push(
-      genWithRetry(body, contentType, ext)
-        .then(b64 => { writeLine(res, { type: 'image', slot, format: 'webp', b64 }); return true; })
-        .catch(err => { console.warn('[avatar-gen] slot', slot, 'failed:', err.message); writeLine(res, { type: 'slot_failed', slot }); return false; })
+      genWithRetry(body, contentType, ext, style.prompt)
+        .then(b64 => { writeLine(res, { type: 'image', slot, style: style.id, format: 'webp', b64 }); return true; })
+        .catch(err => { console.warn('[avatar-gen] slot', slot, 'failed:', err.message); writeLine(res, { type: 'slot_failed', slot, style: style.id }); return false; })
     );
   }
 
@@ -156,21 +385,21 @@ async function checkAndBumpRate(key) {
   return { ok: true };
 }
 
-async function genWithRetry(buf, contentType, ext) {
+async function genWithRetry(buf, contentType, ext, prompt) {
   try {
-    return await withTimeout(genOne(buf, contentType, ext), SLOT_TIMEOUT_MS);
+    return await withTimeout(genOne(buf, contentType, ext, prompt), SLOT_TIMEOUT_MS);
   } catch (e) {
-    return await withTimeout(genOne(buf, contentType, ext), SLOT_TIMEOUT_MS);
+    return await withTimeout(genOne(buf, contentType, ext, prompt), SLOT_TIMEOUT_MS);
   }
 }
 
-async function genOne(buf, contentType, ext) {
+async function genOne(buf, contentType, ext, prompt) {
   // Fresh File per call so a consumed stream is never reused across the 4 slots.
   const file = await OpenAI.toFile(buf, 'source.' + ext, { type: contentType });
   const result = await client.images.edit({
     model:         IMAGE_MODEL,
     image:         file,
-    prompt:        LOCKED_STYLE_PROMPT,
+    prompt:        prompt,
     n:             1,
     size:          '1024x1024',
     quality:       'medium',
