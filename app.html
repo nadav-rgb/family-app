@@ -12537,7 +12537,24 @@ const AvatarFlow = {
       DataAdapter.mode     = 'family';
       if (lsUserId) DataAdapter.userId = lsUserId;
     }
-    if (!DataAdapter.isFamily()) { alert('לא ניתן ליצור — המכשיר לא במצב משפחה.'); return; }
+    const _diag = {
+      isFamily: DataAdapter.isFamily?.(),
+      familyId: DataAdapter.familyId,
+      mode: DataAdapter.mode,
+      userId: DataAdapter.userId,
+      myMemberId: DataAdapter.myMemberId,
+      lsFamilyId,
+      lsMode,
+      lsUserId,
+      currentUser: (typeof AppState !== 'undefined' ? AppState?.currentUser : undefined),
+      build: '564cf06+diag',
+    };
+    console.log('[Avatar DIAG useAI]', _diag);
+    if (!DataAdapter.isFamily()) {
+      // TEMP DIAGNOSTIC: surface runtime state on-device (mobile PWA has no console).
+      alert('לא ניתן ליצור — המכשיר לא במצב משפחה.\n\n[DIAG]\n' + JSON.stringify(_diag, null, 2));
+      return;
+    }
     const familyId = DataAdapter.familyId;
     const memberId = this.memberId;
 
