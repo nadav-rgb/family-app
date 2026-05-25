@@ -12271,6 +12271,7 @@ const AvatarFlow = {
   //    'empty' | 'ready' | 'generating' | 'done'. ──
   openAILanding(memberId) {
     if (!memberId) { console.warn('[Avatar] openAILanding without memberId'); return; }
+    this._closeAllAvatarModals();
     this.memberId = memberId;
     this.blob = null;
     this._selectedStyle = null;
@@ -12281,8 +12282,20 @@ const AvatarFlow = {
     document.getElementById('aiLandingBg').classList.add('open');
     console.log('[Avatar] AI landing open memberId=' + memberId);
   },
+  // Force-close every avatar sub-modal (sheet/crop/choice) and reset the body
+  // lock. Prevents a stale .open modal from showing through under the landing
+  // page (its background is opaque) and being revealed when the landing closes.
+  _closeAllAvatarModals() {
+    ['avshBg', 'avcropBg', 'avchoiceBg'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.classList.remove('open');
+    });
+    this._lockCount = 0;
+    document.body.classList.remove('av-modal-lock');
+  },
   closeAILanding() {
     document.getElementById('aiLandingBg').classList.remove('open');
+    this._closeAllAvatarModals();
     this.blob = null;
     this._selectedStyle = null;
     this._selectedB64 = null;
@@ -12293,6 +12306,7 @@ const AvatarFlow = {
   // Open the landing page with the already-cropped photo shown, ready to generate.
   // Used both after picking from the landing page and from the pencil→AI choice.
   showAILandingWithPhoto() {
+    this._closeAllAvatarModals();
     this._aiDirect = false;
     this._setUploadPhoto(this.blob);
     this._resetGenCards();
