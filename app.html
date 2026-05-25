@@ -13,7 +13,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
 <meta name="apple-mobile-web-app-title" content="Family"/>
 <meta name="mobile-web-app-capable" content="yes"/>
-<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&family=Rubik:wght@400;600;700;800;900&family=Heebo:wght@400;500;600;700;800;900&family=Frank+Ruhl+Libre:wght@300;400;500;700;900&family=Instrument+Serif:ital@0;1&family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&family=Rubik:wght@400;600;700;800;900&family=Heebo:wght@400;500;600;700;800;900&family=Frank+Ruhl+Libre:wght@300;400;500;700;900&family=Instrument+Serif:ital@0;1&family=Manrope:wght@300;400;500;600;700;800&family=Varela+Round&family=Caveat:wght@500;700&family=Pacifico&display=swap" rel="stylesheet"/>
 <style>
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
 *:focus{outline:none;}
@@ -2719,6 +2719,51 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
 .avgen-btn.cancel{background:rgba(255,255,255,.14);color:#fff;}
 .avgen-btn.ok{background:linear-gradient(135deg,#ff9a4e,#ff5e14);color:#fff;box-shadow:0 5px 16px rgba(255,94,20,.32);}
 .avgen-btn:disabled{opacity:.5;cursor:not-allowed;}
+
+/* ════ AI AVATAR LANDING (Claude-design page, scoped) ════ */
+.ail-bg{position:absolute;inset:0;z-index:947;background:linear-gradient(180deg,#FDF0E9 0%,#FBEFE8 45%,#FAEAE0 100%);pointer-events:none;opacity:0;transition:opacity .25s ease;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+.ail-bg.open{opacity:1;pointer-events:auto;}
+.ail-wrap{padding:20px 22px calc(36px + env(safe-area-inset-bottom,0));direction:rtl;color:#2D2A32;font-family:'Heebo','Varela Round',system-ui,sans-serif;-webkit-font-smoothing:antialiased;}
+.ail-wrap *,.ail-wrap *::before,.ail-wrap *::after{box-sizing:border-box;}
+.ail-header{display:flex;align-items:center;justify-content:space-between;padding:6px 0 18px;}
+.ail-icon-btn{width:44px;height:44px;border-radius:50%;background:#fff;border:none;box-shadow:0 4px 14px rgba(140,90,70,.10),0 1px 2px rgba(140,90,70,.06);display:flex;align-items:center;justify-content:center;cursor:pointer;color:#2D2A32;}
+.ail-icon-btn svg{width:18px;height:18px;}
+.ail-help-btn{transform:translateX(-10px);}
+.ail-logo{position:relative;font-family:'Pacifico',cursive;font-size:32px;line-height:1;background:linear-gradient(90deg,#8B3FD9 0%,#C44FBE 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;padding:0 4px;}
+.ail-logo .ail-heart{position:absolute;top:-10px;left:38%;width:14px;height:14px;}
+.ail-title-block{text-align:center;margin-top:8px;}
+.ail-page-title{font-family:'Heebo',sans-serif;font-weight:900;font-size:38px;line-height:1.1;color:#2D2A32;margin:0 0 10px;letter-spacing:-.5px;}
+.ail-subtitle{color:#8a8290;font-size:15px;font-weight:400;margin:0;}
+.ail-upload-wrap{position:relative;display:flex;justify-content:center;margin:28px 0 24px;}
+.ail-upload-box{width:220px;height:220px;border-radius:28px;border:2px dashed #cdb9ab;background:rgba(255,255,255,.35);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#a89888;cursor:pointer;transition:border-color .15s,background .15s;}
+.ail-upload-box:active{background:rgba(255,255,255,.55);border-color:#b89a86;}
+.ail-camera{width:36px;height:36px;stroke:#a89888;}
+.ail-uplabel{font-size:15px;font-weight:500;color:#a89888;}
+.ail-handwritten{position:absolute;top:52%;right:calc(50% + 130px);transform:translateY(-50%) rotate(-8deg);font-family:'Caveat',cursive;font-size:26px;font-weight:700;color:#2D2A32;white-space:nowrap;pointer-events:none;}
+.ail-arrow{display:block;margin-top:-2px;margin-right:18px;}
+.ail-cta{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:19px 24px;border-radius:26px;border:none;background:linear-gradient(95deg,#7C3AED 0%,#A93AE0 50%,#C026D3 100%);color:#fff;font-family:'Heebo',sans-serif;font-weight:700;font-size:18px;cursor:pointer;box-shadow:0 14px 30px rgba(124,58,237,.32),0 6px 12px rgba(192,38,211,.18),inset 0 1px 0 rgba(255,255,255,.25);transition:transform .15s ease;}
+.ail-cta:active{transform:translateY(0) scale(.99);}
+.ail-sparkle{font-size:18px;}
+.ail-section{text-align:center;margin:34px 0 16px;position:relative;}
+.ail-mini-heart{width:12px;height:12px;display:block;margin:0 auto 6px;}
+.ail-row{display:flex;align-items:center;justify-content:center;gap:14px;}
+.ail-h2{font-family:'Heebo',sans-serif;font-weight:700;font-size:19px;color:#2D2A32;margin:0;}
+.ail-deco{display:flex;align-items:center;color:#d8b9a3;}
+.ail-deco svg{width:38px;height:10px;}
+.ail-cards{background:linear-gradient(180deg,#fff9f3 0%,#fdf2e9 100%);border-radius:28px;padding:16px;box-shadow:0 6px 22px rgba(180,120,90,.08),0 1px 2px rgba(180,120,90,.04);}
+.ail-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.ail-card{background:#fff;border-radius:20px;padding:12px 12px 14px;box-shadow:0 4px 14px rgba(180,120,90,.08),0 1px 2px rgba(180,120,90,.04);position:relative;display:flex;flex-direction:column;}
+.ail-card-image{position:relative;width:100%;aspect-ratio:1/1;background:#ececec;border-radius:14px;overflow:hidden;margin-bottom:12px;}
+.ail-badge{position:absolute;top:9px;right:9px;width:28px;height:28px;border-radius:50%;color:#fff;font-family:'Heebo',sans-serif;font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 8px rgba(0,0,0,.15);border:2px solid #fff;}
+.ail-badge.pink{background:#EC4D8A;}
+.ail-badge.purple{background:#8B5CF6;}
+.ail-badge.blue{background:#4FB3E8;}
+.ail-badge.green{background:#2BB67A;}
+.ail-card-title{font-family:'Heebo',sans-serif;font-weight:700;font-size:14px;color:#2D2A32;line-height:1.25;margin:0 0 4px;direction:ltr;text-align:right;}
+.ail-card-desc{font-size:12px;color:#8a8290;line-height:1.35;margin:0;padding-left:26px;}
+.ail-card-heart{position:absolute;bottom:12px;left:12px;width:18px;height:18px;}
+.ail-footer{margin-top:22px;display:flex;align-items:center;justify-content:center;gap:6px;color:#a89888;font-size:13px;}
+.ail-footer svg{width:13px;height:13px;}
 </style>
 <!-- cropper.js (local vendor — no CDN dependency for Capacitor/offline) -->
 <link rel="stylesheet" href="vendor/cropper.min.css">
@@ -5366,6 +5411,85 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
   <div class="avgen-foot">
     <button class="avgen-btn cancel" id="avgenCancel" type="button">ביטול</button>
     <button class="avgen-btn ok" id="avgenSave" type="button" disabled>שמור תמונה</button>
+  </div>
+</div>
+
+<!-- ════ AI AVATAR LANDING (entry screen for "צור דמות AI מתמונה") ════ -->
+<div class="ail-bg" id="aiLandingBg">
+  <div class="ail-wrap">
+    <div class="ail-header">
+      <button class="ail-icon-btn" type="button" aria-label="חזור" onclick="AvatarFlow.closeAILanding()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"></polyline></svg>
+      </button>
+      <div class="ail-logo">Family
+        <svg class="ail-heart" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 21s-7.5-4.5-9.5-9.2C1.1 8.3 3.4 5 6.7 5c1.9 0 3.5 1 4.3 2.4l1 1.6 1-1.6C13.8 6 15.4 5 17.3 5c3.3 0 5.6 3.3 4.2 6.8C19.5 16.5 12 21 12 21z" fill="#F25C8D"/></svg>
+      </div>
+      <button class="ail-icon-btn ail-help-btn" type="button" aria-label="עזרה">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 2.5-3 4.5"></path><line x1="12" y1="18" x2="12" y2="18.01"></line></svg>
+      </button>
+    </div>
+
+    <div class="ail-title-block">
+      <h1 class="ail-page-title">צור אווטאר מעוצב</h1>
+      <p class="ail-subtitle">בחר סגנון שאהבת והפוך את התמונה שלך לייחודית</p>
+    </div>
+
+    <div class="ail-upload-wrap">
+      <div class="ail-upload-box" onclick="AvatarFlow.startAIFromLanding()">
+        <svg class="ail-camera" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+        <span class="ail-uplabel">התמונה שלך</span>
+      </div>
+      <div class="ail-handwritten">התמונה שלך
+        <svg class="ail-arrow" width="78" height="32" viewBox="0 0 78 32" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 24 C 14 8, 38 4, 60 14" stroke="#2D2A32" stroke-width="1.8" stroke-linecap="round" fill="none"/><path d="M60 14 L 52 7 L 53 16 Z" fill="#2D2A32" stroke="#2D2A32" stroke-width="1.4" stroke-linejoin="round"/></svg>
+      </div>
+    </div>
+
+    <button class="ail-cta" type="button" onclick="AvatarFlow.startAIFromLanding()">
+      <span>צור גרסה מעוצבת</span><span class="ail-sparkle">✨</span>
+    </button>
+
+    <div class="ail-section">
+      <svg class="ail-mini-heart" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 21s-7.5-4.5-9.5-9.2C1.1 8.3 3.4 5 6.7 5c1.9 0 3.5 1 4.3 2.4l1 1.6 1-1.6C13.8 6 15.4 5 17.3 5c3.3 0 5.6 3.3 4.2 6.8C19.5 16.5 12 21 12 21z" fill="#F25C8D"/></svg>
+      <div class="ail-row">
+        <span class="ail-deco" aria-hidden="true"><svg viewBox="0 0 38 10" fill="none"><path d="M2 5 H 30" stroke="#d8b9a3" stroke-width="1.4" stroke-linecap="round"/><path d="M30 5 L 24 2 M30 5 L 24 8" stroke="#d8b9a3" stroke-width="1.4" stroke-linecap="round"/></svg></span>
+        <h2 class="ail-h2">בחר סגנון שאהבת</h2>
+        <span class="ail-deco" aria-hidden="true"><svg viewBox="0 0 38 10" fill="none"><path d="M36 5 H 8" stroke="#d8b9a3" stroke-width="1.4" stroke-linecap="round"/><path d="M8 5 L 14 2 M8 5 L 14 8" stroke="#d8b9a3" stroke-width="1.4" stroke-linecap="round"/></svg></span>
+      </div>
+    </div>
+
+    <div class="ail-cards">
+      <div class="ail-grid">
+        <div class="ail-card">
+          <div class="ail-card-image"><span class="ail-badge pink">1</span></div>
+          <h3 class="ail-card-title">Warm Illustrated Storybook</h3>
+          <p class="ail-card-desc">איור חם ומצויר בסגנון ספר ילדים</p>
+          <svg class="ail-card-heart" viewBox="0 0 24 24"><path d="M12 21s-7.5-4.5-9.5-9.2C1.1 8.3 3.4 5 6.7 5c1.9 0 3.5 1 4.3 2.4l1 1.6 1-1.6C13.8 6 15.4 5 17.3 5c3.3 0 5.6 3.3 4.2 6.8C19.5 16.5 12 21 12 21z" fill="#F25C8D"/></svg>
+        </div>
+        <div class="ail-card">
+          <div class="ail-card-image"><span class="ail-badge purple">2</span></div>
+          <h3 class="ail-card-title">Cute Premium Character</h3>
+          <p class="ail-card-desc">דמות מתוקה וסגנון אנימציה איכותי</p>
+          <svg class="ail-card-heart" viewBox="0 0 24 24"><path d="M12 21s-7.5-4.5-9.5-9.2C1.1 8.3 3.4 5 6.7 5c1.9 0 3.5 1 4.3 2.4l1 1.6 1-1.6C13.8 6 15.4 5 17.3 5c3.3 0 5.6 3.3 4.2 6.8C19.5 16.5 12 21 12 21z" fill="#F25C8D"/></svg>
+        </div>
+        <div class="ail-card">
+          <div class="ail-card-image"><span class="ail-badge blue">3</span></div>
+          <h3 class="ail-card-title">Dreamy Magical Realism</h3>
+          <p class="ail-card-desc">תאורה קסומה וריאליזם חלומי</p>
+          <svg class="ail-card-heart" viewBox="0 0 24 24"><path d="M12 21s-7.5-4.5-9.5-9.2C1.1 8.3 3.4 5 6.7 5c1.9 0 3.5 1 4.3 2.4l1 1.6 1-1.6C13.8 6 15.4 5 17.3 5c3.3 0 5.6 3.3 4.2 6.8C19.5 16.5 12 21 12 21z" fill="#F25C8D"/></svg>
+        </div>
+        <div class="ail-card">
+          <div class="ail-card-image"><span class="ail-badge green">4</span></div>
+          <h3 class="ail-card-title">Tropical Fantasy Adventure</h3>
+          <p class="ail-card-desc">הרפתקה טרופית באי קסום</p>
+          <svg class="ail-card-heart" viewBox="0 0 24 24"><path d="M12 21s-7.5-4.5-9.5-9.2C1.1 8.3 3.4 5 6.7 5c1.9 0 3.5 1 4.3 2.4l1 1.6 1-1.6C13.8 6 15.4 5 17.3 5c3.3 0 5.6 3.3 4.2 6.8C19.5 16.5 12 21 12 21z" fill="#F25C8D"/></svg>
+        </div>
+      </div>
+    </div>
+
+    <div class="ail-footer">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+      <span>התמונה שלך פרטית ומוצפנת. רק אתה רואה אותה.</span>
+    </div>
   </div>
 </div>
 
@@ -12153,6 +12277,29 @@ const AvatarFlow = {
     document.getElementById('avshBg').classList.remove('open');
     this._unlock();
   },
+
+  // ── AI landing screen (entry for "צור דמות AI מתמונה") ──
+  openAILanding(memberId) {
+    if (!memberId) { console.warn('[Avatar] openAILanding without memberId'); return; }
+    this.memberId = memberId;
+    this._aiDirect = false;
+    document.getElementById('aiLandingBg').classList.add('open');
+    console.log('[Avatar] AI landing open memberId=' + memberId);
+  },
+  closeAILanding() {
+    document.getElementById('aiLandingBg').classList.remove('open');
+    this._aiDirect = false;
+  },
+  startAIFromLanding() {
+    if (!DataAdapter.isFamily()) { alert('לא ניתן ליצור — המכשיר לא במצב משפחה.'); return; }
+    this._aiDirect = true;
+    const member = _FAMILY_MEMBERS_SEED.find(m => m.memberId === this.memberId)
+                || _familyMembersCache.find(m => m.memberId === this.memberId);
+    document.getElementById('avshTitle').textContent = 'צור דמות AI — ' + (member?.name || '');
+    document.getElementById('avshRemove').style.display = 'none';
+    document.getElementById('avshBg').classList.add('open');
+    this._lock();
+  },
   pick(source) {
     console.log('[Avatar] pick source=' + source);
     this.closeSheet();
@@ -12223,6 +12370,7 @@ const AvatarFlow = {
     document.getElementById('avcropBg').classList.remove('open');
     this._unlock();
     this._revokeUrls();
+    this._aiDirect = false;
     console.log('[Avatar] crop cancelled');
   },
   async confirmCrop() {
@@ -12240,7 +12388,12 @@ const AvatarFlow = {
     document.getElementById('avcropBg').classList.remove('open');
     this._unlock();
     this._revokeUrls();
-    this._showChoice(blob);
+    if (this._aiDirect) {
+      this.closeAILanding();
+      this.useAI();
+    } else {
+      this._showChoice(blob);
+    }
   },
   _showChoice(blob) {
     // Reset button state in case a previous attempt left it disabled.
@@ -12323,12 +12476,26 @@ const AvatarFlow = {
     this.blob = null;
     this._selectedStyle = null;
     this._selectedB64 = null;
+    this._aiDirect = false;
     console.log('[Avatar] AI generation cancelled');
   },
 
   async useAI() {
     if (!this.blob) { console.warn('[Avatar] useAI: blob is null'); return; }
     if (!this.memberId) { console.warn('[Avatar] useAI: memberId is null'); return; }
+
+    // Self-healing (same as useOriginal): the in-memory DataAdapter can lose
+    // family state after a WebView restart / stale module instance, while
+    // localStorage still holds the source of truth. Restore before the guard.
+    const lsFamilyId = localStorage.getItem('family-app-da-family-id');
+    const lsMode     = localStorage.getItem('family-app-da-mode');
+    const lsUserId   = localStorage.getItem('family-app-da-user-id');
+    if (!DataAdapter.isFamily() && lsFamilyId && lsMode === 'family') {
+      console.warn('[Avatar] useAI: DataAdapter out of sync with localStorage — recovering');
+      DataAdapter.familyId = lsFamilyId;
+      DataAdapter.mode     = 'family';
+      if (lsUserId) DataAdapter.userId = lsUserId;
+    }
     if (!DataAdapter.isFamily()) { alert('לא ניתן ליצור — המכשיר לא במצב משפחה.'); return; }
     const familyId = DataAdapter.familyId;
     const memberId = this.memberId;
@@ -12340,9 +12507,14 @@ const AvatarFlow = {
     this._lock();
 
     const qs = '?familyId=' + encodeURIComponent(familyId) + '&memberId=' + encodeURIComponent(memberId);
+    const reqUrl = '/api/generate-avatar' + qs;
+    console.log('[Avatar] useAI guard passed — familyId=' + familyId
+      + ' memberId=' + memberId
+      + ' myMemberId=' + (DataAdapter && DataAdapter.myMemberId)
+      + ' url=' + reqUrl);
     let res;
     try {
-      res = await fetch('/api/generate-avatar' + qs, {
+      res = await fetch(reqUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'image/jpeg' },
         body: this.blob,
@@ -12413,6 +12585,7 @@ const AvatarFlow = {
       this.blob = null;
       this._selectedStyle = null;
       this._selectedB64 = null;
+      this._aiDirect = false;
     } catch (e) {
       console.error('[Avatar] AI save failed', e);
       alert('שמירה נכשלה:\n' + (e.code ? '[' + e.code + '] ' : '') + (e.message || e));
@@ -15239,6 +15412,7 @@ function _renderMemberProfile() {
         AppState.avatarMode = row.dataset.av;
         if (typeof saveAppearance === 'function') saveAppearance();
         if (row.dataset.av === 'photo') AvatarFlow.open(memberId);
+        else if (row.dataset.av === 'ai-from-photo') AvatarFlow.openAILanding(memberId);
       };
     });
   }
