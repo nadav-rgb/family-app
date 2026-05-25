@@ -12565,10 +12565,16 @@ const AvatarFlow = {
     this._lock();
 
     const qs = '?familyId=' + encodeURIComponent(familyId) + '&memberId=' + encodeURIComponent(memberId);
-    const reqUrl = '/api/generate-avatar' + qs;
+    // On native (Capacitor) the page origin is https://localhost, so a relative
+    // /api path can't reach the serverless function. Point at the Vercel host.
+    // CORS is open on the endpoint (Access-Control-Allow-Origin: *).
+    const _isNative = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+    const _apiBase  = _isNative ? 'https://family-app-roan.vercel.app' : '';
+    const reqUrl = _apiBase + '/api/generate-avatar' + qs;
     console.log('[Avatar] useAI guard passed — familyId=' + familyId
       + ' memberId=' + memberId
       + ' myMemberId=' + (DataAdapter && DataAdapter.myMemberId)
+      + ' native=' + _isNative
       + ' url=' + reqUrl);
     let res;
     try {
