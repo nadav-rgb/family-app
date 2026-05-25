@@ -11412,10 +11412,23 @@ setTimeout(() => {
 // in a previous session we re-establish the push subscription so reminders
 // keep flowing without requiring another bell tap.
 if ('serviceWorker' in navigator) {
+  // Auto-reload once when a new SW takes control, so an installed PWA that
+  // resumes from a frozen state can't keep running stale cached HTML. Without
+  // this, a deployed fix never reaches a phone until the user manually clears
+  // the cache (desktop works because each open is a fresh network-first nav).
+  let _swReloaded = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (_swReloaded) return;
+    _swReloaded = true;
+    window.location.reload();
+  });
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/service-worker.js')
       .then(reg => {
         AppLog.info('SW registered', reg.scope || '');
+        // Actively check for a newer SW on every load so updates are picked up
+        // promptly instead of waiting for the browser's own update heuristic.
+        try { reg.update(); } catch (_) {}
         if (_notifSupported() && Notification.permission === 'granted') {
           // Returning user — re-establish push subscription quietly so
           // scheduled reminders continue working across sessions.
