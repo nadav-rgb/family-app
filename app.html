@@ -12575,7 +12575,14 @@ const AvatarFlow = {
     // CORS is open on the endpoint (Access-Control-Allow-Origin: *).
     const _isNative = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
     const _apiBase  = _isNative ? 'https://family-app-roan.vercel.app' : '';
-    const reqUrl = _apiBase + '/api/generate-avatar' + qs;
+    // TEMP A/B probe: ?avatarModel=… on the page URL passes through to the API
+    // as &model=… (server allowlists it; absent → server default gpt-image-1).
+    let _modelQs = '';
+    try {
+      const m = new URLSearchParams(window.location.search).get('avatarModel');
+      if (m) _modelQs = '&model=' + encodeURIComponent(m);
+    } catch (_) {}
+    const reqUrl = _apiBase + '/api/generate-avatar' + qs + _modelQs;
     console.log('[Avatar] useAI guard passed — familyId=' + familyId
       + ' memberId=' + memberId
       + ' myMemberId=' + (DataAdapter && DataAdapter.myMemberId)
