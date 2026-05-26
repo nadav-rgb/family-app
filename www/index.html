@@ -4363,6 +4363,8 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
       <span>כל הפרטים <u>ניתנים</u> לעריכה</span>
     </div>
 
+    <!-- Add another task — opens the record/write sheet (openAddSheet) -->
+    <button class="btn-add-more" id="confAddMore" type="button" onclick="openAddSheet()" style="margin-bottom:10px;">+ הוסף משימה</button>
 
     <!-- Save CTA -->
     <button class="cta" type="button" onclick="_confirmSaveAll()">
@@ -4722,20 +4724,8 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
       </div>
     </div>
 
-    <!-- Reminder chips card -->
+    <!-- Reminder prefs -->
     <div id="notifPrefsSection">
-      <div id="notifChipsWrapper">
-        <div class="n-sec-label">תזכורת ברירת מחדל לפני המשימה</div>
-        <div class="n-card" style="margin-bottom:10px;">
-          <div class="n-chips" id="notifChips">
-            <button class="n-chip" data-min="5"  type="button">5 דק׳</button>
-            <button class="n-chip" data-min="10" type="button">10 דק׳</button>
-            <button class="n-chip" data-min="15" type="button">15 דק׳</button>
-            <button class="n-chip" data-min="20" type="button">20 דק׳</button>
-            <button class="n-chip" data-min="30" type="button">30 דק׳</button>
-          </div>
-        </div>
-      </div>
       <div class="n-card">
         <!-- Overdue toggle -->
         <div class="n-row">
@@ -4748,6 +4738,15 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
             <input type="checkbox" id="notifOverdueToggle">
             <span class="slider"></span>
           </label>
+        </div>
+        <!-- Overdue stage selection — which minutes after the task to remind -->
+        <div id="notifOverdueChipsWrap" style="margin-top:12px;">
+          <div class="n-sec-label" style="margin-bottom:8px;">אם המשימה לא בוצעה בזמן, נשלח תזכורת לאחר:</div>
+          <div class="n-chips" id="notifOverdueChips">
+            <button class="n-chip" data-min="5"  type="button">5 דק׳</button>
+            <button class="n-chip" data-min="10" type="button">10 דק׳</button>
+            <button class="n-chip" data-min="15" type="button">15 דק׳</button>
+          </div>
         </div>
       </div>
     </div>
@@ -4966,7 +4965,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
       <span class="vis-check-circle">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg>
       </span>
-      <span>שמור והוסף למשימות</span>
+      <span>שמור</span>
     </button>
 
   </div>
@@ -10701,6 +10700,8 @@ function _loadNotifPrefs() {
       masterOn: saved.masterOn ?? true,
       defaultReminderMinutes: Array.isArray(saved.defaultReminderMinutes) ? saved.defaultReminderMinutes : [saved.defaultReminderMinutes ?? 10],
       overdueRemindersOn: saved.overdueRemindersOn ?? true,
+      // Which overdue stages (minutes after the task) to send, when overdue is on
+      overdueOffsets: (Array.isArray(saved.overdueOffsets) && saved.overdueOffsets.length) ? saved.overdueOffsets.slice().sort((a,b)=>a-b) : [5, 10, 15],
       sounds: {
         reminder: saved.sounds?.reminder ?? 'soft',
         due:      saved.sounds?.due      ?? 'chime',
@@ -10708,8 +10709,14 @@ function _loadNotifPrefs() {
       },
     };
   } catch (_) {
-    return { masterOn: true, defaultReminderMinutes: [10], overdueRemindersOn: true };
+    return { masterOn: true, defaultReminderMinutes: [10], overdueRemindersOn: true, overdueOffsets: [5, 10, 15] };
   }
+}
+
+// Effective overdue stages — the global selection drives all tasks' late reminders.
+function _overdueOffsets() {
+  var p = _loadNotifPrefs();
+  return (Array.isArray(p.overdueOffsets) && p.overdueOffsets.length) ? p.overdueOffsets : [5, 10, 15];
 }
 
 function _saveNotifPrefs(prefs) {
@@ -10816,9 +10823,9 @@ function renderNotifications() {
     });
   });
 
-  const chipsWrapper = document.getElementById('notifChipsWrapper');
+  const overdueChipsWrap = document.getElementById('notifOverdueChipsWrap');
   function _applyOverdueState(on) {
-    if (chipsWrapper) chipsWrapper.classList.toggle('n-disabled-overlay', !on);
+    if (overdueChipsWrap) overdueChipsWrap.classList.toggle('n-disabled-overlay', !on);
   }
   _applyOverdueState(prefs.overdueRemindersOn);
 
@@ -10830,6 +10837,26 @@ function renderNotifications() {
     p.overdueRemindersOn = newOverdue.checked;
     _saveNotifPrefs(p);
     _applyOverdueState(newOverdue.checked);
+    if (typeof _capRescheduleAll === 'function') _capRescheduleAll().catch(function(){});
+  });
+
+  // Overdue stage chips (5/10/15) — multi-select, at least one kept on
+  document.querySelectorAll('#notifOverdueChips .n-chip').forEach(chip => {
+    const newChip = chip.cloneNode(true);
+    chip.parentNode.replaceChild(newChip, chip);
+    const min = parseInt(newChip.dataset.min, 10);
+    newChip.classList.toggle('sel', _loadNotifPrefs().overdueOffsets.includes(min));
+    newChip.addEventListener('click', () => {
+      const p = _loadNotifPrefs();
+      const idx = p.overdueOffsets.indexOf(min);
+      if (idx === -1) { p.overdueOffsets.push(min); p.overdueOffsets.sort((a, b) => a - b); }
+      else if (p.overdueOffsets.length > 1) { p.overdueOffsets.splice(idx, 1); }
+      _saveNotifPrefs(p);
+      document.querySelectorAll('#notifOverdueChips .n-chip').forEach(c =>
+        c.classList.toggle('sel', p.overdueOffsets.includes(parseInt(c.dataset.min, 10)))
+      );
+      if (typeof _capRescheduleAll === 'function') _capRescheduleAll().catch(function(){});
+    });
   });
 
   // Scenario sound pickers
@@ -11455,7 +11482,7 @@ function checkOverdueReminders() {
     if (elapsedMins < 0) { console.log(`    not yet at task time (elapsed=${elapsedMins})`); return; }
 
     if (_loadNotifPrefs().overdueRemindersOn) {
-      task.overdueReminderOffsets.forEach((stageOffset, idx) => {
+      _overdueOffsets().forEach((stageOffset, idx) => {
         const stageDue = elapsedMins >= stageOffset && !task.sentReminderStages.includes(idx);
         if (stageDue) {
           task.sentReminderStages.push(idx);
@@ -11588,7 +11615,7 @@ function _buildScheduledPushList() {
 
     // Overdue stages — skip entirely when the global "overdue reminders" toggle is off.
     if (prefs.overdueRemindersOn) {
-      (task.overdueReminderOffsets || [5, 10, 15]).forEach((stageOffset, idx) => {
+      _overdueOffsets().forEach((stageOffset, idx) => {
         const id = `task-${task.id}-overdue-${idx}-${deviceId}`;
         out.push({
           id, taskId: task.id,
@@ -11806,7 +11833,7 @@ async function _capScheduleTask(task) {
                   schedule: { at: atTime, allowWhileIdle: true } });
   }
   if (_loadNotifPrefs().overdueRemindersOn) {
-    (task.overdueReminderOffsets || [5, 10, 15]).forEach((stageOffset, idx) => {
+    _overdueOffsets().forEach((stageOffset, idx) => {
       const fireAt = new Date(taskAt + stageOffset * 60 * 1000);
       if (fireAt.getTime() > now)
         notifs.push({ id: _capNotifId(task.id, idx + 2), title: task.title,
@@ -15418,13 +15445,8 @@ function splitSave() {
   // Init visibility screen state on load
   if (typeof renderVisibility === 'function') renderVisibility();
 
-  // #s-visibility: CTA → s-today
-  var visCta = document.getElementById('visSaveCta');
-  if (visCta) {
-    visCta.addEventListener('click', function() {
-      if (typeof goto === 'function') goto('s-today', 'txLeaveFade', 'txEnterFade');
-    });
-  }
+  // (removed: the old CTA→s-today handler. Saving + navigation is handled by
+  //  the visSaveCta.onclick below, which returns to the confirmation screen.)
 
   // #s-split: option selection — opt1 (green/single) / opt2 (purple/split)
   var splOpt1 = document.getElementById('splOpt1');
@@ -15516,7 +15538,12 @@ function splitSave() {
         if (seeIds.length)    t.visibleTo  = seeIds;
         if (notifyIds.length) t.notifyTo   = notifyIds;
       });
-      if (typeof _confirmSaveAll === 'function') _confirmSaveAll();
+      // Save the visibility choice onto the preview tasks and return to the
+      // "הנה מה שהבנתי" confirmation screen — do NOT finalize all tasks here
+      // (that happens from the confirmation screen's "שמור הכל").
+      if (typeof renderConfirmationTasks === 'function') renderConfirmationTasks();
+      var destV = (typeof _visBackScreen !== 'undefined' && _visBackScreen) ? _visBackScreen : 's-confirmation';
+      if (typeof goto === 'function') goto(destV, 'txLeaveFade', 'txEnterFade');
     };
   }
 
