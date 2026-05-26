@@ -8644,7 +8644,9 @@ async function vOrganize() {
   if (fallbackBanner) fallbackBanner.classList.toggle('on', !!result.fallback);
 
   _vOrganizerBusy = false;
-  setTimeout(() => {
+  // No artificial delay here: the "organizing" animation already showed for the
+  // full duration of the parse call, so reveal the preview as soon as it's ready.
+  const _showPreview = () => {
     zone.classList.remove('rec');
     zone.classList.remove('processing');
     ltxt.className = 'ltxt';
@@ -8653,17 +8655,10 @@ async function vOrganize() {
     dpRender(true);
     const sh = document.querySelector('#s-dp .list-shimmer');
     if (sh) { sh.style.animation = 'none'; void sh.offsetWidth; sh.style.animation = ''; }
-
-    // When the AI detected 2+ tasks → show all as separate cards
-    if (result.tasks.length >= 2) {
-      AppState.previewTasks = result.tasks.map(aiParsedToTask);
-      renderConfirmationTasks();
-      goto('s-confirmation', 'txLeaveBloom', 'txEnterFocus');
-    } else {
-      renderConfirmationTasks();
-      goto('s-confirmation', 'txLeaveBloom', 'txEnterFocus');
-    }
-  }, 140);
+    renderConfirmationTasks();
+    goto('s-confirmation', 'txLeaveBloom', 'txEnterFocus');
+  };
+  _showPreview();
 }
 
 function vBurst() {
