@@ -22,12 +22,13 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 /* ── Phone ── */
 .phone{width:375px;height:812px;background:linear-gradient(175deg,#fffaf5 0%,#fff4e8 55%,#fdebd8 100%);border-radius:48px;box-shadow:0 40px 100px rgba(0,0,0,.18),0 12px 36px rgba(0,0,0,.09),inset 0 1px 0 rgba(255,255,255,.9);position:relative;overflow:hidden;border:1px solid rgba(255,255,255,.6);}
 @media(max-width:500px){
-  /* Fill the whole device with the app's own cream background (no gray peek),
-     lock the document so only inner containers scroll, and kill overscroll. */
-  html,body{height:100%;overflow:hidden;overscroll-behavior:none;}
-  body{padding:0;align-items:stretch;min-height:100vh;min-height:100dvh;
+  /* Cream app background instead of the gray desktop frame (kills the gray peek
+     below the app). overscroll-behavior:none stops the rubber-band stretch.
+     NOTE: deliberately NOT locking the document with overflow:hidden — that
+     broke the Today list's scroll on device. Keep the original scroll model. */
+  body{padding:0;align-items:stretch;min-height:100vh;min-height:100dvh;overscroll-behavior:none;
        background:linear-gradient(175deg,#fffaf5 0%,#fff4e8 55%,#fdebd8 100%);}
-  .phone{width:100%;height:100%;height:100dvh;border-radius:0;box-shadow:none;border:none;}
+  .phone{width:100%;height:100vh;height:100dvh;border-radius:0;box-shadow:none;border:none;}
 }
 
 /* ── Screen layer system ── */
@@ -14217,11 +14218,12 @@ document.getElementById('btnAddMore').addEventListener('click', () => {
   function apply() {
     if (!mq.matches) return;
     var ph = document.querySelectorAll('.phone');
-    // Always size the phone to the real visible viewport (visualViewport.height).
-    // This is the true visible area — using it keeps the inner scroll container
-    // the right height (so long lists scroll to the end), and the cream body
-    // background covers any device inset so no gray shows.
-    for (var i = 0; i < ph.length; i++) ph[i].style.height = vv.height + 'px';
+    // Only shrink the phone when the keyboard is actually open. At rest, clear
+    // the inline height so .phone uses the CSS 100dvh — the original height that
+    // let the Today list scroll correctly. (Forcing visualViewport.height at
+    // rest could make .phone taller/shorter than the real area and break scroll.)
+    var keyboardOpen = (window.innerHeight - vv.height) > 120;
+    for (var i = 0; i < ph.length; i++) ph[i].style.height = keyboardOpen ? (vv.height + 'px') : '';
   }
   function clear() {
     var ph = document.querySelectorAll('.phone');
