@@ -163,7 +163,10 @@ async function parseWithOpenAI(transcript, context = {}) {
     ],
     response_format: { type: 'json_object' },
     temperature:     0,
-    max_tokens:      640,
+    max_tokens:      320,
+  }, {
+    timeout:    15000,
+    maxRetries: 1,
   });
 
   const raw = completion.choices[0]?.message?.content?.trim() || '{}';
