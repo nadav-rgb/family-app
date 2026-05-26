@@ -5842,10 +5842,25 @@ function saveAppearance() {
 }
 function applyAppearance() {
   document.body.setAttribute('data-theme', AppState.theme || 'bright');
+  const color = AppState.accentColor || '#FF7A3D';
+  const deep  = AppState.accentDeep  || '#E5621A';
+  const soft  = AppState.accentSoft  || '#FFE9D2';
   const r = document.documentElement.style;
-  r.setProperty('--orange',      AppState.accentColor || '#FF7A3D');
-  r.setProperty('--orange-deep', AppState.accentDeep  || '#E5621A');
-  r.setProperty('--orange-soft', AppState.accentSoft  || '#FFE9D2');
+  r.setProperty('--orange',      color);
+  r.setProperty('--orange-deep', deep);
+  r.setProperty('--orange-soft', soft);
+  // Each screen scope redefines --orange (e.g. #s-confirmation{--orange:…}),
+  // and an element's own declaration shadows the inherited :root value — so a
+  // root override (even !important) never reaches them. Re-declare the accent
+  // on every screen with !important so the chosen color propagates app-wide.
+  try {
+    let st = document.getElementById('apprAccentStyle');
+    if (!st) { st = document.createElement('style'); st.id = 'apprAccentStyle'; document.head.appendChild(st); }
+    const esc = (window.CSS && CSS.escape) ? CSS.escape : function(s){ return s; };
+    const ids = Array.prototype.map.call(document.querySelectorAll('[id^="s-"]'), function(el){ return '#' + esc(el.id); });
+    const sel = (ids.length ? ids.join(',') + ',' : '') + ':root';
+    st.textContent = sel + '{--orange:' + color + ' !important;--orange-deep:' + deep + ' !important;--orange-soft:' + soft + ' !important;}';
+  } catch (_) {}
   document.body.classList.remove('text-small', 'text-normal', 'text-large');
   document.body.classList.add('text-' + (AppState.textSize || 'normal'));
 }
