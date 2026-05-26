@@ -1968,6 +1968,11 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 #s-confirmation .time-row.no-time span{color:var(--orange);letter-spacing:0.06em;opacity:0.75;}
 #s-confirmation .time-row.no-time svg{opacity:0.6;}
 #s-confirmation .date{font-size:10px;font-weight:600;color:var(--muted);line-height:1;text-align:center;}
+/* A spoken/typed time that already passed today — flagged red, must be fixed */
+#s-confirmation .time-row.time-past span{color:#C0392B;}
+#s-confirmation .time-row.time-past svg{color:#C0392B;}
+#s-confirmation .date.date-past{color:#C0392B;font-weight:800;}
+#s-confirmation .task.task-past .col-left{background:rgba(192,57,43,0.07);box-shadow:0 0 0 1.5px rgba(192,57,43,0.35) inset;}
 #s-confirmation .category{font-size:9px;font-weight:700;color:var(--muted);display:inline-flex;align-items:center;gap:5px;line-height:1;margin-top:2px;}
 #s-confirmation .cdot{width:8px;height:8px;border-radius:50%;box-shadow:0 0 0 1.5px rgba(255,255,255,0.6);}
 #s-confirmation .dot-turquoise{background:var(--turquoise);}
@@ -8484,6 +8489,10 @@ function renderConfirmationTasks() {
   const CLOCK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>';
   const MENU_SVG  = '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2.2"/><circle cx="12" cy="12" r="2.2"/><circle cx="12" cy="19" r="2.2"/></svg>';
 
+  // A parsed/spoken time that already passed today must be fixed before saving.
+  const _today = (typeof todayDate === 'function') ? todayDate() : new Date().toISOString().slice(0,10);
+  const _nowM  = new Date().getHours() * 60 + new Date().getMinutes();
+
   listEl.innerHTML = tasks.map(function(task) {
     const avClass  = LEGACY_TO_AVATAR[task.assignedTo] || 'av-aba';
     const name     = t('family_' + task.assignedTo) || task.person || task.assignedTo || '—';
@@ -8501,12 +8510,13 @@ function renderConfirmationTasks() {
       ? ' data-avatar-for="' + _confMemberId + '" data-avatar-size="40"'
       : '';
     const hasTime  = task.mins != null;
+    const isPast   = hasTime && task.date === _today && task.mins < _nowM;
     const timeHTML = hasTime
-      ? '<div class="time-row">' + CLOCK_SVG + '<span>' + fmtTime(task.mins) + '</span></div>' +
-        '<div class="date">' + (fmtDate(task.date) || '') + '</div>'
+      ? '<div class="time-row' + (isPast ? ' time-past' : '') + '">' + CLOCK_SVG + '<span>' + fmtTime(task.mins) + '</span></div>' +
+        '<div class="date' + (isPast ? ' date-past' : '') + '">' + (isPast ? 'הזמן כבר עבר' : (fmtDate(task.date) || '')) + '</div>'
       : '<div class="time-row no-time">' + CLOCK_SVG + '<span>--:--</span></div>' +
         '<div class="date">ללא שעה</div>';
-    return '<div class="task" data-taskid="' + task.id + '">' +
+    return '<div class="task' + (isPast ? ' task-past' : '') + '" data-taskid="' + task.id + '">' +
       '<button class="menu" aria-label="אפשרויות" onclick="_visBackScreen=\'s-confirmation\';goto(\'s-visibility\',\'txLeaveBloom\',\'txEnterFocus\')">' + MENU_SVG + '</button>' +
       '<button class="col-left" type="button" aria-label="ערוך שעה">' + timeHTML + '</button>' +
       '<div class="col-mid"><div class="t-title"><span contenteditable="plaintext-only" role="textbox" aria-label="כותרת משימה">' + esc(task.title) + '</span></div>' +
@@ -14176,6 +14186,19 @@ document.getElementById('btnAddMore').addEventListener('click', () => {
 function _confirmSaveAll() {
   if (!AppState.previewTasks || AppState.previewTasks.length === 0) {
     if (typeof goto === 'function') goto('s-today', 'txLeaveFade', 'txEnterFade');
+    return;
+  }
+  // Block saving while any task carries a time that already passed today (e.g.
+  // a time mentioned in speech/typing). The card flags it red; the user fixes
+  // it via the time-date editor (whose own guard prevents past times).
+  var _today = (typeof todayDate === 'function') ? todayDate() : new Date().toISOString().slice(0,10);
+  var _nowM  = new Date().getHours() * 60 + new Date().getMinutes();
+  var hasPast = AppState.previewTasks.some(function(t) {
+    return t.mins != null && t.date === _today && t.mins < _nowM;
+  });
+  if (hasPast) {
+    if (typeof renderConfirmationTasks === 'function') renderConfirmationTasks();
+    if (typeof showNotifToast === 'function') showNotifToast('יש משימה עם זמן שכבר עבר — עדכן/י את השעה');
     return;
   }
   var newTasks = AppState.previewTasks.map(function(t) {
