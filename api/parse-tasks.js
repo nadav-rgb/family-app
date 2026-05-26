@@ -119,6 +119,8 @@ module.exports = async function handler(req, res) {
         normalizedTasks:       raw.rawTasks,
         droppedContextless:    dropped,
         assigneeFromPreamble,
+        userMsgSent:           raw._userMsg || null,
+        systemPromptLen:       raw._systemPromptLen || null,
       };
     }
 

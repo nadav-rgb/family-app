@@ -179,6 +179,8 @@ async function parseWithOpenAI(transcript, context = {}) {
     _finishReason: completion.choices[0]?.finish_reason || null,
     _raw:        raw,
     _parsed:     parsed,
+    _userMsg:    userMsg,
+    _systemPromptLen: SYSTEM_PROMPT.length,
   };
 }
 
