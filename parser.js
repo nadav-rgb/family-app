@@ -225,14 +225,9 @@
       }
     }
 
-    // Time-of-day expressions from config
-    for (const { re, mins } of (config.tod || [])) {
-      m = text.match(re);
-      if (m) {
-        Log.info('time', `time-of-day "${m[0]}" → ${Math.floor(mins/60)}:00`);
-        return { mins, match: m[0], fromText: true };
-      }
-    }
+    // Time-of-day words (בוקר/צהריים/ערב/לילה) intentionally do NOT set a clock
+    // time — only an explicit hour does. A vague part-of-day leaves the task
+    // with no time (the user can add one in "זמן ותאריך" if they want).
 
     return { mins: null, fromText: false, match: null };
   }
@@ -547,9 +542,11 @@
     // time.match intentionally excluded: stripping only the number leaves dangling
     // preposition words ("בשעה", "ב") in the title. Keep the full natural phrasing.
     const title = cleanTitle(text, [resolvedDate.match, assignee.match], config);
+    // No explicit time → leave it empty. We never invent a clock time from a
+    // vague part-of-day (or from nothing); the task stays "ללא שעה".
     const mins  = time.mins !== null
       ? Math.max(0, Math.min(time.mins, 23 * 60 + 59))
-      : defaultMins(now);
+      : null;
 
     Log.info('title', title);
     Log.info('mins', mins + ' (' + Math.floor(mins/60) + ':' + String(mins%60).padStart(2,'0') + ')');

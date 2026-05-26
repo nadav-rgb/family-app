@@ -97,11 +97,11 @@ assignedTo:
 mins:
   Minutes from midnight as an integer.
 
-  Vague time-of-day words (no number spoken):
-    "בבוקר"              → 540  (09:00)
-    "בצהריים"/"בצהרים"   → 840  (14:00)
-    "בערב"               → 1080 (18:00)
-    "בלילה"              → 1260 (21:00)
+  Vague time-of-day words spoken ALONE (no specific hour) do NOT set a time —
+  set mins=null for them. NEVER convert a part-of-day into a clock time:
+    "בבוקר" / "בצהריים"/"בצהרים" / "אחר הצהריים" / "בערב" / "בלילה"  → mins=null
+  They only act as morning/evening CONTEXT for an explicitly spoken hour
+  (e.g. "שבע בבוקר" → 07:00). On their own they never produce a clock time.
 
   Israeli Hebrew specific hours — default to afternoon unless "בבוקר"/"לפני הצהריים":
     "אחת"              → 780  (13:00)

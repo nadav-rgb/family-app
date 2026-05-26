@@ -225,14 +225,9 @@
       }
     }
 
-    // Time-of-day expressions from config
-    for (const { re, mins } of (config.tod || [])) {
-      m = text.match(re);
-      if (m) {
-        Log.info('time', `time-of-day "${m[0]}" → ${Math.floor(mins/60)}:00`);
-        return { mins, match: m[0], fromText: true };
-      }
-    }
+    // Time-of-day words (בוקר/צהריים/ערב/לילה) intentionally do NOT set a clock
+    // time — only an explicit hour does. A vague part-of-day leaves the task
+    // with no time (the user can add one in "זמן ותאריך" if they want).
 
     return { mins: null, fromText: false, match: null };
   }
@@ -547,9 +542,11 @@
     // time.match intentionally excluded: stripping only the number leaves dangling
     // preposition words ("בשעה", "ב") in the title. Keep the full natural phrasing.
     const title = cleanTitle(text, [resolvedDate.match, assignee.match], config);
+    // No explicit time → leave it empty. We never invent a clock time from a
+    // vague part-of-day (or from nothing); the task stays "ללא שעה".
     const mins  = time.mins !== null
       ? Math.max(0, Math.min(time.mins, 23 * 60 + 59))
-      : defaultMins(now);
+      : null;
 
     Log.info('title', title);
     Log.info('mins', mins + ' (' + Math.floor(mins/60) + ':' + String(mins%60).padStart(2,'0') + ')');
@@ -704,8 +701,39 @@
       };
     });
 
+    // ── Fallback safety: prefer one conservative task over a lossy split ──────
+    // The local parser is a fallback, not the brain. It cannot redistribute a
+    // shared topic across split titles, so a split here risks producing a
+    // context-losing result ("לבדוק חומר") or a bare verb ("להכין"). When the
+    // split looks lossy, collapse back to a single task = the original sentence
+    // and flag review, rather than emit a half-split.
+    const BARE_TRANSITIVE_VERBS = new Set([
+      'להכין','לבדוק','לקנות','לסדר','להביא','לקחת','לעשות','להוציא','לשלוח','לתקן',
+      'לארגן','לסיים','להתחיל','לכתוב','לקרוא','לאסוף',
+    ]);
+    const isBareVerb = t => BARE_TRANSITIVE_VERBS.has(String(t.title || '').trim());
+    const wordCount  = t => String(t.title || '').trim().split(/\s+/).filter(Boolean).length;
+
+    const droppedBare = tasks.some(isBareVerb);
+    const hasShort    = tasks.length > 1 && tasks.some(t => wordCount(t) < 2);
+    const lossySplit  = tasks.length > 1 && (droppedBare || hasShort);
+
+    if (lossySplit) {
+      const oneTitle = String(text || '').trim();
+      return {
+        tasks:          [{ title: oneTitle, time: null, date: null, assignee: null }],
+        needsReview:    true,
+        uncertainParts: [oneTitle],
+        source:         'local',
+        fallback:       true,
+      };
+    }
+
+    // Clean split (or single task): still drop any stray bare-verb task.
+    const finalTasks = tasks.filter(t => !isBareVerb(t));
+
     return {
-      tasks:          tasks,
+      tasks:          finalTasks,
       needsReview:    true,
       uncertainParts: uncertainParts,
       source:         'local',
