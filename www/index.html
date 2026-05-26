@@ -2732,17 +2732,27 @@ body.text-large .phone{font-size:17px}
 #s-time-date .td-cal-wrap.open{max-height:360px;}
 #s-time-date .td-cal-card{margin-bottom:8px;padding:12px;}
 #s-time-date .td-cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;direction:rtl;}
-#s-time-date .td-cal-month-name{font-size:14px;font-weight:900;color:var(--ink);}
+#s-time-date .td-cal-month-name{font-size:14px;font-weight:900;color:var(--ink);display:flex;flex-direction:column;align-items:center;line-height:1.15;}
+#s-time-date .td-cal-month-name .td-cal-heb-head{font-size:11px;font-weight:600;color:var(--orange-deep);margin-top:2px;}
 #s-time-date .td-cal-nav{background:none;border:none;color:var(--orange);font-size:20px;font-weight:900;cursor:pointer;padding:0 6px;line-height:1;}
 #s-time-date .td-cal-dow-row{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;margin-bottom:4px;}
 #s-time-date .td-cal-dow-row span{font-size:10px;font-weight:700;color:var(--muted);}
 #s-time-date .td-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;}
-#s-time-date .td-cal-cell{aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--ink);border-radius:50%;cursor:pointer;transition:all .15s ease;}
+/* Cell mirrors the rich Hebrew picker (.mdp-day): number on top + tiny Hebrew
+   sub-line, with holiday / Shabbat coloring. Reuses the same Hebrew helpers. */
+#s-time-date .td-cal-cell{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font-size:12px;font-weight:700;color:var(--ink);border-radius:10px;cursor:pointer;transition:all .15s ease;padding:2px 0;}
+#s-time-date .td-cal-cell .td-cal-num{font-size:13px;font-weight:800;line-height:1;}
+#s-time-date .td-cal-cell .td-cal-heb{font-size:7.5px;font-weight:600;color:var(--muted);line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
 #s-time-date .td-cal-cell:hover{background:var(--orange-soft);}
-#s-time-date .td-cal-cell.empty{cursor:default;}
+#s-time-date .td-cal-cell.empty{cursor:default;pointer-events:none;}
 #s-time-date .td-cal-cell.empty:hover{background:transparent;}
 #s-time-date .td-cal-cell.today{box-shadow:0 0 0 1.5px var(--orange);}
+#s-time-date .td-cal-cell.td-cal-shab .td-cal-num{color:#845EC2;}
+#s-time-date .td-cal-cell.td-cal-holiday .td-cal-num{color:#E63946;}
+#s-time-date .td-cal-cell.td-cal-holiday .td-cal-hol{color:#E63946;}
 #s-time-date .td-cal-cell.on{background:linear-gradient(135deg,var(--orange-light),var(--orange));color:#fff;box-shadow:0 3px 8px rgba(229,98,26,.28);}
+#s-time-date .td-cal-cell.on .td-cal-num,#s-time-date .td-cal-cell.on .td-cal-heb,#s-time-date .td-cal-cell.on .td-cal-hol{color:#fff;}
+#s-time-date .td-cal-cell.disabled{opacity:.3;pointer-events:none;cursor:default;}
 #s-time-date .td-manual-btn{display:block;margin:8px auto 0;background:none;border:1px solid rgba(255,122,61,.35);border-radius:99px;padding:4px 16px;font-family:inherit;font-size:11px;font-weight:700;color:var(--orange-deep);cursor:pointer;}
 #s-time-date .td-optfull-card{background:var(--card-bg);border-radius:18px;padding:14px;box-shadow:var(--card-shadow);border:1px solid rgba(255,255,255,.7);margin-top:8px;display:flex;flex-direction:column;gap:12px;}
 #s-time-date .td-optfull-section{display:flex;flex-direction:column;gap:8px;}
@@ -14305,11 +14315,27 @@ function updateHmPortrait(){
 <script>
 var _tdTargetId = null;
 var _tdNoTime   = false;
+var _tdOrigMins = null;   // task's original time-of-day (mins) when the screen opened — past values are display-allowed when unchanged
 
 var _TD_DOW_HE = ['א\'','ב\'','ג\'','ד\'','ה\'','ו\'','ש\''];
 
 function _tdLocalIso(d) {
   return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+
+// ── Past date/time guards (Task 1) ───────────────────────────────
+function _tdTodayIso() {
+  return (typeof todayDate === 'function') ? todayDate() : _tdLocalIso(new Date());
+}
+function _tdNowMins() { var n = new Date(); return n.getHours() * 60 + n.getMinutes(); }
+function _tdIsToday(iso) { return !!iso && iso === _tdTodayIso(); }
+function _tdSelectedIso() {
+  var on = document.querySelector('#tdDateStrip .td-day.on') ||
+           document.querySelector('#tdCalGrid .td-cal-cell.on');
+  return on ? on.dataset.date : null;
+}
+function _tdPastMsg() {
+  if (typeof showNotifToast === 'function') showNotifToast('לא ניתן לבחור זמן שכבר עבר');
 }
 
 function _tdBuildDateStrip(selectedDate) {
@@ -14372,9 +14398,18 @@ function renderTimeDateScreen(taskId) {
   _tdBuildDateStrip(task.date || null);
 
   var mins = task.mins != null ? task.mins : null;
+  _tdOrigMins = mins;   // remember original time so an unchanged past value stays editable/displayable
   _tdNoTime = false;
   var hVal = mins != null ? Math.floor(mins / 60) : 8;
   var mVal = mins != null ? mins % 60 : 0;
+  // New task defaulting to today: if the default time already passed, start at "now"
+  if (mins == null) {
+    var effIso = task.date || _tdTodayIso();
+    if (_tdIsToday(effIso) && (hVal * 60 + mVal) < _tdNowMins()) {
+      hVal = Math.floor(_tdNowMins() / 60);
+      mVal = _tdNowMins() % 60;
+    }
+  }
   var hourEl = document.getElementById('tdHourDigit');
   var minEl  = document.getElementById('tdMinDigit');
   if (hourEl) hourEl.textContent = String(hVal).padStart(2,'0');
@@ -14401,7 +14436,14 @@ function tdSave() {
     } else {
       var hh = parseInt(document.getElementById('tdHourDigit').textContent, 10) || 0;
       var mm = parseInt(document.getElementById('tdMinDigit').textContent, 10) || 0;
-      task.mins = hh * 60 + mm;
+      var candMins = hh * 60 + mm;
+      // Final guard: never commit a past time when the date is today (unchanged existing value allowed)
+      var selIso = selDay ? selDay.dataset.date : task.date;
+      if (_tdIsToday(selIso) && candMins < _tdNowMins() && candMins !== _tdOrigMins) {
+        _tdPastMsg();
+        return;
+      }
+      task.mins = candMins;
     }
     var remOnChips = document.querySelectorAll('#tdReminderChips .td-optfull-chip.on');
     var remOffsets = [];
@@ -14451,21 +14493,57 @@ var _TD_MONTH_HE = ['ינואר','פברואר','מרץ','אפריל','מאי','
 
 function _tdBuildCalGrid(year, month, selDate) {
   _tdCalYear = year; _tdCalMonth = month;
-  var nameEl = document.getElementById('tdCalMonthName');
-  if (nameEl) nameEl.textContent = _TD_MONTH_HE[month] + ' ' + year;
   var grid = document.getElementById('tdCalGrid');
   if (!grid) return;
-  var today = (typeof todayDate === 'function') ? todayDate() : new Date().toISOString().slice(0,10);
+
+  // Header: Gregorian + Hebrew month label (reuses the rich picker's helpers)
+  var nameEl = document.getElementById('tdCalMonthName');
+  if (nameEl) {
+    var hebHead = '';
+    try {
+      var hF = _jdnToH(_gToJdn(year, month + 1, 1));
+      var dimH = new Date(year, month + 1, 0).getDate();
+      var hL = _jdnToH(_gToJdn(year, month + 1, dimH));
+      hebHead = (hF.m === hL.m)
+        ? (_hMonthName(hF.y, hF.m) + ' ' + _hYearLetters(hF.y))
+        : (_hMonthName(hF.y, hF.m) + ' – ' + _hMonthName(hL.y, hL.m) + ' ' + _hYearLetters(hL.y));
+    } catch (_) {}
+    nameEl.innerHTML = '<span class="td-cal-greg">' + _TD_MONTH_HE[month] + ' ' + year + '</span>' +
+                       (hebHead ? '<span class="td-cal-heb-head">' + hebHead + '</span>' : '');
+  }
+
+  var today = _tdTodayIso();
   var firstDay = new Date(year, month, 1).getDay();
   var daysInMonth = new Date(year, month + 1, 0).getDate();
   var html = '';
   for (var e = 0; e < firstDay; e++) { html += '<div class="td-cal-cell empty"></div>'; }
   for (var d = 1; d <= daysInMonth; d++) {
     var iso = year + '-' + String(month + 1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+    var isSel  = (iso === selDate);
+    var isPast = (iso < today);
     var cls = 'td-cal-cell';
     if (iso === today) cls += ' today';
-    if (iso === selDate) cls += ' on';
-    html += '<div class="' + cls + '" data-date="' + iso + '">' + d + '</div>';
+    if (isSel) cls += ' on';
+    // Past days are not selectable — except an already-selected (existing) date, which stays displayable.
+    if (isPast && !isSel) cls += ' disabled';
+
+    // Hebrew date + Jewish holiday + Shabbat (same logic as _mdpRender)
+    var sub = '';
+    try {
+      var hd  = _jdnToH(_gToJdn(year, month + 1, d));
+      var hol = _H_HOLIDAYS[hd.m + '-' + hd.d];
+      var isShab = (new Date(year, month, d).getDay() === 6);
+      if (hol) {
+        cls += ' td-cal-holiday';
+        sub = '<span class="td-cal-heb td-cal-hol">' + hol.e + '</span>';
+      } else {
+        if (isShab) cls += ' td-cal-shab';
+        var hebDay = (hd.d === 1) ? ('א׳ ' + _hMonthName(hd.y, hd.m).slice(0,3)) : _hDayLetters(hd.d);
+        sub = '<span class="td-cal-heb">' + hebDay + '</span>';
+      }
+    } catch (_) {}
+
+    html += '<div class="' + cls + '" data-date="' + iso + '"><span class="td-cal-num">' + d + '</span>' + sub + '</div>';
   }
   grid.innerHTML = html;
 }
@@ -14732,6 +14810,7 @@ document.addEventListener('DOMContentLoaded', function() {
     calGrid.addEventListener('click', function(e) {
       var cell = e.target.closest('.td-cal-cell:not(.empty)');
       if (!cell) return;
+      if (cell.classList.contains('disabled')) { _tdPastMsg(); return; }  // past date — not selectable
       _tdCalSelDate = cell.dataset.date;
       calGrid.querySelectorAll('.td-cal-cell').forEach(function(c) { c.classList.remove('on'); });
       cell.classList.add('on');
@@ -15117,14 +15196,24 @@ function splitSave() {
 
   // #s-time-date: hour/minute chevrons
   function _tdChev(elId, delta, isHour) {
-    var el = document.getElementById(elId);
-    if (!el) return;
-    var val = parseInt(el.textContent, 10);
-    if (isHour) {
-      el.textContent = String(((val + delta) + 24) % 24).padStart(2,'0');
-    } else {
-      el.textContent = String(((val + delta) + 60) % 60).padStart(2,'0');
+    var hEl = document.getElementById('tdHourDigit');
+    var mEl = document.getElementById('tdMinDigit');
+    if (!hEl || !mEl) return;
+    var hh = parseInt(hEl.textContent, 10) || 0;
+    var mm = parseInt(mEl.textContent, 10) || 0;
+    var nhh = hh, nmm = mm;
+    if (isHour) nhh = ((hh + delta) + 24) % 24;
+    else        nmm = ((mm + delta) + 60) % 60;
+    // Past-time guard: when the selected date is today, block stepping to a
+    // time earlier than now (forward steps stay allowed). An unchanged existing
+    // value is still allowed (display of an already-saved past time).
+    var iso = _tdSelectedIso();
+    if (_tdIsToday(iso)) {
+      var cand = nhh * 60 + nmm;
+      if (cand < _tdNowMins() && cand !== _tdOrigMins) { _tdPastMsg(); return; }
     }
+    hEl.textContent = String(nhh).padStart(2,'0');
+    mEl.textContent = String(nmm).padStart(2,'0');
     _tdNoTime = false;
     var picker = document.getElementById('tdTimePicker');
     if (picker) picker.classList.remove('td-no-time');
