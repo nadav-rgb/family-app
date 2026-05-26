@@ -13974,6 +13974,15 @@ function openAddSheet() {
   // Always open in voice mode — typing-mode class is cleared so the
   // heart mic + status are visible, the textarea is hidden.
   const sheet = document.getElementById('atdBg');
+  // The sheet lives inside the day-preview screen; when opened from another
+  // screen (e.g. #s-confirmation) that screen is hidden, so the overlay never
+  // shows. Reparent it onto the active screen's .phone so it overlays whatever
+  // screen is currently visible (.atd-bg is position:absolute; inset:0).
+  try {
+    const active = document.querySelector('.app-screen.active') || document.querySelector('.app-screen:not([style*="display: none"])');
+    const host = (active && active.closest('.phone')) || document.querySelector('.phone');
+    if (host && sheet.parentNode !== host) host.appendChild(sheet);
+  } catch (_) {}
   sheet.classList.remove('typing-mode');
   const typeInp = document.getElementById('atdTypeInp');
   if (typeInp) typeInp.innerHTML = '';
