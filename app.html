@@ -4369,7 +4369,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
     </div>
 
     <!-- Add another task — opens the record/write sheet (openAddSheet) -->
-    <button class="btn-add-more" id="confAddMore" type="button" onclick="openAddSheet()" style="margin-bottom:10px;">+ הוסף משימה</button>
+    <button class="btn-add-more" id="confAddMore" type="button" onclick="openAddSheet({autoRecord:false})" style="margin-bottom:10px;">+ הוסף משימה</button>
 
     <!-- Save CTA -->
     <button class="cta" type="button" onclick="_confirmSaveAll()">
@@ -13969,7 +13969,12 @@ if (activeTasks().length > 0) {
 }
 
 // ─── Add-to-day sheet ─────────────────────────────────────────────
-function openAddSheet() {
+// opts.autoRecord (default true): start dictation automatically on open.
+// The confirmation screen opens with autoRecord:false so the sheet shows a
+// calm choice (tap the mic to record, or "או הקלד במקום") instead of grabbing
+// the mic immediately.
+function openAddSheet(opts) {
+  const autoRecord = !(opts && opts.autoRecord === false);
   addMode = true;
   // Reset voice state fresh for add session
   vTranscript = ''; vCarryOver = ''; vSessionFinal = '';
@@ -13998,8 +14003,11 @@ function openAddSheet() {
   if (typeInp) typeInp.innerHTML = '';
   _setAtdRecording(false);
   sheet.classList.add('open');
-  // Start recording automatically after sheet animates in
-  setTimeout(() => _atdStartRec(), 360);
+  // Start recording automatically only when asked (day-preview flow). From the
+  // confirmation screen we leave the sheet idle so the user chooses record/type.
+  const st = document.getElementById('atdStatus');
+  if (st) st.textContent = t('atd_tap');
+  if (autoRecord) setTimeout(() => _atdStartRec(), 360);
 }
 
 function closeAddSheet() {
