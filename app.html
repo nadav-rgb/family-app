@@ -9206,6 +9206,13 @@ function insertNewTasks(newTasks) {
   });
 
   _updateDpMeta();
+  // The sheet can also be opened from the confirmation screen ("הנה מה שהבנתי"),
+  // which renders previewTasks into a different list (#confirmTasksList). Refresh
+  // it too so a task added there actually appears (otherwise it looks like
+  // nothing happened). Harmless when that screen isn't visible.
+  if (typeof renderConfirmationTasks === 'function') {
+    try { renderConfirmationTasks(); } catch (_) {}
+  }
   closeAddSheet();
   // Schedule OS notifications for newly inserted tasks (add-mode flow).
   // btnOk will reschedule again on final commit, this handles the case
