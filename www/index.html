@@ -13,7 +13,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
 <meta name="apple-mobile-web-app-title" content="Family"/>
 <meta name="mobile-web-app-capable" content="yes"/>
-<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&family=Rubik:wght@400;600;700;800;900&family=Heebo:wght@400;500;600;700;800;900&family=Frank+Ruhl+Libre:wght@300;400;500;700;900&family=Instrument+Serif:ital@0;1&family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&family=Rubik:wght@400;600;700;800;900&family=Heebo:wght@400;500;600;700;800;900&family=Frank+Ruhl+Libre:wght@300;400;500;700;900&family=Instrument+Serif:ital@0;1&family=Manrope:wght@300;400;500;600;700;800&family=Varela+Round&family=Caveat:wght@500;700&family=Pacifico&display=swap" rel="stylesheet"/>
 <style>
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
 *:focus{outline:none;}
@@ -1368,8 +1368,11 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 #qaPanel pre{white-space:pre-wrap;word-break:break-all;margin:0;}
 #qaClose{background:#ff5e14;color:#fff;border:none;border-radius:8px;padding:6px 16px;font-size:12px;font-weight:800;margin-bottom:12px;cursor:pointer;display:block;}
 /* ─── Device Setup Screen ─── */
-#deviceSetupScreen{position:fixed;inset:0;background:#fffaf5;z-index:9999;display:flex;align-items:center;justify-content:center;direction:rtl;}
-#deviceSetupScreen.hidden{display:none;}
+#deviceSetupScreen,#firstRunScreen{position:fixed;inset:0;background:#fffaf5;z-index:9999;display:flex;align-items:center;justify-content:center;direction:rtl;}
+#deviceSetupScreen.hidden,#firstRunScreen.hidden{display:none;}
+#firstRunScreen .fr-sep{font-size:13px;color:#a07050;font-weight:700;margin:4px 0;}
+#firstRunScreen .fr-join-inp{width:100%;box-sizing:border-box;text-align:center;font-family:'Rubik',sans-serif;font-size:18px;font-weight:700;letter-spacing:.12em;color:#1c110a;background:#fff8f2;border:2px solid rgba(224,180,140,.4);border-radius:14px;padding:12px 14px;}
+#firstRunScreen .fr-err{color:#c03020;font-size:13px;font-weight:700;min-height:16px;}
 .device-setup-card{background:#fff;border-radius:24px;padding:32px 28px;max-width:320px;width:90%;box-shadow:0 8px 40px rgba(100,60,20,.18);text-align:center;}
 .device-setup-title{font-family:'Nunito',sans-serif;font-size:22px;font-weight:900;color:#1c110a;margin-bottom:6px;}
 .device-setup-sub{font-size:13px;color:#a07050;margin-bottom:24px;}
@@ -1377,6 +1380,151 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 .device-setup-btn{display:flex;align-items:center;gap:14px;background:#fff8f2;border:2px solid rgba(224,180,140,.3);border-radius:16px;padding:14px 18px;cursor:pointer;font-family:'Rubik',sans-serif;font-size:17px;font-weight:700;color:#1c110a;width:100%;transition:background .15s,border-color .15s;}
 .device-setup-btn:active{background:#fde8cf;border-color:#e8a060;}
 .device-setup-emoji{font-size:30px;line-height:1;}
+/* ─── First-run welcome: real HTML states inside #firstRunScreen ─── */
+#firstRunScreen{
+  --fr-orange:#FF7A3D; --fr-orange-deep:#E5621A; --fr-orange-soft:#FFE9D2;
+  --fr-purple:#7C3AED; --fr-purple-soft:#EFE7FE;
+  --fr-mint:#2F9E7E;   --fr-mint-soft:#DFF3EA;
+  --fr-ink:#1A0F08; --fr-muted:#9E8878;
+  overflow-y:auto;background:#FAF3E9;padding:0;align-items:flex-start;
+}
+/* One responsive mobile unit: width drives everything, height is derived
+   from content. The card no longer stretches to the viewport height, so
+   hero + card always scale together by width (stable under zoom/resize). */
+#firstRunScreen .fr-shell{
+  width:min(100vw, 480px);
+  margin:auto 0;
+  flex:0 0 auto;
+  display:block;
+  container-type:inline-size; /* enables cqw units for the hero crop below */
+}
+/* Each state is a self-contained hero + card unit (one visible at a time). */
+#firstRunScreen .fr-state{display:flex;flex-direction:column;}
+#firstRunScreen .fr-state.hidden{display:none;}
+/* Each hero shows only the TOP of its artwork — down to where the drawn
+   card begins; the real HTML card overlaps just below. Scales by width only. */
+#firstRunScreen .fr-hero{
+  width:100%;flex:0 0 auto;
+  background-color:#FAF3E9;background-repeat:no-repeat;
+  background-position:top center;background-size:100% auto;
+  /* Vertical-fit safety: on short viewports clamp the hero so the card + CTA
+     stay on-screen. Doesn't bite on tall phones (natural height < 60vh). */
+  max-height:60vh;
+}
+#firstRunScreen .fr-hero-welcome{aspect-ratio:953 / 1170;background-image:url("assets/welcome-hero.png");}
+/* create/join artwork is a clean illustration-only banner (1408×1117) — no
+   status bar, no drawn UI. The lower band is empty cream so the real HTML card
+   overlaps smoothly. Show the top of the art (family + logo) and let the card
+   rise into the empty cream zone. height in cqw = % of shell width → stable at
+   any screen size, and both images are identical so one value fits both. */
+#firstRunScreen .fr-hero-create{
+  height:64cqw;background-image:url("assets/create-family-hero.png");
+  background-position:top center;
+}
+#firstRunScreen .fr-hero-join{
+  height:64cqw;background-image:url("assets/join-family-hero.png");
+  background-position:top center;
+}
+#firstRunScreen .fr-card{
+  position:relative;z-index:1;margin-top:-30px;
+  flex:0 0 auto;
+  background:#FFFDFA;border-radius:30px 30px 0 0;
+  box-shadow:0 -12px 34px rgba(120,70,25,.12);
+  padding:24px 22px calc(26px + env(safe-area-inset-bottom));
+  display:flex;flex-direction:column;gap:13px;
+}
+
+/* welcome — two real choice buttons */
+#firstRunScreen .fr-choice{
+  display:flex;align-items:center;gap:13px;width:100%;
+  border:1.5px solid rgba(224,180,140,.34);border-radius:18px;
+  padding:15px 16px;cursor:pointer;background:#fff;
+  font-family:'Rubik',sans-serif;font-size:16px;font-weight:700;color:var(--fr-ink);
+  box-shadow:0 4px 14px rgba(160,90,30,.07);
+  transition:transform .14s ease, box-shadow .14s ease, background .14s ease;
+}
+#firstRunScreen .fr-choice:active{transform:scale(.985);}
+#firstRunScreen .fr-choice-ic{
+  flex:0 0 auto;width:42px;height:42px;border-radius:13px;
+  display:flex;align-items:center;justify-content:center;
+}
+#firstRunScreen .fr-choice-ic svg{width:21px;height:21px;}
+#firstRunScreen .fr-choice-tx{flex:1 1 auto;text-align:right;line-height:1.25;}
+#firstRunScreen .fr-choice-go{flex:0 0 auto;color:var(--fr-muted);opacity:.7;}
+#firstRunScreen .fr-choice-go svg{width:18px;height:18px;display:block;}
+#firstRunScreen .fr-choice-join .fr-choice-ic{background:var(--fr-purple-soft);color:var(--fr-purple);}
+#firstRunScreen .fr-choice-join:active{background:#FBF8FF;}
+#firstRunScreen .fr-choice-create .fr-choice-ic{background:var(--fr-mint-soft);color:var(--fr-mint);}
+#firstRunScreen .fr-choice-create:active{background:#F6FCF9;}
+
+/* create / join shared */
+#firstRunScreen .fr-back{
+  align-self:flex-start;width:36px;height:36px;border-radius:12px;
+  background:#FFF6EE;border:1px solid rgba(224,180,140,.34);
+  display:flex;align-items:center;justify-content:center;color:var(--fr-ink);
+  cursor:pointer;margin-bottom:2px;
+}
+#firstRunScreen .fr-back svg{width:16px;height:16px;}
+#firstRunScreen .fr-h1{
+  font-family:'Nunito','Rubik',sans-serif;font-size:22px;font-weight:900;
+  color:#2D2438;text-align:center;line-height:1.15;
+}
+#firstRunScreen .fr-sub{font-size:13.5px;font-weight:500;color:var(--fr-muted);text-align:center;line-height:1.45;margin-top:-6px;}
+#firstRunScreen .fr-field-lbl{font-size:12px;font-weight:700;color:#8A6F5C;text-align:right;margin-bottom:-6px;}
+#firstRunScreen .fr-input{
+  width:100%;box-sizing:border-box;
+  font-family:'Rubik',sans-serif;font-size:17px;font-weight:600;color:var(--fr-ink);
+  background:#FFF8F2;border:2px solid rgba(224,180,140,.4);border-radius:14px;
+  padding:13px 15px;outline:none;transition:border-color .15s, box-shadow .15s;
+}
+#firstRunScreen .fr-input:focus{border-color:var(--fr-orange);box-shadow:0 0 0 3px rgba(255,122,61,.16);}
+#firstRunScreen .fr-input-code{text-align:center;letter-spacing:.42em;font-weight:800;font-size:22px;padding-right:15px;}
+#firstRunScreen .fr-err{color:#C03020;font-size:13px;font-weight:700;min-height:16px;text-align:right;}
+#firstRunScreen .fr-cta{
+  width:100%;border:0;border-radius:16px;padding:15px;margin-top:4px;cursor:pointer;
+  font-family:'Rubik',sans-serif;font-size:17px;font-weight:800;color:#fff;
+  box-shadow:0 8px 20px rgba(160,90,30,.18);transition:transform .14s ease, filter .14s ease;
+}
+#firstRunScreen .fr-cta:active{transform:scale(.985);filter:brightness(.96);}
+#firstRunScreen .fr-cta-create,
+#firstRunScreen .fr-cta-join{background:linear-gradient(135deg,#8B5CD6 0%,#7C3AED 55%,#6D28D9 100%);}
+
+/* create — role picker (visual only) */
+#firstRunScreen .fr-role-q{font-size:13px;font-weight:700;color:#8A6F5C;text-align:center;margin-top:2px;}
+#firstRunScreen .fr-roles{display:flex;gap:10px;}
+#firstRunScreen .fr-role{
+  flex:1 1 0;min-width:0;display:flex;align-items:center;justify-content:center;gap:7px;
+  padding:12px;border-radius:14px;cursor:pointer;background:#fff;
+  border:2px solid rgba(224,180,140,.4);
+  font-family:'Rubik',sans-serif;font-size:15px;font-weight:700;color:var(--fr-muted);
+  transition:border-color .15s, color .15s, background .15s;
+}
+#firstRunScreen .fr-role svg{width:18px;height:18px;}
+/* distinct accents per role (mom = pink, dad = blue) — icon tinted always,
+   full accent when selected. data-role already on the buttons; no JS change. */
+#firstRunScreen .fr-role[data-role="mom"] svg{color:#E85D9A;}
+#firstRunScreen .fr-role[data-role="dad"] svg{color:#3B82F6;}
+#firstRunScreen .fr-role[data-role="mom"].is-active{border-color:#E85D9A;color:#C23B7A;background:#FCE7F1;}
+#firstRunScreen .fr-role[data-role="dad"].is-active{border-color:#3B82F6;color:#2563EB;background:#E7F0FD;}
+
+/* join — 6 real code boxes */
+#firstRunScreen .fr-code{display:flex;gap:8px;justify-content:center;direction:ltr;}
+#firstRunScreen .fr-code-box{
+  flex:1 1 0;min-width:0;aspect-ratio:1 / 1;max-width:50px;box-sizing:border-box;
+  text-align:center;text-transform:uppercase;
+  font-family:'Rubik',sans-serif;font-size:24px;font-weight:800;color:var(--fr-ink);
+  background:#FFF8F2;border:2px solid rgba(224,180,140,.4);border-radius:13px;
+  padding:0;outline:none;transition:border-color .15s, box-shadow .15s;
+}
+#firstRunScreen .fr-code-box:focus{border-color:var(--fr-purple);box-shadow:0 0 0 3px rgba(124,58,237,.16);}
+#firstRunScreen .fr-code-box::placeholder{color:#C9BCD6;font-weight:600;}
+
+/* text link + hint */
+#firstRunScreen .fr-link{
+  background:none;border:0;cursor:pointer;align-self:center;
+  font-family:'Rubik',sans-serif;font-size:14px;font-weight:700;color:var(--fr-purple);padding:4px;
+}
+#firstRunScreen .fr-hint{font-size:12px;font-weight:500;color:var(--fr-muted);text-align:center;line-height:1.4;}
 
 /* ════════════════════════════════════════════════════════════════════
    SCREEN — SETTINGS  (Claude Design merge, step 1)
@@ -2633,7 +2781,7 @@ body.text-large .phone{font-size:17px}
 #s-time-date .td-custom-rem-ok{height:34px;padding:0 14px;border-radius:12px;background:var(--orange);color:#fff;border:none;font-family:inherit;font-size:12px;font-weight:800;cursor:pointer;flex:0 0 auto;}
 
 /* ─── Avatar bottom sheet (1A) ─── */
-.avsh-bg{position:absolute;inset:0;z-index:930;background:rgba(28,17,10,.36);display:flex;align-items:flex-end;pointer-events:none;opacity:0;transition:opacity .22s ease;}
+.avsh-bg{position:absolute;inset:0;z-index:948;background:rgba(28,17,10,.36);display:flex;align-items:flex-end;pointer-events:none;opacity:0;transition:opacity .22s ease;}
 .avsh-bg.open{opacity:1;pointer-events:auto;}
 .avsh-sheet{width:100%;background:#fff9f5;border-radius:24px 24px 0 0;padding:10px 18px 28px;box-shadow:0 -8px 40px rgba(100,60,20,.18);transform:translateY(100%);transition:transform .32s cubic-bezier(.34,1.1,.64,1);}
 .avsh-bg.open .avsh-sheet{transform:translateY(0);}
@@ -2655,7 +2803,7 @@ body.text-large .phone{font-size:17px}
    doesn't scroll the page underneath (Samsung Android was scrolling instead
    of moving the cropper image). */
 body.av-modal-lock{overflow:hidden;touch-action:none;}
-.avcrop-bg{position:absolute;inset:0;z-index:940;background:rgba(20,10,5,.92);display:flex;flex-direction:column;align-items:stretch;justify-content:stretch;pointer-events:none;opacity:0;transition:opacity .2s ease;}
+.avcrop-bg{position:absolute;inset:0;z-index:949;background:rgba(20,10,5,.92);display:flex;flex-direction:column;align-items:stretch;justify-content:stretch;pointer-events:none;opacity:0;transition:opacity .2s ease;}
 .avcrop-bg.open{opacity:1;pointer-events:auto;}
 .avcrop-hdr{flex:0 0 auto;padding:18px 18px 6px;color:#fff;text-align:center;}
 .avcrop-hdr .t{font-size:15px;font-weight:800;letter-spacing:.2px;line-height:1.35;}
@@ -2683,7 +2831,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
 .avcrop-canvas-wrap .cropper-dashed{display:none !important;}
 
 /* ─── Avatar use-or-AI choice modal (1A: only "use" enabled, AI button stays disabled) ─── */
-.avchoice-bg{position:absolute;inset:0;z-index:945;background:rgba(28,17,10,.46);display:flex;align-items:center;justify-content:center;pointer-events:none;opacity:0;transition:opacity .22s ease;padding:24px;}
+.avchoice-bg{position:absolute;inset:0;z-index:950;background:rgba(28,17,10,.46);display:flex;align-items:center;justify-content:center;pointer-events:none;opacity:0;transition:opacity .22s ease;padding:24px;}
 .avchoice-bg.open{opacity:1;pointer-events:auto;}
 .avchoice-card{width:100%;max-width:340px;background:#fff9f5;border-radius:22px;padding:22px 18px 18px;box-shadow:0 14px 46px rgba(100,60,20,.32);transform:translateY(8px) scale(.98);opacity:0;transition:transform .26s cubic-bezier(.34,1.1,.64,1),opacity .22s;}
 .avchoice-bg.open .avchoice-card{transform:translateY(0) scale(1);opacity:1;}
@@ -2698,6 +2846,92 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
 .avchoice-btn.ai[disabled]{cursor:not-allowed;opacity:.7;}
 .avchoice-btn.ai .soon-pill{font-size:10px;font-weight:900;padding:2px 8px;border-radius:99px;background:rgba(117,96,192,.18);color:#7560c0;letter-spacing:.3px;}
 .avchoice-btn.cancel{background:transparent;color:#9e8878;font-weight:700;font-size:13px;padding:10px;margin-top:4px;}
+
+/* ─── AI results rendered inside the landing-page gallery cards ─── */
+@keyframes avgenSpin{to{transform:rotate(360deg);}}
+.ail-up-placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;}
+.ail-upload-box.has-photo{border-style:solid;border-color:#7C3AED;padding:0;overflow:hidden;background:#fff;}
+.ail-upload-box > img{width:100%;height:100%;object-fit:cover;display:block;border-radius:26px;}
+.ail-card{cursor:default;}
+.ail-card.selectable{cursor:pointer;}
+.ail-card.selected{outline:3px solid #7C3AED;outline-offset:2px;box-shadow:0 0 0 4px rgba(124,58,237,.18),0 4px 14px rgba(180,120,90,.08);}
+.ail-card-image .spin{position:absolute;top:50%;left:50%;width:30px;height:30px;margin:-15px 0 0 -15px;border-radius:50%;border:3px solid rgba(124,58,237,.2);border-top-color:#7C3AED;animation:avgenSpin .8s linear infinite;z-index:3;}
+.ail-card-image > img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;z-index:2;}
+.ail-card-image .err{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:8px;font-size:11px;font-weight:700;color:#a05a30;text-align:center;line-height:1.35;background:#f7ece4;z-index:3;}
+/* "הגרסאות שלי" — saved AI variants gallery in the avatar settings card */
+.mp-av-variants{margin-top:14px;padding-top:14px;border-top:1px solid rgba(160,90,30,.10);}
+.mp-av-variants-head{margin-bottom:10px;}
+.mp-av-variants-title{font-size:14px;font-weight:900;color:#1c110a;margin:0;}
+.mp-av-variants-sub{font-size:11.5px;font-weight:600;color:#9e8878;margin:2px 0 0;}
+.mp-av-variants-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+.mp-av-variant{position:relative;aspect-ratio:1;border-radius:14px;overflow:hidden;border:2px solid transparent;cursor:pointer;background:#f4e8dc;transition:border-color .15s,transform .12s;}
+.mp-av-variant:active{transform:scale(.96);}
+.mp-av-variant img{width:100%;height:100%;object-fit:cover;display:block;}
+.mp-av-variant.active{border-color:#7C3AED;box-shadow:0 0 0 3px rgba(124,58,237,.2);}
+.mp-av-variant.active::after{content:'✓';position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#7C3AED;color:#fff;font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;}
+/* Variant lightbox — enlarged preview */
+.avlb-bg{position:absolute;inset:0;z-index:960;background:rgba(15,8,4,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:24px;pointer-events:none;opacity:0;transition:opacity .2s ease;}
+.avlb-bg.open{opacity:1;pointer-events:auto;}
+.avlb-close{position:absolute;top:calc(14px + env(safe-area-inset-top,0));left:14px;width:42px;height:42px;border-radius:50%;border:none;background:rgba(255,255,255,.16);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+.avlb-close svg{width:20px;height:20px;}
+.avlb-stage{width:min(88vw,500px);max-height:72vh;border-radius:24px;overflow:hidden;box-shadow:0 18px 50px rgba(0,0,0,.5);}
+.avlb-stage img{width:100%;height:100%;object-fit:contain;display:block;}
+.avlb-use{padding:15px 28px;border-radius:18px;border:none;font-family:inherit;font-size:15px;font-weight:900;color:#fff;background:linear-gradient(95deg,#7C3AED,#C026D3);box-shadow:0 8px 22px rgba(124,58,237,.4);cursor:pointer;transition:transform .14s,opacity .14s;}
+.avlb-use:active{transform:scale(.97);}
+.avlb-use:disabled{opacity:.5;cursor:default;}
+.avlb-nav{position:absolute;top:50%;transform:translateY(-50%);width:44px;height:44px;border-radius:50%;border:none;background:rgba(255,255,255,.16);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:2;}
+.avlb-nav svg{width:22px;height:22px;}
+.avlb-nav:active{background:rgba(255,255,255,.28);}
+.avlb-prev{right:14px;}
+.avlb-next{left:14px;}
+.avlb-dots{display:flex;gap:8px;}
+.avlb-dots .dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.3);transition:background .15s,transform .15s;}
+.avlb-dots .dot.on{background:#fff;transform:scale(1.25);}
+
+/* ════ AI AVATAR LANDING (Claude-design page, scoped) ════ */
+.ail-bg{position:absolute;inset:0;z-index:947;background:linear-gradient(180deg,#FDF0E9 0%,#FBEFE8 45%,#FAEAE0 100%);pointer-events:none;opacity:0;transition:opacity .25s ease;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+.ail-bg.open{opacity:1;pointer-events:auto;}
+.ail-wrap{padding:20px 22px calc(36px + env(safe-area-inset-bottom,0));direction:rtl;color:#2D2A32;font-family:'Heebo','Varela Round',system-ui,sans-serif;-webkit-font-smoothing:antialiased;}
+.ail-wrap *,.ail-wrap *::before,.ail-wrap *::after{box-sizing:border-box;}
+.ail-header{display:flex;align-items:center;justify-content:space-between;padding:6px 0 18px;}
+.ail-icon-btn{width:44px;height:44px;border-radius:50%;background:#fff;border:none;box-shadow:0 4px 14px rgba(140,90,70,.10),0 1px 2px rgba(140,90,70,.06);display:flex;align-items:center;justify-content:center;cursor:pointer;color:#2D2A32;}
+.ail-icon-btn svg{width:18px;height:18px;}
+.ail-help-btn{transform:translateX(-10px);}
+.ail-logo{position:relative;font-family:'Pacifico',cursive;font-size:32px;line-height:1;background:linear-gradient(90deg,#8B3FD9 0%,#C44FBE 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;padding:0 4px;}
+.ail-logo .ail-heart{position:absolute;top:-10px;left:38%;width:14px;height:14px;}
+.ail-title-block{text-align:center;margin-top:8px;}
+.ail-page-title{font-family:'Heebo',sans-serif;font-weight:900;font-size:38px;line-height:1.1;color:#2D2A32;margin:0 0 10px;letter-spacing:-.5px;}
+.ail-subtitle{color:#8a8290;font-size:15px;font-weight:400;margin:0;}
+.ail-upload-wrap{position:relative;display:flex;justify-content:center;margin:28px 0 24px;}
+.ail-upload-box{width:220px;height:220px;border-radius:28px;border:2px dashed #cdb9ab;background:rgba(255,255,255,.35);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#a89888;cursor:pointer;transition:border-color .15s,background .15s;}
+.ail-upload-box:active{background:rgba(255,255,255,.55);border-color:#b89a86;}
+.ail-camera{width:36px;height:36px;stroke:#a89888;}
+.ail-uplabel{font-size:15px;font-weight:500;color:#a89888;}
+.ail-handwritten{position:absolute;top:42%;left:6px;right:auto;transform:translateY(-50%) rotate(-8deg);transform-origin:left center;font-family:'Caveat',cursive;font-size:24px;font-weight:700;color:#2D2A32;white-space:nowrap;pointer-events:none;line-height:1.05;}
+.ail-arrow{display:block;margin-top:-2px;margin-right:26px;width:64px;}
+.ail-cta{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:19px 24px;border-radius:26px;border:none;background:linear-gradient(95deg,#7C3AED 0%,#A93AE0 50%,#C026D3 100%);color:#fff;font-family:'Heebo',sans-serif;font-weight:700;font-size:18px;cursor:pointer;box-shadow:0 14px 30px rgba(124,58,237,.32),0 6px 12px rgba(192,38,211,.18),inset 0 1px 0 rgba(255,255,255,.25);transition:transform .15s ease;}
+.ail-cta:active{transform:translateY(0) scale(.99);}
+.ail-sparkle{font-size:18px;}
+.ail-section{text-align:center;margin:34px 0 16px;position:relative;}
+.ail-mini-heart{width:12px;height:12px;display:block;margin:0 auto 6px;}
+.ail-row{display:flex;align-items:center;justify-content:center;gap:14px;}
+.ail-h2{font-family:'Heebo',sans-serif;font-weight:700;font-size:19px;color:#2D2A32;margin:0;}
+.ail-deco{display:flex;align-items:center;color:#d8b9a3;}
+.ail-deco svg{width:38px;height:10px;}
+.ail-cards{background:linear-gradient(180deg,#fff9f3 0%,#fdf2e9 100%);border-radius:28px;padding:16px;box-shadow:0 6px 22px rgba(180,120,90,.08),0 1px 2px rgba(180,120,90,.04);}
+.ail-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.ail-card{background:#fff;border-radius:20px;padding:12px 12px 14px;box-shadow:0 4px 14px rgba(180,120,90,.08),0 1px 2px rgba(180,120,90,.04);position:relative;display:flex;flex-direction:column;}
+.ail-card-image{position:relative;width:100%;aspect-ratio:1/1;background:#ececec;border-radius:14px;overflow:hidden;margin-bottom:12px;}
+.ail-badge{position:absolute;top:9px;right:9px;width:28px;height:28px;border-radius:50%;color:#fff;font-family:'Heebo',sans-serif;font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 8px rgba(0,0,0,.15);border:2px solid #fff;}
+.ail-badge.pink{background:#EC4D8A;}
+.ail-badge.purple{background:#8B5CF6;}
+.ail-badge.blue{background:#4FB3E8;}
+.ail-badge.green{background:#2BB67A;}
+.ail-card-title{font-family:'Heebo',sans-serif;font-weight:700;font-size:14px;color:#2D2A32;line-height:1.25;margin:0 0 4px;direction:ltr;text-align:right;}
+.ail-card-desc{font-size:12px;color:#8a8290;line-height:1.35;margin:0;padding-left:26px;}
+.ail-card-heart{position:absolute;bottom:12px;left:12px;width:18px;height:18px;}
+.ail-footer{margin-top:22px;display:flex;align-items:center;justify-content:center;gap:6px;color:#a89888;font-size:13px;}
+.ail-footer svg{width:13px;height:13px;}
 </style>
 <!-- cropper.js (local vendor — no CDN dependency for Capacitor/offline) -->
 <link rel="stylesheet" href="vendor/cropper.min.css">
@@ -2710,7 +2944,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
 </head>
 <body>
 
-<!-- ════ SVG PORTRAIT SPRITES — real family: אמא, אבא, לאלי, אהרן צבי ════ -->
+<!-- ════ SVG PORTRAIT SPRITES (legacy/unused — default avatar is now neutral 👤) ════ -->
 <svg width="0" height="0" style="position:absolute;overflow:hidden" aria-hidden="true">
   <defs>
     <!-- backgrounds -->
@@ -2839,7 +3073,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
       <path d="M43 64.5 Q50 66.5 57 64.5" stroke="rgba(255,250,240,.7)" stroke-width="1.4" fill="none" stroke-linecap="round"/>
     </symbol>
 
-    <!-- ═════ DUDI = לאלי (girl ~11) — LONG STRAIGHT dark hair past shoulders ═════ -->
+    <!-- ═════ member_laali portrait (legacy/unused) — LONG STRAIGHT dark hair past shoulders ═════ -->
     <symbol id="p-dudi" viewBox="0 0 100 100">
       <rect width="100" height="100" fill="url(#bgC)"/>
       <!-- LONG STRAIGHT HAIR — falls all the way to bottom of frame, very long -->
@@ -2880,7 +3114,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
       <ellipse cx="64" cy="54.5" rx="5" ry="3" fill="url(#cheekRose)"/>
     </symbol>
 
-    <!-- ═════ YONATAN = אהרן צבי (boy ~9) — colorful KIPPAH dome on head ═════ -->
+    <!-- ═════ member_aharon portrait (legacy/unused) — colorful KIPPAH dome on head ═════ -->
     <symbol id="p-yonatan" viewBox="0 0 100 100">
       <rect width="100" height="100" fill="url(#bgD)"/>
       <!-- Shirt — rust/brown -->
@@ -3363,28 +3597,28 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
           <div data-avatar-slot style="position:absolute;inset:0;border-radius:inherit;overflow:hidden;"></div>
           <span class="badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg></span>
         </div>
-        <div class="ava-name">אבא</div>
+        <div class="ava-name">חבר 1</div>
       </div>
       <div class="member" data-id="ima">
         <div class="ava-circle av-ima" data-avatar-for="member_mom" data-avatar-size="56">
           <div data-avatar-slot style="position:absolute;inset:0;border-radius:inherit;overflow:hidden;"></div>
           <span class="badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg></span>
         </div>
-        <div class="ava-name">אמא</div>
+        <div class="ava-name">חבר 2</div>
       </div>
       <div class="member" data-id="leali">
         <div class="ava-circle av-leali" data-avatar-for="member_laali" data-avatar-size="56">
           <div data-avatar-slot style="position:absolute;inset:0;border-radius:inherit;overflow:hidden;"></div>
           <span class="badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg></span>
         </div>
-        <div class="ava-name">ליאלי</div>
+        <div class="ava-name">חבר 3</div>
       </div>
       <div class="member" data-id="uri">
         <div class="ava-circle av-uri" data-avatar-for="member_aharon" data-avatar-size="56">
           <div data-avatar-slot style="position:absolute;inset:0;border-radius:inherit;overflow:hidden;"></div>
           <span class="badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg></span>
         </div>
-        <div class="ava-name">אורי</div>
+        <div class="ava-name">חבר 4</div>
       </div>
     </div>
     <div class="members-caption">זהות המכשיר משמשת להצגת תוכן והתראות מותאמות אישית</div>
@@ -3469,14 +3703,14 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
 
     <!-- Members -->
     <div class="members">
-      <!-- Card 1: אבא -->
+      <!-- Card 1 -->
       <div class="mcard">
         <div class="mavatar av-aba" data-avatar-for="member_dad" data-avatar-size="78" onclick="openMemberProfile('member_dad','s-family-members')">
           <div data-avatar-slot></div>
         </div>
         <div class="mbody">
           <div class="name-row">
-            <div class="name">אבא</div>
+            <div class="name">חבר 1</div>
             <span class="me-pill">המכשיר הזה</span>
           </div>
           <div class="meta-row">
@@ -3490,13 +3724,13 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
         </div>
       </div>
 
-      <!-- Card 2: אמא -->
+      <!-- Card 2 -->
       <div class="mcard">
         <div class="mavatar av-ima" data-avatar-for="member_mom" data-avatar-size="78" onclick="openMemberProfile('member_mom','s-family-members')">
           <div data-avatar-slot></div>
         </div>
         <div class="mbody">
-          <div class="name-row"><div class="name">אמא</div></div>
+          <div class="name-row"><div class="name">חבר 2</div></div>
           <div class="meta-row">
             <span>הורה</span>
             <span class="icn-mini" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M5 21c0-4 3-7 7-7s7 3 7 7"/></svg></span>
@@ -3508,13 +3742,13 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
         </div>
       </div>
 
-      <!-- Card 3: ליאלי -->
+      <!-- Card 3 -->
       <div class="mcard">
         <div class="mavatar av-leali" data-avatar-for="member_laali" data-avatar-size="78" onclick="openMemberProfile('member_laali','s-family-members')">
           <div data-avatar-slot></div>
         </div>
         <div class="mbody">
-          <div class="name-row"><div class="name">ליאלי</div></div>
+          <div class="name-row"><div class="name">חבר 3</div></div>
           <div class="meta-row">
             <span>ילדה</span>
             <span class="icn-mini" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M5 21c0-4 3-7 7-7s7 3 7 7"/></svg></span>
@@ -3526,13 +3760,13 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
         </div>
       </div>
 
-      <!-- Card 4: אורי -->
+      <!-- Card 4 -->
       <div class="mcard">
         <div class="mavatar av-uri" data-avatar-for="member_aharon" data-avatar-size="78" onclick="openMemberProfile('member_aharon','s-family-members')">
           <div data-avatar-slot></div>
         </div>
         <div class="mbody">
-          <div class="name-row"><div class="name">אורי</div></div>
+          <div class="name-row"><div class="name">חבר 4</div></div>
           <div class="meta-row">
             <span>ילד</span>
             <span class="icn-mini" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M5 21c0-4 3-7 7-7s7 3 7 7"/></svg></span>
@@ -3644,7 +3878,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
         </div>
         <div class="code-info">
           <div class="lbl">קוד המשפחה שלכם</div>
-          <div class="val" id="inviteFamilyCode">YUPT7N</div>
+          <div class="val" id="inviteFamilyCode"></div>
         </div>
       </div>
       <button class="copy-btn" type="button" onclick="inviteCopyCode(this)">
@@ -3826,12 +4060,13 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
           <div class="body"><div class="t">צור דמות AI מתמונה</div><div class="s">ניצור דמות מאיירת בהתאמה אישית</div></div>
           <div class="av-dot"></div>
         </div>
-        <div class="mp-av-row" data-av="ai-4-options">
-          <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></span>
-          <div class="ico ic-sparks"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4l1.6 3.4L17 9l-3.4 1.6L12 14l-1.6-3.4L7 9l3.4-1.6z"/><path d="M6 15l.8 1.6L8.5 17.5l-1.7.8L6 20l-.8-1.7L3.5 17.5l1.7-.8z"/></svg></div>
-          <div class="body"><div class="t">בחר מתוך 4 אפשרויות AI</div><div class="s">ניצור 4 דמויות מאיירות לבחירתכם</div></div>
-          <div class="av-dot"></div>
+      </div>
+      <div class="mp-av-variants" id="mpVariants" style="display:none">
+        <div class="mp-av-variants-head">
+          <h3 class="mp-av-variants-title">הגרסאות שלי</h3>
+          <p class="mp-av-variants-sub">לחצו כדי להחליף את התמונה הפעילה</p>
         </div>
+        <div class="mp-av-variants-grid" id="mpVariantsGrid"></div>
       </div>
       <div class="mp-av-privacy">
         <span class="lk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>
@@ -3961,7 +4196,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
         <div class="dev-avatar av-aba" data-avatar-for="member_dad" data-avatar-size="40"><div data-avatar-slot></div><span class="online"></span></div>
         <div class="dev-body">
           <div class="dev-top">
-            <span class="dev-name">הטלפון של אבא</span>
+            <span class="dev-name">הטלפון של חבר 1</span>
             <span class="me-pill">מכשיר זה</span>
           </div>
           <div class="dev-model" id="devModelDad">Samsung Galaxy S24</div>
@@ -3975,7 +4210,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
         <div class="dev-avatar av-ima" data-avatar-for="member_mom" data-avatar-size="40"><div data-avatar-slot></div><span class="online"></span></div>
         <div class="dev-body">
           <div class="dev-top">
-            <span class="dev-name">הטלפון של אמא</span>
+            <span class="dev-name">הטלפון של חבר 2</span>
           </div>
           <div class="dev-model" id="devModelMom">Samsung Galaxy</div>
         </div>
@@ -3988,7 +4223,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
         <div class="dev-avatar av-leali" data-avatar-for="member_laali" data-avatar-size="40"><div data-avatar-slot></div><span class="online"></span></div>
         <div class="dev-body">
           <div class="dev-top">
-            <span class="dev-name">הטלפון של ליאלי</span>
+            <span class="dev-name">הטלפון של חבר 3</span>
           </div>
           <div class="dev-model" id="devModelLaali">Samsung Galaxy</div>
         </div>
@@ -4001,7 +4236,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
         <div class="dev-avatar av-uri" data-avatar-for="member_aharon" data-avatar-size="40"><div data-avatar-slot></div><span class="online"></span></div>
         <div class="dev-body">
           <div class="dev-top">
-            <span class="dev-name">הטלפון של אהרן</span>
+            <span class="dev-name">הטלפון של חבר 4</span>
           </div>
           <div class="dev-model">Samsung Galaxy</div>
         </div>
@@ -4583,7 +4818,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
     <div class="vis-hero-card" id="visHeroCard">
       <div class="vis-hero-perf">
         <div class="vis-hero-big-ava av-aba" id="visHeroBigAva"></div>
-        <div class="vis-hero-perf-name" id="visHeroPerfName">אבא</div>
+        <div class="vis-hero-perf-name" id="visHeroPerfName">חבר 1</div>
         <div class="vis-hero-perf-role">מבצע</div>
       </div>
       <div class="vis-hero-sep"></div>
@@ -4609,22 +4844,22 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
         <button class="vis-ava-frame orange" data-id="aba" type="button">
           <div class="vis-ava-circle av-aba" data-avatar-for="member_dad" data-avatar-size="48" style="position:relative;overflow:hidden;"><div data-avatar-slot style="position:absolute;inset:0;border-radius:inherit;"></div></div>
           <span class="vis-badge orange"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg></span>
-          <div class="vis-ava-name">אבא</div>
+          <div class="vis-ava-name">חבר 1</div>
         </button>
         <button class="vis-ava-frame orange dimmed" data-id="ima" type="button">
           <div class="vis-ava-circle av-ima" data-avatar-for="member_mom" data-avatar-size="48" style="position:relative;overflow:hidden;"><div data-avatar-slot style="position:absolute;inset:0;border-radius:inherit;"></div></div>
           <span class="vis-badge empty"></span>
-          <div class="vis-ava-name">אמא</div>
+          <div class="vis-ava-name">חבר 2</div>
         </button>
         <button class="vis-ava-frame orange dimmed" data-id="leali" type="button">
           <div class="vis-ava-circle av-leali" data-avatar-for="member_laali" data-avatar-size="48" style="position:relative;overflow:hidden;"><div data-avatar-slot style="position:absolute;inset:0;border-radius:inherit;"></div></div>
           <span class="vis-badge empty"></span>
-          <div class="vis-ava-name">ליאלי</div>
+          <div class="vis-ava-name">חבר 3</div>
         </button>
         <button class="vis-ava-frame orange dimmed" data-id="aharon" type="button">
           <div class="vis-ava-circle av-aharon" data-avatar-for="member_aharon" data-avatar-size="48" style="position:relative;overflow:hidden;"><div data-avatar-slot style="position:absolute;inset:0;border-radius:inherit;"></div></div>
           <span class="vis-badge empty"></span>
-          <div class="vis-ava-name">אהרן</div>
+          <div class="vis-ava-name">חבר 4</div>
         </button>
       </div>
 
@@ -4663,22 +4898,22 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
         <button class="vis-ava-frame orange" data-id="aba" type="button">
           <div class="vis-ava-circle av-aba" data-avatar-for="member_dad" data-avatar-size="48" style="position:relative;overflow:hidden;"><div data-avatar-slot style="position:absolute;inset:0;border-radius:inherit;"></div></div>
           <span class="vis-badge orange"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg></span>
-          <div class="vis-ava-name">אבא</div>
+          <div class="vis-ava-name">חבר 1</div>
         </button>
         <button class="vis-ava-frame orange" data-id="ima" type="button">
           <div class="vis-ava-circle av-ima" data-avatar-for="member_mom" data-avatar-size="48" style="position:relative;overflow:hidden;"><div data-avatar-slot style="position:absolute;inset:0;border-radius:inherit;"></div></div>
           <span class="vis-badge empty"></span>
-          <div class="vis-ava-name">אמא</div>
+          <div class="vis-ava-name">חבר 2</div>
         </button>
         <button class="vis-ava-frame orange" data-id="leali" type="button">
           <div class="vis-ava-circle av-leali" data-avatar-for="member_laali" data-avatar-size="48" style="position:relative;overflow:hidden;"><div data-avatar-slot style="position:absolute;inset:0;border-radius:inherit;"></div></div>
           <span class="vis-badge empty"></span>
-          <div class="vis-ava-name">ליאלי</div>
+          <div class="vis-ava-name">חבר 3</div>
         </button>
         <button class="vis-ava-frame orange" data-id="aharon" type="button">
           <div class="vis-ava-circle av-aharon" data-avatar-for="member_aharon" data-avatar-size="48" style="position:relative;overflow:hidden;"><div data-avatar-slot style="position:absolute;inset:0;border-radius:inherit;"></div></div>
           <span class="vis-badge empty"></span>
-          <div class="vis-ava-name">אהרן</div>
+          <div class="vis-ava-name">חבר 4</div>
         </button>
       </div>
 
@@ -4699,7 +4934,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
 
       <div class="vis-tip" id="visNotifyTipWrap">
         <span class="bulb" aria-hidden="true">💡</span>
-        <span id="visNotifyTip">רק <u>אבא</u> יקבל התראה, כדי לא להפריע לאחרים.</span>
+        <span id="visNotifyTip">רק <u>חבר 1</u> יקבל התראה, כדי לא להפריע לאחרים.</span>
       </div>
     </div>
 
@@ -5163,6 +5398,81 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
   </div>
 </div>
 
+<div id="firstRunScreen" class="hidden">
+  <div class="fr-shell">
+
+    <!-- ── STATE: welcome ── -->
+    <div class="fr-state" data-fr-state="welcome">
+      <div class="fr-hero fr-hero-welcome" role="img" aria-label="Family — היום של כולם, מסודר במקום אחד"></div>
+      <div class="fr-card">
+        <button type="button" class="fr-choice fr-choice-join" onclick="_frGoto('join')">
+          <span class="fr-choice-ic" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="m10.8 12.2 6.2-6.2"/><path d="m16 6 2 2"/><path d="m19 3 2 2"/></svg>
+          </span>
+          <span class="fr-choice-tx">יש לי קוד משפחה</span>
+          <span class="fr-choice-go" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+          </span>
+        </button>
+        <button type="button" class="fr-choice fr-choice-create" onclick="_frGoto('create')">
+          <span class="fr-choice-ic" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+          </span>
+          <span class="fr-choice-tx">אני רוצה ליצור משפחה חדשה</span>
+          <span class="fr-choice-go" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+          </span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ── STATE: create ── -->
+    <div class="fr-state hidden" data-fr-state="create">
+      <div class="fr-hero fr-hero-create" role="img" aria-label="בואו נקים את המשפחה שלכם"></div>
+      <div class="fr-card">
+        <div class="fr-h1">✨ בואו נקים את המשפחה שלכם</div>
+        <label class="fr-field-lbl" for="frCreateName">שם המשפחה</label>
+        <input class="fr-input" id="frCreateName" type="text" placeholder="למשל: משפחת כהן" dir="rtl" maxlength="24" />
+        <div class="fr-role-q">מי משתמש במכשיר הזה?</div>
+        <div class="fr-roles">
+          <button type="button" class="fr-role" data-role="mom" onclick="_frPickRole(this)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M5 21c0-4 3-7 7-7s7 3 7 7"/></svg>
+            <span>אמא</span>
+          </button>
+          <button type="button" class="fr-role" data-role="dad" onclick="_frPickRole(this)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M5 21c0-4 3-7 7-7s7 3 7 7"/></svg>
+            <span>אבא</span>
+          </button>
+        </div>
+        <button type="button" class="fr-cta fr-cta-create" onclick="_firstRunCreate()">צור משפחה</button>
+        <div class="fr-hint">אפשר לחבר ילדים נוספים אחר כך בהגדרות בני המשפחה.</div>
+      </div>
+    </div>
+
+    <!-- ── STATE: join ── -->
+    <div class="fr-state hidden" data-fr-state="join">
+      <div class="fr-hero fr-hero-join" role="img" aria-label="הצטרפות למשפחה שלכם"></div>
+      <div class="fr-card">
+        <div class="fr-h1">הצטרפו למשפחה שלכם 🏡</div>
+        <div class="fr-sub">קיבלתם קוד משפחה? הכניסו אותו כאן.</div>
+        <div class="fr-code" id="frCodeBoxes" dir="ltr">
+          <input class="fr-code-box" type="text" inputmode="text" autocomplete="off" maxlength="1" placeholder="–" aria-label="תו 1" oninput="_frCodeInput(this,0)" onkeydown="_frCodeKey(event,this,0)" onpaste="_frCodePaste(event)" />
+          <input class="fr-code-box" type="text" inputmode="text" autocomplete="off" maxlength="1" placeholder="–" aria-label="תו 2" oninput="_frCodeInput(this,1)" onkeydown="_frCodeKey(event,this,1)" onpaste="_frCodePaste(event)" />
+          <input class="fr-code-box" type="text" inputmode="text" autocomplete="off" maxlength="1" placeholder="–" aria-label="תו 3" oninput="_frCodeInput(this,2)" onkeydown="_frCodeKey(event,this,2)" onpaste="_frCodePaste(event)" />
+          <input class="fr-code-box" type="text" inputmode="text" autocomplete="off" maxlength="1" placeholder="–" aria-label="תו 4" oninput="_frCodeInput(this,3)" onkeydown="_frCodeKey(event,this,3)" onpaste="_frCodePaste(event)" />
+          <input class="fr-code-box" type="text" inputmode="text" autocomplete="off" maxlength="1" placeholder="–" aria-label="תו 5" oninput="_frCodeInput(this,4)" onkeydown="_frCodeKey(event,this,4)" onpaste="_frCodePaste(event)" />
+          <input class="fr-code-box" type="text" inputmode="text" autocomplete="off" maxlength="1" placeholder="–" aria-label="תו 6" oninput="_frCodeInput(this,5)" onkeydown="_frCodeKey(event,this,5)" onpaste="_frCodePaste(event)" />
+        </div>
+        <input type="hidden" id="firstRunJoinInp" />
+        <div class="fr-err" id="firstRunErr"></div>
+        <button type="button" class="fr-cta fr-cta-join" onclick="_firstRunJoin()">הצטרף למשפחה</button>
+        <button type="button" class="fr-link" onclick="_frGoto('welcome')">אין לי קוד משפחה</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
 <div class="undo-toast" id="undoToast">
   <span class="undo-msg" id="undoMsg"></span>
   <button class="undo-btn" id="undoBtn">בטל</button>
@@ -5322,12 +5632,110 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
     <div class="avchoice-ttl">איך להשתמש בתמונה?</div>
     <div class="avchoice-row">
       <button class="avchoice-btn primary" id="avchoiceUse" type="button">השתמש בתמונה הזו</button>
-      <button class="avchoice-btn ai" id="avchoiceAI" type="button" disabled title="בקרוב">
-        ✨ צור דמות AI <span class="soon-pill">בקרוב</span>
+      <button class="avchoice-btn ai" id="avchoiceAI" type="button">
+        ✨ צור גרסה מעוצבת
       </button>
       <button class="avchoice-btn cancel" id="avchoiceCancel" type="button">ביטול</button>
     </div>
   </div>
+</div>
+
+
+<!-- ════ AI AVATAR LANDING (entry screen for "צור דמות AI מתמונה") ════ -->
+<div class="ail-bg" id="aiLandingBg">
+  <div class="ail-wrap">
+    <div class="ail-header">
+      <button class="ail-icon-btn" type="button" aria-label="חזור" onclick="AvatarFlow.closeAILanding()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"></polyline></svg>
+      </button>
+      <div class="ail-logo">Family
+        <svg class="ail-heart" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 21s-7.5-4.5-9.5-9.2C1.1 8.3 3.4 5 6.7 5c1.9 0 3.5 1 4.3 2.4l1 1.6 1-1.6C13.8 6 15.4 5 17.3 5c3.3 0 5.6 3.3 4.2 6.8C19.5 16.5 12 21 12 21z" fill="#F25C8D"/></svg>
+      </div>
+      <button class="ail-icon-btn ail-help-btn" type="button" aria-label="עזרה">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 2.5-3 4.5"></path><line x1="12" y1="18" x2="12" y2="18.01"></line></svg>
+      </button>
+    </div>
+
+    <div class="ail-title-block">
+      <h1 class="ail-page-title">צור אווטאר מעוצב</h1>
+      <p class="ail-subtitle">בחר סגנון שאהבת והפוך את התמונה שלך לייחודית</p>
+    </div>
+
+    <div class="ail-upload-wrap">
+      <div class="ail-upload-box" id="ailUploadBox" onclick="AvatarFlow.onUploadBoxClick()">
+        <span class="ail-up-placeholder">
+          <svg class="ail-camera" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+          <span class="ail-uplabel">התמונה שלך</span>
+        </span>
+      </div>
+      <div class="ail-handwritten">התמונה שלך
+        <svg class="ail-arrow" width="78" height="32" viewBox="0 0 78 32" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 24 C 14 8, 38 4, 60 14" stroke="#2D2A32" stroke-width="1.8" stroke-linecap="round" fill="none"/><path d="M60 14 L 52 7 L 53 16 Z" fill="#2D2A32" stroke="#2D2A32" stroke-width="1.4" stroke-linejoin="round"/></svg>
+      </div>
+    </div>
+
+    <button class="ail-cta" id="ailCta" type="button" onclick="AvatarFlow.onCtaClick()">
+      <span id="ailCtaLabel">צור גרסה מעוצבת</span><span class="ail-sparkle">✨</span>
+    </button>
+
+    <div class="ail-section">
+      <svg class="ail-mini-heart" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 21s-7.5-4.5-9.5-9.2C1.1 8.3 3.4 5 6.7 5c1.9 0 3.5 1 4.3 2.4l1 1.6 1-1.6C13.8 6 15.4 5 17.3 5c3.3 0 5.6 3.3 4.2 6.8C19.5 16.5 12 21 12 21z" fill="#F25C8D"/></svg>
+      <div class="ail-row">
+        <span class="ail-deco" aria-hidden="true"><svg viewBox="0 0 38 10" fill="none"><path d="M2 5 H 30" stroke="#d8b9a3" stroke-width="1.4" stroke-linecap="round"/><path d="M30 5 L 24 2 M30 5 L 24 8" stroke="#d8b9a3" stroke-width="1.4" stroke-linecap="round"/></svg></span>
+        <h2 class="ail-h2">בחר סגנון שאהבת</h2>
+        <span class="ail-deco" aria-hidden="true"><svg viewBox="0 0 38 10" fill="none"><path d="M36 5 H 8" stroke="#d8b9a3" stroke-width="1.4" stroke-linecap="round"/><path d="M8 5 L 14 2 M8 5 L 14 8" stroke="#d8b9a3" stroke-width="1.4" stroke-linecap="round"/></svg></span>
+      </div>
+    </div>
+
+    <div class="ail-cards">
+      <div class="ail-grid">
+        <div class="ail-card" data-style="warm_illustrated_storybook">
+          <div class="ail-card-image"><span class="ail-badge pink">1</span></div>
+          <h3 class="ail-card-title">Warm Illustrated Storybook</h3>
+          <p class="ail-card-desc">איור חם ומצויר בסגנון ספר ילדים</p>
+          <svg class="ail-card-heart" viewBox="0 0 24 24"><path d="M12 21s-7.5-4.5-9.5-9.2C1.1 8.3 3.4 5 6.7 5c1.9 0 3.5 1 4.3 2.4l1 1.6 1-1.6C13.8 6 15.4 5 17.3 5c3.3 0 5.6 3.3 4.2 6.8C19.5 16.5 12 21 12 21z" fill="#F25C8D"/></svg>
+        </div>
+        <div class="ail-card" data-style="cute_premium_character">
+          <div class="ail-card-image"><span class="ail-badge purple">2</span></div>
+          <h3 class="ail-card-title">Cute Premium Character</h3>
+          <p class="ail-card-desc">דמות מתוקה וסגנון אנימציה איכותי</p>
+          <svg class="ail-card-heart" viewBox="0 0 24 24"><path d="M12 21s-7.5-4.5-9.5-9.2C1.1 8.3 3.4 5 6.7 5c1.9 0 3.5 1 4.3 2.4l1 1.6 1-1.6C13.8 6 15.4 5 17.3 5c3.3 0 5.6 3.3 4.2 6.8C19.5 16.5 12 21 12 21z" fill="#F25C8D"/></svg>
+        </div>
+        <div class="ail-card" data-style="dreamy_magical_realism">
+          <div class="ail-card-image"><span class="ail-badge blue">3</span></div>
+          <h3 class="ail-card-title">Dreamy Magical Realism</h3>
+          <p class="ail-card-desc">תאורה קסומה וריאליזם חלומי</p>
+          <svg class="ail-card-heart" viewBox="0 0 24 24"><path d="M12 21s-7.5-4.5-9.5-9.2C1.1 8.3 3.4 5 6.7 5c1.9 0 3.5 1 4.3 2.4l1 1.6 1-1.6C13.8 6 15.4 5 17.3 5c3.3 0 5.6 3.3 4.2 6.8C19.5 16.5 12 21 12 21z" fill="#F25C8D"/></svg>
+        </div>
+        <div class="ail-card" data-style="tropical_fantasy_adventure">
+          <div class="ail-card-image"><span class="ail-badge green">4</span></div>
+          <h3 class="ail-card-title">Tropical Fantasy Adventure</h3>
+          <p class="ail-card-desc">הרפתקה טרופית באי קסום</p>
+          <svg class="ail-card-heart" viewBox="0 0 24 24"><path d="M12 21s-7.5-4.5-9.5-9.2C1.1 8.3 3.4 5 6.7 5c1.9 0 3.5 1 4.3 2.4l1 1.6 1-1.6C13.8 6 15.4 5 17.3 5c3.3 0 5.6 3.3 4.2 6.8C19.5 16.5 12 21 12 21z" fill="#F25C8D"/></svg>
+        </div>
+      </div>
+    </div>
+
+    <div class="ail-footer">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+      <span>התמונה שלך פרטית ומוצפנת. רק אתה רואה אותה.</span>
+    </div>
+  </div>
+</div>
+
+<!-- ════ AVATAR VARIANT LIGHTBOX — enlarged preview + set active ════ -->
+<div class="avlb-bg" id="avLightbox">
+  <button class="avlb-close" id="avlbClose" type="button" aria-label="סגור">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>
+  </button>
+  <button class="avlb-nav avlb-prev" id="avlbPrev" type="button" aria-label="הקודם">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+  </button>
+  <div class="avlb-stage" id="avlbStage"><img id="avlbImg" alt=""></div>
+  <button class="avlb-nav avlb-next" id="avlbNext" type="button" aria-label="הבא">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 6 9 12 15 18"/></svg>
+  </button>
+  <div class="avlb-dots" id="avlbDots"></div>
+  <button class="avlb-use" id="avlbUse" type="button">השתמש בתמונה זו</button>
 </div>
 
 <!-- ════ OPTIONS MINI-SHEET — "אפשרויות נוספות" ════ -->
@@ -5566,7 +5974,7 @@ const I18N = {
     remind_30:'30 min before', remind_60:'1 hour before', remind_custom:'Custom',
     repeat_none:'None', repeat_daily:'Daily', repeat_weekly:'Weekly',
     user_switch:'Switch user',
-    family_mom:'Mom', family_dad:'Dad', family_dudi:'Laali', family_yonatan:'Aharon Tzvi',
+    family_mom:'Member 2', family_dad:'Member 1', family_dudi:'Member 3', family_yonatan:'Member 4',
     date_today:'Today', date_tomorrow:'Tomorrow',
     months:['January','February','March','April','May','June','July','August','September','October','November','December'],
     months_short:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
@@ -5645,7 +6053,7 @@ const I18N = {
     remind_30:'30 דקות לפני', remind_60:'שעה לפני', remind_custom:'מותאם אישית',
     repeat_none:'ללא', repeat_daily:'יומי', repeat_weekly:'שבועי',
     user_switch:'החלף משתמש',
-    family_mom:'אמא', family_dad:'אבא', family_dudi:'לאלי', family_yonatan:'אהרן צבי',
+    family_mom:'חבר 2', family_dad:'חבר 1', family_dudi:'חבר 3', family_yonatan:'חבר 4',
     date_today:'היום', date_tomorrow:'מחר',
     months:['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'],
     months_short:['ינו','פבר','מרץ','אפר','מאי','יוני','יולי','אוג','ספט','אוק','נוב','דצמ'],
@@ -5847,11 +6255,11 @@ function _syncSettingsDeviceMember() {
   });
 }
 function _requireDeviceMemberForTaskCreation() {
-  if (!DataAdapter.isFamily() || DataAdapter.myMemberId) return true;
-  console.warn('[Identity] Cannot create task before selecting this device member');
-  if (typeof _showDeviceSetupScreen === 'function') _showDeviceSetupScreen();
-  if (typeof showNotifToast === 'function') showNotifToast('בחר מי משתמש במכשיר לפני יצירת משימה');
-  return false;
+  // Identity ("who uses this device") is now set later in the avatar/profile
+  // screen rather than via a blocking device-setup screen. Never block task
+  // creation here, and never surface that screen. Tasks fall back to a sensible
+  // assignee via _taskLegacyAssigneeId() when no member id is set yet.
+  return true;
 }
 function _taskLegacyAssigneeId(task) {
   return _legacyIdForMemberId(task?.assignedToMemberId)
@@ -6043,7 +6451,9 @@ function parsedToTask(p, idx) {
   const dateStr      = p.date && p.date.date
     ? dateToYMD(p.date.date)
     : todayDate();
-  const defaultVisibleTo = _defaultVisibleToIds();
+  const defaultVisibleTo = DataAdapter.isFamily()
+    ? [assignedToMemberId].filter(Boolean)
+    : _defaultVisibleToIds();
   return {
     id:                    DataAdapter.isFamily() ? _genCode(16) : Date.now() + idx,
     title:                 p.title,
@@ -6090,7 +6500,9 @@ function aiParsedToTask(t, idx) {
     mins = h * 60 + m;
   }
 
-  const defaultVisibleTo = _defaultVisibleToIds();
+  const defaultVisibleTo = DataAdapter.isFamily()
+    ? [assignedToMemberId].filter(Boolean)
+    : _defaultVisibleToIds();
   return {
     id:                    DataAdapter.isFamily() ? _genCode(16) : Date.now() + idx,
     title:                 t.title,
@@ -8310,7 +8722,9 @@ async function vOrganize() {
   if (fallbackBanner) fallbackBanner.classList.toggle('on', !!result.fallback);
 
   _vOrganizerBusy = false;
-  setTimeout(() => {
+  // No artificial delay here: the "organizing" animation already showed for the
+  // full duration of the parse call, so reveal the preview as soon as it's ready.
+  const _showPreview = () => {
     zone.classList.remove('rec');
     zone.classList.remove('processing');
     ltxt.className = 'ltxt';
@@ -8319,17 +8733,10 @@ async function vOrganize() {
     dpRender(true);
     const sh = document.querySelector('#s-dp .list-shimmer');
     if (sh) { sh.style.animation = 'none'; void sh.offsetWidth; sh.style.animation = ''; }
-
-    // When the AI detected 2+ tasks → show all as separate cards
-    if (result.tasks.length >= 2) {
-      AppState.previewTasks = result.tasks.map(aiParsedToTask);
-      renderConfirmationTasks();
-      goto('s-confirmation', 'txLeaveBloom', 'txEnterFocus');
-    } else {
-      renderConfirmationTasks();
-      goto('s-confirmation', 'txLeaveBloom', 'txEnterFocus');
-    }
-  }, 140);
+    renderConfirmationTasks();
+    goto('s-confirmation', 'txLeaveBloom', 'txEnterFocus');
+  };
+  _showPreview();
 }
 
 function vBurst() {
@@ -11249,10 +11656,23 @@ setTimeout(() => {
 // in a previous session we re-establish the push subscription so reminders
 // keep flowing without requiring another bell tap.
 if ('serviceWorker' in navigator) {
+  // Auto-reload once when a new SW takes control, so an installed PWA that
+  // resumes from a frozen state can't keep running stale cached HTML. Without
+  // this, a deployed fix never reaches a phone until the user manually clears
+  // the cache (desktop works because each open is a fresh network-first nav).
+  let _swReloaded = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (_swReloaded) return;
+    _swReloaded = true;
+    window.location.reload();
+  });
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/service-worker.js')
       .then(reg => {
         AppLog.info('SW registered', reg.scope || '');
+        // Actively check for a newer SW on every load so updates are picked up
+        // promptly instead of waiting for the browser's own update heuristic.
+        try { reg.update(); } catch (_) {}
         if (_notifSupported() && Notification.permission === 'granted') {
           // Returning user — re-establish push subscription quietly so
           // scheduled reminders continue working across sessions.
@@ -11998,7 +12418,10 @@ async function _uploadAvatarBlob(blob, memberId) {
   const familyId = DataAdapter.familyId;
   if (!memberId) throw new Error('No memberId — cannot upload');
   const ts       = Date.now();
-  const path     = 'families/' + familyId + '/avatars/' + memberId + '-' + ts + '.jpg';
+  // Random suffix so parallel uploads (e.g. saving all 4 AI options at once)
+  // can't collide on the same Date.now() path and overwrite each other.
+  const rnd      = Math.random().toString(36).slice(2, 8);
+  const path     = 'families/' + familyId + '/avatars/' + memberId + '-' + ts + '-' + rnd + '.jpg';
   const ref      = _storage.ref(path);
   const meta     = { contentType: blob.type || 'image/jpeg' };
   const bucket   = (_storage.app && _storage.app.options && _storage.app.options.storageBucket) || '(unknown)';
@@ -12060,18 +12483,28 @@ async function _uploadAvatarBlob(blob, memberId) {
 }
 
 // Save avatar to member doc in Firestore.
-async function _saveMemberAvatar(memberId, avatar) {
+async function _saveMemberAvatar(memberId, avatar, options) {
   const tStart = performance.now();
   if (!_db || !DataAdapter.isFamily()) throw new Error('Firestore not ready');
   const ref = _db.collection('families').doc(DataAdapter.familyId)
                  .collection('members').doc(memberId);
-  await ref.set({ avatar }, { merge: true });
+  // avatarOptions = the last generated AI set (switchable). Only written when a
+  // fresh set was generated; switching between options leaves it untouched.
+  // NOTE: distinct from avatarVariants (scene/hero) used by the home portrait.
+  const payload = options !== undefined ? { avatar, avatarOptions: options } : { avatar };
+  await ref.set(payload, { merge: true });
   console.log('[Avatar] firestore save +' + Math.round(performance.now() - tStart)
-    + 'ms memberId=' + memberId + ' type=' + avatar.type);
+    + 'ms memberId=' + memberId + ' type=' + avatar.type
+    + (options !== undefined ? ' options=' + options.length : ''));
   // Refresh in-memory cache so render uses new avatar immediately.
   const cached = _familyMembersCache.find(m => m.memberId === memberId);
-  if (cached) cached.avatar = avatar;
+  if (cached) { cached.avatar = avatar; if (options !== undefined) cached.avatarOptions = options; }
 }
+
+// Crop output sent to the avatar pipeline (and saved). A/B input-quality test:
+// higher res + lower compression gives the image model more facial detail.
+const AVATAR_AI_CROP_SIZE    = 1024;
+const AVATAR_AI_JPEG_QUALITY = 0.95;
 
 // ─── Avatar flow controller (1A) ─────────────────────────────────
 // State machine: idle → sheet → pick → crop → choice → upload → save → render
@@ -12114,6 +12547,112 @@ const AvatarFlow = {
     document.getElementById('avshBg').classList.remove('open');
     this._unlock();
   },
+
+  // ── AI landing screen (single AI surface: pick → show photo → generate into
+  //    the 4 gallery cards → select one → save). State machine in _aiState:
+  //    'empty' | 'ready' | 'generating' | 'done'. ──
+  openAILanding(memberId) {
+    if (!memberId) { console.warn('[Avatar] openAILanding without memberId'); return; }
+    this._closeAllAvatarModals();
+    this.memberId = memberId;
+    this.blob = null;
+    this._selectedStyle = null;
+    this._selectedB64 = null;
+    this._clearUploadPhoto();
+    this._resetGenCards();
+    this._setAIState('empty');
+    document.getElementById('aiLandingBg').classList.add('open');
+    console.log('[Avatar] AI landing open memberId=' + memberId);
+  },
+  // Force-close every avatar sub-modal (sheet/crop/choice) and reset the body
+  // lock. Prevents a stale .open modal from showing through under the landing
+  // page (its background is opaque) and being revealed when the landing closes.
+  _closeAllAvatarModals() {
+    ['avshBg', 'avcropBg', 'avchoiceBg'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.classList.remove('open');
+    });
+    this._lockCount = 0;
+    document.body.classList.remove('av-modal-lock');
+  },
+  closeAILanding() {
+    document.getElementById('aiLandingBg').classList.remove('open');
+    this._closeAllAvatarModals();
+    this.blob = null;
+    this._selectedStyle = null;
+    this._selectedB64 = null;
+    this._aiDirect = false;
+    this._aiState = 'empty';
+    this._revokeUrls();
+  },
+  // Open the landing page with the already-cropped photo shown, ready to generate.
+  // Used both after picking from the landing page and from the pencil→AI choice.
+  showAILandingWithPhoto() {
+    this._closeAllAvatarModals();
+    this._aiDirect = false;
+    this._setUploadPhoto(this.blob);
+    this._resetGenCards();
+    this._setAIState('ready');
+    document.getElementById('aiLandingBg').classList.add('open');
+  },
+  // Entry from the pencil → choice modal → "עיצוב AI".
+  enterAIFromChoice() {
+    document.getElementById('avchoiceBg').classList.remove('open');
+    this._unlock();
+    this.showAILandingWithPhoto();
+  },
+  onUploadBoxClick() {
+    if (this._aiState === 'generating') return;
+    this._openPickSheet();
+  },
+  onCtaClick() {
+    if (this._aiState === 'generating') return;
+    if (this._aiState === 'done') { this.saveSelected(); return; }
+    if (!this.blob) { this._openPickSheet(); return; }
+    this.startGen();
+  },
+  _openPickSheet() {
+    this._aiDirect = true; // so confirmCrop returns to the landing page with the photo
+    const member = _FAMILY_MEMBERS_SEED.find(m => m.memberId === this.memberId)
+                || _familyMembersCache.find(m => m.memberId === this.memberId);
+    document.getElementById('avshTitle').textContent = 'צור דמות AI — ' + (member?.name || '');
+    document.getElementById('avshRemove').style.display = 'none';
+    document.getElementById('avshBg').classList.add('open');
+    this._lock();
+  },
+  _setUploadPhoto(blob) {
+    const box = document.getElementById('ailUploadBox');
+    if (!box || !blob) return;
+    const url = URL.createObjectURL(blob);
+    this._objUrls.push(url);
+    box.querySelectorAll('img').forEach(n => n.remove());
+    const ph = box.querySelector('.ail-up-placeholder');
+    if (ph) ph.style.display = 'none';
+    const img = document.createElement('img');
+    img.alt = '';
+    img.src = url;
+    box.appendChild(img);
+    box.classList.add('has-photo');
+  },
+  _clearUploadPhoto() {
+    const box = document.getElementById('ailUploadBox');
+    if (!box) return;
+    box.querySelectorAll('img').forEach(n => n.remove());
+    const ph = box.querySelector('.ail-up-placeholder');
+    if (ph) ph.style.display = '';
+    box.classList.remove('has-photo');
+  },
+  _setAIState(state) {
+    this._aiState = state;
+    const cta = document.getElementById('ailCta');
+    const lbl = document.getElementById('ailCtaLabel');
+    const selectable = state === 'done';
+    document.querySelectorAll('#aiLandingBg .ail-card').forEach(c => c.classList.toggle('selectable', selectable));
+    if (!cta || !lbl) return;
+    if (state === 'generating') { lbl.textContent = 'יוצר…'; cta.disabled = true; }
+    else if (state === 'done')  { lbl.textContent = 'שמור תמונה'; cta.disabled = !this._selectedB64; }
+    else                        { lbl.textContent = 'צור גרסה מעוצבת'; cta.disabled = false; }
+  },
   pick(source) {
     console.log('[Avatar] pick source=' + source);
     this.closeSheet();
@@ -12143,10 +12682,18 @@ const AvatarFlow = {
     // a stale viewport and the first 2-3s of drag are glitchy.
     document.getElementById('avcropBg').classList.add('open');
     this._lock();
-    newImg.onload = () => {
-      setTimeout(() => this._initCropper(), 220);
+    let _inited = false;
+    const go = () => { if (_inited) return; _inited = true; this._initCropper(); };
+    newImg.onload = () => setTimeout(go, 220);
+    newImg.onerror = () => {
+      console.warn('[Avatar] crop image failed to load');
+      this.cancelCrop();
+      alert('לא הצלחנו לטעון את התמונה. נסו תמונה אחרת.');
     };
     newImg.src = url;
+    // Fallback: some WebViews don't fire onload reliably for object URLs —
+    // init anyway after a short delay so the crop stage never stays blank.
+    setTimeout(go, 1200);
   },
   _teardownCropper() {
     if (this.cropper) {
@@ -12184,24 +12731,29 @@ const AvatarFlow = {
     document.getElementById('avcropBg').classList.remove('open');
     this._unlock();
     this._revokeUrls();
+    this._aiDirect = false;
     console.log('[Avatar] crop cancelled');
   },
   async confirmCrop() {
     if (!this.cropper) { console.warn('[Avatar] confirmCrop: no cropper'); return; }
     const tStart = performance.now();
     const canvas = this.cropper.getCroppedCanvas({
-      width: 512, height: 512,
+      width: AVATAR_AI_CROP_SIZE, height: AVATAR_AI_CROP_SIZE,
       imageSmoothingEnabled: true, imageSmoothingQuality: 'high',
     });
-    const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.88));
+    const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', AVATAR_AI_JPEG_QUALITY));
     console.log('[Avatar] crop done +' + Math.round(performance.now() - tStart)
-      + 'ms out=512x512 size=' + blob.size + 'B');
+      + 'ms out=' + AVATAR_AI_CROP_SIZE + 'x' + AVATAR_AI_CROP_SIZE + ' q=' + AVATAR_AI_JPEG_QUALITY + ' size=' + blob.size + 'B');
     this.blob = blob;
     this._teardownCropper();
     document.getElementById('avcropBg').classList.remove('open');
     this._unlock();
     this._revokeUrls();
-    this._showChoice(blob);
+    if (this._aiDirect) {
+      this.showAILandingWithPhoto();
+    } else {
+      this._showChoice(blob);
+    }
   },
   _showChoice(blob) {
     // Reset button state in case a previous attempt left it disabled.
@@ -12221,6 +12773,306 @@ const AvatarFlow = {
     this._revokeUrls();
     this.blob = null;
     console.log('[Avatar] choice cancelled');
+  },
+
+  // ── Phase 1: AI styled-avatar generation ──
+  // Fixed card order. Index === slot index in the endpoint's loop.
+  _STYLE_ORDER: ['warm_illustrated_storybook', 'cute_premium_character', 'dreamy_magical_realism', 'tropical_fantasy_adventure'],
+
+  // The result slot for a style = the .ail-card-image inside that gallery card.
+  _slotEl(style) {
+    return document.querySelector('#aiLandingBg .ail-card[data-style="' + style + '"] .ail-card-image');
+  },
+  _clearSlot(el) {
+    if (el) el.querySelectorAll('img, .spin, .err').forEach(n => n.remove());
+  },
+  _resetGenCards() {
+    this._selectedStyle = null;
+    this._selectedB64 = null;
+    this._genResults = {};   // style → b64 of every produced image (for saving all 4)
+    this._STYLE_ORDER.forEach(style => {
+      const card = document.querySelector('#aiLandingBg .ail-card[data-style="' + style + '"]');
+      if (card) card.classList.remove('selected');
+      this._clearSlot(this._slotEl(style));
+    });
+  },
+  _spinGenCard(style) {
+    const el = this._slotEl(style);
+    if (!el) return;
+    this._clearSlot(el);
+    const spin = document.createElement('div');
+    spin.className = 'spin';
+    el.appendChild(spin);
+  },
+  _fillGenCard(style, b64) {
+    const el = this._slotEl(style);
+    if (!el) return;
+    if (!this._genResults) this._genResults = {};
+    this._genResults[style] = b64;
+    this._clearSlot(el);
+    const img = document.createElement('img');
+    img.alt = '';
+    img.src = 'data:image/webp;base64,' + b64;
+    img.addEventListener('click', () => this._selectGen(style, b64));
+    el.appendChild(img);
+  },
+  _failGenCard(style) {
+    const el = this._slotEl(style);
+    if (!el) return;
+    this._clearSlot(el);
+    const err = document.createElement('div');
+    err.className = 'err';
+    err.textContent = 'לא הצלחנו ליצור את הסגנון הזה';
+    el.appendChild(err);
+  },
+  _selectGen(style, b64) {
+    if (this._aiState !== 'done') return; // selectable only after generation finishes
+    this._selectedStyle = style;
+    this._selectedB64 = b64;
+    this._STYLE_ORDER.forEach(s => {
+      const card = document.querySelector('#aiLandingBg .ail-card[data-style="' + s + '"]');
+      if (card) card.classList.toggle('selected', s === style);
+    });
+    const cta = document.getElementById('ailCta');
+    if (cta) cta.disabled = false;
+  },
+
+  async startGen() {
+    if (!this.blob) { this._openPickSheet(); return; }
+    if (!this.memberId) { console.warn('[Avatar] startGen: memberId is null'); return; }
+
+    // Self-healing: in-memory DataAdapter can lose family state after a WebView
+    // restart / stale module while localStorage still holds the source of truth.
+    const lsFamilyId = localStorage.getItem('family-app-da-family-id');
+    const lsMode     = localStorage.getItem('family-app-da-mode');
+    const lsUserId   = localStorage.getItem('family-app-da-user-id');
+    if (!DataAdapter.isFamily() && lsFamilyId && lsMode === 'family') {
+      console.warn('[Avatar] startGen: DataAdapter out of sync — recovering from localStorage');
+      DataAdapter.familyId = lsFamilyId;
+      DataAdapter.mode     = 'family';
+      if (lsUserId) DataAdapter.userId = lsUserId;
+    }
+    if (!DataAdapter.isFamily()) { alert('לא ניתן ליצור — המכשיר לא במצב משפחה.'); return; }
+    const familyId = DataAdapter.familyId;
+    const memberId = this.memberId;
+
+    this._selectedStyle = null;
+    this._selectedB64 = null;
+    this._STYLE_ORDER.forEach(s => this._spinGenCard(s));
+    this._setAIState('generating');
+
+    const qs = '?familyId=' + encodeURIComponent(familyId) + '&memberId=' + encodeURIComponent(memberId);
+    // On native (Capacitor) the page origin is https://localhost, so a relative
+    // /api path can't reach the serverless function. Point at the Vercel host.
+    const _isNative = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+    const _apiBase  = _isNative ? 'https://family-app-roan.vercel.app' : '';
+    // TEMP A/B probe: ?avatarModel=… on the page URL passes through as &model=…
+    let _modelQs = '';
+    try {
+      const m = new URLSearchParams(window.location.search).get('avatarModel');
+      if (m) _modelQs = '&model=' + encodeURIComponent(m);
+    } catch (_) {}
+    const reqUrl = _apiBase + '/api/generate-avatar' + qs + _modelQs;
+    console.log('[Avatar] startGen — familyId=' + familyId + ' memberId=' + memberId
+      + ' native=' + _isNative + ' url=' + reqUrl);
+
+    let res;
+    try {
+      res = await fetch(reqUrl, { method: 'POST', headers: { 'Content-Type': 'image/jpeg' }, body: this.blob });
+    } catch (e) {
+      console.error('[Avatar] AI fetch failed', e);
+      this._STYLE_ORDER.forEach(s => this._failGenCard(s));
+      this._setAIState('ready');
+      return;
+    }
+    if (!res.ok || !res.body) {
+      console.error('[Avatar] AI bad response status=' + res.status);
+      let reason = '';
+      try { reason = (await res.json()).reason || ''; } catch (_) {}
+      this._STYLE_ORDER.forEach(s => this._failGenCard(s));
+      if (reason === 'limit_reached') alert('הגעתם למכסת היצירות לחבר משפחה זה.');
+      else if (reason === 'rate_limited') alert('יותר מדי בקשות. נסו שוב מאוחר יותר.');
+      else if (reason === 'temporarily_unavailable') alert('השירות אינו זמין כרגע. נסו שוב מאוחר יותר.');
+      this._setAIState('ready');
+      return;
+    }
+
+    // Read NDJSON line by line.
+    const reader  = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buf = '';
+    try {
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        let nl;
+        while ((nl = buf.indexOf('\n')) >= 0) {
+          const line = buf.slice(0, nl).trim();
+          buf = buf.slice(nl + 1);
+          if (line) this._handleGenLine(line);
+        }
+      }
+      if (buf.trim()) this._handleGenLine(buf.trim());
+    } catch (e) {
+      console.error('[Avatar] AI stream error', e);
+    }
+
+    // Stream ended (done, or the function hit its time budget and the
+    // connection closed). Any slot still showing a spinner will never resolve,
+    // so mark it failed instead of leaving it spinning forever.
+    this._STYLE_ORDER.forEach(s => {
+      const el = this._slotEl(s);
+      if (el && !el.querySelector('img') && !el.querySelector('.err')) this._failGenCard(s);
+    });
+
+    // If at least one image rendered, allow selection + save; else allow retry.
+    const any = this._STYLE_ORDER.some(s => { const el = this._slotEl(s); return el && el.querySelector('img'); });
+    this._setAIState(any ? 'done' : 'ready');
+  },
+  _handleGenLine(line) {
+    let msg;
+    try { msg = JSON.parse(line); } catch (_) { return; }
+    if (msg.type === 'image') {
+      const b64 = msg.b64 || msg.imageBase64;
+      if (msg.style && b64) this._fillGenCard(msg.style, b64);
+    } else if (msg.type === 'slot_failed') {
+      if (msg.style) this._failGenCard(msg.style);
+    } else if (msg.type === 'done') {
+      console.log('[Avatar] AI done produced=' + msg.produced + ' remaining=' + msg.remaining);
+    }
+  },
+  async saveSelected() {
+    if (!this._selectedB64) { console.warn('[Avatar] saveSelected: nothing selected'); return; }
+    if (!_storage) { alert('Storage לא מוכן. רענן את הדף.'); return; }
+    const cta = document.getElementById('ailCta');
+    const lbl = document.getElementById('ailCtaLabel');
+    if (cta) cta.disabled = true;
+    if (lbl) lbl.textContent = 'שומר…';
+    try {
+      // Upload every produced image (not just the selected one) so all of them
+      // are saved as switchable options. Order follows _STYLE_ORDER.
+      const results = this._genResults || {};
+      const styles  = this._STYLE_ORDER.filter(s => results[s]);
+      const options = await Promise.all(styles.map(async s => {
+        const b   = await (await fetch('data:image/webp;base64,' + results[s])).blob();
+        const url = await _uploadAvatarBlob(b, this.memberId);
+        return { url, style: s };
+      }));
+      const active = options.find(o => o.style === this._selectedStyle) || options[0];
+      const avatar = { type: 'ai-photo', url: active.url, style: active.style };
+      await _saveMemberAvatar(this.memberId, avatar, options);
+      const nodeCount = _refreshAvatarUI(this.memberId, avatar);
+      // The home hero portrait and the member-profile avatar circle render via
+      // separate paths not covered by _refreshAvatarUI — refresh them too so
+      // they don't keep showing the old image until the next navigation.
+      if (typeof updateHmPortrait === 'function') updateHmPortrait();
+      if (typeof _renderMemberProfile === 'function' && typeof _mpCurrentId !== 'undefined' && _mpCurrentId === this.memberId) {
+        _renderMemberProfile();
+      }
+      console.log('[Avatar] AI avatar saved active=' + avatar.style + ' options=' + options.length + ' nodes=' + nodeCount);
+      this.closeAILanding();
+    } catch (e) {
+      console.error('[Avatar] AI save failed', e);
+      alert('שמירה נכשלה:\n' + (e.code ? '[' + e.code + '] ' : '') + (e.message || e));
+      if (lbl) lbl.textContent = 'שמור תמונה';
+      if (cta) cta.disabled = false;
+    }
+  },
+  // Render the saved AI options gallery ("הגרסאות שלי") in the avatar card.
+  _renderAvatarVariants(memberId) {
+    const wrap = document.getElementById('mpVariants');
+    const grid = document.getElementById('mpVariantsGrid');
+    if (!wrap || !grid) return;
+    const m = (typeof _familyMembersCache !== 'undefined' ? _familyMembersCache : []).find(x => x.memberId === memberId)
+           || _FAMILY_MEMBERS_SEED.find(x => x.memberId === memberId);
+    const opts = (m && Array.isArray(m.avatarOptions)) ? m.avatarOptions.filter(o => o && o.url) : [];
+    if (!opts.length) { wrap.style.display = 'none'; grid.innerHTML = ''; return; }
+    // Match the active option by style (always unique per slot), not by url —
+    // older saved sets can share a url from a past upload-path collision.
+    const activeStyle = m && m.avatar && m.avatar.style;
+    grid.innerHTML = '';
+    opts.forEach(o => {
+      const cell = document.createElement('div');
+      cell.className = 'mp-av-variant' + (activeStyle && o.style === activeStyle ? ' active' : '');
+      const img = document.createElement('img');
+      img.alt = ''; img.loading = 'lazy'; img.src = o.url;
+      cell.appendChild(img);
+      cell.addEventListener('click', () => this.openVariantLightbox(memberId, o.url, o.style));
+      grid.appendChild(cell);
+    });
+    wrap.style.display = '';
+  },
+  // Switch the active avatar to a previously-saved option — no regeneration.
+  async useVariant(memberId, url, style) {
+    const m = (typeof _familyMembersCache !== 'undefined' ? _familyMembersCache : []).find(x => x.memberId === memberId);
+    if (m && m.avatar && m.avatar.style === style && m.avatar.url === url) return; // already active
+    const avatar = { type: 'ai-photo', url, style };
+    try {
+      await _saveMemberAvatar(memberId, avatar); // no options arg → keeps avatarOptions
+      _refreshAvatarUI(memberId, avatar);
+      if (typeof updateHmPortrait === 'function') updateHmPortrait();
+      if (typeof _renderMemberProfile === 'function' && typeof _mpCurrentId !== 'undefined' && _mpCurrentId === memberId) _renderMemberProfile();
+      else this._renderAvatarVariants(memberId);
+      console.log('[Avatar] switched to variant style=' + style);
+    } catch (e) {
+      console.error('[Avatar] useVariant failed', e);
+      alert('החלפה נכשלה: ' + (e.message || e));
+    }
+  },
+  // Enlarged preview of the saved options — swipe / arrows to flip through all.
+  openVariantLightbox(memberId, url, style) {
+    const m = (typeof _familyMembersCache !== 'undefined' ? _familyMembersCache : []).find(x => x.memberId === memberId);
+    const opts = (m && Array.isArray(m.avatarOptions)) ? m.avatarOptions.filter(o => o && o.url) : [];
+    if (!opts.length) return;
+    this._lbMember = memberId;
+    this._lbOptions = opts;
+    let idx = opts.findIndex(o => o.style === style && o.url === url);
+    if (idx < 0) idx = opts.findIndex(o => o.style === style);
+    if (idx < 0) idx = opts.findIndex(o => o.url === url);
+    this._lbIndex = idx < 0 ? 0 : idx;
+    this._renderLightbox();
+    document.getElementById('avLightbox').classList.add('open');
+  },
+  _renderLightbox() {
+    const opts = this._lbOptions || [];
+    if (!opts.length) return;
+    const o = opts[this._lbIndex];
+    this._lbUrl = o.url; this._lbStyle = o.style;
+    document.getElementById('avlbImg').src = o.url;
+    const m = (typeof _familyMembersCache !== 'undefined' ? _familyMembersCache : []).find(x => x.memberId === this._lbMember);
+    const activeStyle = m && m.avatar && m.avatar.style;
+    const isActive = !!(activeStyle && o.style === activeStyle);
+    const useBtn = document.getElementById('avlbUse');
+    useBtn.disabled = isActive;
+    useBtn.textContent = isActive ? 'התמונה הפעילה' : 'השתמש בתמונה זו';
+    // Dots
+    const dots = document.getElementById('avlbDots');
+    if (dots) {
+      dots.innerHTML = '';
+      opts.forEach((_, i) => {
+        const d = document.createElement('span');
+        d.className = 'dot' + (i === this._lbIndex ? ' on' : '');
+        dots.appendChild(d);
+      });
+    }
+    const multi = opts.length > 1;
+    const prev = document.getElementById('avlbPrev'); if (prev) prev.style.display = multi ? '' : 'none';
+    const next = document.getElementById('avlbNext'); if (next) next.style.display = multi ? '' : 'none';
+  },
+  _lbStep(dir) {
+    const opts = this._lbOptions || [];
+    if (opts.length < 2) return;
+    this._lbIndex = (this._lbIndex + dir + opts.length) % opts.length;
+    this._renderLightbox();
+  },
+  closeVariantLightbox() {
+    document.getElementById('avLightbox').classList.remove('open');
+  },
+  async useFromLightbox() {
+    const memberId = this._lbMember, url = this._lbUrl, style = this._lbStyle;
+    this.closeVariantLightbox();
+    if (memberId && url) await this.useVariant(memberId, url, style);
   },
   async useOriginal() {
     // Full diagnostic snapshot — read localStorage DIRECTLY (bypass DataAdapter),
@@ -12388,6 +13240,25 @@ function _wireAvatarFlow() {
   document.getElementById('avcropOk').addEventListener('click', () => AvatarFlow.confirmCrop());
   document.getElementById('avchoiceCancel').addEventListener('click', () => AvatarFlow.cancelChoice());
   document.getElementById('avchoiceUse').addEventListener('click', () => AvatarFlow.useOriginal());
+  document.getElementById('avchoiceAI').addEventListener('click', () => AvatarFlow.enterAIFromChoice());
+  document.getElementById('avlbClose').addEventListener('click', () => AvatarFlow.closeVariantLightbox());
+  document.getElementById('avLightbox').addEventListener('click', e => { if (e.target.id === 'avLightbox') AvatarFlow.closeVariantLightbox(); });
+  document.getElementById('avlbUse').addEventListener('click', () => AvatarFlow.useFromLightbox());
+  document.getElementById('avlbPrev').addEventListener('click', () => AvatarFlow._lbStep(-1));
+  document.getElementById('avlbNext').addEventListener('click', () => AvatarFlow._lbStep(1));
+  // Swipe left/right on the enlarged image to flip through the options.
+  (function(){
+    const lb = document.getElementById('avLightbox');
+    let x0 = null, y0 = null;
+    lb.addEventListener('touchstart', e => { const t = e.changedTouches[0]; x0 = t.clientX; y0 = t.clientY; }, { passive: true });
+    lb.addEventListener('touchend', e => {
+      if (x0 === null) return;
+      const t = e.changedTouches[0];
+      const dx = t.clientX - x0, dy = t.clientY - y0;
+      x0 = null;
+      if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy)) AvatarFlow._lbStep(dx < 0 ? 1 : -1);
+    }, { passive: true });
+  })();
   console.log('[Avatar] flow wired');
 }
 
@@ -12560,10 +13431,10 @@ function _selectDeviceMember(memberId) {
 // Runs once per device. Creates the 4 fixed member documents if they
 // don't exist yet. Additive only — never overwrites existing documents.
 const _FAMILY_MEMBERS_SEED = [
-  { memberId: 'member_dad',    name: 'אבא',      role: 'parent', avatar: { type: 'emoji', value: '👨' } },
-  { memberId: 'member_mom',    name: 'אמא',      role: 'parent', avatar: { type: 'emoji', value: '👩' } },
-  { memberId: 'member_laali',  name: 'לאלי',     role: 'child',  avatar: { type: 'emoji', value: '👧' } },
-  { memberId: 'member_aharon', name: 'אהרן צבי', role: 'child',  avatar: { type: 'emoji', value: '👦' } },
+  { memberId: 'member_dad',    name: 'חבר 1', role: 'parent', avatar: { type: 'emoji', value: '👤' } },
+  { memberId: 'member_mom',    name: 'חבר 2', role: 'parent', avatar: { type: 'emoji', value: '👤' } },
+  { memberId: 'member_laali',  name: 'חבר 3', role: 'child',  avatar: { type: 'emoji', value: '👤' } },
+  { memberId: 'member_aharon', name: 'חבר 4', role: 'child',  avatar: { type: 'emoji', value: '👤' } },
 ];
 
 // Maps legacy assignedTo IDs → stable memberIds
@@ -12752,17 +13623,17 @@ async function _daCreateFamily() {
   }
 }
 
-async function _daJoinFamily() {
+async function _daJoinFamily(codeArg) {
   const inp  = document.getElementById('famJoinInp');
-  const code = inp ? inp.value.trim().toUpperCase() : '';
-  if (code.length < 4) { _famShErr('הכנס קוד בן 4-6 תווים'); return; }
+  const code = (codeArg != null ? codeArg : (inp ? inp.value : '')).trim().toUpperCase();
+  if (code.length < 4) { _famShErr('הכנס קוד בן 4-6 תווים'); return false; }
 
   if (!_db) {
     // No Firestore connection — save locally and warn
     const userId = DataAdapter.userId || _genCode(8);
     DataAdapter.setFamily(code, userId);
     _renderFamilySheet();
-    return;
+    return true;
   }
 
   // Show loading state
@@ -12774,7 +13645,7 @@ async function _daJoinFamily() {
     if (!familySnap.exists) {
       _famShErr('לא נמצאה משפחה עם הקוד הזה');
       if (joinBtn) { joinBtn.disabled = false; joinBtn.textContent = 'הצטרף למשפחה'; }
-      return;
+      return false;
     }
 
     const userId     = DataAdapter.userId || _genCode(8);
@@ -12800,10 +13671,12 @@ async function _daJoinFamily() {
     _renderFamilySheet();
     _loadFamilyMembersCache();
     _daStartListener();
+    return true;
   } catch (e) {
     AppLog.warn('FB', 'joinFamily failed', e.message || e);
     _famShErr('שגיאה בהתחברות לענן — נסה שוב');
     if (joinBtn) { joinBtn.disabled = false; joinBtn.textContent = 'הצטרף למשפחה'; }
+    return false;
   }
 }
 
@@ -12822,6 +13695,94 @@ function _daLeaveFamily() {
   DataAdapter.leaveFamily();
   console.log('[DA] left family, returned to local mode');
   _renderFamilySheet();
+}
+
+// ─── First-run onboarding gate ────────────────────────────────────
+// Shown only when no family identity exists locally. Forces create/join
+// so a fresh install never presents the seeded family or any other data.
+function _showFirstRunScreen() {
+  const scr = document.getElementById('firstRunScreen');
+  if (scr) scr.classList.remove('hidden');
+}
+
+function _finishFirstRun() {
+  const scr = document.getElementById('firstRunScreen');
+  if (scr) scr.classList.add('hidden');
+  try { _loadFamilyMembersCache(); } catch (e) {}
+  try { if (!_recoveryActive()) _daStartListener(); } catch (e) {}
+  try { _bootstrapFamilyMembers(); } catch (e) {}
+  // Device-member identity is now chosen later in the avatar/profile screen,
+  // not via a blocking setup screen right after create/join. Skip it here.
+  try { if (typeof updateTodayTitle === 'function') updateTodayTitle(); } catch (e) {}
+}
+
+async function _firstRunCreate() {
+  const nameInp = document.getElementById('frCreateName');
+  const name    = nameInp ? nameInp.value.trim() : '';
+  if (name) { try { DataAdapter.setDisplayName(name); } catch (e) {} }
+  await _daCreateFamily();
+  if (DataAdapter.isFamily()) _finishFirstRun();
+}
+
+function _frGoto(state) {
+  const scr = document.getElementById('firstRunScreen');
+  if (!scr) return;
+  scr.querySelectorAll('.fr-state').forEach(el => {
+    el.classList.toggle('hidden', el.getAttribute('data-fr-state') !== state);
+  });
+  const errEl = document.getElementById('firstRunErr');
+  if (errEl) errEl.textContent = '';
+  let focusEl = null;
+  if (state === 'create') focusEl = document.getElementById('frCreateName');
+  else if (state === 'join') focusEl = _frCodeBoxes()[0];
+  if (focusEl) { try { focusEl.focus(); } catch (e) {} }
+}
+
+function _frPickRole(el) {
+  document.querySelectorAll('#firstRunScreen .fr-role').forEach(r => r.classList.remove('is-active'));
+  el.classList.add('is-active');
+}
+
+function _frCodeBoxes() {
+  return Array.from(document.querySelectorAll('#frCodeBoxes .fr-code-box'));
+}
+function _frCodeSync() {
+  const v = _frCodeBoxes().map(b => b.value).join('');
+  const hid = document.getElementById('firstRunJoinInp');
+  if (hid) hid.value = v;
+}
+function _frCodeInput(box, idx) {
+  box.value = box.value.toUpperCase().replace(/[^A-Z2-9]/g, '').slice(0, 1);
+  _frCodeSync();
+  if (box.value) { const boxes = _frCodeBoxes(); if (idx < boxes.length - 1) boxes[idx + 1].focus(); }
+}
+function _frCodeKey(e, box, idx) {
+  if (e.key === 'Backspace' && !box.value && idx > 0) {
+    const boxes = _frCodeBoxes();
+    boxes[idx - 1].focus(); boxes[idx - 1].value = ''; _frCodeSync();
+    e.preventDefault();
+  }
+}
+function _frCodePaste(e) {
+  e.preventDefault();
+  const src = (e.clipboardData || window.clipboardData);
+  const txt = (src ? src.getData('text') : '').toUpperCase().replace(/[^A-Z2-9]/g, '').slice(0, 6);
+  const boxes = _frCodeBoxes();
+  boxes.forEach((b, i) => { b.value = txt[i] || ''; });
+  _frCodeSync();
+  const next = Math.min(txt.length, boxes.length - 1);
+  if (boxes[next]) boxes[next].focus();
+}
+
+async function _firstRunJoin() {
+  const inp   = document.getElementById('firstRunJoinInp');
+  const errEl = document.getElementById('firstRunErr');
+  const code  = inp ? inp.value.trim().toUpperCase() : '';
+  if (code.length < 4) { if (errEl) errEl.textContent = 'הכנס קוד בן 4-6 תווים'; return; }
+  if (errEl) errEl.textContent = '';
+  const ok = await _daJoinFamily(code);
+  if (ok && DataAdapter.isFamily()) _finishFirstRun();
+  else if (errEl && !errEl.textContent) errEl.textContent = 'לא נמצאה משפחה עם הקוד הזה';
 }
 
 async function _daSaveDisplayName() {
@@ -12915,13 +13876,22 @@ localStorage.setItem(LANG_KEY, 'he');
 AppState.lang = 'he';
 _applyLang();
 _capInit().then(() => _capRescheduleAll()).catch(() => {});
-if (DataAdapter.isFamily()) {
+// Preview-only: ?previewFirstRun=1 forces the onboarding screen for visual
+// review. Pure UI — touches no data, no family state, no listeners.
+if (/[?&]previewFirstRun=1/.test(location.search)) {
+  _showFirstRunScreen();
+} else if (DataAdapter.isFamily()) {
   _loadFamilyMembersCache();
   // While in the 72h post-reset recovery window, do NOT auto-sync — the wipe
   // must persist until the user explicitly restores from the cloud.
   if (!_recoveryActive()) _daStartListener();
   _bootstrapFamilyMembers();
-  _checkDeviceSetup();
+  // Device-member identity is deferred to the avatar/profile screen — do not
+  // surface the blocking "who uses this device?" screen on boot.
+} else {
+  // Fresh install / no family identity — force the onboarding gate so the app
+  // never auto-enters a seeded/default family.
+  _showFirstRunScreen();
 }
 try { _updateRecoveryBanner(); } catch (e) { console.warn('recovery banner failed', e); }
 try { _syncSettingsDeviceMember(); } catch (e) { console.warn('settings device member sync failed', e); }
@@ -13229,6 +14199,35 @@ function updateHomProgress() {
     hmTitle.textContent = _greet + (_name ? ', ' + _name : '') + ' ☀️';
   }
 
+  /* hero card — show the next upcoming open task (same pick as the portrait) */
+  var hmText = document.querySelector('#hmProgressCard .hm-text');
+  if (hmText) {
+    var hmH2   = hmText.querySelector('h2');
+    var hmLead = hmText.querySelector('.hm-lead');
+    var nextUp = tasks.find(function(t){ return !t.completed && t.mins != null; })
+              || tasks.find(function(t){ return !t.completed; });
+    var setH2 = function(txt){
+      if (!hmH2) return;
+      hmH2.innerHTML = '';
+      var sp = document.createElement('span');
+      sp.textContent = txt;
+      hmH2.appendChild(sp);
+    };
+    if (nextUp) {
+      setH2(nextUp.subItems && nextUp.subItems.mainTitle ? nextUp.subItems.mainTitle : nextUp.title);
+      if (hmLead) {
+        var parts = ['הבא בתור'];
+        if (nextUp.mins != null && typeof m2t === 'function') parts.push('בשעה ' + m2t(nextUp.mins));
+        var owner = (typeof _taskDisplayName === 'function') ? _taskDisplayName(nextUp) : '';
+        if (owner) parts.push(owner);
+        hmLead.textContent = parts.join(' · ');
+      }
+    } else {
+      setH2('אין משימות פתוחות להיום');
+      if (hmLead) hmLead.textContent = total > 0 ? 'כל המשימות להיום הושלמו 🎉' : 'הוסיפו משימה כדי להתחיל';
+    }
+  }
+
   /* inject icon boxes into rendered task cards */
   _hmInjectIconBoxes();
   updateHmPortrait();
@@ -13475,7 +14474,7 @@ function _tdBuildCalGrid(year, month, selDate) {
 var _visPerformer      = null;
 var _visSeeFilter      = 'custom';
 var _visNotifyFilter   = 'custom';
-var _visMemberNames    = {aba:'אבא', ima:'אמא', leali:'ליאלי', aharon:'אהרן'};
+var _visMemberNames    = {aba:'חבר 1', ima:'חבר 2', leali:'חבר 3', aharon:'חבר 4'};
 var _visSVGCheck       = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg>';
 
 function _visSetFilter(section, val) {
@@ -14445,7 +15444,7 @@ function syncFamilyMemberColors() {
 
 // ── Invite family member screen helpers ───────────────────────────
 function _inviteGetCode() {
-  return AppState.familyCode || 'YUPT7N';
+  return (typeof DataAdapter !== 'undefined' && DataAdapter.familyId) || '';
 }
 function _inviteGetLink() {
   const code = _inviteGetCode();
@@ -14942,6 +15941,14 @@ function _renderMemberProfile() {
   pencil.style.display = isSelf ? 'flex' : 'none';
   pencil.onclick = () => AvatarFlow.open(memberId);
 
+  // Saved AI options gallery ("הגרסאות שלי") — self only
+  if (isSelf) {
+    AvatarFlow._renderAvatarVariants(memberId);
+  } else {
+    const vWrap = document.getElementById('mpVariants');
+    if (vWrap) vWrap.style.display = 'none';
+  }
+
   // Info row: birthday always + anniversary for parents only
   const infoRow = document.getElementById('mpInfoRow');
   const bdayAge = _mpCalcAge(m.birthday);
@@ -15037,6 +16044,7 @@ function _renderMemberProfile() {
         AppState.avatarMode = row.dataset.av;
         if (typeof saveAppearance === 'function') saveAppearance();
         if (row.dataset.av === 'photo') AvatarFlow.open(memberId);
+        else if (row.dataset.av === 'ai-from-photo') AvatarFlow.openAILanding(memberId);
       };
     });
   }

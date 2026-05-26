@@ -1386,30 +1386,53 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
   --fr-purple:#7C3AED; --fr-purple-soft:#EFE7FE;
   --fr-mint:#2F9E7E;   --fr-mint-soft:#DFF3EA;
   --fr-ink:#1A0F08; --fr-muted:#9E8878;
-  overflow-y:auto;background:#FAF3E9;padding:0;align-items:stretch;
+  overflow-y:auto;background:#FAF3E9;padding:0;align-items:flex-start;
 }
+/* One responsive mobile unit: width drives everything, height is derived
+   from content. The card no longer stretches to the viewport height, so
+   hero + card always scale together by width (stable under zoom/resize). */
 #firstRunScreen .fr-shell{
-  width:min(100vw, calc(100vh * 953 / 1500));
-  margin:0 auto;min-height:100%;
-  display:flex;flex-direction:column;
-}
-/* Hero shows only the TOP ~71% of the artwork (illustration + title);
-   the drawn card/buttons below are cropped — the real HTML card replaces them. */
-#firstRunScreen .fr-hero{
-  width:100%;aspect-ratio:953 / 1170;
-  background:#FAF3E9 url("assets/welcome-hero.png") top center / 100% auto no-repeat;
+  width:min(100vw, 480px);
+  margin:auto 0;
   flex:0 0 auto;
+  display:block;
+  container-type:inline-size; /* enables cqw units for the hero crop below */
+}
+/* Each state is a self-contained hero + card unit (one visible at a time). */
+#firstRunScreen .fr-state{display:flex;flex-direction:column;}
+#firstRunScreen .fr-state.hidden{display:none;}
+/* Each hero shows only the TOP of its artwork — down to where the drawn
+   card begins; the real HTML card overlaps just below. Scales by width only. */
+#firstRunScreen .fr-hero{
+  width:100%;flex:0 0 auto;
+  background-color:#FAF3E9;background-repeat:no-repeat;
+  background-position:top center;background-size:100% auto;
+  /* Vertical-fit safety: on short viewports clamp the hero so the card + CTA
+     stay on-screen. Doesn't bite on tall phones (natural height < 60vh). */
+  max-height:60vh;
+}
+#firstRunScreen .fr-hero-welcome{aspect-ratio:953 / 1170;background-image:url("assets/welcome-hero.png");}
+/* create/join artwork is a clean illustration-only banner (1408×1117) — no
+   status bar, no drawn UI. The lower band is empty cream so the real HTML card
+   overlaps smoothly. Show the top of the art (family + logo) and let the card
+   rise into the empty cream zone. height in cqw = % of shell width → stable at
+   any screen size, and both images are identical so one value fits both. */
+#firstRunScreen .fr-hero-create{
+  height:64cqw;background-image:url("assets/create-family-hero.png");
+  background-position:top center;
+}
+#firstRunScreen .fr-hero-join{
+  height:64cqw;background-image:url("assets/join-family-hero.png");
+  background-position:top center;
 }
 #firstRunScreen .fr-card{
   position:relative;z-index:1;margin-top:-30px;
-  flex:1 1 auto;
+  flex:0 0 auto;
   background:#FFFDFA;border-radius:30px 30px 0 0;
   box-shadow:0 -12px 34px rgba(120,70,25,.12);
   padding:24px 22px calc(26px + env(safe-area-inset-bottom));
-  display:flex;flex-direction:column;
+  display:flex;flex-direction:column;gap:13px;
 }
-#firstRunScreen .fr-state{display:flex;flex-direction:column;gap:13px;}
-#firstRunScreen .fr-state.hidden{display:none;}
 
 /* welcome — two real choice buttons */
 #firstRunScreen .fr-choice{
@@ -1443,10 +1466,10 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 }
 #firstRunScreen .fr-back svg{width:16px;height:16px;}
 #firstRunScreen .fr-h1{
-  font-family:'Nunito','Rubik',sans-serif;font-size:23px;font-weight:900;
-  color:var(--fr-ink);text-align:right;line-height:1.1;
+  font-family:'Nunito','Rubik',sans-serif;font-size:22px;font-weight:900;
+  color:#2D2438;text-align:center;line-height:1.15;
 }
-#firstRunScreen .fr-sub{font-size:13px;font-weight:500;color:var(--fr-muted);text-align:right;line-height:1.45;margin-top:-4px;}
+#firstRunScreen .fr-sub{font-size:13.5px;font-weight:500;color:var(--fr-muted);text-align:center;line-height:1.45;margin-top:-6px;}
 #firstRunScreen .fr-field-lbl{font-size:12px;font-weight:700;color:#8A6F5C;text-align:right;margin-bottom:-6px;}
 #firstRunScreen .fr-input{
   width:100%;box-sizing:border-box;
@@ -1463,8 +1486,45 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
   box-shadow:0 8px 20px rgba(160,90,30,.18);transition:transform .14s ease, filter .14s ease;
 }
 #firstRunScreen .fr-cta:active{transform:scale(.985);filter:brightness(.96);}
-#firstRunScreen .fr-cta-create{background:linear-gradient(135deg,#34B08C 0%,#2F9E7E 100%);}
-#firstRunScreen .fr-cta-join{background:linear-gradient(135deg,#8B54F0 0%,#7C3AED 100%);}
+#firstRunScreen .fr-cta-create,
+#firstRunScreen .fr-cta-join{background:linear-gradient(135deg,#8B5CD6 0%,#7C3AED 55%,#6D28D9 100%);}
+
+/* create — role picker (visual only) */
+#firstRunScreen .fr-role-q{font-size:13px;font-weight:700;color:#8A6F5C;text-align:center;margin-top:2px;}
+#firstRunScreen .fr-roles{display:flex;gap:10px;}
+#firstRunScreen .fr-role{
+  flex:1 1 0;min-width:0;display:flex;align-items:center;justify-content:center;gap:7px;
+  padding:12px;border-radius:14px;cursor:pointer;background:#fff;
+  border:2px solid rgba(224,180,140,.4);
+  font-family:'Rubik',sans-serif;font-size:15px;font-weight:700;color:var(--fr-muted);
+  transition:border-color .15s, color .15s, background .15s;
+}
+#firstRunScreen .fr-role svg{width:18px;height:18px;}
+/* distinct accents per role (mom = pink, dad = blue) — icon tinted always,
+   full accent when selected. data-role already on the buttons; no JS change. */
+#firstRunScreen .fr-role[data-role="mom"] svg{color:#E85D9A;}
+#firstRunScreen .fr-role[data-role="dad"] svg{color:#3B82F6;}
+#firstRunScreen .fr-role[data-role="mom"].is-active{border-color:#E85D9A;color:#C23B7A;background:#FCE7F1;}
+#firstRunScreen .fr-role[data-role="dad"].is-active{border-color:#3B82F6;color:#2563EB;background:#E7F0FD;}
+
+/* join — 6 real code boxes */
+#firstRunScreen .fr-code{display:flex;gap:8px;justify-content:center;direction:ltr;}
+#firstRunScreen .fr-code-box{
+  flex:1 1 0;min-width:0;aspect-ratio:1 / 1;max-width:50px;box-sizing:border-box;
+  text-align:center;text-transform:uppercase;
+  font-family:'Rubik',sans-serif;font-size:24px;font-weight:800;color:var(--fr-ink);
+  background:#FFF8F2;border:2px solid rgba(224,180,140,.4);border-radius:13px;
+  padding:0;outline:none;transition:border-color .15s, box-shadow .15s;
+}
+#firstRunScreen .fr-code-box:focus{border-color:var(--fr-purple);box-shadow:0 0 0 3px rgba(124,58,237,.16);}
+#firstRunScreen .fr-code-box::placeholder{color:#C9BCD6;font-weight:600;}
+
+/* text link + hint */
+#firstRunScreen .fr-link{
+  background:none;border:0;cursor:pointer;align-self:center;
+  font-family:'Rubik',sans-serif;font-size:14px;font-weight:700;color:var(--fr-purple);padding:4px;
+}
+#firstRunScreen .fr-hint{font-size:12px;font-weight:500;color:var(--fr-muted);text-align:center;line-height:1.4;}
 
 /* ════════════════════════════════════════════════════════════════════
    SCREEN — SETTINGS  (Claude Design merge, step 1)
@@ -5340,11 +5400,11 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
 
 <div id="firstRunScreen" class="hidden">
   <div class="fr-shell">
-    <div class="fr-hero" role="img" aria-label="Family — היום של כולם, מסודר במקום אחד"></div>
-    <div class="fr-card">
 
-      <!-- ── STATE: welcome ── -->
-      <div class="fr-state" data-fr-state="welcome">
+    <!-- ── STATE: welcome ── -->
+    <div class="fr-state" data-fr-state="welcome">
+      <div class="fr-hero fr-hero-welcome" role="img" aria-label="Family — היום של כולם, מסודר במקום אחד"></div>
+      <div class="fr-card">
         <button type="button" class="fr-choice fr-choice-join" onclick="_frGoto('join')">
           <span class="fr-choice-ic" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="m10.8 12.2 6.2-6.2"/><path d="m16 6 2 2"/><path d="m19 3 2 2"/></svg>
@@ -5364,34 +5424,52 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
           </span>
         </button>
       </div>
+    </div>
 
-      <!-- ── STATE: create ── -->
-      <div class="fr-state hidden" data-fr-state="create">
-        <button type="button" class="fr-back" onclick="_frGoto('welcome')" aria-label="חזרה">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-        </button>
-        <div class="fr-h1">יצירת משפחה חדשה</div>
-        <div class="fr-sub">איך נקרא לך? אפשר להזמין בני משפחה נוספים בהמשך.</div>
-        <label class="fr-field-lbl" for="frCreateName">השם שלך</label>
-        <input class="fr-input" id="frCreateName" type="text" placeholder="לדוגמה: אבא" dir="rtl" maxlength="20" />
+    <!-- ── STATE: create ── -->
+    <div class="fr-state hidden" data-fr-state="create">
+      <div class="fr-hero fr-hero-create" role="img" aria-label="בואו נקים את המשפחה שלכם"></div>
+      <div class="fr-card">
+        <div class="fr-h1">✨ בואו נקים את המשפחה שלכם</div>
+        <label class="fr-field-lbl" for="frCreateName">שם המשפחה</label>
+        <input class="fr-input" id="frCreateName" type="text" placeholder="למשל: משפחת כהן" dir="rtl" maxlength="24" />
+        <div class="fr-role-q">מי משתמש במכשיר הזה?</div>
+        <div class="fr-roles">
+          <button type="button" class="fr-role" data-role="mom" onclick="_frPickRole(this)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M5 21c0-4 3-7 7-7s7 3 7 7"/></svg>
+            <span>אמא</span>
+          </button>
+          <button type="button" class="fr-role" data-role="dad" onclick="_frPickRole(this)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M5 21c0-4 3-7 7-7s7 3 7 7"/></svg>
+            <span>אבא</span>
+          </button>
+        </div>
         <button type="button" class="fr-cta fr-cta-create" onclick="_firstRunCreate()">צור משפחה</button>
+        <div class="fr-hint">אפשר לחבר ילדים נוספים אחר כך בהגדרות בני המשפחה.</div>
       </div>
+    </div>
 
-      <!-- ── STATE: join ── -->
-      <div class="fr-state hidden" data-fr-state="join">
-        <button type="button" class="fr-back" onclick="_frGoto('welcome')" aria-label="חזרה">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-        </button>
-        <div class="fr-h1">הצטרפות למשפחה</div>
-        <div class="fr-sub">הזינו את קוד המשפחה בן 6 התווים שקיבלתם.</div>
-        <label class="fr-field-lbl" for="firstRunJoinInp">קוד משפחה</label>
-        <input class="fr-input fr-input-code" id="firstRunJoinInp" placeholder="XXXXXX" maxlength="6" dir="ltr"
-               oninput="this.value=this.value.toUpperCase().replace(/[^A-Z2-9]/g,'')" />
+    <!-- ── STATE: join ── -->
+    <div class="fr-state hidden" data-fr-state="join">
+      <div class="fr-hero fr-hero-join" role="img" aria-label="הצטרפות למשפחה שלכם"></div>
+      <div class="fr-card">
+        <div class="fr-h1">הצטרפו למשפחה שלכם 🏡</div>
+        <div class="fr-sub">קיבלתם קוד משפחה? הכניסו אותו כאן.</div>
+        <div class="fr-code" id="frCodeBoxes" dir="ltr">
+          <input class="fr-code-box" type="text" inputmode="text" autocomplete="off" maxlength="1" placeholder="–" aria-label="תו 1" oninput="_frCodeInput(this,0)" onkeydown="_frCodeKey(event,this,0)" onpaste="_frCodePaste(event)" />
+          <input class="fr-code-box" type="text" inputmode="text" autocomplete="off" maxlength="1" placeholder="–" aria-label="תו 2" oninput="_frCodeInput(this,1)" onkeydown="_frCodeKey(event,this,1)" onpaste="_frCodePaste(event)" />
+          <input class="fr-code-box" type="text" inputmode="text" autocomplete="off" maxlength="1" placeholder="–" aria-label="תו 3" oninput="_frCodeInput(this,2)" onkeydown="_frCodeKey(event,this,2)" onpaste="_frCodePaste(event)" />
+          <input class="fr-code-box" type="text" inputmode="text" autocomplete="off" maxlength="1" placeholder="–" aria-label="תו 4" oninput="_frCodeInput(this,3)" onkeydown="_frCodeKey(event,this,3)" onpaste="_frCodePaste(event)" />
+          <input class="fr-code-box" type="text" inputmode="text" autocomplete="off" maxlength="1" placeholder="–" aria-label="תו 5" oninput="_frCodeInput(this,4)" onkeydown="_frCodeKey(event,this,4)" onpaste="_frCodePaste(event)" />
+          <input class="fr-code-box" type="text" inputmode="text" autocomplete="off" maxlength="1" placeholder="–" aria-label="תו 6" oninput="_frCodeInput(this,5)" onkeydown="_frCodeKey(event,this,5)" onpaste="_frCodePaste(event)" />
+        </div>
+        <input type="hidden" id="firstRunJoinInp" />
         <div class="fr-err" id="firstRunErr"></div>
         <button type="button" class="fr-cta fr-cta-join" onclick="_firstRunJoin()">הצטרף למשפחה</button>
+        <button type="button" class="fr-link" onclick="_frGoto('welcome')">אין לי קוד משפחה</button>
       </div>
-
     </div>
+
   </div>
 </div>
 
@@ -6177,11 +6255,11 @@ function _syncSettingsDeviceMember() {
   });
 }
 function _requireDeviceMemberForTaskCreation() {
-  if (!DataAdapter.isFamily() || DataAdapter.myMemberId) return true;
-  console.warn('[Identity] Cannot create task before selecting this device member');
-  if (typeof _showDeviceSetupScreen === 'function') _showDeviceSetupScreen();
-  if (typeof showNotifToast === 'function') showNotifToast('בחר מי משתמש במכשיר לפני יצירת משימה');
-  return false;
+  // Identity ("who uses this device") is now set later in the avatar/profile
+  // screen rather than via a blocking device-setup screen. Never block task
+  // creation here, and never surface that screen. Tasks fall back to a sensible
+  // assignee via _taskLegacyAssigneeId() when no member id is set yet.
+  return true;
 }
 function _taskLegacyAssigneeId(task) {
   return _legacyIdForMemberId(task?.assignedToMemberId)
@@ -13633,7 +13711,8 @@ function _finishFirstRun() {
   try { _loadFamilyMembersCache(); } catch (e) {}
   try { if (!_recoveryActive()) _daStartListener(); } catch (e) {}
   try { _bootstrapFamilyMembers(); } catch (e) {}
-  try { _checkDeviceSetup(); } catch (e) {}
+  // Device-member identity is now chosen later in the avatar/profile screen,
+  // not via a blocking setup screen right after create/join. Skip it here.
   try { if (typeof updateTodayTitle === 'function') updateTodayTitle(); } catch (e) {}
 }
 
@@ -13653,8 +13732,46 @@ function _frGoto(state) {
   });
   const errEl = document.getElementById('firstRunErr');
   if (errEl) errEl.textContent = '';
-  const focusId = state === 'join' ? 'firstRunJoinInp' : (state === 'create' ? 'frCreateName' : null);
-  if (focusId) { const inp = document.getElementById(focusId); if (inp) { try { inp.focus(); } catch (e) {} } }
+  let focusEl = null;
+  if (state === 'create') focusEl = document.getElementById('frCreateName');
+  else if (state === 'join') focusEl = _frCodeBoxes()[0];
+  if (focusEl) { try { focusEl.focus(); } catch (e) {} }
+}
+
+function _frPickRole(el) {
+  document.querySelectorAll('#firstRunScreen .fr-role').forEach(r => r.classList.remove('is-active'));
+  el.classList.add('is-active');
+}
+
+function _frCodeBoxes() {
+  return Array.from(document.querySelectorAll('#frCodeBoxes .fr-code-box'));
+}
+function _frCodeSync() {
+  const v = _frCodeBoxes().map(b => b.value).join('');
+  const hid = document.getElementById('firstRunJoinInp');
+  if (hid) hid.value = v;
+}
+function _frCodeInput(box, idx) {
+  box.value = box.value.toUpperCase().replace(/[^A-Z2-9]/g, '').slice(0, 1);
+  _frCodeSync();
+  if (box.value) { const boxes = _frCodeBoxes(); if (idx < boxes.length - 1) boxes[idx + 1].focus(); }
+}
+function _frCodeKey(e, box, idx) {
+  if (e.key === 'Backspace' && !box.value && idx > 0) {
+    const boxes = _frCodeBoxes();
+    boxes[idx - 1].focus(); boxes[idx - 1].value = ''; _frCodeSync();
+    e.preventDefault();
+  }
+}
+function _frCodePaste(e) {
+  e.preventDefault();
+  const src = (e.clipboardData || window.clipboardData);
+  const txt = (src ? src.getData('text') : '').toUpperCase().replace(/[^A-Z2-9]/g, '').slice(0, 6);
+  const boxes = _frCodeBoxes();
+  boxes.forEach((b, i) => { b.value = txt[i] || ''; });
+  _frCodeSync();
+  const next = Math.min(txt.length, boxes.length - 1);
+  if (boxes[next]) boxes[next].focus();
 }
 
 async function _firstRunJoin() {
@@ -13769,7 +13886,8 @@ if (/[?&]previewFirstRun=1/.test(location.search)) {
   // must persist until the user explicitly restores from the cloud.
   if (!_recoveryActive()) _daStartListener();
   _bootstrapFamilyMembers();
-  _checkDeviceSetup();
+  // Device-member identity is deferred to the avatar/profile screen — do not
+  // surface the blocking "who uses this device?" screen on boot.
 } else {
   // Fresh install / no family identity — force the onboarding gate so the app
   // never auto-enters a seeded/default family.
