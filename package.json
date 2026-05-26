@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "sync": "node -e \"const fs=require('fs');fs.copyFileSync('app.html','www/index.html');fs.copyFileSync('parser.js','www/parser.js');fs.cpSync('vendor','www/vendor',{recursive:true});if(fs.existsSync('sounds'))fs.cpSync('sounds','www/sounds',{recursive:true})\" && npx cap sync android"
+    "sync": "node -e \"const fs=require('fs');fs.copyFileSync('app.html','www/index.html');fs.copyFileSync('parser.js','www/parser.js');fs.cpSync('vendor','www/vendor',{recursive:true});if(fs.existsSync('sounds'))fs.cpSync('sounds','www/sounds',{recursive:true});if(fs.existsSync('assets'))fs.cpSync('assets','www/assets',{recursive:true})\" && npx cap sync android"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.54.0",

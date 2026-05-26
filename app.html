@@ -1368,8 +1368,11 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 #qaPanel pre{white-space:pre-wrap;word-break:break-all;margin:0;}
 #qaClose{background:#ff5e14;color:#fff;border:none;border-radius:8px;padding:6px 16px;font-size:12px;font-weight:800;margin-bottom:12px;cursor:pointer;display:block;}
 /* ─── Device Setup Screen ─── */
-#deviceSetupScreen{position:fixed;inset:0;background:#fffaf5;z-index:9999;display:flex;align-items:center;justify-content:center;direction:rtl;}
-#deviceSetupScreen.hidden{display:none;}
+#deviceSetupScreen,#firstRunScreen{position:fixed;inset:0;background:#fffaf5;z-index:9999;display:flex;align-items:center;justify-content:center;direction:rtl;}
+#deviceSetupScreen.hidden,#firstRunScreen.hidden{display:none;}
+#firstRunScreen .fr-sep{font-size:13px;color:#a07050;font-weight:700;margin:4px 0;}
+#firstRunScreen .fr-join-inp{width:100%;box-sizing:border-box;text-align:center;font-family:'Rubik',sans-serif;font-size:18px;font-weight:700;letter-spacing:.12em;color:#1c110a;background:#fff8f2;border:2px solid rgba(224,180,140,.4);border-radius:14px;padding:12px 14px;}
+#firstRunScreen .fr-err{color:#c03020;font-size:13px;font-weight:700;min-height:16px;}
 .device-setup-card{background:#fff;border-radius:24px;padding:32px 28px;max-width:320px;width:90%;box-shadow:0 8px 40px rgba(100,60,20,.18);text-align:center;}
 .device-setup-title{font-family:'Nunito',sans-serif;font-size:22px;font-weight:900;color:#1c110a;margin-bottom:6px;}
 .device-setup-sub{font-size:13px;color:#a07050;margin-bottom:24px;}
@@ -1377,6 +1380,91 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 .device-setup-btn{display:flex;align-items:center;gap:14px;background:#fff8f2;border:2px solid rgba(224,180,140,.3);border-radius:16px;padding:14px 18px;cursor:pointer;font-family:'Rubik',sans-serif;font-size:17px;font-weight:700;color:#1c110a;width:100%;transition:background .15s,border-color .15s;}
 .device-setup-btn:active{background:#fde8cf;border-color:#e8a060;}
 .device-setup-emoji{font-size:30px;line-height:1;}
+/* ─── First-run welcome: real HTML states inside #firstRunScreen ─── */
+#firstRunScreen{
+  --fr-orange:#FF7A3D; --fr-orange-deep:#E5621A; --fr-orange-soft:#FFE9D2;
+  --fr-purple:#7C3AED; --fr-purple-soft:#EFE7FE;
+  --fr-mint:#2F9E7E;   --fr-mint-soft:#DFF3EA;
+  --fr-ink:#1A0F08; --fr-muted:#9E8878;
+  overflow-y:auto;background:#FAF3E9;padding:0;align-items:stretch;
+}
+#firstRunScreen .fr-shell{
+  width:min(100vw, calc(100vh * 953 / 1500));
+  margin:0 auto;min-height:100%;
+  display:flex;flex-direction:column;
+}
+/* Hero shows only the TOP ~71% of the artwork (illustration + title);
+   the drawn card/buttons below are cropped — the real HTML card replaces them. */
+#firstRunScreen .fr-hero{
+  width:100%;aspect-ratio:953 / 1170;
+  background:#FAF3E9 url("assets/welcome-hero.png") top center / 100% auto no-repeat;
+  flex:0 0 auto;
+}
+#firstRunScreen .fr-card{
+  position:relative;z-index:1;margin-top:-30px;
+  flex:1 1 auto;
+  background:#FFFDFA;border-radius:30px 30px 0 0;
+  box-shadow:0 -12px 34px rgba(120,70,25,.12);
+  padding:24px 22px calc(26px + env(safe-area-inset-bottom));
+  display:flex;flex-direction:column;
+}
+#firstRunScreen .fr-state{display:flex;flex-direction:column;gap:13px;}
+#firstRunScreen .fr-state.hidden{display:none;}
+
+/* welcome — two real choice buttons */
+#firstRunScreen .fr-choice{
+  display:flex;align-items:center;gap:13px;width:100%;
+  border:1.5px solid rgba(224,180,140,.34);border-radius:18px;
+  padding:15px 16px;cursor:pointer;background:#fff;
+  font-family:'Rubik',sans-serif;font-size:16px;font-weight:700;color:var(--fr-ink);
+  box-shadow:0 4px 14px rgba(160,90,30,.07);
+  transition:transform .14s ease, box-shadow .14s ease, background .14s ease;
+}
+#firstRunScreen .fr-choice:active{transform:scale(.985);}
+#firstRunScreen .fr-choice-ic{
+  flex:0 0 auto;width:42px;height:42px;border-radius:13px;
+  display:flex;align-items:center;justify-content:center;
+}
+#firstRunScreen .fr-choice-ic svg{width:21px;height:21px;}
+#firstRunScreen .fr-choice-tx{flex:1 1 auto;text-align:right;line-height:1.25;}
+#firstRunScreen .fr-choice-go{flex:0 0 auto;color:var(--fr-muted);opacity:.7;}
+#firstRunScreen .fr-choice-go svg{width:18px;height:18px;display:block;}
+#firstRunScreen .fr-choice-join .fr-choice-ic{background:var(--fr-purple-soft);color:var(--fr-purple);}
+#firstRunScreen .fr-choice-join:active{background:#FBF8FF;}
+#firstRunScreen .fr-choice-create .fr-choice-ic{background:var(--fr-mint-soft);color:var(--fr-mint);}
+#firstRunScreen .fr-choice-create:active{background:#F6FCF9;}
+
+/* create / join shared */
+#firstRunScreen .fr-back{
+  align-self:flex-start;width:36px;height:36px;border-radius:12px;
+  background:#FFF6EE;border:1px solid rgba(224,180,140,.34);
+  display:flex;align-items:center;justify-content:center;color:var(--fr-ink);
+  cursor:pointer;margin-bottom:2px;
+}
+#firstRunScreen .fr-back svg{width:16px;height:16px;}
+#firstRunScreen .fr-h1{
+  font-family:'Nunito','Rubik',sans-serif;font-size:23px;font-weight:900;
+  color:var(--fr-ink);text-align:right;line-height:1.1;
+}
+#firstRunScreen .fr-sub{font-size:13px;font-weight:500;color:var(--fr-muted);text-align:right;line-height:1.45;margin-top:-4px;}
+#firstRunScreen .fr-field-lbl{font-size:12px;font-weight:700;color:#8A6F5C;text-align:right;margin-bottom:-6px;}
+#firstRunScreen .fr-input{
+  width:100%;box-sizing:border-box;
+  font-family:'Rubik',sans-serif;font-size:17px;font-weight:600;color:var(--fr-ink);
+  background:#FFF8F2;border:2px solid rgba(224,180,140,.4);border-radius:14px;
+  padding:13px 15px;outline:none;transition:border-color .15s, box-shadow .15s;
+}
+#firstRunScreen .fr-input:focus{border-color:var(--fr-orange);box-shadow:0 0 0 3px rgba(255,122,61,.16);}
+#firstRunScreen .fr-input-code{text-align:center;letter-spacing:.42em;font-weight:800;font-size:22px;padding-right:15px;}
+#firstRunScreen .fr-err{color:#C03020;font-size:13px;font-weight:700;min-height:16px;text-align:right;}
+#firstRunScreen .fr-cta{
+  width:100%;border:0;border-radius:16px;padding:15px;margin-top:4px;cursor:pointer;
+  font-family:'Rubik',sans-serif;font-size:17px;font-weight:800;color:#fff;
+  box-shadow:0 8px 20px rgba(160,90,30,.18);transition:transform .14s ease, filter .14s ease;
+}
+#firstRunScreen .fr-cta:active{transform:scale(.985);filter:brightness(.96);}
+#firstRunScreen .fr-cta-create{background:linear-gradient(135deg,#34B08C 0%,#2F9E7E 100%);}
+#firstRunScreen .fr-cta-join{background:linear-gradient(135deg,#8B54F0 0%,#7C3AED 100%);}
 
 /* ════════════════════════════════════════════════════════════════════
    SCREEN — SETTINGS  (Claude Design merge, step 1)
@@ -2796,7 +2884,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
 </head>
 <body>
 
-<!-- ════ SVG PORTRAIT SPRITES — real family: אמא, אבא, לאלי, אהרן צבי ════ -->
+<!-- ════ SVG PORTRAIT SPRITES (legacy/unused — default avatar is now neutral 👤) ════ -->
 <svg width="0" height="0" style="position:absolute;overflow:hidden" aria-hidden="true">
   <defs>
     <!-- backgrounds -->
@@ -2925,7 +3013,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
       <path d="M43 64.5 Q50 66.5 57 64.5" stroke="rgba(255,250,240,.7)" stroke-width="1.4" fill="none" stroke-linecap="round"/>
     </symbol>
 
-    <!-- ═════ DUDI = לאלי (girl ~11) — LONG STRAIGHT dark hair past shoulders ═════ -->
+    <!-- ═════ member_laali portrait (legacy/unused) — LONG STRAIGHT dark hair past shoulders ═════ -->
     <symbol id="p-dudi" viewBox="0 0 100 100">
       <rect width="100" height="100" fill="url(#bgC)"/>
       <!-- LONG STRAIGHT HAIR — falls all the way to bottom of frame, very long -->
@@ -2966,7 +3054,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
       <ellipse cx="64" cy="54.5" rx="5" ry="3" fill="url(#cheekRose)"/>
     </symbol>
 
-    <!-- ═════ YONATAN = אהרן צבי (boy ~9) — colorful KIPPAH dome on head ═════ -->
+    <!-- ═════ member_aharon portrait (legacy/unused) — colorful KIPPAH dome on head ═════ -->
     <symbol id="p-yonatan" viewBox="0 0 100 100">
       <rect width="100" height="100" fill="url(#bgD)"/>
       <!-- Shirt — rust/brown -->
@@ -3449,28 +3537,28 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
           <div data-avatar-slot style="position:absolute;inset:0;border-radius:inherit;overflow:hidden;"></div>
           <span class="badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg></span>
         </div>
-        <div class="ava-name">אבא</div>
+        <div class="ava-name">חבר 1</div>
       </div>
       <div class="member" data-id="ima">
         <div class="ava-circle av-ima" data-avatar-for="member_mom" data-avatar-size="56">
           <div data-avatar-slot style="position:absolute;inset:0;border-radius:inherit;overflow:hidden;"></div>
           <span class="badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg></span>
         </div>
-        <div class="ava-name">אמא</div>
+        <div class="ava-name">חבר 2</div>
       </div>
       <div class="member" data-id="leali">
         <div class="ava-circle av-leali" data-avatar-for="member_laali" data-avatar-size="56">
           <div data-avatar-slot style="position:absolute;inset:0;border-radius:inherit;overflow:hidden;"></div>
           <span class="badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg></span>
         </div>
-        <div class="ava-name">ליאלי</div>
+        <div class="ava-name">חבר 3</div>
       </div>
       <div class="member" data-id="uri">
         <div class="ava-circle av-uri" data-avatar-for="member_aharon" data-avatar-size="56">
           <div data-avatar-slot style="position:absolute;inset:0;border-radius:inherit;overflow:hidden;"></div>
           <span class="badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg></span>
         </div>
-        <div class="ava-name">אורי</div>
+        <div class="ava-name">חבר 4</div>
       </div>
     </div>
     <div class="members-caption">זהות המכשיר משמשת להצגת תוכן והתראות מותאמות אישית</div>
@@ -3555,14 +3643,14 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
 
     <!-- Members -->
     <div class="members">
-      <!-- Card 1: אבא -->
+      <!-- Card 1 -->
       <div class="mcard">
         <div class="mavatar av-aba" data-avatar-for="member_dad" data-avatar-size="78" onclick="openMemberProfile('member_dad','s-family-members')">
           <div data-avatar-slot></div>
         </div>
         <div class="mbody">
           <div class="name-row">
-            <div class="name">אבא</div>
+            <div class="name">חבר 1</div>
             <span class="me-pill">המכשיר הזה</span>
           </div>
           <div class="meta-row">
@@ -3576,13 +3664,13 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
         </div>
       </div>
 
-      <!-- Card 2: אמא -->
+      <!-- Card 2 -->
       <div class="mcard">
         <div class="mavatar av-ima" data-avatar-for="member_mom" data-avatar-size="78" onclick="openMemberProfile('member_mom','s-family-members')">
           <div data-avatar-slot></div>
         </div>
         <div class="mbody">
-          <div class="name-row"><div class="name">אמא</div></div>
+          <div class="name-row"><div class="name">חבר 2</div></div>
           <div class="meta-row">
             <span>הורה</span>
             <span class="icn-mini" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M5 21c0-4 3-7 7-7s7 3 7 7"/></svg></span>
@@ -3594,13 +3682,13 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
         </div>
       </div>
 
-      <!-- Card 3: ליאלי -->
+      <!-- Card 3 -->
       <div class="mcard">
         <div class="mavatar av-leali" data-avatar-for="member_laali" data-avatar-size="78" onclick="openMemberProfile('member_laali','s-family-members')">
           <div data-avatar-slot></div>
         </div>
         <div class="mbody">
-          <div class="name-row"><div class="name">ליאלי</div></div>
+          <div class="name-row"><div class="name">חבר 3</div></div>
           <div class="meta-row">
             <span>ילדה</span>
             <span class="icn-mini" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M5 21c0-4 3-7 7-7s7 3 7 7"/></svg></span>
@@ -3612,13 +3700,13 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
         </div>
       </div>
 
-      <!-- Card 4: אורי -->
+      <!-- Card 4 -->
       <div class="mcard">
         <div class="mavatar av-uri" data-avatar-for="member_aharon" data-avatar-size="78" onclick="openMemberProfile('member_aharon','s-family-members')">
           <div data-avatar-slot></div>
         </div>
         <div class="mbody">
-          <div class="name-row"><div class="name">אורי</div></div>
+          <div class="name-row"><div class="name">חבר 4</div></div>
           <div class="meta-row">
             <span>ילד</span>
             <span class="icn-mini" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M5 21c0-4 3-7 7-7s7 3 7 7"/></svg></span>
@@ -3730,7 +3818,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
         </div>
         <div class="code-info">
           <div class="lbl">קוד המשפחה שלכם</div>
-          <div class="val" id="inviteFamilyCode">YUPT7N</div>
+          <div class="val" id="inviteFamilyCode"></div>
         </div>
       </div>
       <button class="copy-btn" type="button" onclick="inviteCopyCode(this)">
@@ -4048,7 +4136,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
         <div class="dev-avatar av-aba" data-avatar-for="member_dad" data-avatar-size="40"><div data-avatar-slot></div><span class="online"></span></div>
         <div class="dev-body">
           <div class="dev-top">
-            <span class="dev-name">הטלפון של אבא</span>
+            <span class="dev-name">הטלפון של חבר 1</span>
             <span class="me-pill">מכשיר זה</span>
           </div>
           <div class="dev-model" id="devModelDad">Samsung Galaxy S24</div>
@@ -4062,7 +4150,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
         <div class="dev-avatar av-ima" data-avatar-for="member_mom" data-avatar-size="40"><div data-avatar-slot></div><span class="online"></span></div>
         <div class="dev-body">
           <div class="dev-top">
-            <span class="dev-name">הטלפון של אמא</span>
+            <span class="dev-name">הטלפון של חבר 2</span>
           </div>
           <div class="dev-model" id="devModelMom">Samsung Galaxy</div>
         </div>
@@ -4075,7 +4163,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
         <div class="dev-avatar av-leali" data-avatar-for="member_laali" data-avatar-size="40"><div data-avatar-slot></div><span class="online"></span></div>
         <div class="dev-body">
           <div class="dev-top">
-            <span class="dev-name">הטלפון של ליאלי</span>
+            <span class="dev-name">הטלפון של חבר 3</span>
           </div>
           <div class="dev-model" id="devModelLaali">Samsung Galaxy</div>
         </div>
@@ -4088,7 +4176,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
         <div class="dev-avatar av-uri" data-avatar-for="member_aharon" data-avatar-size="40"><div data-avatar-slot></div><span class="online"></span></div>
         <div class="dev-body">
           <div class="dev-top">
-            <span class="dev-name">הטלפון של אהרן</span>
+            <span class="dev-name">הטלפון של חבר 4</span>
           </div>
           <div class="dev-model">Samsung Galaxy</div>
         </div>
@@ -4670,7 +4758,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
     <div class="vis-hero-card" id="visHeroCard">
       <div class="vis-hero-perf">
         <div class="vis-hero-big-ava av-aba" id="visHeroBigAva"></div>
-        <div class="vis-hero-perf-name" id="visHeroPerfName">אבא</div>
+        <div class="vis-hero-perf-name" id="visHeroPerfName">חבר 1</div>
         <div class="vis-hero-perf-role">מבצע</div>
       </div>
       <div class="vis-hero-sep"></div>
@@ -4696,22 +4784,22 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
         <button class="vis-ava-frame orange" data-id="aba" type="button">
           <div class="vis-ava-circle av-aba" data-avatar-for="member_dad" data-avatar-size="48" style="position:relative;overflow:hidden;"><div data-avatar-slot style="position:absolute;inset:0;border-radius:inherit;"></div></div>
           <span class="vis-badge orange"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg></span>
-          <div class="vis-ava-name">אבא</div>
+          <div class="vis-ava-name">חבר 1</div>
         </button>
         <button class="vis-ava-frame orange dimmed" data-id="ima" type="button">
           <div class="vis-ava-circle av-ima" data-avatar-for="member_mom" data-avatar-size="48" style="position:relative;overflow:hidden;"><div data-avatar-slot style="position:absolute;inset:0;border-radius:inherit;"></div></div>
           <span class="vis-badge empty"></span>
-          <div class="vis-ava-name">אמא</div>
+          <div class="vis-ava-name">חבר 2</div>
         </button>
         <button class="vis-ava-frame orange dimmed" data-id="leali" type="button">
           <div class="vis-ava-circle av-leali" data-avatar-for="member_laali" data-avatar-size="48" style="position:relative;overflow:hidden;"><div data-avatar-slot style="position:absolute;inset:0;border-radius:inherit;"></div></div>
           <span class="vis-badge empty"></span>
-          <div class="vis-ava-name">ליאלי</div>
+          <div class="vis-ava-name">חבר 3</div>
         </button>
         <button class="vis-ava-frame orange dimmed" data-id="aharon" type="button">
           <div class="vis-ava-circle av-aharon" data-avatar-for="member_aharon" data-avatar-size="48" style="position:relative;overflow:hidden;"><div data-avatar-slot style="position:absolute;inset:0;border-radius:inherit;"></div></div>
           <span class="vis-badge empty"></span>
-          <div class="vis-ava-name">אהרן</div>
+          <div class="vis-ava-name">חבר 4</div>
         </button>
       </div>
 
@@ -4750,22 +4838,22 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
         <button class="vis-ava-frame orange" data-id="aba" type="button">
           <div class="vis-ava-circle av-aba" data-avatar-for="member_dad" data-avatar-size="48" style="position:relative;overflow:hidden;"><div data-avatar-slot style="position:absolute;inset:0;border-radius:inherit;"></div></div>
           <span class="vis-badge orange"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg></span>
-          <div class="vis-ava-name">אבא</div>
+          <div class="vis-ava-name">חבר 1</div>
         </button>
         <button class="vis-ava-frame orange" data-id="ima" type="button">
           <div class="vis-ava-circle av-ima" data-avatar-for="member_mom" data-avatar-size="48" style="position:relative;overflow:hidden;"><div data-avatar-slot style="position:absolute;inset:0;border-radius:inherit;"></div></div>
           <span class="vis-badge empty"></span>
-          <div class="vis-ava-name">אמא</div>
+          <div class="vis-ava-name">חבר 2</div>
         </button>
         <button class="vis-ava-frame orange" data-id="leali" type="button">
           <div class="vis-ava-circle av-leali" data-avatar-for="member_laali" data-avatar-size="48" style="position:relative;overflow:hidden;"><div data-avatar-slot style="position:absolute;inset:0;border-radius:inherit;"></div></div>
           <span class="vis-badge empty"></span>
-          <div class="vis-ava-name">ליאלי</div>
+          <div class="vis-ava-name">חבר 3</div>
         </button>
         <button class="vis-ava-frame orange" data-id="aharon" type="button">
           <div class="vis-ava-circle av-aharon" data-avatar-for="member_aharon" data-avatar-size="48" style="position:relative;overflow:hidden;"><div data-avatar-slot style="position:absolute;inset:0;border-radius:inherit;"></div></div>
           <span class="vis-badge empty"></span>
-          <div class="vis-ava-name">אהרן</div>
+          <div class="vis-ava-name">חבר 4</div>
         </button>
       </div>
 
@@ -4786,7 +4874,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
 
       <div class="vis-tip" id="visNotifyTipWrap">
         <span class="bulb" aria-hidden="true">💡</span>
-        <span id="visNotifyTip">רק <u>אבא</u> יקבל התראה, כדי לא להפריע לאחרים.</span>
+        <span id="visNotifyTip">רק <u>חבר 1</u> יקבל התראה, כדי לא להפריע לאחרים.</span>
       </div>
     </div>
 
@@ -5247,6 +5335,63 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
     <div class="device-setup-title">מי משתמש במכשיר זה?</div>
     <div class="device-setup-sub">הגדרה חד-פעמית</div>
     <div id="deviceSetupList" class="device-setup-list"></div>
+  </div>
+</div>
+
+<div id="firstRunScreen" class="hidden">
+  <div class="fr-shell">
+    <div class="fr-hero" role="img" aria-label="Family — היום של כולם, מסודר במקום אחד"></div>
+    <div class="fr-card">
+
+      <!-- ── STATE: welcome ── -->
+      <div class="fr-state" data-fr-state="welcome">
+        <button type="button" class="fr-choice fr-choice-join" onclick="_frGoto('join')">
+          <span class="fr-choice-ic" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="m10.8 12.2 6.2-6.2"/><path d="m16 6 2 2"/><path d="m19 3 2 2"/></svg>
+          </span>
+          <span class="fr-choice-tx">יש לי קוד משפחה</span>
+          <span class="fr-choice-go" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+          </span>
+        </button>
+        <button type="button" class="fr-choice fr-choice-create" onclick="_frGoto('create')">
+          <span class="fr-choice-ic" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+          </span>
+          <span class="fr-choice-tx">אני רוצה ליצור משפחה חדשה</span>
+          <span class="fr-choice-go" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+          </span>
+        </button>
+      </div>
+
+      <!-- ── STATE: create ── -->
+      <div class="fr-state hidden" data-fr-state="create">
+        <button type="button" class="fr-back" onclick="_frGoto('welcome')" aria-label="חזרה">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+        </button>
+        <div class="fr-h1">יצירת משפחה חדשה</div>
+        <div class="fr-sub">איך נקרא לך? אפשר להזמין בני משפחה נוספים בהמשך.</div>
+        <label class="fr-field-lbl" for="frCreateName">השם שלך</label>
+        <input class="fr-input" id="frCreateName" type="text" placeholder="לדוגמה: אבא" dir="rtl" maxlength="20" />
+        <button type="button" class="fr-cta fr-cta-create" onclick="_firstRunCreate()">צור משפחה</button>
+      </div>
+
+      <!-- ── STATE: join ── -->
+      <div class="fr-state hidden" data-fr-state="join">
+        <button type="button" class="fr-back" onclick="_frGoto('welcome')" aria-label="חזרה">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+        </button>
+        <div class="fr-h1">הצטרפות למשפחה</div>
+        <div class="fr-sub">הזינו את קוד המשפחה בן 6 התווים שקיבלתם.</div>
+        <label class="fr-field-lbl" for="firstRunJoinInp">קוד משפחה</label>
+        <input class="fr-input fr-input-code" id="firstRunJoinInp" placeholder="XXXXXX" maxlength="6" dir="ltr"
+               oninput="this.value=this.value.toUpperCase().replace(/[^A-Z2-9]/g,'')" />
+        <div class="fr-err" id="firstRunErr"></div>
+        <button type="button" class="fr-cta fr-cta-join" onclick="_firstRunJoin()">הצטרף למשפחה</button>
+      </div>
+
+    </div>
   </div>
 </div>
 
@@ -5751,7 +5896,7 @@ const I18N = {
     remind_30:'30 min before', remind_60:'1 hour before', remind_custom:'Custom',
     repeat_none:'None', repeat_daily:'Daily', repeat_weekly:'Weekly',
     user_switch:'Switch user',
-    family_mom:'Mom', family_dad:'Dad', family_dudi:'Laali', family_yonatan:'Aharon Tzvi',
+    family_mom:'Member 2', family_dad:'Member 1', family_dudi:'Member 3', family_yonatan:'Member 4',
     date_today:'Today', date_tomorrow:'Tomorrow',
     months:['January','February','March','April','May','June','July','August','September','October','November','December'],
     months_short:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
@@ -5830,7 +5975,7 @@ const I18N = {
     remind_30:'30 דקות לפני', remind_60:'שעה לפני', remind_custom:'מותאם אישית',
     repeat_none:'ללא', repeat_daily:'יומי', repeat_weekly:'שבועי',
     user_switch:'החלף משתמש',
-    family_mom:'אמא', family_dad:'אבא', family_dudi:'לאלי', family_yonatan:'אהרן צבי',
+    family_mom:'חבר 2', family_dad:'חבר 1', family_dudi:'חבר 3', family_yonatan:'חבר 4',
     date_today:'היום', date_tomorrow:'מחר',
     months:['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'],
     months_short:['ינו','פבר','מרץ','אפר','מאי','יוני','יולי','אוג','ספט','אוק','נוב','דצמ'],
@@ -13209,10 +13354,10 @@ function _selectDeviceMember(memberId) {
 // Runs once per device. Creates the 4 fixed member documents if they
 // don't exist yet. Additive only — never overwrites existing documents.
 const _FAMILY_MEMBERS_SEED = [
-  { memberId: 'member_dad',    name: 'אבא',      role: 'parent', avatar: { type: 'emoji', value: '👨' } },
-  { memberId: 'member_mom',    name: 'אמא',      role: 'parent', avatar: { type: 'emoji', value: '👩' } },
-  { memberId: 'member_laali',  name: 'לאלי',     role: 'child',  avatar: { type: 'emoji', value: '👧' } },
-  { memberId: 'member_aharon', name: 'אהרן צבי', role: 'child',  avatar: { type: 'emoji', value: '👦' } },
+  { memberId: 'member_dad',    name: 'חבר 1', role: 'parent', avatar: { type: 'emoji', value: '👤' } },
+  { memberId: 'member_mom',    name: 'חבר 2', role: 'parent', avatar: { type: 'emoji', value: '👤' } },
+  { memberId: 'member_laali',  name: 'חבר 3', role: 'child',  avatar: { type: 'emoji', value: '👤' } },
+  { memberId: 'member_aharon', name: 'חבר 4', role: 'child',  avatar: { type: 'emoji', value: '👤' } },
 ];
 
 // Maps legacy assignedTo IDs → stable memberIds
@@ -13401,17 +13546,17 @@ async function _daCreateFamily() {
   }
 }
 
-async function _daJoinFamily() {
+async function _daJoinFamily(codeArg) {
   const inp  = document.getElementById('famJoinInp');
-  const code = inp ? inp.value.trim().toUpperCase() : '';
-  if (code.length < 4) { _famShErr('הכנס קוד בן 4-6 תווים'); return; }
+  const code = (codeArg != null ? codeArg : (inp ? inp.value : '')).trim().toUpperCase();
+  if (code.length < 4) { _famShErr('הכנס קוד בן 4-6 תווים'); return false; }
 
   if (!_db) {
     // No Firestore connection — save locally and warn
     const userId = DataAdapter.userId || _genCode(8);
     DataAdapter.setFamily(code, userId);
     _renderFamilySheet();
-    return;
+    return true;
   }
 
   // Show loading state
@@ -13423,7 +13568,7 @@ async function _daJoinFamily() {
     if (!familySnap.exists) {
       _famShErr('לא נמצאה משפחה עם הקוד הזה');
       if (joinBtn) { joinBtn.disabled = false; joinBtn.textContent = 'הצטרף למשפחה'; }
-      return;
+      return false;
     }
 
     const userId     = DataAdapter.userId || _genCode(8);
@@ -13449,10 +13594,12 @@ async function _daJoinFamily() {
     _renderFamilySheet();
     _loadFamilyMembersCache();
     _daStartListener();
+    return true;
   } catch (e) {
     AppLog.warn('FB', 'joinFamily failed', e.message || e);
     _famShErr('שגיאה בהתחברות לענן — נסה שוב');
     if (joinBtn) { joinBtn.disabled = false; joinBtn.textContent = 'הצטרף למשפחה'; }
+    return false;
   }
 }
 
@@ -13471,6 +13618,55 @@ function _daLeaveFamily() {
   DataAdapter.leaveFamily();
   console.log('[DA] left family, returned to local mode');
   _renderFamilySheet();
+}
+
+// ─── First-run onboarding gate ────────────────────────────────────
+// Shown only when no family identity exists locally. Forces create/join
+// so a fresh install never presents the seeded family or any other data.
+function _showFirstRunScreen() {
+  const scr = document.getElementById('firstRunScreen');
+  if (scr) scr.classList.remove('hidden');
+}
+
+function _finishFirstRun() {
+  const scr = document.getElementById('firstRunScreen');
+  if (scr) scr.classList.add('hidden');
+  try { _loadFamilyMembersCache(); } catch (e) {}
+  try { if (!_recoveryActive()) _daStartListener(); } catch (e) {}
+  try { _bootstrapFamilyMembers(); } catch (e) {}
+  try { _checkDeviceSetup(); } catch (e) {}
+  try { if (typeof updateTodayTitle === 'function') updateTodayTitle(); } catch (e) {}
+}
+
+async function _firstRunCreate() {
+  const nameInp = document.getElementById('frCreateName');
+  const name    = nameInp ? nameInp.value.trim() : '';
+  if (name) { try { DataAdapter.setDisplayName(name); } catch (e) {} }
+  await _daCreateFamily();
+  if (DataAdapter.isFamily()) _finishFirstRun();
+}
+
+function _frGoto(state) {
+  const scr = document.getElementById('firstRunScreen');
+  if (!scr) return;
+  scr.querySelectorAll('.fr-state').forEach(el => {
+    el.classList.toggle('hidden', el.getAttribute('data-fr-state') !== state);
+  });
+  const errEl = document.getElementById('firstRunErr');
+  if (errEl) errEl.textContent = '';
+  const focusId = state === 'join' ? 'firstRunJoinInp' : (state === 'create' ? 'frCreateName' : null);
+  if (focusId) { const inp = document.getElementById(focusId); if (inp) { try { inp.focus(); } catch (e) {} } }
+}
+
+async function _firstRunJoin() {
+  const inp   = document.getElementById('firstRunJoinInp');
+  const errEl = document.getElementById('firstRunErr');
+  const code  = inp ? inp.value.trim().toUpperCase() : '';
+  if (code.length < 4) { if (errEl) errEl.textContent = 'הכנס קוד בן 4-6 תווים'; return; }
+  if (errEl) errEl.textContent = '';
+  const ok = await _daJoinFamily(code);
+  if (ok && DataAdapter.isFamily()) _finishFirstRun();
+  else if (errEl && !errEl.textContent) errEl.textContent = 'לא נמצאה משפחה עם הקוד הזה';
 }
 
 async function _daSaveDisplayName() {
@@ -13564,13 +13760,21 @@ localStorage.setItem(LANG_KEY, 'he');
 AppState.lang = 'he';
 _applyLang();
 _capInit().then(() => _capRescheduleAll()).catch(() => {});
-if (DataAdapter.isFamily()) {
+// Preview-only: ?previewFirstRun=1 forces the onboarding screen for visual
+// review. Pure UI — touches no data, no family state, no listeners.
+if (/[?&]previewFirstRun=1/.test(location.search)) {
+  _showFirstRunScreen();
+} else if (DataAdapter.isFamily()) {
   _loadFamilyMembersCache();
   // While in the 72h post-reset recovery window, do NOT auto-sync — the wipe
   // must persist until the user explicitly restores from the cloud.
   if (!_recoveryActive()) _daStartListener();
   _bootstrapFamilyMembers();
   _checkDeviceSetup();
+} else {
+  // Fresh install / no family identity — force the onboarding gate so the app
+  // never auto-enters a seeded/default family.
+  _showFirstRunScreen();
 }
 try { _updateRecoveryBanner(); } catch (e) { console.warn('recovery banner failed', e); }
 try { _syncSettingsDeviceMember(); } catch (e) { console.warn('settings device member sync failed', e); }
@@ -14124,7 +14328,7 @@ function _tdBuildCalGrid(year, month, selDate) {
 var _visPerformer      = null;
 var _visSeeFilter      = 'custom';
 var _visNotifyFilter   = 'custom';
-var _visMemberNames    = {aba:'אבא', ima:'אמא', leali:'ליאלי', aharon:'אהרן'};
+var _visMemberNames    = {aba:'חבר 1', ima:'חבר 2', leali:'חבר 3', aharon:'חבר 4'};
 var _visSVGCheck       = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg>';
 
 function _visSetFilter(section, val) {
@@ -15094,7 +15298,7 @@ function syncFamilyMemberColors() {
 
 // ── Invite family member screen helpers ───────────────────────────
 function _inviteGetCode() {
-  return AppState.familyCode || 'YUPT7N';
+  return (typeof DataAdapter !== 'undefined' && DataAdapter.familyId) || '';
 }
 function _inviteGetLink() {
   const code = _inviteGetCode();
