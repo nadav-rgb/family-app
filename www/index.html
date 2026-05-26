@@ -353,15 +353,16 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
    while recording so it feels alive in both states. */
 .atd-mic-ring{width:88px;height:88px;border-radius:50%;background:linear-gradient(145deg,#ff8040,#e05520);box-shadow:0 6px 24px rgba(255,90,20,.38);display:flex;align-items:center;justify-content:center;position:relative;animation:atdMicIdle 3s ease-in-out infinite;transition:box-shadow .3s,filter .3s,transform .14s;}
 .atd-mic-ring:active{transform:scale(.93);}
-.atd-mic-ring.rec{animation:atdMicRec 1.8s ease-in-out infinite;background:linear-gradient(145deg,#ff9050,#ff6020);}
+/* Recording — clearly distinct from idle: red ring with an expanding pulse. */
+.atd-mic-ring.rec{animation:atdMicRec 1.1s ease-in-out infinite;background:linear-gradient(145deg,#ff5a5a,#d61f1f);box-shadow:0 6px 26px rgba(214,31,31,.55),0 0 0 5px rgba(214,31,31,.18);}
 /* Resting heartbeat — gentle double-pulse like a real heart at ~60bpm */
 @keyframes atdMicIdle{
   0%,100%{transform:scale(1);box-shadow:0 6px 24px rgba(255,90,20,.38);}
   50%{transform:scale(1.05);box-shadow:0 10px 32px rgba(255,90,20,.55);}
 }
 @keyframes atdMicRec{
-  0%,100%{transform:scale(1);filter:brightness(1);box-shadow:0 6px 28px rgba(255,90,20,.45);}
-  50%{transform:scale(1.08);filter:brightness(1.18);box-shadow:0 12px 40px rgba(255,90,20,.72);}
+  0%,100%{transform:scale(1);box-shadow:0 6px 26px rgba(214,31,31,.55),0 0 0 4px rgba(214,31,31,.22);}
+  50%{transform:scale(1.07);box-shadow:0 10px 34px rgba(214,31,31,.7),0 0 0 14px rgba(214,31,31,0);}
 }
 @keyframes atdHeartIdle{
   0%,100% { transform:scale(1); }
@@ -482,8 +483,12 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 /* ════════════════════════════════════
    SCREEN 3 — TODAY
 ════════════════════════════════════ */
-#s-today .t-scroll{flex:1;overflow-y:auto;overflow-x:hidden;padding-bottom:200px;scrollbar-width:none;}
+#s-today .t-scroll{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;padding-bottom:200px;scrollbar-width:none;-webkit-overflow-scrolling:touch;}
 #s-today .t-scroll::-webkit-scrollbar{display:none;}
+/* Now that the document itself is locked (overflow:hidden), the inner scroll
+   containers are the only scrollers — they need momentum touch scrolling and
+   min-height:0 (flex child) so touch-drag actually scrolls in the WebView. */
+.t-scroll,.dp-list,.scroll,.td-scroll,.mp-scroll,.spl-scroll{-webkit-overflow-scrolling:touch;min-height:0;}
 #s-today .t-header{padding:18px 24px 8px;animation:fadeUp .4s ease .04s both;}
 .t-greeting{font-size:12.5px;font-weight:600;color:#e07c3a;letter-spacing:.15px;margin-bottom:4px;}
 .t-title{font-size:27px;font-weight:900;color:#1c110a;line-height:1.15;}
@@ -1364,7 +1369,9 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
   background:radial-gradient(50% 50% at 50% 50%,rgba(255,120,40,.28),transparent 70%);
   z-index:-1;filter:blur(5px);
 }
-#s-today .t-scroll{padding-bottom:110px;}
+/* Clear the floating nav (80px) + the protruding add button + the device
+   safe-area so the last tasks always scroll fully into view. */
+#s-today .t-scroll{padding-bottom:calc(132px + env(safe-area-inset-bottom));}
 /* ─── QA Panel (temp) ─── */
 #qaBtn{display:none;position:fixed;bottom:90px;left:10px;z-index:99999;background:#1c110a;color:#fff;border:none;border-radius:20px;padding:6px 12px;font-size:11px;font-weight:800;cursor:pointer;opacity:.7;}
 #qaPanel{position:fixed;inset:0;z-index:99998;background:rgba(0,0,0,.88);color:#fff;font-size:11px;font-family:monospace;overflow-y:auto;padding:16px;direction:ltr;display:none;}
@@ -7084,11 +7091,12 @@ function showBubble(text) {
   ltxt.className     = 'ltxt listening';
   ltxt.style.opacity = '';
   ltxt.style.color   = '';
-  // Mirror transcript into add-sheet bubble when in add mode
+  // Add sheet: record WITHOUT an on-screen caption ("ללא דיבוב"). We only
+  // enable the "add" button once speech has been captured — no live text.
   if (addMode) {
     const atdBub = document.getElementById('atdBubble');
     const atdBtn = document.getElementById('atdAddBtn');
-    if (atdBub) { atdBub.textContent = incoming || ''; atdBub.classList.toggle('has-text', !!incoming); }
+    if (atdBub) { atdBub.textContent = ''; atdBub.classList.remove('has-text'); }
     if (atdBtn) atdBtn.disabled = !incoming;
   }
 }
@@ -14097,10 +14105,15 @@ function _atdStopAndOrganize() {
 document.getElementById('atdMicArea').addEventListener('click', () => {
   if (!addMode) return;
   if (vListening) {
+    // Stop the recording immediately WITH an audible stop cue (previously the
+    // stop sound only fired later on "הוסף ליום"). Captured text stays ready.
+    _sfxMute(false);
     _stopKeepAlive();
+    _clearMaxRecTimers();
     clearTimeout(_restartTimer);
     vListening = false;
     if (recognition) { try { recognition.abort(); } catch(_) {} }
+    _beepStop();
     _setAtdRecording(false);
   } else {
     _atdStartRec();
@@ -14121,7 +14134,10 @@ document.getElementById('atdAddBtn').addEventListener('click', () => {
     vOrganize();
     return;
   }
-  _atdStopAndOrganize();
+  // If still recording, stop (with sound) + organize. If the user already
+  // tapped the mic to stop, just organize the captured text (no double beep).
+  if (vListening) _atdStopAndOrganize();
+  else { setTimeout(() => { if (addMode) vOrganize(); }, 40); }
 });
 
 // ─── Typing toggle inside the Add-Task sheet ──────────────────────
