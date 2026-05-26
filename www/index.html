@@ -2732,27 +2732,16 @@ body.text-large .phone{font-size:17px}
 #s-time-date .td-cal-wrap.open{max-height:360px;}
 #s-time-date .td-cal-card{margin-bottom:8px;padding:12px;}
 #s-time-date .td-cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;direction:rtl;}
-#s-time-date .td-cal-month-name{font-size:14px;font-weight:900;color:var(--ink);display:flex;flex-direction:column;align-items:center;line-height:1.15;}
-#s-time-date .td-cal-month-name .td-cal-heb-head{font-size:11px;font-weight:600;color:var(--orange-deep);margin-top:2px;}
+#s-time-date .td-cal-month-name{font-size:14px;font-weight:900;color:var(--ink);}
 #s-time-date .td-cal-nav{background:none;border:none;color:var(--orange);font-size:20px;font-weight:900;cursor:pointer;padding:0 6px;line-height:1;}
-#s-time-date .td-cal-dow-row{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;margin-bottom:4px;}
-#s-time-date .td-cal-dow-row span{font-size:10px;font-weight:700;color:var(--muted);}
-#s-time-date .td-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;}
-/* Cell mirrors the rich Hebrew picker (.mdp-day): number on top + tiny Hebrew
-   sub-line, with holiday / Shabbat coloring. Reuses the same Hebrew helpers. */
-#s-time-date .td-cal-cell{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font-size:12px;font-weight:700;color:var(--ink);border-radius:10px;cursor:pointer;transition:all .15s ease;padding:2px 0;}
-#s-time-date .td-cal-cell .td-cal-num{font-size:13px;font-weight:800;line-height:1;}
-#s-time-date .td-cal-cell .td-cal-heb{font-size:7.5px;font-weight:600;color:var(--muted);line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
-#s-time-date .td-cal-cell:hover{background:var(--orange-soft);}
-#s-time-date .td-cal-cell.empty{cursor:default;pointer-events:none;}
-#s-time-date .td-cal-cell.empty:hover{background:transparent;}
-#s-time-date .td-cal-cell.today{box-shadow:0 0 0 1.5px var(--orange);}
-#s-time-date .td-cal-cell.td-cal-shab .td-cal-num{color:#845EC2;}
-#s-time-date .td-cal-cell.td-cal-holiday .td-cal-num{color:#E63946;}
-#s-time-date .td-cal-cell.td-cal-holiday .td-cal-hol{color:#E63946;}
-#s-time-date .td-cal-cell.on{background:linear-gradient(135deg,var(--orange-light),var(--orange));color:#fff;box-shadow:0 3px 8px rgba(229,98,26,.28);}
-#s-time-date .td-cal-cell.on .td-cal-num,#s-time-date .td-cal-cell.on .td-cal-heb,#s-time-date .td-cal-cell.on .td-cal-hol{color:#fff;}
-#s-time-date .td-cal-cell.disabled{opacity:.3;pointer-events:none;cursor:default;}
+/* Calendar in זמן ותאריך reuses the Today drawer's calendar markup + global
+   classes (.cal-grid/.cal-day/.cal-heb/.cal-hol-name/.cal-heb-header) for an
+   identical look. Only additions: dim non-selectable past days + tint header. */
+#s-time-date #tdCalGrid.cal-grid{margin-top:2px;}
+#s-time-date #tdCalHebHeader.cal-heb-header{color:var(--orange-deep);margin:-2px 0 10px;}
+.cal-day.disabled{opacity:.32;pointer-events:none;cursor:default;}
+/* Past-time guard: greyed (non-clickable) time chevrons when date is today */
+#s-time-date .td-chev.td-chev-off{opacity:.26;pointer-events:none;cursor:default;}
 #s-time-date .td-manual-btn{display:block;margin:8px auto 0;background:none;border:1px solid rgba(255,122,61,.35);border-radius:99px;padding:4px 16px;font-family:inherit;font-size:11px;font-weight:700;color:var(--orange-deep);cursor:pointer;}
 #s-time-date .td-optfull-card{background:var(--card-bg);border-radius:18px;padding:14px;box-shadow:var(--card-shadow);border:1px solid rgba(255,255,255,.7);margin-top:8px;display:flex;flex-direction:column;gap:12px;}
 #s-time-date .td-optfull-section{display:flex;flex-direction:column;gap:8px;}
@@ -5145,10 +5134,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
           <div class="td-cal-month-name" id="tdCalMonthName"></div>
           <button class="td-cal-nav" id="tdCalPrev" type="button">&#8250;</button>
         </div>
-        <div class="td-cal-dow-row">
-          <span>ש</span><span>ו</span><span>ה</span><span>ד</span><span>ג</span><span>ב</span><span>א</span>
-        </div>
-        <div class="td-cal-grid" id="tdCalGrid"></div>
+        <div class="cal-grid" id="tdCalGrid"></div>
       </div>
     </div>
     <div class="td-week-label">השבוע הקרוב</div>
@@ -9355,6 +9341,23 @@ function openManualTimeModal(task, onDone) {
 
   let digits = [];
 
+  // Past-time guard: only when the task's date is today. An unchanged existing
+  // value stays allowed (so an already-saved past time can be displayed/kept).
+  function _kpIsPastTime(h, m) {
+    const iso = task.date || (typeof todayDate === 'function' ? todayDate() : null);
+    const tod = (typeof todayDate === 'function') ? todayDate() : null;
+    if (!iso || iso !== tod) return false;
+    const now = new Date();
+    const cand = h * 60 + m;
+    return cand < (now.getHours() * 60 + now.getMinutes()) && cand !== task.mins;
+  }
+  function _kpSetOk(on) {
+    const ok = bg.querySelector('#kpOk');
+    if (!ok) return;
+    ok.style.opacity = on ? '' : '0.35';
+    ok.style.pointerEvents = on ? '' : 'none';
+  }
+
   function renderDisplay() {
     const d = digits;
     const h1 = d[0] !== undefined ? `<span class="kp-digit">${d[0]}</span>` : `<span class="kp-blank">_</span>`;
@@ -9365,11 +9368,13 @@ function openManualTimeModal(task, onDone) {
     const hint = bg.querySelector('#kpHint');
     if (digits.length === 4) {
       const h = parseInt(digits[0]+digits[1]), m = parseInt(digits[2]+digits[3]);
-      if (h > 23 || m > 59) hint.style.color = '#ff4444', hint.textContent = t('tp_invalid');
-      else hint.style.color = '#34c759', hint.textContent = h < 12 ? t('period_morning') : h < 17 ? t('period_afternoon') : h < 21 ? t('period_evening') : t('period_night');
+      if (h > 23 || m > 59) { hint.style.color = '#ff4444'; hint.textContent = t('tp_invalid'); _kpSetOk(false); }
+      else if (_kpIsPastTime(h, m)) { hint.style.color = '#ff4444'; hint.textContent = 'לא ניתן לבחור זמן שכבר עבר'; _kpSetOk(false); }
+      else { hint.style.color = '#34c759'; hint.textContent = h < 12 ? t('period_morning') : h < 17 ? t('period_afternoon') : h < 21 ? t('period_evening') : t('period_night'); _kpSetOk(true); }
     } else {
       hint.style.color = '#c4ae9f';
       hint.textContent = digits.length === 0 ? t('tp_hint0') : digits.length < 2 ? t('tp_hint1') : digits.length === 2 ? t('tp_hint2') : t('tp_hint3');
+      _kpSetOk(false);
     }
   }
 
@@ -9385,7 +9390,7 @@ function openManualTimeModal(task, onDone) {
   function commit() {
     if (digits.length === 4) {
       const h = parseInt(digits[0]+digits[1]), m = parseInt(digits[2]+digits[3]);
-      if (h <= 23 && m <= 59) task.mins = h * 60 + m;
+      if (h <= 23 && m <= 59 && !_kpIsPastTime(h, m)) task.mins = h * 60 + m;
     }
     dismiss();
   }
@@ -14331,11 +14336,28 @@ function _tdNowMins() { var n = new Date(); return n.getHours() * 60 + n.getMinu
 function _tdIsToday(iso) { return !!iso && iso === _tdTodayIso(); }
 function _tdSelectedIso() {
   var on = document.querySelector('#tdDateStrip .td-day.on') ||
-           document.querySelector('#tdCalGrid .td-cal-cell.on');
+           document.querySelector('#tdCalGrid .cal-day.selected');
   return on ? on.dataset.date : null;
 }
 function _tdPastMsg() {
   if (typeof showNotifToast === 'function') showNotifToast('לא ניתן לבחור זמן שכבר עבר');
+}
+// Grey out the time "down" chevrons when stepping down would land in the past
+// (only when the selected date is today). Forward steps always stay enabled.
+function _tdUpdateTimeBounds() {
+  var hDown = document.getElementById('tdHourDown');
+  var mDown = document.getElementById('tdMinDown');
+  if (!hDown || !mDown) return;
+  var hh = parseInt((document.getElementById('tdHourDigit') || {}).textContent, 10) || 0;
+  var mm = parseInt((document.getElementById('tdMinDigit')  || {}).textContent, 10) || 0;
+  var guard = !_tdNoTime && _tdIsToday(_tdSelectedIso());
+  var nm = _tdNowMins();
+  // Use the exact deltas the chevrons apply (-1h / -15m) so the greyed state
+  // matches the _tdChev guard precisely.
+  var hCand = (((hh - 1) + 24) % 24) * 60 + mm;
+  var mCand = hh * 60 + (((mm - 15) + 60) % 60);
+  hDown.classList.toggle('td-chev-off', guard && hCand < nm && hCand !== _tdOrigMins);
+  mDown.classList.toggle('td-chev-off', guard && mCand < nm && mCand !== _tdOrigMins);
 }
 
 function _tdBuildDateStrip(selectedDate) {
@@ -14423,13 +14445,14 @@ function renderTimeDateScreen(taskId) {
   var remSec = document.getElementById('tdReminderSection');
   if (remSec) remSec.classList.remove('td-rem-disabled');
   if (typeof _tdInitCalAndOptions === 'function') _tdInitCalAndOptions(task);
+  if (typeof _tdUpdateTimeBounds === 'function') _tdUpdateTimeBounds();
 }
 
 function tdSave() {
   var task = _tdFindTask(_tdTargetId);
   if (task) {
     var selDay = document.querySelector('#tdDateStrip .td-day.on');
-    if (!selDay) selDay = document.querySelector('#tdCalGrid .td-cal-cell.on');
+    if (!selDay) selDay = document.querySelector('#tdCalGrid .cal-day.selected');
     if (selDay) task.date = selDay.dataset.date;
     if (_tdNoTime) {
       task.mins = null;
@@ -14491,61 +14514,113 @@ var _tdCalSelDate = null;
 
 var _TD_MONTH_HE = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
 
+// Faithful clone of the Today drawer calendar (renderCalGrid): identical
+// markup, classes (.cal-day/.cal-heb/.cal-hol-name), Hebrew dates, full holiday
+// names, prev/next-month spill days and task dots. The only additions are the
+// past-day .disabled guard and selection wiring for the time-date screen.
 function _tdBuildCalGrid(year, month, selDate) {
   _tdCalYear = year; _tdCalMonth = month;
   var grid = document.getElementById('tdCalGrid');
   if (!grid) return;
+  grid.innerHTML = '';
+  var lng = (I18N[AppState.lang] || I18N.en);
 
-  // Header: Gregorian + Hebrew month label (reuses the rich picker's helpers)
   var nameEl = document.getElementById('tdCalMonthName');
-  if (nameEl) {
-    var hebHead = '';
-    try {
-      var hF = _jdnToH(_gToJdn(year, month + 1, 1));
-      var dimH = new Date(year, month + 1, 0).getDate();
-      var hL = _jdnToH(_gToJdn(year, month + 1, dimH));
-      hebHead = (hF.m === hL.m)
-        ? (_hMonthName(hF.y, hF.m) + ' ' + _hYearLetters(hF.y))
-        : (_hMonthName(hF.y, hF.m) + ' – ' + _hMonthName(hL.y, hL.m) + ' ' + _hYearLetters(hL.y));
-    } catch (_) {}
-    nameEl.innerHTML = '<span class="td-cal-greg">' + _TD_MONTH_HE[month] + ' ' + year + '</span>' +
-                       (hebHead ? '<span class="td-cal-heb-head">' + hebHead + '</span>' : '');
-  }
+  if (nameEl) nameEl.textContent = lng.months[month] + ' ' + year;
 
-  var today = _tdTodayIso();
-  var firstDay = new Date(year, month, 1).getDay();
-  var daysInMonth = new Date(year, month + 1, 0).getDate();
-  var html = '';
-  for (var e = 0; e < firstDay; e++) { html += '<div class="td-cal-cell empty"></div>'; }
-  for (var d = 1; d <= daysInMonth; d++) {
-    var iso = year + '-' + String(month + 1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
-    var isSel  = (iso === selDate);
-    var isPast = (iso < today);
-    var cls = 'td-cal-cell';
-    if (iso === today) cls += ' today';
-    if (isSel) cls += ' on';
-    // Past days are not selectable — except an already-selected (existing) date, which stays displayable.
-    if (isPast && !isSel) cls += ' disabled';
+  // Hebrew sub-header — Hebrew month(s) spanning this Gregorian month
+  try {
+    var _hF = _jdnToH(_gToJdn(year, month + 1, 1));
+    var _dimL = new Date(year, month + 1, 0).getDate();
+    var _hL = _jdnToH(_gToJdn(year, month + 1, _dimL));
+    var _hebLabel = _hF.m === _hL.m
+      ? (_hMonthName(_hF.y, _hF.m) + ' ' + _hYearLetters(_hF.y))
+      : (_hMonthName(_hF.y, _hF.m) + ' – ' + _hMonthName(_hL.y, _hL.m) + ' ' + _hYearLetters(_hL.y));
+    var _hebHdr = document.getElementById('tdCalHebHeader');
+    if (!_hebHdr) {
+      _hebHdr = document.createElement('div');
+      _hebHdr.id = 'tdCalHebHeader';
+      _hebHdr.className = 'cal-heb-header';
+      grid.parentNode.insertBefore(_hebHdr, grid);
+    }
+    _hebHdr.textContent = _hebLabel;
+  } catch (_) {}
 
-    // Hebrew date + Jewish holiday + Shabbat (same logic as _mdpRender)
-    var sub = '';
-    try {
-      var hd  = _jdnToH(_gToJdn(year, month + 1, d));
-      var hol = _H_HOLIDAYS[hd.m + '-' + hd.d];
-      var isShab = (new Date(year, month, d).getDay() === 6);
-      if (hol) {
-        cls += ' td-cal-holiday';
-        sub = '<span class="td-cal-heb td-cal-hol">' + hol.e + '</span>';
-      } else {
-        if (isShab) cls += ' td-cal-shab';
-        var hebDay = (hd.d === 1) ? ('א׳ ' + _hMonthName(hd.y, hd.m).slice(0,3)) : _hDayLetters(hd.d);
-        sub = '<span class="td-cal-heb">' + hebDay + '</span>';
+  // Days that carry a task (incl. daily/weekly recurrences) — same as Today
+  var taskDates = new Set((AppState.tasks || []).filter(function(t){ return !t.deleted; })
+                                                 .map(function(t){ return t.date; }).filter(Boolean));
+  (AppState.tasks || []).forEach(function(t) {
+    var type = t.recurrence && t.recurrence.type;
+    if (type !== 'daily' && type !== 'weekly') return;
+    var startDate = new Date(Math.max(new Date(year, month, 1),
+                                      new Date((t.date || todayDate()) + 'T00:00:00')));
+    var endDate = new Date(year, month + 1, 0);
+    var days = null;
+    if (type === 'weekly') {
+      days = Array.isArray(t.recurrence.daysOfWeek) ? t.recurrence.daysOfWeek
+           : (typeof t.recurrence.dayOfWeek === 'number' ? [t.recurrence.dayOfWeek] : []);
+      if (days.length === 0) return;
+    }
+    var cur = new Date(startDate);
+    while (cur <= endDate) {
+      if (type === 'daily' || days.indexOf(cur.getDay()) !== -1) {
+        taskDates.add(fmtDate(cur.getFullYear(), cur.getMonth(), cur.getDate()));
       }
-    } catch (_) {}
+      cur.setDate(cur.getDate() + 1);
+    }
+  });
 
-    html += '<div class="' + cls + '" data-date="' + iso + '"><span class="td-cal-num">' + d + '</span>' + sub + '</div>';
-  }
-  grid.innerHTML = html;
+  var today      = _tdTodayIso();
+  var firstDow   = new Date(year, month, 1).getDay();
+  var daysInMo   = new Date(year, month + 1, 0).getDate();
+  var daysInPrev = new Date(year, month, 0).getDate();
+
+  lng.days_short.forEach(function(dn) {
+    var h = document.createElement('div');
+    h.className = 'cal-dow'; h.textContent = dn;
+    grid.appendChild(h);
+  });
+
+  var addDay = function(num, dateStr, other) {
+    var el = document.createElement('div');
+    el.className = 'cal-day';
+    el.dataset.date = dateStr;
+    var hebDay = '', holName = '';
+    try {
+      var p = dateStr.split('-');
+      var hd = _jdnToH(_gToJdn(+p[0], +p[1], +p[2]));
+      hebDay = hd.d === 1 ? ('א׳ ' + _hMonthName(hd.y, hd.m).slice(0,3)) : _hDayLetters(hd.d);
+      var hol = _H_HOLIDAYS[hd.m + '-' + hd.d];
+      if (hol) { holName = hol.n; el.classList.add('cal-hol'); el.title = hol.e + ' ' + hol.n; }
+    } catch (_) {}
+    el.innerHTML = '<span>' + num + '</span>'
+      + (hebDay  ? '<span class="cal-heb">' + hebDay + '</span>' : '')
+      + (holName ? '<span class="cal-hol-name">' + holName + '</span>' : '');
+    if (other)             el.classList.add('other-month');
+    if (dateStr === today) el.classList.add('is-today');
+    if (dateStr === selDate) el.classList.add('selected');
+    if (taskDates.has(dateStr)) el.classList.add('has-tasks');
+    if (dateStr < today && dateStr !== selDate) el.classList.add('disabled');  // past — not selectable
+    el.addEventListener('click', function() {
+      if (el.classList.contains('disabled')) { _tdPastMsg(); return; }
+      _tdCalSelDate = dateStr;
+      var dp = dateStr.split('-');
+      _tdBuildCalGrid(+dp[0], +dp[1] - 1, dateStr);   // re-render (may shift month for spill days)
+      document.querySelectorAll('#tdDateStrip .td-day').forEach(function(d) {
+        d.classList.toggle('on', d.dataset.date === dateStr);
+      });
+      if (typeof _tdUpdateTimeBounds === 'function') _tdUpdateTimeBounds();
+    });
+    grid.appendChild(el);
+  };
+
+  for (var i = firstDow - 1; i >= 0; i--)
+    addDay(daysInPrev - i, fmtDate(year, month - 1, daysInPrev - i), true);
+  for (var d = 1; d <= daysInMo; d++)
+    addDay(d, fmtDate(year, month, d), false);
+  var trailing = (firstDow + daysInMo) % 7;
+  if (trailing) for (var d2 = 1; d2 <= 7 - trailing; d2++)
+    addDay(d2, fmtDate(year, month + 1, d2), true);
 }
 
 // ── #s-visibility globals ──────────────────────────────────────────
@@ -14805,20 +14880,8 @@ document.addEventListener('DOMContentLoaded', function() {
     _tdBuildCalGrid(y, m, _tdCalSelDate);
   });
 
-  var calGrid = document.getElementById('tdCalGrid');
-  if (calGrid) {
-    calGrid.addEventListener('click', function(e) {
-      var cell = e.target.closest('.td-cal-cell:not(.empty)');
-      if (!cell) return;
-      if (cell.classList.contains('disabled')) { _tdPastMsg(); return; }  // past date — not selectable
-      _tdCalSelDate = cell.dataset.date;
-      calGrid.querySelectorAll('.td-cal-cell').forEach(function(c) { c.classList.remove('on'); });
-      cell.classList.add('on');
-      document.querySelectorAll('#tdDateStrip .td-day').forEach(function(d) {
-        d.classList.toggle('on', d.dataset.date === _tdCalSelDate);
-      });
-    });
-  }
+  // Calendar day selection is wired per-cell inside _tdBuildCalGrid (clone of
+  // the Today drawer), so no delegated handler is needed here.
 
   // גרירה רציפה — mouse + touch על כל ה-slot
   var _tdDrag = {active: false, isHour: false, startY: 0, accum: 0};
@@ -14843,6 +14906,7 @@ document.addEventListener('DOMContentLoaded', function() {
     var mm = parseInt((document.getElementById('tdMinDigit') ||{}).textContent||'0',10)||0;
     _tdSetPeriodPill(hh * 60 + mm);
     _tdSetReminderSectionDisabled(false);
+    if (typeof _tdUpdateTimeBounds === 'function') _tdUpdateTimeBounds();
   }
 
   var hourDigit = document.getElementById('tdHourDigit');
@@ -14903,6 +14967,7 @@ document.addEventListener('DOMContentLoaded', function() {
             var pk = document.getElementById('tdTimePicker');
             if (pk) pk.classList.remove('td-no-time');
             _tdSetPeriodPill(task.mins);
+            if (typeof _tdUpdateTimeBounds === 'function') _tdUpdateTimeBounds();
           }
         });
       }
@@ -15173,6 +15238,11 @@ function splitSave() {
     if (!day) return;
     document.querySelectorAll('#tdDateStrip .td-day').forEach(function(d) { d.classList.remove('on'); });
     day.classList.add('on');
+    // Keep the calendar grid + time bounds in sync with the strip selection
+    _tdCalSelDate = day.dataset.date;
+    var _dp = day.dataset.date.split('-');
+    if (typeof _tdBuildCalGrid === 'function') _tdBuildCalGrid(+_dp[0], +_dp[1] - 1, day.dataset.date);
+    if (typeof _tdUpdateTimeBounds === 'function') _tdUpdateTimeBounds();
   });
 
   // #s-time-date: כפתור "ללא שעה"
@@ -15191,6 +15261,7 @@ function splitSave() {
         _tdSetPeriodPill(hh * 60 + mm);
       }
       _tdSetReminderSectionDisabled(_tdNoTime);
+      if (typeof _tdUpdateTimeBounds === 'function') _tdUpdateTimeBounds();
     });
   }
 
@@ -15207,10 +15278,14 @@ function splitSave() {
     // Past-time guard: when the selected date is today, block stepping to a
     // time earlier than now (forward steps stay allowed). An unchanged existing
     // value is still allowed (display of an already-saved past time).
+    // Past-time guard: when the selected date is today, never step to a time
+    // earlier than now (forward steps allowed; the down chevrons are greyed via
+    // _tdUpdateTimeBounds so this mainly catches drag/wheel). An unchanged
+    // existing value stays allowed (display of an already-saved past time).
     var iso = _tdSelectedIso();
     if (_tdIsToday(iso)) {
       var cand = nhh * 60 + nmm;
-      if (cand < _tdNowMins() && cand !== _tdOrigMins) { _tdPastMsg(); return; }
+      if (cand < _tdNowMins() && cand !== _tdOrigMins) { return; }
     }
     hEl.textContent = String(nhh).padStart(2,'0');
     mEl.textContent = String(nmm).padStart(2,'0');
@@ -15219,9 +15294,10 @@ function splitSave() {
     if (picker) picker.classList.remove('td-no-time');
     var ntb = document.getElementById('tdNoTimeBtn');
     if (ntb) ntb.classList.remove('no-time-on');
-    var hh = parseInt((document.getElementById('tdHourDigit') || {}).textContent || '0', 10) || 0;
-    var mm = parseInt((document.getElementById('tdMinDigit')  || {}).textContent || '0', 10) || 0;
-    if (typeof _tdSetPeriodPill === 'function') _tdSetPeriodPill(hh * 60 + mm);
+    var hh2 = parseInt((document.getElementById('tdHourDigit') || {}).textContent || '0', 10) || 0;
+    var mm2 = parseInt((document.getElementById('tdMinDigit')  || {}).textContent || '0', 10) || 0;
+    if (typeof _tdSetPeriodPill === 'function') _tdSetPeriodPill(hh2 * 60 + mm2);
+    if (typeof _tdUpdateTimeBounds === 'function') _tdUpdateTimeBounds();
     // עדכון פופאפ חזרה בזמן אמת
     var activeRecurChip = document.querySelector('#tdRecurChips .td-optfull-chip.on');
     if (activeRecurChip && typeof _tdUpdateRecurPopup === 'function') {
