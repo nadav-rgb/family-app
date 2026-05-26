@@ -6373,7 +6373,9 @@ function parsedToTask(p, idx) {
   const dateStr      = p.date && p.date.date
     ? dateToYMD(p.date.date)
     : todayDate();
-  const defaultVisibleTo = _defaultVisibleToIds();
+  const defaultVisibleTo = DataAdapter.isFamily()
+    ? [assignedToMemberId].filter(Boolean)
+    : _defaultVisibleToIds();
   return {
     id:                    DataAdapter.isFamily() ? _genCode(16) : Date.now() + idx,
     title:                 p.title,
@@ -6420,7 +6422,9 @@ function aiParsedToTask(t, idx) {
     mins = h * 60 + m;
   }
 
-  const defaultVisibleTo = _defaultVisibleToIds();
+  const defaultVisibleTo = DataAdapter.isFamily()
+    ? [assignedToMemberId].filter(Boolean)
+    : _defaultVisibleToIds();
   return {
     id:                    DataAdapter.isFamily() ? _genCode(16) : Date.now() + idx,
     title:                 t.title,

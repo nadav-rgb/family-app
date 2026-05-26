@@ -23,42 +23,56 @@ Return this exact structure:
   "needsReview": false
 }
 
-━━━ SPLITTING — the most important part ━━━
+━━━ SPLITTING — read carefully ━━━
 
-Hebrew speakers chain multiple tasks in one breath without "ו" or commas.
-Every independent infinitive verb is a potential new task — even with no separator.
+DEFAULT BIAS: prefer FEWER tasks. When in doubt, return ONE task.
+Do NOT split just because the sentence has several verbs. Multiple verbs that share
+the same object/topic are usually ONE task — or several tasks that ALL refer to that
+same thing. Splitting by verb alone produces context-less garbage.
 
-RULE: Each new action verb that describes a distinct action = start of a NEW task.
+Split into separate tasks ONLY when each part is a genuinely independent action that
+stands on its own AND is meaningful without the others.
 
-Example — this transcript has THREE tasks:
+SELF-CONTAINED RULE (critical): every task title MUST be understandable on its own.
+If several verbs share a common object/topic, that shared context MUST be repeated in
+EACH split title — never emit a bare, context-stripped verb.
+  Input:  "הרצאה של שחר לייבו לבדוק חומר להכין"
+  The shared topic is "חומר להרצאה של שחר לייבו". Two acceptable outputs:
+    • ONE task:  "להכין ולבדוק חומר להרצאה של שחר לייבו"   ← prefer this when unsure
+    • TWO tasks: "לבדוק חומר להרצאה של שחר לייבו"
+                 "להכין חומר להרצאה של שחר לייבו"
+  FORBIDDEN: ["לבדוק", "להכין"] — bare verbs with the context stripped away.
+
+NEVER output a title that is only a verb with no clear object, e.g. "להכין", "לבדוק",
+"לקנות", "לסדר", "להביא". If you cannot attach a clear object from the transcript,
+merge that verb into the related task instead of emitting it alone.
+
+Clear multi-task example (each part independent AND self-contained):
   Input:  "להתקשר לאמא לקבוע תור לרופא שיניים מחר בתשע וללכת לבנק בשתיים"
   Output:
-    task 1: title="להתקשר לאמא",                 mins=null, date="tomorrow"
-    task 2: title="לקבוע תור לרופא שיניים",       mins=540,  date="tomorrow"
-    task 3: title="ללכת לבנק",                    mins=840,  date="tomorrow"
-  Note: "מחר" (tomorrow) and "בשתיים" (14:00) are inherited where they belong.
-  Note: "להתקשר" and "לקבוע" are two separate actions → two tasks.
+    task 1: title="להתקשר לאמא לקבוע תור לרופא שיניים", mins=540, date="tomorrow"
+    task 2: title="ללכת לבנק",                          mins=840, date="tomorrow"
+  Note: the call and its purpose (קביעת התור) are one errand → one task.
+  Note: "מחר" (tomorrow) is inherited; times attach to their adjacent task.
 
-EXCEPTION — movement verb + immediate purpose = ONE task (not two):
-  "לנסוע לסופר לקנות ירקות"  → ONE task: "לנסוע לסופר לקנות ירקות"
-  "ללכת לבנק לשלם"           → ONE task: "ללכת לבנק לשלם"
+EXCEPTION — movement verb + immediate purpose = ONE task:
+  "לנסוע לסופר לקנות ירקות" → ONE task: "לנסוע לסופר לקנות ירקות"
   Movement verbs: ללכת, לנסוע, לצאת, לקפוץ, לעלות, לרדת, לחזור, לטוס, לרוץ
 
-EXCEPTION — one verb + multiple objects (ו connects objects, not verbs) = ONE task:
-  "לקנות חלב וביצים"       → ONE task (one shopping action, two items)
-  "להכין תיק ואוכל לילד"  → ONE task (one verb, two objects — "אוכל" is a noun here)
-  Rule: only split when BOTH sides of ו have their own independent infinitive verb (ל + verb).
-  If the word after ו is a noun, adjective, or object — do NOT split.
+EXCEPTION — one verb + multiple objects = ONE task:
+  "לקנות חלב וביצים" → ONE task (one action, two items)
+  "להכין תיק ואוכל לילד" → ONE task ("אוכל" is a noun, not a verb)
 
 EXCEPTION — communication verb + content/purpose verb = ONE task:
   "להתקשר לאמא ולהגיד לה מזל טוב" → ONE task (the message is the purpose of the call)
-  "להתקשר לאבא ולשאול מה שלומו"   → ONE task (the question is the purpose of the call)
   Communication verbs: להתקשר, לצלצל, לשלוח, לכתוב, לדבר, לפנות
   Content verbs (purpose): להגיד, לשאול, לספר, לבשר, לברר, לומר
 
 EXCEPTION — subordinate clause = no split:
   "להתקשר לגן ולבקש שישלחו את הטופס" → ONE task (לבקש is subordinate to להתקשר)
-  Signal: verb preceded by "ש" + conjugated prefix (שי, שת, שנ, שא)
+
+When the boundary between one task and two is genuinely unclear, return ONE task and
+set its confidence below 0.7 so the user is prompted to review.
 
 Date/time inheritance:
   DATE carries forward ("מחר", "היום") — inherit to ALL tasks in the same sentence.

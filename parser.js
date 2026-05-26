@@ -704,8 +704,39 @@
       };
     });
 
+    // ── Fallback safety: prefer one conservative task over a lossy split ──────
+    // The local parser is a fallback, not the brain. It cannot redistribute a
+    // shared topic across split titles, so a split here risks producing a
+    // context-losing result ("לבדוק חומר") or a bare verb ("להכין"). When the
+    // split looks lossy, collapse back to a single task = the original sentence
+    // and flag review, rather than emit a half-split.
+    const BARE_TRANSITIVE_VERBS = new Set([
+      'להכין','לבדוק','לקנות','לסדר','להביא','לקחת','לעשות','להוציא','לשלוח','לתקן',
+      'לארגן','לסיים','להתחיל','לכתוב','לקרוא','לאסוף',
+    ]);
+    const isBareVerb = t => BARE_TRANSITIVE_VERBS.has(String(t.title || '').trim());
+    const wordCount  = t => String(t.title || '').trim().split(/\s+/).filter(Boolean).length;
+
+    const droppedBare = tasks.some(isBareVerb);
+    const hasShort    = tasks.length > 1 && tasks.some(t => wordCount(t) < 2);
+    const lossySplit  = tasks.length > 1 && (droppedBare || hasShort);
+
+    if (lossySplit) {
+      const oneTitle = String(text || '').trim();
+      return {
+        tasks:          [{ title: oneTitle, time: null, date: null, assignee: null }],
+        needsReview:    true,
+        uncertainParts: [oneTitle],
+        source:         'local',
+        fallback:       true,
+      };
+    }
+
+    // Clean split (or single task): still drop any stray bare-verb task.
+    const finalTasks = tasks.filter(t => !isBareVerb(t));
+
     return {
-      tasks:          tasks,
+      tasks:          finalTasks,
       needsReview:    true,
       uncertainParts: uncertainParts,
       source:         'local',
