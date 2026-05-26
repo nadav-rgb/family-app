@@ -24,56 +24,37 @@ Return this exact structure:
   "needsReview": false
 }
 
-━━━ SPLITTING — read carefully ━━━
+━━━ SPLITTING ━━━
 
-DEFAULT BIAS: prefer FEWER tasks. When in doubt, return ONE task.
-Do NOT split just because the sentence has several verbs. Multiple verbs that share
-the same object/topic are usually ONE task — or several tasks that ALL refer to that
-same thing. Splitting by verb alone produces context-less garbage.
+ALWAYS return at least one task when the transcript contains any action.
+Return "tasks": [] ONLY if there is genuinely no action at all (e.g. just a greeting).
 
-Split into separate tasks ONLY when each part is a genuinely independent action that
-stands on its own AND is meaningful without the others.
+How many tasks:
+  • Most sentences are ONE task. Only create a second task when the sentence clearly
+    contains a second, independent action that makes sense on its own.
+  • Do not split a sentence just because it has several verbs — verbs that share the
+    same object or topic belong together.
+  • When unsure whether it is one task or two, return ONE task.
 
-SELF-CONTAINED RULE (critical): every task title MUST be understandable on its own.
-If several verbs share a common object/topic, that shared context MUST be repeated in
-EACH split title — never emit a bare, context-stripped verb.
-  Input:  "הרצאה של שחר לייבו לבדוק חומר להכין"
-  The shared topic is "חומר להרצאה של שחר לייבו". Two acceptable outputs:
-    • ONE task:  "להכין ולבדוק חומר להרצאה של שחר לייבו"   ← prefer this when unsure
-    • TWO tasks: "לבדוק חומר להרצאה של שחר לייבו"
+Each task title must make sense on its own. If you do split and the parts share a
+topic, include that shared topic in every title (don't leave a bare verb like "להכין").
+
+Examples:
+  "לקנות חלב"        → ONE task: "לקנות חלב"
+  "להתקשר לאמא"      → ONE task: "להתקשר לאמא"
+  "לבדוק חומר ב-11"  → ONE task: "לבדוק חומר", mins=660 (11:00)
+  "הרצאה של שחר לייבו לבדוק חומר להכין" → shared topic is "חומר להרצאה של שחר לייבו":
+      ONE task:  "להכין ולבדוק חומר להרצאה של שחר לייבו"   (preferred)
+      or TWO:    "לבדוק חומר להרצאה של שחר לייבו"
                  "להכין חומר להרצאה של שחר לייבו"
-  FORBIDDEN: ["לבדוק", "להכין"] — bare verbs with the context stripped away.
+  "לקנות חלב לשלם חשבון חשמל" → TWO independent tasks: "לקנות חלב" + "לשלם חשבון חשמל"
 
-NEVER output a title that is only a verb with no clear object, e.g. "להכין", "לבדוק",
-"לקנות", "לסדר", "להביא". If you cannot attach a clear object from the transcript,
-merge that verb into the related task instead of emitting it alone.
-
-Clear multi-task example (each part independent AND self-contained):
-  Input:  "להתקשר לאמא לקבוע תור לרופא שיניים מחר בתשע וללכת לבנק בשתיים"
-  Output:
-    task 1: title="להתקשר לאמא לקבוע תור לרופא שיניים", mins=540, date="tomorrow"
-    task 2: title="ללכת לבנק",                          mins=840, date="tomorrow"
-  Note: the call and its purpose (קביעת התור) are one errand → one task.
-  Note: "מחר" (tomorrow) is inherited; times attach to their adjacent task.
-
-EXCEPTION — movement verb + immediate purpose = ONE task:
-  "לנסוע לסופר לקנות ירקות" → ONE task: "לנסוע לסופר לקנות ירקות"
-  Movement verbs: ללכת, לנסוע, לצאת, לקפוץ, לעלות, לרדת, לחזור, לטוס, לרוץ
-
-EXCEPTION — one verb + multiple objects = ONE task:
-  "לקנות חלב וביצים" → ONE task (one action, two items)
-  "להכין תיק ואוכל לילד" → ONE task ("אוכל" is a noun, not a verb)
-
-EXCEPTION — communication verb + content/purpose verb = ONE task:
-  "להתקשר לאמא ולהגיד לה מזל טוב" → ONE task (the message is the purpose of the call)
-  Communication verbs: להתקשר, לצלצל, לשלוח, לכתוב, לדבר, לפנות
-  Content verbs (purpose): להגיד, לשאול, לספר, לבשר, לברר, לומר
-
-EXCEPTION — subordinate clause = no split:
-  "להתקשר לגן ולבקש שישלחו את הטופס" → ONE task (לבקש is subordinate to להתקשר)
-
-When the boundary between one task and two is genuinely unclear, return ONE task and
-set its confidence below 0.7 so the user is prompted to review.
+Keep together as ONE task (do not split):
+  • Movement + its purpose:   "לנסוע לסופר לקנות ירקות"
+    Movement verbs: ללכת, לנסוע, לצאת, לקפוץ, לעלות, לרדת, לחזור, לטוס, לרוץ
+  • One verb + several objects: "לקנות חלב וביצים"  ("אוכל"/"חלב" are objects, not verbs)
+  • Call + its message:        "להתקשר לאמא ולהגיד לה מזל טוב"
+  • Subordinate clause:        "להתקשר לגן ולבקש שישלחו את הטופס"
 
 Date/time inheritance:
   DATE carries forward ("מחר", "היום") — inherit to ALL tasks in the same sentence.
