@@ -174,8 +174,9 @@ async function parseWithOpenAI(transcript, context = {}) {
     `Transcript: "${transcript}"`,
   ].filter(Boolean).join('\n');
 
+  const model = process.env.OPENAI_PARSE_MODEL || process.env.OPENAI_MODEL || 'gpt-4o-mini';
   const completion = await client.chat.completions.create({
-    model:           process.env.OPENAI_PARSE_MODEL || process.env.OPENAI_MODEL || 'gpt-4o-mini',
+    model,
     messages:        [
       { role: 'system', content: SYSTEM_PROMPT },
       { role: 'user',   content: userMsg },
@@ -192,6 +193,11 @@ async function parseWithOpenAI(transcript, context = {}) {
   return {
     rawTasks:    parsed.tasks.map(normalizeTask),
     needsReview: !!parsed.needsReview,
+    // Debug-only extras (ignored unless the handler is in debug mode). No secrets.
+    _model:      model,
+    _finishReason: completion.choices[0]?.finish_reason || null,
+    _raw:        raw,
+    _parsed:     parsed,
   };
 }
 

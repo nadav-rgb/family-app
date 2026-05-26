@@ -175,8 +175,9 @@ async function parseWithClaude(transcript, context = {}) {
     `Transcript: "${transcript}"`,
   ].filter(Boolean).join('\n');
 
+  const model = process.env.AI_MODEL || 'claude-haiku-4-5-20251001';
   const message = await client.messages.create({
-    model:      process.env.AI_MODEL || 'claude-haiku-4-5-20251001',
+    model,
     max_tokens: 1024,
     system:     SYSTEM_PROMPT,
     messages:   [{ role: 'user', content: userMsg }],
@@ -192,6 +193,11 @@ async function parseWithClaude(transcript, context = {}) {
   return {
     rawTasks:    parsed.tasks.map(normalizeTask),
     needsReview: !!parsed.needsReview,
+    // Debug-only extras (ignored unless the handler is in debug mode). No secrets.
+    _model:        model,
+    _stopReason:   message.stop_reason || null,
+    _raw:          raw,
+    _parsed:       parsed,
   };
 }
 

@@ -58,7 +58,7 @@ module.exports = async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { transcript, lang = 'he', date, time } = req.body || {};
+  const { transcript, lang = 'he', date, time, debug } = req.body || {};
 
   if (!transcript || typeof transcript !== 'string' || !transcript.trim()) {
     return res.status(400).json({ error: 'transcript is required' });
@@ -97,22 +97,42 @@ module.exports = async function handler(req, res) {
     const tasks      = cleaned.filter(t => !isContextlessTitle(t.title));
     const droppedAny = tasks.length !== cleaned.length;
 
-    return res.status(200).json({
+    const response = {
       tasks,
       needsReview:    raw.needsReview || droppedAny,
       uncertainParts,
       source:         'ai',
       fallback:       false,
-    });
+    };
+
+    // TEMPORARY debug output — only when caller passes debug:true. No secrets,
+    // no env, no API keys. Remove in the follow-up cleanup commit.
+    if (debug === true) {
+      const dropped = cleaned.filter(t => isContextlessTitle(t.title)).map(t => t.title);
+      response.debug = {
+        provider:              PROVIDER,
+        model:                 raw._model || null,
+        finishReason:          raw._finishReason || raw._stopReason || null,
+        rawAIResponse:         raw._raw || null,
+        parsedBeforeNormalize: raw._parsed || null,
+        normalizedTasks:       raw.rawTasks,
+        droppedContextless:    dropped,
+        assigneeFromPreamble,
+      };
+    }
+
+    return res.status(200).json(response);
   } catch (err) {
     console.error('[parse-tasks] error:', err.message);
-    return res.status(500).json({
+    const errResponse = {
       error:          'AI parsing failed',
       tasks:          [],
       needsReview:    true,
       uncertainParts: [],
       source:         'ai',
       fallback:       false,
-    });
+    };
+    if (debug === true) errResponse.debug = { provider: PROVIDER, errorMessage: err.message };
+    return res.status(500).json(errResponse);
   }
 };
