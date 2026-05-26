@@ -10743,6 +10743,17 @@ function _overdueOffsets() {
   var p = _loadNotifPrefs();
   return (Array.isArray(p.overdueOffsets) && p.overdueOffsets.length) ? p.overdueOffsets : [5, 10, 15];
 }
+// Hebrew sub-label describing the chosen overdue stages — kept in sync with the
+// Notifications screen so other screens (e.g. the visibility card) match it.
+function _overdueOffsetsLabel() {
+  var p = _loadNotifPrefs();
+  if (!p.overdueRemindersOn) return 'תזכורות איחור כבויות';
+  var offs = _overdueOffsets();
+  var nums = (offs.length === 1)
+    ? offs[0] + ' דקות'
+    : offs.slice(0, -1).join(', ') + ' ו-' + offs[offs.length - 1] + ' דקות';
+  return nums + ' לאחר הזמן המתוכנן';
+}
 
 function _saveNotifPrefs(prefs) {
   try { localStorage.setItem(NOTIF_PREFS_KEY, JSON.stringify(prefs)); } catch (_) {}
@@ -14934,6 +14945,17 @@ function renderVisibility() {
 
   _visSetFilter('see',    'custom');
   _visSetFilter('notify', 'custom');
+  // Sync the "send another reminder if not done" card with the overdue stages
+  // chosen in the Notifications screen (e.g. disabling 5 → "10 ו-15 דקות …").
+  try {
+    var _ovRow = document.getElementById('visOptReminderRow');
+    if (_ovRow) {
+      var _ovSub = _ovRow.querySelector('.vis-opt-sub');
+      if (_ovSub) _ovSub.textContent = _overdueOffsetsLabel();
+      var _ovChk = _ovRow.querySelector('input[type="checkbox"]');
+      if (_ovChk) _ovChk.checked = _loadNotifPrefs().overdueRemindersOn;
+    }
+  } catch (_) {}
   _visUpdateHero();
 }
 // ── end #s-visibility globals ──────────────────────────────────────
