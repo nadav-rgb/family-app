@@ -14198,11 +14198,11 @@ document.getElementById('btnAddMore').addEventListener('click', () => {
   function apply() {
     if (!mq.matches) return;
     var ph = document.querySelectorAll('.phone');
-    // Only shrink the phone when the keyboard is actually open (viewport notably
-    // reduced). At rest, clear the inline height so the CSS 100dvh fill applies
-    // and no gray body shows below the app.
-    var keyboardOpen = (window.innerHeight - vv.height) > 120;
-    for (var i = 0; i < ph.length; i++) ph[i].style.height = keyboardOpen ? (vv.height + 'px') : '';
+    // Always size the phone to the real visible viewport (visualViewport.height).
+    // This is the true visible area — using it keeps the inner scroll container
+    // the right height (so long lists scroll to the end), and the cream body
+    // background covers any device inset so no gray shows.
+    for (var i = 0; i < ph.length; i++) ph[i].style.height = vv.height + 'px';
   }
   function clear() {
     var ph = document.querySelectorAll('.phone');
