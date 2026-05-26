@@ -14086,6 +14086,35 @@ function updateHomProgress() {
     hmTitle.textContent = _greet + (_name ? ', ' + _name : '') + ' ☀️';
   }
 
+  /* hero card — show the next upcoming open task (same pick as the portrait) */
+  var hmText = document.querySelector('#hmProgressCard .hm-text');
+  if (hmText) {
+    var hmH2   = hmText.querySelector('h2');
+    var hmLead = hmText.querySelector('.hm-lead');
+    var nextUp = tasks.find(function(t){ return !t.completed && t.mins != null; })
+              || tasks.find(function(t){ return !t.completed; });
+    var setH2 = function(txt){
+      if (!hmH2) return;
+      hmH2.innerHTML = '';
+      var sp = document.createElement('span');
+      sp.textContent = txt;
+      hmH2.appendChild(sp);
+    };
+    if (nextUp) {
+      setH2(nextUp.subItems && nextUp.subItems.mainTitle ? nextUp.subItems.mainTitle : nextUp.title);
+      if (hmLead) {
+        var parts = ['הבא בתור'];
+        if (nextUp.mins != null && typeof m2t === 'function') parts.push('בשעה ' + m2t(nextUp.mins));
+        var owner = (typeof _taskDisplayName === 'function') ? _taskDisplayName(nextUp) : '';
+        if (owner) parts.push(owner);
+        hmLead.textContent = parts.join(' · ');
+      }
+    } else {
+      setH2('אין משימות פתוחות להיום');
+      if (hmLead) hmLead.textContent = total > 0 ? 'כל המשימות להיום הושלמו 🎉' : 'הוסיפו משימה כדי להתחיל';
+    }
+  }
+
   /* inject icon boxes into rendered task cards */
   _hmInjectIconBoxes();
   updateHmPortrait();
