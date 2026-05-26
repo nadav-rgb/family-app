@@ -110,6 +110,7 @@ module.exports = async function handler(req, res) {
     if (debug === true) {
       const dropped = cleaned.filter(t => isContextlessTitle(t.title)).map(t => t.title);
       response.debug = {
+        buildMarker:           'prompt-v2',
         provider:              PROVIDER,
         model:                 raw._model || null,
         finishReason:          raw._finishReason || raw._stopReason || null,
