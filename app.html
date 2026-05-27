@@ -14085,8 +14085,17 @@ _applyLang();
 _capInit().then(() => _capRescheduleAll()).catch(() => {});
 // Preview-only: ?previewFirstRun=1 forces the onboarding screen for visual
 // review. Pure UI — touches no data, no family state, no listeners.
+const _urlJoinCode = (new URLSearchParams(location.search).get('code') || '')
+  .toUpperCase().replace(/[^A-Z2-9]/g, '').slice(0, 6);
 if (/[?&]previewFirstRun=1/.test(location.search)) {
   _showFirstRunScreen();
+} else if (_urlJoinCode) {
+  // Invite-link deep link — ALWAYS open the join flow with the code pre-filled,
+  // even if this device already belongs to a group. Clicking an invite clearly
+  // means "join this group", so we never silently auto-enter the previous one
+  // (which is what made a returning tester land in their old data).
+  _showFirstRunScreen();
+  try { _frGoto('join'); _frPrefillJoinCode(_urlJoinCode); } catch (e) {}
 } else if (DataAdapter.isFamily()) {
   _loadFamilyMembersCache();
   // While in the 72h post-reset recovery window, do NOT auto-sync — the wipe
@@ -14102,13 +14111,6 @@ if (/[?&]previewFirstRun=1/.test(location.search)) {
   // Fresh install / no family identity — force the onboarding gate so the app
   // never auto-enters a seeded/default family.
   _showFirstRunScreen();
-  // Invite-link deep link: /join?code=XXXX → open straight on the join step
-  // with the code pre-filled, so the recipient just adds their name and joins.
-  const _joinCode = (new URLSearchParams(location.search).get('code') || '')
-    .toUpperCase().replace(/[^A-Z2-9]/g, '').slice(0, 6);
-  if (_joinCode) {
-    try { _frGoto('join'); _frPrefillJoinCode(_joinCode); } catch (e) {}
-  }
 }
 try { _updateRecoveryBanner(); } catch (e) { console.warn('recovery banner failed', e); }
 try { _syncSettingsDeviceMember(); } catch (e) { console.warn('settings device member sync failed', e); }
