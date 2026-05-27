@@ -2,6 +2,25 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
+<!-- Tester reset: opening any URL with ?reset=1 wipes local identity, caches
+     and service workers, then reloads into a clean first-run onboarding.
+     Cloud data is NOT touched. Runs first, before any app/Firebase script. -->
+<script>
+(function(){
+  if (!/[?&]reset=1\b/.test(location.search)) return;
+  try { localStorage.clear(); } catch(e){}
+  try { sessionStorage.clear(); } catch(e){}
+  var finish = function(){ location.replace(location.origin + '/app.html?fresh=' + Date.now()); };
+  var jobs = [];
+  if (window.caches && caches.keys) {
+    jobs.push(caches.keys().then(function(ks){ return Promise.all(ks.map(function(k){ return caches.delete(k); })); }));
+  }
+  if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
+    jobs.push(navigator.serviceWorker.getRegistrations().then(function(rs){ return Promise.all(rs.map(function(r){ return r.unregister(); })); }));
+  }
+  (jobs.length ? Promise.all(jobs) : Promise.resolve()).then(finish, finish);
+})();
+</script>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
 <title>Family App</title>
 <!-- PWA: installable + offline + foundation for push notifications -->
