@@ -3721,8 +3721,9 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
       </div>
     </div>
 
-    <!-- Members -->
-    <div class="members">
+    <!-- Members — rendered dynamically from real participants in family mode
+         (_renderFamilyMembersScreen). Static cards below are the demo fallback. -->
+    <div class="members" id="famMembersCards">
       <!-- Card 1 -->
       <div class="mcard">
         <div class="mavatar av-aba" data-avatar-for="member_dad" data-avatar-size="78" onclick="openMemberProfile('member_dad','s-family-members')">
@@ -6646,6 +6647,7 @@ function goto(toId, leaveKf, enterKf, onDone) {
     from.style.cssText = '';
     to.style.animation = '';
     busy = false;
+    if (toId === 's-family-members' && typeof _renderFamilyMembersScreen === 'function') _renderFamilyMembersScreen();
     if (toId === 's-family-members' && typeof syncFamilyMemberColors === 'function') { syncFamilyMemberColors(); if (typeof _mpApplyAllStripes === 'function') _mpApplyAllStripes(); }
     if (toId === 's-settings' && typeof _syncSettingsDeviceMember === 'function') _syncSettingsDeviceMember();
     if (toId === 's-settings' && typeof _renderSettingsMembers === 'function') _renderSettingsMembers();
@@ -9586,8 +9588,11 @@ function activeTasks() {
   const myDynId      = DataAdapter.userId;
   const myMemberId   = DataAdapter.myMemberId;
   const isVisible = t =>
-    (myDynId && t.createdBy === myDynId)
-    || (!DataAdapter.isFamily() && t.createdBy === currentUser)
+    // Real-identity model: a group is a shared space — every member sees every
+    // task in the family. (Per-member visibility can be reintroduced later via
+    // the share screen.) In local/demo mode keep the old creator/visibleTo rule.
+    DataAdapter.isFamily()
+    || (t.createdBy === currentUser)
     || (t.visibleTo && (
          (myDynId    && t.visibleTo.includes(myDynId))
       || t.visibleTo.includes(currentUser)
@@ -12498,8 +12503,12 @@ async function _loadFamilyMembersCache() {
   try {
     const snap = await _db.collection('families').doc(DataAdapter.familyId)
                           .collection('members').get();
+    // Real-identity model: the cache holds the real participant docs (keyed by
+    // userId), not the retired 4-slot demo seed. Normalize displayName→name so
+    // resolveMember/avatar code (which reads .name) keeps working.
     _familyMembersCache = snap.docs.map(d => d.data())
-      .filter(m => IDENTITY_MEMBER_IDS.includes(m.memberId));
+      .filter(m => m && m.userId && !IDENTITY_MEMBER_IDS.includes(m.memberId))
+      .map(m => ({ ...m, memberId: m.memberId || m.userId, name: m.displayName || m.name || 'חבר' }));
     console.log('[DA] members cache loaded:', _familyMembersCache.length);
     try { localStorage.setItem(_MEMBER_CACHE_LS_KEY, JSON.stringify(_familyMembersCache)); } catch(e) {}
     if (typeof _renderAllAvatars === 'function') _renderAllAvatars();
@@ -13597,25 +13606,10 @@ const _ASSIGNEE_TO_MEMBER_ID = {
 };
 
 async function _bootstrapFamilyMembers() {
-  if (!_db || !DataAdapter.isFamily()) return;
-  try {
-    const ref = _db.collection('families').doc(DataAdapter.familyId)
-                   .collection('members').doc('member_dad');
-    const existing = await ref.get();
-    if (existing.exists && existing.data().memberId) {
-      console.log('[Bootstrap] members already seeded — skipping');
-      return;
-    }
-    const batch = _db.batch();
-    const colRef = _db.collection('families').doc(DataAdapter.familyId).collection('members');
-    for (const m of _FAMILY_MEMBERS_SEED) {
-      batch.set(colRef.doc(m.memberId), m);
-    }
-    await batch.commit();
-    console.log('[Bootstrap] seeded 4 family members');
-  } catch (e) {
-    AppLog.warn('Bootstrap', 'bootstrapFamilyMembers failed', e.message || e);
-  }
+  // Real-identity model: groups no longer seed the fixed 4 demo members.
+  // Each device registers itself as a real member (keyed by userId) on
+  // create/join. Kept as a no-op so existing call sites stay harmless.
+  return;
 }
 
 // ─── Family sheet (Phase 2) ───────────────────────────────────────
@@ -13753,6 +13747,9 @@ async function _daCreateFamily(groupName) {
   const userId   = DataAdapter.userId || _genCode(8);
   DataAdapter.setFamily(familyId, userId);
   DataAdapter.setGroupName(groupName); // store locally for display (optional)
+  // Real-identity model: this device IS a real member, keyed by its userId.
+  // No more fixed 4-slot demo seed — the member id is the userId itself.
+  try { localStorage.setItem(MY_MEMBER_ID_KEY, userId); } catch (e) {}
   _renderFamilySheet();
   console.log('[DA] created family', familyId, 'userId', userId);
 
@@ -13771,8 +13768,11 @@ async function _daCreateFamily(groupName) {
     await _db.collection('families').doc(familyId)
              .collection('members').doc(userId).set({
       userId,
-      role:     'owner',
-      joinedAt: ts,
+      memberId:    userId,
+      displayName: DataAdapter.displayName || '',
+      avatar:      { type: 'emoji', value: '👤' },
+      role:        'owner',
+      joinedAt:    ts,
     });
     console.log('[FB] family', familyId, 'written to Firestore');
   } catch (e) {
@@ -13821,20 +13821,31 @@ async function _daJoinFamily(codeArg) {
       const isOwner = (fam.createdBy === userId);
       const count   = (typeof fam.memberCount === 'number') ? fam.memberCount : null;
 
+      const myName = DataAdapter.displayName || '';
       if (isOwner) {
         // Creator always gets/restores owner role; never counts as a new member.
-        tx.set(memberRef, { userId, role: 'owner', joinedAt: ts }, { merge: true });
+        tx.set(memberRef, { userId, memberId: userId, role: 'owner', joinedAt: ts }, { merge: true });
+        if (myName) tx.set(memberRef, { displayName: myName }, { merge: true });
         return 'ok';
       }
       if (memDoc.exists) {
-        // Existing member rejoining — just touch lastSeen, no count change.
-        tx.update(memberRef, { lastSeenAt: ts });
+        // Existing member rejoining — touch lastSeen + keep name fresh.
+        const patch = { lastSeenAt: ts, memberId: userId };
+        if (myName) patch.displayName = myName;
+        tx.update(memberRef, patch);
         return 'ok';
       }
       // Genuinely new member — enforce the cap. count===null means a legacy
       // group created before the counter existed; allow (can't safely cap).
       if (count !== null && count >= GROUP_MEMBER_LIMIT) return 'full';
-      tx.set(memberRef, { userId, role: 'member', joinedAt: ts });
+      tx.set(memberRef, {
+        userId,
+        memberId:    userId,
+        displayName: myName,
+        avatar:      { type: 'emoji', value: '👤' },
+        role:        'member',
+        joinedAt:    ts,
+      });
       tx.update(familyRef, { memberCount: firebase.firestore.FieldValue.increment(1) });
       return 'ok';
     });
@@ -13852,6 +13863,7 @@ async function _daJoinFamily(codeArg) {
 
     DataAdapter.setFamily(code, userId);
     DataAdapter.setGroupName(groupNameFromDoc); // store group name for display
+    try { localStorage.setItem(MY_MEMBER_ID_KEY, userId); } catch (e) {} // real-identity: member id = userId
     console.log('[DA] joined family', code, 'userId', userId);
     _renderFamilySheet();
     _loadFamilyMembersCache();
@@ -13901,6 +13913,7 @@ function _finishFirstRun() {
   try { if (typeof updateTodayTitle === 'function') updateTodayTitle(); } catch (e) {}
   try { if (typeof _renderTodayMembers === 'function') _renderTodayMembers(); } catch (e) {}
   try { if (typeof _renderSettingsMembers === 'function') _renderSettingsMembers(); } catch (e) {}
+  try { if (typeof _renderFamilyMembersScreen === 'function') _renderFamilyMembersScreen(); } catch (e) {}
   try { if (typeof _applyGroupName === 'function') _applyGroupName(); } catch (e) {}
 }
 
@@ -14120,6 +14133,7 @@ try { _syncSettingsDeviceMember(); } catch (e) { console.warn('settings device m
 try { _applyGroupName(); } catch (e) { console.warn('apply group name failed', e); }
 try { if (typeof _renderTodayMembers === 'function') _renderTodayMembers(); } catch (e) { console.warn('render today members failed', e); }
 try { if (typeof _renderSettingsMembers === 'function') _renderSettingsMembers(); } catch (e) { console.warn('render settings members failed', e); }
+try { if (typeof _renderFamilyMembersScreen === 'function') _renderFamilyMembersScreen(); } catch (e) { console.warn('render family members failed', e); }
 if (activeTasks().length > 0) {
   renderToday();
   document.getElementById('s-voice').classList.remove('active');
@@ -15977,6 +15991,18 @@ async function _loadRealParticipants() {
 function _participantName(p, myId) {
   return (p.userId === myId) ? (DataAdapter.displayName || 'אני') : (p.displayName || 'חבר');
 }
+// Inner HTML for a participant circle: real photo if set, else a colored
+// initial-letter badge. sizePx drives the emoji/photo sizing.
+function _participantAvatarInner(p, name, gradIdx, sizePx) {
+  const av = p.avatar;
+  if (av && (av.type === 'photo' || av.type === 'ai-photo') && av.url) {
+    return renderAvatarHTML(av, sizePx);
+  }
+  const letter = (name || '👤').trim().charAt(0) || '👤';
+  const grad   = _MEMBER_GRADS[gradIdx % _MEMBER_GRADS.length];
+  const fs     = Math.round((Number(sizePx) || 54) * 0.42);
+  return `<span style="width:100%;height:100%;border-radius:inherit;display:flex;align-items:center;justify-content:center;background:${grad};color:#fff;font-weight:800;font-size:${fs}px;">${letter}</span>`;
+}
 async function _renderTodayMembers() {
   if (!DataAdapter.isFamily()) return; // demo mode keeps the static strip
   const strip = document.querySelector('#s-today .t-avatars');
@@ -15984,11 +16010,10 @@ async function _renderTodayMembers() {
   const myId = DataAdapter.userId;
   const participants = await _loadRealParticipants();
   strip.innerHTML = participants.map((p, i) => {
-    const name   = _participantName(p, myId);
-    const letter = (name || '👤').trim().charAt(0) || '👤';
-    const grad   = _MEMBER_GRADS[i % _MEMBER_GRADS.length];
-    return `<div class="t-mem">
-      <div class="t-av online" style="background:${grad};color:#fff;font-weight:800;">${letter}</div>
+    const name  = _participantName(p, myId);
+    const inner = _participantAvatarInner(p, name, i, 54);
+    return `<div class="t-mem" onclick="openMemberProfile('${p.userId}','s-today')">
+      <div class="t-av online" style="overflow:hidden;">${inner}</div>
       <span class="t-avname">${name}</span>
     </div>`;
   }).join('');
@@ -16000,15 +16025,41 @@ async function _renderSettingsMembers() {
   const myId = DataAdapter.userId;
   const participants = await _loadRealParticipants();
   card.innerHTML = participants.map((p, i) => {
-    const isMe   = p.userId === myId;
-    const name   = _participantName(p, myId);
-    const letter = (name || '👤').trim().charAt(0) || '👤';
-    const grad   = _MEMBER_GRADS[i % _MEMBER_GRADS.length];
-    return `<div class="member${isMe ? ' active' : ''}">
-      <div class="ava-circle" style="background:${grad};color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:24px;">${letter}
+    const isMe  = p.userId === myId;
+    const name  = _participantName(p, myId);
+    const inner = _participantAvatarInner(p, name, i, 56);
+    return `<div class="member${isMe ? ' active' : ''}" onclick="openMemberProfile('${p.userId}','s-settings')">
+      <div class="ava-circle" style="overflow:hidden;">${inner}
         <span class="badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg></span>
       </div>
       <div class="ava-name">${name}</div>
+    </div>`;
+  }).join('');
+}
+
+async function _renderFamilyMembersScreen() {
+  if (!DataAdapter.isFamily()) return; // demo mode keeps the static cards
+  const wrap = document.getElementById('famMembersCards');
+  if (!wrap) return;
+  const myId = DataAdapter.userId;
+  const participants = await _loadRealParticipants();
+  wrap.innerHTML = participants.map((p, i) => {
+    const isMe  = p.userId === myId;
+    const name  = _participantName(p, myId);
+    const inner = _participantAvatarInner(p, name, i, 78);
+    const roleLabel = (p.role === 'owner') ? 'מנהל/ת הקבוצה' : 'חבר/ה';
+    const crown = (p.role === 'owner')
+      ? '<span class="icn-mini crown" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 17 L5 8 L9.5 12 L12 6 L14.5 12 L19 8 L21 17 Z"/></svg></span>'
+      : '';
+    return `<div class="mcard">
+      <div class="mavatar" style="overflow:hidden;" onclick="openMemberProfile('${p.userId}','s-family-members')">${inner}</div>
+      <div class="mbody">
+        <div class="name-row">
+          <div class="name">${name}</div>
+          ${isMe ? '<span class="me-pill">המכשיר הזה</span>' : ''}
+        </div>
+        <div class="meta-row"><span>${roleLabel}</span>${crown}</div>
+      </div>
     </div>`;
   }).join('');
 }
