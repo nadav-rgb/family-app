@@ -3781,8 +3781,8 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
     </div>
 
     <!-- Add member → invite screen -->
-    <div class="add-card" style="cursor:pointer;" onclick="_inviteReturnScreen='s-family-members';goto('s-invite-member','txSlideIn','txSlideOut')">
-      <button class="add-plus" type="button" aria-label="הזמן" onclick="event.stopPropagation();_inviteReturnScreen='s-family-members';goto('s-invite-member','txSlideIn','txSlideOut')">
+    <div class="add-card" style="cursor:pointer;" onclick="_inviteReturnScreen='s-family-members';_inviteFromOnboarding=false;goto('s-invite-member','txSlideIn','txSlideOut')">
+      <button class="add-plus" type="button" aria-label="הזמן" onclick="event.stopPropagation();_inviteReturnScreen='s-family-members';_inviteFromOnboarding=false;goto('s-invite-member','txSlideIn','txSlideOut')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
       </button>
       <div class="add-text">
@@ -3961,9 +3961,14 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
       </div>
       <div class="privacy-body">
         <div class="privacy-title">פרטי ופרטיות</div>
-        <div class="privacy-sub">בן המשפחה ימלא בעצמו את פרטיו לאחר ההצטרפות.</div>
+        <div class="privacy-sub">חברי הקבוצה ימלאו בעצמם את פרטיהם לאחר ההצטרפות.</div>
       </div>
     </div>
+
+    <!-- Continue into the app — shown only when reached from onboarding-create -->
+    <button id="inviteContinueBtn" type="button" onclick="inviteContinueToApp()" style="display:none;width:100%;margin-top:20px;padding:15px;border:none;border-radius:14px;background:#2EC4B6;color:#fff;font-family:inherit;font-size:16px;font-weight:800;cursor:pointer;box-shadow:0 6px 16px rgba(46,196,182,.32);">
+      המשך לאפליקציה
+    </button>
 
   </div>
 </div>
@@ -13888,6 +13893,7 @@ async function _firstRunCreate() {
     try {
       const landing = (document.querySelector('.app-screen.active') || {}).id || 's-today';
       _inviteReturnScreen = landing;
+      _inviteFromOnboarding = true;
       goto('s-invite-member', 'txSlideIn', 'txSlideOut');
     } catch (e) {}
   }
@@ -15886,14 +15892,24 @@ function inviteViaShare() {
 // screen (settings → 's-family-members'; onboarding-create → the screen the
 // user was actually on). Defaults to settings for safety.
 let _inviteReturnScreen = 's-family-members';
+// True when the invite screen was opened as the last step of creating a group
+// (onboarding). In that case we show an explicit "continue to app" CTA so the
+// user isn't forced to use the back arrow to enter the app.
+let _inviteFromOnboarding = false;
 function inviteGoBack() {
   goto(_inviteReturnScreen || 's-family-members', 'txSlideOut', 'txSlideIn');
+}
+function inviteContinueToApp() {
+  _inviteFromOnboarding = false;
+  goto(_inviteReturnScreen || 's-today', 'txSlideOut', 'txSlideIn');
 }
 
 function _inviteScreenEnter() {
   const codeEl = document.getElementById('inviteFamilyCode');
   if (codeEl) codeEl.textContent = _inviteGetCode();
   try { _applyGroupName(); } catch (e) {}
+  const contBtn = document.getElementById('inviteContinueBtn');
+  if (contBtn) contBtn.style.display = _inviteFromOnboarding ? 'block' : 'none';
 }
 
 // Render the (optional) group name into the settings header kicker and the
