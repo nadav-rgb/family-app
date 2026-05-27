@@ -3586,7 +3586,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
     <!-- Header -->
     <div class="header">
       <div class="head-text">
-        <span class="kicker"><span>מרחב משותף</span> <span aria-hidden="true">✨</span></span>
+        <span class="kicker"><span>מרחב משפחתי</span> <span aria-hidden="true">✨</span></span>
         <h1 class="title">הגדרות</h1>
       </div>
       <button class="bell" aria-label="התראות" type="button" onclick="openBellPanel()">
@@ -3598,8 +3598,8 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
     <!-- Family hero card -->
     <div class="fam-card">
       <div class="fam-text">
-        <div class="fam-name"><span id="settingsGroupName">המרחב שלי</span> <span class="heart" aria-hidden="true">💗</span></div>
-        <div class="fam-desc">מרחב משותף<br/>לנהל, לתכנן ולדאוג אחד לשני</div>
+        <div class="fam-name"><span>משפחת לבון</span> <span class="heart" aria-hidden="true">💗</span></div>
+        <div class="fam-desc">מרחב משפחתי משותף<br/>לנהל, לתכנן ולדאוג אחד לשני</div>
       </div>
       <div class="fam-avatar" data-avatar-bind="me" data-avatar-size="78"><div data-avatar-slot></div></div>
     </div>
@@ -3721,9 +3721,8 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
       </div>
     </div>
 
-    <!-- Members — rendered dynamically from real participants in family mode
-         (_renderFamilyMembersScreen). Static cards below are the demo fallback. -->
-    <div class="members" id="famMembersCards">
+    <!-- Members -->
+    <div class="members">
       <!-- Card 1 -->
       <div class="mcard">
         <div class="mavatar av-aba" data-avatar-for="member_dad" data-avatar-size="78" onclick="openMemberProfile('member_dad','s-family-members')">
@@ -6647,10 +6646,8 @@ function goto(toId, leaveKf, enterKf, onDone) {
     from.style.cssText = '';
     to.style.animation = '';
     busy = false;
-    if (toId === 's-family-members' && typeof _renderFamilyMembersScreen === 'function') _renderFamilyMembersScreen();
     if (toId === 's-family-members' && typeof syncFamilyMemberColors === 'function') { syncFamilyMemberColors(); if (typeof _mpApplyAllStripes === 'function') _mpApplyAllStripes(); }
     if (toId === 's-settings' && typeof _syncSettingsDeviceMember === 'function') _syncSettingsDeviceMember();
-    if (toId === 's-settings' && typeof _renderSettingsMembers === 'function') _renderSettingsMembers();
     if (toId === 's-invite-member' && typeof _inviteScreenEnter === 'function') _inviteScreenEnter();
     if (toId === 's-today' && typeof _renderTodayMembers === 'function') _renderTodayMembers();
     if (onDone) onDone();
@@ -9588,11 +9585,8 @@ function activeTasks() {
   const myDynId      = DataAdapter.userId;
   const myMemberId   = DataAdapter.myMemberId;
   const isVisible = t =>
-    // Real-identity model: a group is a shared space — every member sees every
-    // task in the family. (Per-member visibility can be reintroduced later via
-    // the share screen.) In local/demo mode keep the old creator/visibleTo rule.
-    DataAdapter.isFamily()
-    || (t.createdBy === currentUser)
+    (myDynId && t.createdBy === myDynId)
+    || (!DataAdapter.isFamily() && t.createdBy === currentUser)
     || (t.visibleTo && (
          (myDynId    && t.visibleTo.includes(myDynId))
       || t.visibleTo.includes(currentUser)
@@ -12503,12 +12497,8 @@ async function _loadFamilyMembersCache() {
   try {
     const snap = await _db.collection('families').doc(DataAdapter.familyId)
                           .collection('members').get();
-    // Real-identity model: the cache holds the real participant docs (keyed by
-    // userId), not the retired 4-slot demo seed. Normalize displayName→name so
-    // resolveMember/avatar code (which reads .name) keeps working.
     _familyMembersCache = snap.docs.map(d => d.data())
-      .filter(m => m && m.userId && !IDENTITY_MEMBER_IDS.includes(m.memberId))
-      .map(m => ({ ...m, memberId: m.memberId || m.userId, name: m.displayName || m.name || 'חבר' }));
+      .filter(m => IDENTITY_MEMBER_IDS.includes(m.memberId));
     console.log('[DA] members cache loaded:', _familyMembersCache.length);
     try { localStorage.setItem(_MEMBER_CACHE_LS_KEY, JSON.stringify(_familyMembersCache)); } catch(e) {}
     if (typeof _renderAllAvatars === 'function') _renderAllAvatars();
@@ -13606,10 +13596,25 @@ const _ASSIGNEE_TO_MEMBER_ID = {
 };
 
 async function _bootstrapFamilyMembers() {
-  // Real-identity model: groups no longer seed the fixed 4 demo members.
-  // Each device registers itself as a real member (keyed by userId) on
-  // create/join. Kept as a no-op so existing call sites stay harmless.
-  return;
+  if (!_db || !DataAdapter.isFamily()) return;
+  try {
+    const ref = _db.collection('families').doc(DataAdapter.familyId)
+                   .collection('members').doc('member_dad');
+    const existing = await ref.get();
+    if (existing.exists && existing.data().memberId) {
+      console.log('[Bootstrap] members already seeded — skipping');
+      return;
+    }
+    const batch = _db.batch();
+    const colRef = _db.collection('families').doc(DataAdapter.familyId).collection('members');
+    for (const m of _FAMILY_MEMBERS_SEED) {
+      batch.set(colRef.doc(m.memberId), m);
+    }
+    await batch.commit();
+    console.log('[Bootstrap] seeded 4 family members');
+  } catch (e) {
+    AppLog.warn('Bootstrap', 'bootstrapFamilyMembers failed', e.message || e);
+  }
 }
 
 // ─── Family sheet (Phase 2) ───────────────────────────────────────
@@ -13747,9 +13752,6 @@ async function _daCreateFamily(groupName) {
   const userId   = DataAdapter.userId || _genCode(8);
   DataAdapter.setFamily(familyId, userId);
   DataAdapter.setGroupName(groupName); // store locally for display (optional)
-  // Real-identity model: this device IS a real member, keyed by its userId.
-  // No more fixed 4-slot demo seed — the member id is the userId itself.
-  try { localStorage.setItem(MY_MEMBER_ID_KEY, userId); } catch (e) {}
   _renderFamilySheet();
   console.log('[DA] created family', familyId, 'userId', userId);
 
@@ -13768,11 +13770,8 @@ async function _daCreateFamily(groupName) {
     await _db.collection('families').doc(familyId)
              .collection('members').doc(userId).set({
       userId,
-      memberId:    userId,
-      displayName: DataAdapter.displayName || '',
-      avatar:      { type: 'emoji', value: '👤' },
-      role:        'owner',
-      joinedAt:    ts,
+      role:     'owner',
+      joinedAt: ts,
     });
     console.log('[FB] family', familyId, 'written to Firestore');
   } catch (e) {
@@ -13821,31 +13820,20 @@ async function _daJoinFamily(codeArg) {
       const isOwner = (fam.createdBy === userId);
       const count   = (typeof fam.memberCount === 'number') ? fam.memberCount : null;
 
-      const myName = DataAdapter.displayName || '';
       if (isOwner) {
         // Creator always gets/restores owner role; never counts as a new member.
-        tx.set(memberRef, { userId, memberId: userId, role: 'owner', joinedAt: ts }, { merge: true });
-        if (myName) tx.set(memberRef, { displayName: myName }, { merge: true });
+        tx.set(memberRef, { userId, role: 'owner', joinedAt: ts }, { merge: true });
         return 'ok';
       }
       if (memDoc.exists) {
-        // Existing member rejoining — touch lastSeen + keep name fresh.
-        const patch = { lastSeenAt: ts, memberId: userId };
-        if (myName) patch.displayName = myName;
-        tx.update(memberRef, patch);
+        // Existing member rejoining — just touch lastSeen, no count change.
+        tx.update(memberRef, { lastSeenAt: ts });
         return 'ok';
       }
       // Genuinely new member — enforce the cap. count===null means a legacy
       // group created before the counter existed; allow (can't safely cap).
       if (count !== null && count >= GROUP_MEMBER_LIMIT) return 'full';
-      tx.set(memberRef, {
-        userId,
-        memberId:    userId,
-        displayName: myName,
-        avatar:      { type: 'emoji', value: '👤' },
-        role:        'member',
-        joinedAt:    ts,
-      });
+      tx.set(memberRef, { userId, role: 'member', joinedAt: ts });
       tx.update(familyRef, { memberCount: firebase.firestore.FieldValue.increment(1) });
       return 'ok';
     });
@@ -13863,7 +13851,6 @@ async function _daJoinFamily(codeArg) {
 
     DataAdapter.setFamily(code, userId);
     DataAdapter.setGroupName(groupNameFromDoc); // store group name for display
-    try { localStorage.setItem(MY_MEMBER_ID_KEY, userId); } catch (e) {} // real-identity: member id = userId
     console.log('[DA] joined family', code, 'userId', userId);
     _renderFamilySheet();
     _loadFamilyMembersCache();
@@ -13912,9 +13899,6 @@ function _finishFirstRun() {
   // not via a blocking setup screen right after create/join. Skip it here.
   try { if (typeof updateTodayTitle === 'function') updateTodayTitle(); } catch (e) {}
   try { if (typeof _renderTodayMembers === 'function') _renderTodayMembers(); } catch (e) {}
-  try { if (typeof _renderSettingsMembers === 'function') _renderSettingsMembers(); } catch (e) {}
-  try { if (typeof _renderFamilyMembersScreen === 'function') _renderFamilyMembersScreen(); } catch (e) {}
-  try { if (typeof _applyGroupName === 'function') _applyGroupName(); } catch (e) {}
 }
 
 async function _firstRunCreate() {
@@ -14132,8 +14116,6 @@ try { _updateRecoveryBanner(); } catch (e) { console.warn('recovery banner faile
 try { _syncSettingsDeviceMember(); } catch (e) { console.warn('settings device member sync failed', e); }
 try { _applyGroupName(); } catch (e) { console.warn('apply group name failed', e); }
 try { if (typeof _renderTodayMembers === 'function') _renderTodayMembers(); } catch (e) { console.warn('render today members failed', e); }
-try { if (typeof _renderSettingsMembers === 'function') _renderSettingsMembers(); } catch (e) { console.warn('render settings members failed', e); }
-try { if (typeof _renderFamilyMembersScreen === 'function') _renderFamilyMembersScreen(); } catch (e) { console.warn('render family members failed', e); }
 if (activeTasks().length > 0) {
   renderToday();
   document.getElementById('s-voice').classList.remove('active');
@@ -15958,22 +15940,18 @@ function _inviteScreenEnter() {
   if (contBtn) contBtn.style.display = _inviteFromOnboarding ? 'block' : 'none';
 }
 
-// Phase 1 (display only): the today strip + settings device strip are rendered
-// from the REAL participants (userId-keyed member docs) instead of the fixed 4
-// demo slots. Solo = 1 circle; grows as people join. The current device shows
-// its typed display name. Does NOT touch task attribution/visibility, which
-// still resolve via the seed member ids underneath.
-const _MEMBER_GRADS = [
-  'linear-gradient(160deg,#f0d4c5,#c89f88)', 'linear-gradient(160deg,#d9d0c1,#9d917f)',
-  'linear-gradient(160deg,#ddd6c0,#a39c80)', 'linear-gradient(160deg,#e7d5b8,#b89972)',
-  'linear-gradient(160deg,#cfe0d2,#8fb39a)', 'linear-gradient(160deg,#d6cfe0,#998fb3)',
-];
-// Returns the real participants (me first). Falls back to a solo "me" entry
-// when Firestore isn't reachable or the group is empty.
-async function _loadRealParticipants() {
+// Phase 1 (display only): render the today member strip from the REAL
+// participants (the userId-keyed member docs) instead of the fixed 4 demo
+// slots. Solo = 1 circle; grows as people join. The current device shows its
+// typed display name. Does NOT touch task attribution/visibility, which still
+// resolve via the seed member ids underneath.
+async function _renderTodayMembers() {
+  if (!DataAdapter.isFamily()) return; // demo mode keeps the static strip
+  const strip = document.querySelector('#s-today .t-avatars');
+  if (!strip) return;
   const myId = DataAdapter.userId;
   let participants = [];
-  if (_db && DataAdapter.isFamily()) {
+  if (_db) {
     try {
       const snap = await _db.collection('families').doc(DataAdapter.familyId)
                             .collection('members').get();
@@ -15986,80 +15964,19 @@ async function _loadRealParticipants() {
   }
   if (!participants.length) participants = [{ userId: myId || 'me', role: 'owner' }];
   participants.sort((a, b) => (b.userId === myId ? 1 : 0) - (a.userId === myId ? 1 : 0)); // me first
-  return participants;
-}
-function _participantName(p, myId) {
-  return (p.userId === myId) ? (DataAdapter.displayName || 'אני') : (p.displayName || 'חבר');
-}
-// Inner HTML for a participant circle: real photo if set, else a colored
-// initial-letter badge. sizePx drives the emoji/photo sizing.
-function _participantAvatarInner(p, name, gradIdx, sizePx) {
-  const av = p.avatar;
-  if (av && (av.type === 'photo' || av.type === 'ai-photo') && av.url) {
-    return renderAvatarHTML(av, sizePx);
-  }
-  const letter = (name || '👤').trim().charAt(0) || '👤';
-  const grad   = _MEMBER_GRADS[gradIdx % _MEMBER_GRADS.length];
-  const fs     = Math.round((Number(sizePx) || 54) * 0.42);
-  return `<span style="width:100%;height:100%;border-radius:inherit;display:flex;align-items:center;justify-content:center;background:${grad};color:#fff;font-weight:800;font-size:${fs}px;">${letter}</span>`;
-}
-async function _renderTodayMembers() {
-  if (!DataAdapter.isFamily()) return; // demo mode keeps the static strip
-  const strip = document.querySelector('#s-today .t-avatars');
-  if (!strip) return;
-  const myId = DataAdapter.userId;
-  const participants = await _loadRealParticipants();
+  const grads = [
+    'linear-gradient(160deg,#f0d4c5,#c89f88)', 'linear-gradient(160deg,#d9d0c1,#9d917f)',
+    'linear-gradient(160deg,#ddd6c0,#a39c80)', 'linear-gradient(160deg,#e7d5b8,#b89972)',
+    'linear-gradient(160deg,#cfe0d2,#8fb39a)', 'linear-gradient(160deg,#d6cfe0,#998fb3)',
+  ];
   strip.innerHTML = participants.map((p, i) => {
-    const name  = _participantName(p, myId);
-    const inner = _participantAvatarInner(p, name, i, 54);
-    return `<div class="t-mem" onclick="openMemberProfile('${p.userId}','s-today')">
-      <div class="t-av online" style="overflow:hidden;">${inner}</div>
+    const isMe   = p.userId === myId;
+    const name   = isMe ? (DataAdapter.displayName || 'אני') : (p.displayName || 'חבר');
+    const letter = (name || '👤').trim().charAt(0) || '👤';
+    const grad   = grads[i % grads.length];
+    return `<div class="t-mem">
+      <div class="t-av online" style="background:${grad};color:#fff;font-weight:800;">${letter}</div>
       <span class="t-avname">${name}</span>
-    </div>`;
-  }).join('');
-}
-async function _renderSettingsMembers() {
-  if (!DataAdapter.isFamily()) return; // demo mode keeps the static strip
-  const card = document.getElementById('settingsMembers');
-  if (!card) return;
-  const myId = DataAdapter.userId;
-  const participants = await _loadRealParticipants();
-  card.innerHTML = participants.map((p, i) => {
-    const isMe  = p.userId === myId;
-    const name  = _participantName(p, myId);
-    const inner = _participantAvatarInner(p, name, i, 56);
-    return `<div class="member${isMe ? ' active' : ''}" onclick="openMemberProfile('${p.userId}','s-settings')">
-      <div class="ava-circle" style="overflow:hidden;">${inner}
-        <span class="badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg></span>
-      </div>
-      <div class="ava-name">${name}</div>
-    </div>`;
-  }).join('');
-}
-
-async function _renderFamilyMembersScreen() {
-  if (!DataAdapter.isFamily()) return; // demo mode keeps the static cards
-  const wrap = document.getElementById('famMembersCards');
-  if (!wrap) return;
-  const myId = DataAdapter.userId;
-  const participants = await _loadRealParticipants();
-  wrap.innerHTML = participants.map((p, i) => {
-    const isMe  = p.userId === myId;
-    const name  = _participantName(p, myId);
-    const inner = _participantAvatarInner(p, name, i, 78);
-    const roleLabel = (p.role === 'owner') ? 'מנהל/ת הקבוצה' : 'חבר/ה';
-    const crown = (p.role === 'owner')
-      ? '<span class="icn-mini crown" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 17 L5 8 L9.5 12 L12 6 L14.5 12 L19 8 L21 17 Z"/></svg></span>'
-      : '';
-    return `<div class="mcard">
-      <div class="mavatar" style="overflow:hidden;" onclick="openMemberProfile('${p.userId}','s-family-members')">${inner}</div>
-      <div class="mbody">
-        <div class="name-row">
-          <div class="name">${name}</div>
-          ${isMe ? '<span class="me-pill">המכשיר הזה</span>' : ''}
-        </div>
-        <div class="meta-row"><span>${roleLabel}</span>${crown}</div>
-      </div>
     </div>`;
   }).join('');
 }
@@ -16072,8 +15989,6 @@ function _applyGroupName() {
   if (kicker) kicker.textContent = g || 'המרחב שלנו';
   const invTitle = document.getElementById('inviteGroupTitle');
   if (invTitle) invTitle.textContent = g ? `הזמינו ל"${g}" להצטרף` : 'הזמינו את הקבוצה שלכם להצטרף';
-  const setName = document.getElementById('settingsGroupName');
-  if (setName) setName.textContent = g || 'המרחב שלי';
 }
 
 // ── PIN / Biometric / Delete Data flows ──────────────────────────
@@ -16529,12 +16444,12 @@ function _renderMemberProfile() {
     if (vWrap) vWrap.style.display = 'none';
   }
 
-  // Info row: birthday + anniversary. In the real-identity model anyone can set
-  // their OWN dates (no parent role) — so dates are editable on your own profile.
+  // Info row: birthday always + anniversary for parents only
   const infoRow = document.getElementById('mpInfoRow');
   const bdayAge = _mpCalcAge(m.birthday);
-  const canEditDates = isSelf;
+  const canEditDates = _mpIsFamilyHead();
   const bdayClick = canEditDates ? `onclick="mpEditField('birthday')"` : '';
+  const bdayEmpty = m.birthday ? '' : (canEditDates ? ' empty' : ' empty');
   const bdayVal   = m.birthday || (canEditDates ? 'לחץ להוספה' : '—');
   const bdayHtml = `
     <div class="mp-info-card" ${bdayClick} style="${canEditDates?'':'cursor:default'}">
@@ -16542,17 +16457,20 @@ function _renderMemberProfile() {
       <div class="mp-info-date${m.birthday?'':' empty'}">${bdayVal}</div>
       <div class="mp-info-sub">${bdayAge != null ? `<span>${bdayAge} שנים</span>` : '<span>—</span>'}</div>
     </div>`;
-  const anniAge = _mpCalcAge(m.anniversary);
-  const anniClick = canEditDates ? `onclick="mpEditField('anniversary')"` : '';
-  const anniVal   = m.anniversary || (canEditDates ? 'לחץ להוספה' : '—');
-  const anniHtml = `
-    <div class="mp-info-card" ${anniClick} style="${canEditDates?'':'cursor:default'}">
-      <div class="mp-info-head"><span class="mp-info-label">יום נישואין</span><span class="mp-info-emoji">💍</span></div>
-      <div class="mp-info-date${m.anniversary?'':' empty'}">${anniVal}</div>
-      <div class="mp-info-sub">${anniAge != null ? `<span>${anniAge} שנים</span><span class="pp">💜</span>` : '<span>—</span>'}</div>
-    </div>`;
-  infoRow.className = 'mp-info-row two-col';
-  infoRow.innerHTML = anniHtml + bdayHtml;
+  let anniHtml = '';
+  if (isParent) {
+    const anniAge = _mpCalcAge(m.anniversary);
+    const anniClick = canEditDates ? `onclick="mpEditField('anniversary')"` : '';
+    const anniVal   = m.anniversary || (canEditDates ? 'לחץ להוספה' : '—');
+    anniHtml = `
+      <div class="mp-info-card" ${anniClick} style="${canEditDates?'':'cursor:default'}">
+        <div class="mp-info-head"><span class="mp-info-label">יום נישואין</span><span class="mp-info-emoji">💍</span></div>
+        <div class="mp-info-date${m.anniversary?'':' empty'}">${anniVal}</div>
+        <div class="mp-info-sub">${anniAge != null ? `<span>${anniAge} שנים</span><span class="pp">💜</span>` : '<span>—</span>'}</div>
+      </div>`;
+  }
+  infoRow.className = 'mp-info-row ' + (isParent ? 'two-col' : 'one-col');
+  infoRow.innerHTML = (isParent ? anniHtml : '') + bdayHtml;
 
   // Color card — self only
   const colorCard = document.getElementById('mpColorCard');
@@ -17069,43 +16987,53 @@ function _mpCreateCountdownTasks(memberId, field, dateStr, calTypeOverride) {
   const name = m?.name || '';
   const isAnniv = field === 'anniversary';
 
-  // Real-identity model: a group is a shared space, so each countdown is ONE
-  // shared reminder per day that every member sees (no per-recipient copies,
-  // no parent/child split). Visible-to lists all current members for back-compat.
+  // Anniversary: one SHARED reminder for both parents only (each parent sees
+  //   it once; children never see it).
+  // Birthday: one personal copy per OTHER family member (not the birthday person).
+  const birthdayRecipients = (_FAMILY_MEMBERS_SEED || [])
+    .map(x => x.memberId).filter(id => id !== memberId);
+
   const _cdCreatedBy   = (typeof DataAdapter !== 'undefined' && DataAdapter.userId)     || null;
   const _cdCreatedByM  = (typeof DataAdapter !== 'undefined' && DataAdapter.myMemberId) || null;
-  const allMemberIds   = (_familyMembersCache || []).map(x => x.memberId).filter(Boolean);
 
   // Remove existing countdown tasks for this event this year
   const TAG = `_countdown_${memberId}_${field}_${eventYear}`;
   AppState.tasks = (AppState.tasks || []).filter(t => t._countdownTag !== TAG);
 
   // Create 7 reminders (days T-7 to T-1) — only future ones
-  const _cdCreated = [];
   for (let daysLeft = 7; daysLeft >= 1; daysLeft--) {
     const taskDate = new Date(eventDate);
     taskDate.setDate(taskDate.getDate() - daysLeft);
     if (taskDate < today) continue;
 
     const label = daysLeft === 1 ? 'מחר!' : `בעוד ${daysLeft} ימים!`;
-    const title = isAnniv ? `יום נישואין ${label}` : `יום הולדת ל${name} ${label}`;
+    const prefix = isAnniv ? `יום נישואין לאבא ואמא ${label}` : `יום הולדת ל${name} ${label}`;
     const ymd = `${taskDate.getFullYear()}-${String(taskDate.getMonth()+1).padStart(2,'0')}-${String(taskDate.getDate()).padStart(2,'0')}`;
-    const task = {
-      id: `${TAG}_${daysLeft}`,            // deterministic → re-saving overwrites, no dupes
-      title, emoji: isAnniv ? '💍' : '🎂', date: ymd, mins: null, completed: false,
-      assignedTo: null, assignedToMemberId: null,
-      createdBy: _cdCreatedBy, createdByMemberId: _cdCreatedByM,
-      visibleTo: allMemberIds,
-      viewOnly: true, noNotification: true, _countdownTag: TAG, recurrence: { type:'none' }
-    };
-    AppState.tasks.push(task);
-    _cdCreated.push(task);
+
+    if (isAnniv) {
+      AppState.tasks.push({
+        id: `_cd_${TAG}_${daysLeft}_anniv_${Date.now()}_${Math.random().toString(36).slice(2)}`,
+        title: prefix, emoji: '💍', date: ymd, mins: null, completed: false,
+        assignedTo: null, assignedToMemberId: null,
+        createdBy: _cdCreatedBy, createdByMemberId: _cdCreatedByM,
+        visibleTo: _parentVisibleIds(),     // both parents only
+        viewOnly: true, noNotification: true, _countdownTag: TAG, recurrence: { type:'none' }
+      });
+    } else {
+      birthdayRecipients.forEach(mid => {
+        const legId = _legacyIdForMemberId(mid) || mid;
+        AppState.tasks.push({
+          id: `_cd_${TAG}_${daysLeft}_${mid}_${Date.now()}_${Math.random().toString(36).slice(2)}`,
+          title: prefix, emoji: '🎂', date: ymd, mins: null, completed: false,
+          assignedTo: legId, assignedToMemberId: mid,
+          createdBy: _cdCreatedBy, createdByMemberId: _cdCreatedByM,
+          visibleTo: [legId, mid],          // only this recipient
+          viewOnly: true, noNotification: true, _countdownTag: TAG, recurrence: { type:'none' }
+        });
+      });
+    }
   }
   saveState();
-  // Sync to Firestore so every member sees the countdown (shared space).
-  if (DataAdapter.isFamily() && typeof _daWriteTask === 'function') {
-    _cdCreated.forEach(t => { try { _daWriteTask(t, true).catch(() => {}); } catch (e) {} });
-  }
 }
 
 // ── Save to Firestore + local cache ───────────────────────────────
