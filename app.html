@@ -3696,9 +3696,9 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
       </button>
       <div class="head-text">
-        <span class="kicker"><span>המשפחה שלנו</span> <span aria-hidden="true">✨</span></span>
-        <h1 class="title">בני המשפחה</h1>
-        <p class="subtitle">ניהול בני המשפחה שהאפליקציה מכירה</p>
+        <span class="kicker"><span id="famGroupKicker">המרחב שלנו</span> <span aria-hidden="true">✨</span></span>
+        <h1 class="title">בני הקבוצה</h1>
+        <p class="subtitle">ניהול חברי הקבוצה שהאפליקציה מכירה</p>
       </div>
     </div>
 
@@ -3858,7 +3858,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
     <div class="hero">
       <div class="hero-illu" aria-hidden="true">✉️</div>
       <div class="hero-title">
-        <span>הזמן את המשפחה שלך להצטרף</span>
+        <span id="inviteGroupTitle">הזמינו את הקבוצה שלכם להצטרף</span>
         <span aria-hidden="true">🎉</span>
       </div>
       <div class="hero-sub">
@@ -6248,6 +6248,10 @@ function _currentDeviceLegacyId() {
   return currentUser;
 }
 function currentDeviceDisplayName() {
+  // Prefer the free-text name the user entered during onboarding. Falls back
+  // to the legacy/seed member name only when no display name was set. Display
+  // only — task attribution resolves identity via myMemberId, not this.
+  if (DataAdapter.displayName) return DataAdapter.displayName;
   const legacyId = _currentDeviceLegacyId();
   if (legacyId) return t('family_' + legacyId) || ID_TO_PERSON[legacyId] || legacyId;
   const seed = DataAdapter.isFamily()
@@ -12189,12 +12193,14 @@ const _DA_MODE_KEY   = 'family-app-da-mode';
 const _DA_FAMILY_KEY = 'family-app-da-family-id';
 const _DA_USER_KEY   = 'family-app-da-user-id';
 const _DA_NAME_KEY   = 'family-app-da-display-name';
+const _DA_GROUP_KEY  = 'family-app-da-group-name';
 
 const DataAdapter = {
   mode:        localStorage.getItem(_DA_MODE_KEY)   || 'local',
   familyId:    localStorage.getItem(_DA_FAMILY_KEY) || null,
   userId:      localStorage.getItem(_DA_USER_KEY)   || null,
   displayName: localStorage.getItem(_DA_NAME_KEY)   || '',
+  groupName:   localStorage.getItem(_DA_GROUP_KEY)  || '',
   authUid:     null, // set by _fbInit after signInAnonymously — Auth-1 only, not yet used for writes
 
   get myMemberId() { return localStorage.getItem(MY_MEMBER_ID_KEY) || null; },
@@ -12222,6 +12228,14 @@ const DataAdapter = {
     this.displayName = name;
     if (name) localStorage.setItem(_DA_NAME_KEY, name);
     else      localStorage.removeItem(_DA_NAME_KEY);
+  },
+
+  setGroupName(name) {
+    const v = (name || '').trim();
+    this.groupName = v;
+    if (v) localStorage.setItem(_DA_GROUP_KEY, v);
+    else   localStorage.removeItem(_DA_GROUP_KEY);
+    try { if (typeof _applyGroupName === 'function') _applyGroupName(); } catch (e) {}
   },
 
   // Firestore stubs — implemented in Phase 3.
@@ -13706,6 +13720,7 @@ async function _daCreateFamily(groupName) {
   const familyId = _genCode(6);
   const userId   = DataAdapter.userId || _genCode(8);
   DataAdapter.setFamily(familyId, userId);
+  DataAdapter.setGroupName(groupName); // store locally for display (optional)
   _renderFamilySheet();
   console.log('[DA] created family', familyId, 'userId', userId);
 
@@ -13764,11 +13779,13 @@ async function _daJoinFamily(codeArg) {
     // family doc's memberCount counter. Counting the members subcollection then
     // writing would be racy (two devices read 5, both write → 7). A transaction
     // on a single counter doc serialises concurrent joins, so the cap holds.
+    let groupNameFromDoc = '';
     const joinResult = await _db.runTransaction(async (tx) => {
       const famDoc = await tx.get(familyRef);
       const memDoc = await tx.get(memberRef);
       if (!famDoc.exists) return 'missing';
       const fam     = famDoc.data() || {};
+      groupNameFromDoc = fam.name || ''; // captured read-only value for display
       const isOwner = (fam.createdBy === userId);
       const count   = (typeof fam.memberCount === 'number') ? fam.memberCount : null;
 
@@ -13802,6 +13819,7 @@ async function _daJoinFamily(codeArg) {
     }
 
     DataAdapter.setFamily(code, userId);
+    DataAdapter.setGroupName(groupNameFromDoc); // store group name for display
     console.log('[DA] joined family', code, 'userId', userId);
     _renderFamilySheet();
     _loadFamilyMembersCache();
@@ -14037,6 +14055,7 @@ if (/[?&]previewFirstRun=1/.test(location.search)) {
 }
 try { _updateRecoveryBanner(); } catch (e) { console.warn('recovery banner failed', e); }
 try { _syncSettingsDeviceMember(); } catch (e) { console.warn('settings device member sync failed', e); }
+try { _applyGroupName(); } catch (e) { console.warn('apply group name failed', e); }
 if (activeTasks().length > 0) {
   renderToday();
   document.getElementById('s-voice').classList.remove('active');
@@ -15840,6 +15859,17 @@ function inviteViaShare() {
 function _inviteScreenEnter() {
   const codeEl = document.getElementById('inviteFamilyCode');
   if (codeEl) codeEl.textContent = _inviteGetCode();
+  try { _applyGroupName(); } catch (e) {}
+}
+
+// Render the (optional) group name into the settings header kicker and the
+// invite-screen hero title. Falls back to a neutral default when unset.
+function _applyGroupName() {
+  const g      = (DataAdapter.groupName || '').trim();
+  const kicker = document.getElementById('famGroupKicker');
+  if (kicker) kicker.textContent = g || 'המרחב שלנו';
+  const invTitle = document.getElementById('inviteGroupTitle');
+  if (invTitle) invTitle.textContent = g ? `הזמינו ל"${g}" להצטרף` : 'הזמינו את הקבוצה שלכם להצטרף';
 }
 
 // ── PIN / Biometric / Delete Data flows ──────────────────────────
