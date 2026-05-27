@@ -34,6 +34,8 @@ How many tasks:
     contains a second, independent action that makes sense on its own.
   • Do not split a sentence just because it has several verbs — verbs that share the
     same object or topic belong together.
+  • A time/date phrase is NEVER a task on its own. "בשעה 14:00", "מחר", "בערב" attach to
+    the action they modify (fill mins/date) — never output them as a separate task.
   • When unsure whether it is one task or two, return ONE task.
 
 Each task title must make sense on its own. If you do split and the parts share a
@@ -48,12 +50,16 @@ Examples:
       or TWO:    "לבדוק חומר להרצאה של שחר לייבו"
                  "להכין חומר להרצאה של שחר לייבו"
   "לקנות חלב לשלם חשבון חשמל" → TWO independent tasks: "לקנות חלב" + "לשלם חשבון חשמל"
+  "להתקשר לשמעון להשאיר הודעה לסבתא מרי" → TWO tasks (different people): "להתקשר לשמעון" + "להשאיר הודעה לסבתא מרי"
+  "להתקשר לשמעון ואז להשאיר הודעה לסבתא מרי" → TWO tasks ("ואז"/"אחר כך" = sequential, independent actions)
+  "לקנות חלב בשעה 14:00" → ONE task: "לקנות חלב", mins=840 (14:00) — a time phrase is NEVER its own task
 
 Keep together as ONE task (do not split):
   • Movement + its purpose:   "לנסוע לסופר לקנות ירקות"
     Movement verbs: ללכת, לנסוע, לצאת, לקפוץ, לעלות, לרדת, לחזור, לטוס, לרוץ
   • One verb + several objects: "לקנות חלב וביצים"  ("אוכל"/"חלב" are objects, not verbs)
-  • Call + its message:        "להתקשר לאמא ולהגיד לה מזל טוב"
+  • Call + its message to the SAME person: "להתקשר לאמא ולהגיד לה מזל טוב"
+    (a follow-up action aimed at a DIFFERENT person is independent → SPLIT it)
   • Subordinate clause:        "להתקשר לגן ולבקש שישלחו את הטופס"
 
 Date/time inheritance:
@@ -97,6 +103,9 @@ assignedTo:
 
 mins:
   Minutes from midnight as an integer.
+
+  Digital clock times map directly to mins: "14:00" → 840, "9:30" → 570, "08:15" → 495.
+  "בשעה" before a time is only a marker — strip it from the title and set mins.
 
   Vague time-of-day words spoken ALONE (no specific hour) do NOT set a time —
   set mins=null for them. NEVER convert a part-of-day into a clock time:

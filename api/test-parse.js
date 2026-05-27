@@ -223,6 +223,32 @@ const TEST_CASES = [
     transcript: 'להזמין מזון לכלב ולשלם לווטרינר',
     expectCount: 2,
   },
+
+  // ── REGRESSION: split detection + time-phrase-as-task ───────────────────────
+
+  {
+    // Time phrase must NOT become a second task; it attaches to the action.
+    label: 'time phrase stays on its task (not a 2nd task)',
+    transcript: 'לקנות חלב בשעה 14:00',
+    expectCount: 1,
+    expectTitles: ['לקנות חלב'],
+    expectTimes:  ['14:00'],
+    expectNeedsReview: false,
+  },
+  {
+    // Call X + leave message for a DIFFERENT person Y → two independent tasks.
+    label: 'two people = split (no connector)',
+    transcript: 'להתקשר לשמעון להשאיר הודעה לסבתא מרי',
+    expectCount: 2,
+    expectTitles: ['שמעון', 'סבתא מרי'],
+  },
+  {
+    // "ואז" sequencing connector → two independent tasks.
+    label: 'two people = split (ואז connector)',
+    transcript: 'להתקשר לשמעון ואז להשאיר הודעה לסבתא מרי',
+    expectCount: 2,
+    expectTitles: ['שמעון', 'סבתא מרי'],
+  },
 ];
 
 // ─── runner ──────────────────────────────────────────────────────────────────
