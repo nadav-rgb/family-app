@@ -3781,8 +3781,8 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
     </div>
 
     <!-- Add member → invite screen -->
-    <div class="add-card" style="cursor:pointer;" onclick="goto('s-invite-member','txSlideIn','txSlideOut')">
-      <button class="add-plus" type="button" aria-label="הזמן" onclick="event.stopPropagation();goto('s-invite-member','txSlideIn','txSlideOut')">
+    <div class="add-card" style="cursor:pointer;" onclick="_inviteReturnScreen='s-family-members';goto('s-invite-member','txSlideIn','txSlideOut')">
+      <button class="add-plus" type="button" aria-label="הזמן" onclick="event.stopPropagation();_inviteReturnScreen='s-family-members';goto('s-invite-member','txSlideIn','txSlideOut')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
       </button>
       <div class="add-text">
@@ -3846,7 +3846,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
   </div>
 
   <div class="app-header">
-    <button class="back-btn" type="button" aria-label="חזרה" onclick="goto('s-family-members','txSlideOut','txSlideIn')">
+    <button class="back-btn" type="button" aria-label="חזרה" onclick="inviteGoBack()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
     </button>
     <div class="app-title">הזמן בן משפחה</div>
@@ -13880,8 +13880,14 @@ async function _firstRunCreate() {
     _finishFirstRun();
     // Surface the join code right away so the creator can invite others —
     // otherwise the code is buried in settings. Reuses the existing invite
-    // screen (code card + copy + WhatsApp/SMS/link share).
-    try { goto('s-invite-member', 'txSlideIn', 'txSlideOut'); } catch (e) {}
+    // screen (code card + copy + WhatsApp/SMS/link share). Back returns to the
+    // main app screen the user just landed on (NOT settings) — onboarding
+    // didn't come from settings.
+    try {
+      const landing = (document.querySelector('.app-screen.active') || {}).id || 's-today';
+      _inviteReturnScreen = landing;
+      goto('s-invite-member', 'txSlideIn', 'txSlideOut');
+    } catch (e) {}
   }
 }
 
@@ -15856,6 +15862,14 @@ function inviteViaShare() {
     window.location.href = `intent:#Intent;action=android.intent.action.SEND;type=text/plain;S.android.intent.extra.TEXT=${encoded};end`;
   }
 }
+// Where the invite screen's back arrow returns to. Set by whoever opens the
+// screen (settings → 's-family-members'; onboarding-create → the screen the
+// user was actually on). Defaults to settings for safety.
+let _inviteReturnScreen = 's-family-members';
+function inviteGoBack() {
+  goto(_inviteReturnScreen || 's-family-members', 'txSlideOut', 'txSlideIn');
+}
+
 function _inviteScreenEnter() {
   const codeEl = document.getElementById('inviteFamilyCode');
   if (codeEl) codeEl.textContent = _inviteGetCode();
