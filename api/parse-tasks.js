@@ -27,6 +27,57 @@ function isContextlessTitle(title) {
   return BARE_TRANSITIVE_VERBS.has(clean);
 }
 
+// ─── Time/date-fragment merge ─────────────────────────────────────────────────
+// gpt-4o-mini sometimes mis-splits a bare time/date phrase ("בשעה 14:00", "מחר",
+// "14:00") into its own task. That is never a real task. This guard detects such a
+// fragment and merges its time/date into the neighbouring action task, then drops it
+// — so the time/date lands on the action it belongs to. Deterministic: the prompt
+// asks the model not to do this, but the model still does, so we enforce it here.
+const TIMEDATE_ONLY_RE = /^ו?\s*(?:בשעה\s*)?(?:\d{1,2}:\d{2}|\d{1,2}|מחרתיים|מחר|היום|בבוקר|בצהריי?ם|אחר[\s-]?הצהריים|בערב|בלילה)(?:\s+(?:בבוקר|בצהריי?ם|בערב|בלילה))?$/;
+
+function isTimeDateOnly(title) {
+  return TIMEDATE_ONLY_RE.test(String(title || '').trim());
+}
+
+function timeFromFragment(t) {
+  if (t.time) return t.time;
+  const m = String(t.title || '').match(/(\d{1,2}):(\d{2})/);
+  if (!m) return null;
+  const h  = Math.min(23, parseInt(m[1], 10));
+  const mm = Math.min(59, parseInt(m[2], 10));
+  return String(h).padStart(2, '0') + ':' + String(mm).padStart(2, '0');
+}
+
+function dateFromFragment(t) {
+  if (t.date) return t.date;
+  const s = String(t.title || '');
+  if (/מחרתיים/.test(s)) return 'day-after-tomorrow';
+  if (/מחר/.test(s))     return 'tomorrow';
+  if (/היום/.test(s))    return 'today';
+  return null;
+}
+
+function mergeTimeDateFragments(tasks) {
+  if (!Array.isArray(tasks) || tasks.length <= 1) return tasks;
+  const out = [];
+  for (let i = 0; i < tasks.length; i++) {
+    const t = tasks[i];
+    if (isTimeDateOnly(t.title)) {
+      // Merge into the previous kept task; if the fragment leads, merge forward.
+      const target = out.length ? out[out.length - 1] : tasks[i + 1];
+      if (target) {
+        const time = timeFromFragment(t);
+        const date = dateFromFragment(t);
+        if (time && !target.time) target.time = time;
+        if (date && !target.date) target.date = date;
+        continue; // drop the fragment — it is not a task
+      }
+    }
+    out.push(t);
+  }
+  return out;
+}
+
 // ─── Preamble assignee extraction ─────────────────────────────────────────────
 
 const PREAMBLE_PEOPLE = [
@@ -74,7 +125,9 @@ module.exports = async function handler(req, res) {
       : await parseWithClaude(transcript, context);
 
     // 1. Trust the AI's split — the model is the brain. No local re-splitting.
-    const splitTasks = raw.rawTasks.slice();
+    //    Exception: merge back any bare time/date fragment the model split off
+    //    (e.g. "בשעה 14:00") so the time/date lands on its action, not a phantom task.
+    const splitTasks = mergeTimeDateFragments(raw.rawTasks.slice());
 
     // 2. Fill missing assignees from preamble (only when AI left them null)
     if (assigneeFromPreamble) {

@@ -33,8 +33,10 @@ How many tasks:
     contains a second, independent action that makes sense on its own.
   • Do not split a sentence just because it has several verbs — verbs that share the
     same object or topic belong together.
-  • A time/date phrase is NEVER a task on its own. "בשעה 14:00", "מחר", "בערב" attach to
-    the action they modify (fill mins/date) — never output them as a separate task.
+  • CRITICAL — NEVER output a task whose title is only a time or date. A clock time
+    ("14:00", "9:30", "בשעה 14:00"), a date ("מחר", "היום"), or a part-of-day ("בבוקר",
+    "בערב") is ALWAYS part of the action it modifies — put it in that task's mins/date.
+    WRONG → ["לקנות חלב", "בשעה 14:00"].   RIGHT → ["לקנות חלב" with mins=840].
   • When unsure whether it is one task or two, return ONE task.
 
 Each task title must make sense on its own. If you do split and the parts share a
