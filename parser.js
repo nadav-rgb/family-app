@@ -668,7 +668,7 @@
     // Bound the wait: if the network/LLM is slow, abort and let the caller
     // fall back to the instant local parser instead of hanging.
     const ctrl = new AbortController();
-    const to   = setTimeout(() => ctrl.abort(), 3500);
+    const to   = setTimeout(() => ctrl.abort(), 8000);
     let res;
     try {
       res = await fetch(base + '/api/parse-tasks', {
