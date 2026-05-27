@@ -45,7 +45,7 @@
         'להוריד','להעלות','להחזיר','להזמין','להכין','להביא','להוציא','להגיע',
         'לאסוף','לאכול',
         'לבדוק','לבשל',
-        'לנסוע','לנקות','לנהוג',
+        'לנסוע','לנקות','לנהוג','ללכת',
         'לסדר','לסיים',
         'לקנות','לקחת','לקבוע','לקבל','לקרוא',
         'לשלם','לשלוח','לשמור','לשטוף',
@@ -419,6 +419,17 @@
     return MOVEMENT_VERBS.has(segText.trim().split(/\s+/)[0]);
   }
 
+  // Noun-phrase completion guard. These construct/preposition words REQUIRE an object
+  // after them, so a segment must never END on one ("...לסדר את"). If it does, the
+  // object was orphaned into the next segment and we merge it back. Deterministic.
+  const DANGLING_TAIL = new Set([
+    'את','של','עם','על','אל','אצל','מול','בין','לפי','עבור','בשביל','מן','כדי','לגבי'
+  ]);
+  function endsWithDanglingWord(text) {
+    const w = String(text || '').trim().split(/\s+/);
+    return DANGLING_TAIL.has(w[w.length - 1]);
+  }
+
   /**
    * freeSpeechToIntentSegments(text, opts) → IntentSegment[]
    *
@@ -470,6 +481,7 @@
     const firstPos    = allPositions[0].pos;
     const preambleStr = clean.slice(0, firstPos).trim();
     const preambleDate = preambleStr ? extractDate(preambleStr, now) : null;
+    const preambleTime = preambleStr ? extractTime(preambleStr, now, config) : null;
 
     if (preambleStr) Log.info('preamble context', `"${preambleStr}"`);
 
@@ -512,6 +524,23 @@
       });
     }
 
+    // Noun-phrase completion guard: never leave a segment ending on a construct word
+    // ("...לסדר את") — merge the next segment in so the object is not orphaned.
+    for (let i = 0; i < segments.length - 1; ) {
+      if (endsWithDanglingWord(segments[i].text)) {
+        segments[i].text = (segments[i].text + ' ' + segments[i + 1].text).trim();
+        segments.splice(i + 1, 1);
+      } else {
+        i++;
+      }
+    }
+
+    // A time stated in the preamble ("מחר בשעה 2 לקחת...") belongs to the FIRST task
+    // only (date carries to all tasks; time only to the adjacent first action).
+    if (preambleTime && preambleTime.fromText && segments.length) {
+      segments[0].preambleTime = preambleTime;
+    }
+
     Log.info('total segments', segments.length);
     Log.groupEnd();
 
@@ -527,6 +556,7 @@
   function parseSegment(text, now, people, opts) {
     const config   = (opts && opts.config)      || getLangConfig('he');
     const fallback = (opts && opts.fallbackDate) || null;
+    const fbTime   = (opts && opts.fallbackTime) || null;
 
     Log.group('parseSegment: "' + text + '"');
 
@@ -539,13 +569,19 @@
       ? date
       : (fallback && fallback.fromText ? fallback : date);
 
+    // A time spoken in the preamble before the first verb ("מחר בשעה 2 לקחת...")
+    // is not inside this segment's text — fall back to it so the time isn't lost.
+    const resolvedTime = time.fromText
+      ? time
+      : (fbTime && fbTime.fromText ? fbTime : time);
+
     // time.match intentionally excluded: stripping only the number leaves dangling
     // preposition words ("בשעה", "ב") in the title. Keep the full natural phrasing.
     const title = cleanTitle(text, [resolvedDate.match, assignee.match], config);
     // No explicit time → leave it empty. We never invent a clock time from a
     // vague part-of-day (or from nothing); the task stays "ללא שעה".
-    const mins  = time.mins !== null
-      ? Math.max(0, Math.min(time.mins, 23 * 60 + 59))
+    const mins  = resolvedTime.mins !== null
+      ? Math.max(0, Math.min(resolvedTime.mins, 23 * 60 + 59))
       : null;
 
     Log.info('title', title);
@@ -559,7 +595,7 @@
       date:             resolvedDate,
       assignedTo:       assignee.id,
       type,
-      timeFromText:     time.fromText,
+      timeFromText:     resolvedTime.fromText,
       dateFromText:     resolvedDate.fromText,
       assigneeFromText: assignee.fromText,
       rawInput:         text,
@@ -595,7 +631,7 @@
 
     const segments = freeSpeechToIntentSegments(text.trim(), { now, people, lang, config });
     const result   = segments.map(seg =>
-      parseSegment(seg.text, now, people, { fallbackDate: seg.preambleDate, config })
+      parseSegment(seg.text, now, people, { fallbackDate: seg.preambleDate, fallbackTime: seg.preambleTime, config })
     );
 
     Log.info('result', result.map(r => ({
