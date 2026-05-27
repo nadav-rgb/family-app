@@ -6446,10 +6446,14 @@ function _applyLang() {
   if (uswTitle) uswTitle.innerHTML = t('user_switch') + ' <span style="font-size:10px;background:#f0d8c8;color:#9e6040;border-radius:4px;padding:1px 5px;font-weight:700;vertical-align:middle;">DEMO</span>';
   // Avatar names
   const avNames = {mom:'av-mom', dad:'av-dad', dudi:'av-dudi', yonatan:'av-yona'};
-  document.querySelectorAll('#s-today .t-avname').forEach((el, i) => {
-    const f = FAMILY[i];
-    if (f) el.textContent = t('family_' + f.id);
-  });
+  // In family mode the strip is rendered dynamically from real participants
+  // (_renderTodayMembers); don't overwrite it with the static 4-slot labels.
+  if (!DataAdapter.isFamily()) {
+    document.querySelectorAll('#s-today .t-avname').forEach((el, i) => {
+      const f = FAMILY[i];
+      if (f) el.textContent = t('family_' + f.id);
+    });
+  }
   // tDateBadge & date-related are updated in updateDateBadge()
   if (typeof updateTodayTitle === 'function') updateTodayTitle();
 }
@@ -6626,6 +6630,7 @@ function goto(toId, leaveKf, enterKf, onDone) {
     if (toId === 's-family-members' && typeof syncFamilyMemberColors === 'function') { syncFamilyMemberColors(); if (typeof _mpApplyAllStripes === 'function') _mpApplyAllStripes(); }
     if (toId === 's-settings' && typeof _syncSettingsDeviceMember === 'function') _syncSettingsDeviceMember();
     if (toId === 's-invite-member' && typeof _inviteScreenEnter === 'function') _inviteScreenEnter();
+    if (toId === 's-today' && typeof _renderTodayMembers === 'function') _renderTodayMembers();
     if (onDone) onDone();
   }, dur);
 }
@@ -13874,6 +13879,7 @@ function _finishFirstRun() {
   // Device-member identity is now chosen later in the avatar/profile screen,
   // not via a blocking setup screen right after create/join. Skip it here.
   try { if (typeof updateTodayTitle === 'function') updateTodayTitle(); } catch (e) {}
+  try { if (typeof _renderTodayMembers === 'function') _renderTodayMembers(); } catch (e) {}
 }
 
 async function _firstRunCreate() {
@@ -14088,6 +14094,7 @@ if (/[?&]previewFirstRun=1/.test(location.search)) {
 try { _updateRecoveryBanner(); } catch (e) { console.warn('recovery banner failed', e); }
 try { _syncSettingsDeviceMember(); } catch (e) { console.warn('settings device member sync failed', e); }
 try { _applyGroupName(); } catch (e) { console.warn('apply group name failed', e); }
+try { if (typeof _renderTodayMembers === 'function') _renderTodayMembers(); } catch (e) { console.warn('render today members failed', e); }
 if (activeTasks().length > 0) {
   renderToday();
   document.getElementById('s-voice').classList.remove('active');
@@ -15910,6 +15917,47 @@ function _inviteScreenEnter() {
   try { _applyGroupName(); } catch (e) {}
   const contBtn = document.getElementById('inviteContinueBtn');
   if (contBtn) contBtn.style.display = _inviteFromOnboarding ? 'block' : 'none';
+}
+
+// Phase 1 (display only): render the today member strip from the REAL
+// participants (the userId-keyed member docs) instead of the fixed 4 demo
+// slots. Solo = 1 circle; grows as people join. The current device shows its
+// typed display name. Does NOT touch task attribution/visibility, which still
+// resolve via the seed member ids underneath.
+async function _renderTodayMembers() {
+  if (!DataAdapter.isFamily()) return; // demo mode keeps the static strip
+  const strip = document.querySelector('#s-today .t-avatars');
+  if (!strip) return;
+  const myId = DataAdapter.userId;
+  let participants = [];
+  if (_db) {
+    try {
+      const snap = await _db.collection('families').doc(DataAdapter.familyId)
+                            .collection('members').get();
+      participants = snap.docs.map(d => ({ id: d.id, ...(d.data() || {}) }))
+        .filter(m => m.userId && !IDENTITY_MEMBER_IDS.includes(m.memberId));
+    } catch (e) { /* offline — fall back to local-only below */ }
+  }
+  if (myId && !participants.some(p => p.userId === myId)) {
+    participants.push({ userId: myId, role: 'owner' });
+  }
+  if (!participants.length) participants = [{ userId: myId || 'me', role: 'owner' }];
+  participants.sort((a, b) => (b.userId === myId ? 1 : 0) - (a.userId === myId ? 1 : 0)); // me first
+  const grads = [
+    'linear-gradient(160deg,#f0d4c5,#c89f88)', 'linear-gradient(160deg,#d9d0c1,#9d917f)',
+    'linear-gradient(160deg,#ddd6c0,#a39c80)', 'linear-gradient(160deg,#e7d5b8,#b89972)',
+    'linear-gradient(160deg,#cfe0d2,#8fb39a)', 'linear-gradient(160deg,#d6cfe0,#998fb3)',
+  ];
+  strip.innerHTML = participants.map((p, i) => {
+    const isMe   = p.userId === myId;
+    const name   = isMe ? (DataAdapter.displayName || 'אני') : (p.displayName || 'חבר');
+    const letter = (name || '👤').trim().charAt(0) || '👤';
+    const grad   = grads[i % grads.length];
+    return `<div class="t-mem">
+      <div class="t-av online" style="background:${grad};color:#fff;font-weight:800;">${letter}</div>
+      <span class="t-avname">${name}</span>
+    </div>`;
+  }).join('');
 }
 
 // Render the (optional) group name into the settings header kicker and the
