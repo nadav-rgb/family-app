@@ -8593,6 +8593,27 @@ function renderConfirmationTasks() {
 
 }
 
+// ── Staged "thinking" messages during a long parse (UI only) ──────
+// OpenAI parsing of long speech can take 8–12s. Rotate friendly status
+// lines so the wait never feels stuck. Pure cosmetic — no data/logic effect;
+// only updates the organizing label text on timers, cleared on completion.
+let _parseStageTimers = [];
+function _startParseStages(ltxtEl) {
+  _stopParseStages();
+  if (!ltxtEl) return;
+  const set = (main, sub) => {
+    ltxtEl.innerHTML = main + '<span class="ltxt-sub">' + sub + '</span>';
+  };
+  set('מזהה משימות…', 'רגע, מארגן את מה שאמרת');
+  _parseStageTimers.push(setTimeout(() => set('מפריד בין פעולות…',    'כל משימה בנפרד'),         3000));
+  _parseStageTimers.push(setTimeout(() => set('מסדר זמנים וקניות…',   'שעות, תאריכים ורשימות'),  6000));
+  _parseStageTimers.push(setTimeout(() => set('עוד רגע, זה משפט ארוך…', 'שווה את ההמתנה 💛'),      9000));
+}
+function _stopParseStages() {
+  _parseStageTimers.forEach(id => clearTimeout(id));
+  _parseStageTimers = [];
+}
+
 async function vOrganize() {
   vListening = false;
   wdots.classList.remove('on');
@@ -8657,6 +8678,7 @@ async function vOrganize() {
   ltxt.innerHTML = t('voice_organizing') + '<span class="ltxt-sub">' + t('voice_organizing_sub') + '</span>';
   ltxt.className = 'ltxt organizing';
   zone.classList.add('processing');
+  _startParseStages(ltxt); // friendly staged status while the parse runs (UI only)
 
   AppLog.group('parsing started');
   AppLog.info('text', spokenText);
@@ -8737,6 +8759,7 @@ async function vOrganize() {
       : [aiParsedToTask({ title: spokenText || '?', time: null, date: null, assignee: null }, 0)];
     AppLog.info('add-mode insert', newTasks.map(t => t.title));
     insertNewTasks(newTasks);
+    _stopParseStages();
     _vOrganizerBusy = false;
     return;
   }
@@ -8759,6 +8782,7 @@ async function vOrganize() {
   // No artificial delay here: the "organizing" animation already showed for the
   // full duration of the parse call, so reveal the preview as soon as it's ready.
   const _showPreview = () => {
+    _stopParseStages();
     zone.classList.remove('rec');
     zone.classList.remove('processing');
     ltxt.className = 'ltxt';
