@@ -2,25 +2,6 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<!-- Tester reset: opening any URL with ?reset=1 wipes local identity, caches
-     and service workers, then reloads into a clean first-run onboarding.
-     Cloud data is NOT touched. Runs first, before any app/Firebase script. -->
-<script>
-(function(){
-  if (!/[?&]reset=1\b/.test(location.search)) return;
-  try { localStorage.clear(); } catch(e){}
-  try { sessionStorage.clear(); } catch(e){}
-  var finish = function(){ location.replace(location.origin + '/app.html?fresh=' + Date.now()); };
-  var jobs = [];
-  if (window.caches && caches.keys) {
-    jobs.push(caches.keys().then(function(ks){ return Promise.all(ks.map(function(k){ return caches.delete(k); })); }));
-  }
-  if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
-    jobs.push(navigator.serviceWorker.getRegistrations().then(function(rs){ return Promise.all(rs.map(function(r){ return r.unregister(); })); }));
-  }
-  (jobs.length ? Promise.all(jobs) : Promise.resolve()).then(finish, finish);
-})();
-</script>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
 <title>Family App</title>
 <!-- PWA: installable + offline + foundation for push notifications -->
@@ -1482,7 +1463,6 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 }
 #firstRunScreen .fr-choice-ic svg{width:21px;height:21px;}
 #firstRunScreen .fr-choice-tx{flex:1 1 auto;text-align:right;line-height:1.25;}
-#firstRunScreen .fr-choice-sub{display:block;font-size:11.5px;font-weight:500;color:var(--fr-muted);margin-top:2px;line-height:1.35;}
 #firstRunScreen .fr-choice-go{flex:0 0 auto;color:var(--fr-muted);opacity:.7;}
 #firstRunScreen .fr-choice-go svg{width:18px;height:18px;display:block;}
 #firstRunScreen .fr-choice-join .fr-choice-ic{background:var(--fr-purple-soft);color:var(--fr-purple);}
@@ -1522,6 +1502,23 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 #firstRunScreen .fr-cta-create,
 #firstRunScreen .fr-cta-join{background:linear-gradient(135deg,#8B5CD6 0%,#7C3AED 55%,#6D28D9 100%);}
 
+/* create — role picker (visual only) */
+#firstRunScreen .fr-role-q{font-size:13px;font-weight:700;color:#8A6F5C;text-align:center;margin-top:2px;}
+#firstRunScreen .fr-roles{display:flex;gap:10px;}
+#firstRunScreen .fr-role{
+  flex:1 1 0;min-width:0;display:flex;align-items:center;justify-content:center;gap:7px;
+  padding:12px;border-radius:14px;cursor:pointer;background:#fff;
+  border:2px solid rgba(224,180,140,.4);
+  font-family:'Rubik',sans-serif;font-size:15px;font-weight:700;color:var(--fr-muted);
+  transition:border-color .15s, color .15s, background .15s;
+}
+#firstRunScreen .fr-role svg{width:18px;height:18px;}
+/* distinct accents per role (mom = pink, dad = blue) — icon tinted always,
+   full accent when selected. data-role already on the buttons; no JS change. */
+#firstRunScreen .fr-role[data-role="mom"] svg{color:#E85D9A;}
+#firstRunScreen .fr-role[data-role="dad"] svg{color:#3B82F6;}
+#firstRunScreen .fr-role[data-role="mom"].is-active{border-color:#E85D9A;color:#C23B7A;background:#FCE7F1;}
+#firstRunScreen .fr-role[data-role="dad"].is-active{border-color:#3B82F6;color:#2563EB;background:#E7F0FD;}
 
 /* join — 6 real code boxes */
 #firstRunScreen .fr-code{display:flex;gap:8px;justify-content:center;direction:ltr;}
@@ -3715,9 +3712,9 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
       </button>
       <div class="head-text">
-        <span class="kicker"><span id="famGroupKicker">המרחב שלנו</span> <span aria-hidden="true">✨</span></span>
-        <h1 class="title">בני הקבוצה</h1>
-        <p class="subtitle">ניהול חברי הקבוצה שהאפליקציה מכירה</p>
+        <span class="kicker"><span>המשפחה שלנו</span> <span aria-hidden="true">✨</span></span>
+        <h1 class="title">בני המשפחה</h1>
+        <p class="subtitle">ניהול בני המשפחה שהאפליקציה מכירה</p>
       </div>
     </div>
 
@@ -3800,8 +3797,8 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
     </div>
 
     <!-- Add member → invite screen -->
-    <div class="add-card" style="cursor:pointer;" onclick="_inviteReturnScreen='s-family-members';_inviteFromOnboarding=false;goto('s-invite-member','txSlideIn','txSlideOut')">
-      <button class="add-plus" type="button" aria-label="הזמן" onclick="event.stopPropagation();_inviteReturnScreen='s-family-members';_inviteFromOnboarding=false;goto('s-invite-member','txSlideIn','txSlideOut')">
+    <div class="add-card" style="cursor:pointer;" onclick="goto('s-invite-member','txSlideIn','txSlideOut')">
+      <button class="add-plus" type="button" aria-label="הזמן" onclick="event.stopPropagation();goto('s-invite-member','txSlideIn','txSlideOut')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
       </button>
       <div class="add-text">
@@ -3865,7 +3862,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
   </div>
 
   <div class="app-header">
-    <button class="back-btn" type="button" aria-label="חזרה" onclick="inviteGoBack()">
+    <button class="back-btn" type="button" aria-label="חזרה" onclick="goto('s-family-members','txSlideOut','txSlideIn')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
     </button>
     <div class="app-title">הזמן בן משפחה</div>
@@ -3877,7 +3874,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
     <div class="hero">
       <div class="hero-illu" aria-hidden="true">✉️</div>
       <div class="hero-title">
-        <span id="inviteGroupTitle">הזמינו את הקבוצה שלכם להצטרף</span>
+        <span>הזמן את המשפחה שלך להצטרף</span>
         <span aria-hidden="true">🎉</span>
       </div>
       <div class="hero-sub">
@@ -3980,14 +3977,9 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
       </div>
       <div class="privacy-body">
         <div class="privacy-title">פרטי ופרטיות</div>
-        <div class="privacy-sub">חברי הקבוצה ימלאו בעצמם את פרטיהם לאחר ההצטרפות.</div>
+        <div class="privacy-sub">בן המשפחה ימלא בעצמו את פרטיו לאחר ההצטרפות.</div>
       </div>
     </div>
-
-    <!-- Continue into the app — shown only when reached from onboarding-create -->
-    <button id="inviteContinueBtn" type="button" onclick="inviteContinueToApp()" style="display:none;width:100%;margin-top:20px;padding:15px;border:none;border-radius:14px;background:#2EC4B6;color:#fff;font-family:inherit;font-size:16px;font-weight:800;cursor:pointer;box-shadow:0 6px 16px rgba(46,196,182,.32);">
-      המשך לאפליקציה
-    </button>
 
   </div>
 </div>
@@ -5430,7 +5422,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
           <span class="fr-choice-ic" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="m10.8 12.2 6.2-6.2"/><path d="m16 6 2 2"/><path d="m19 3 2 2"/></svg>
           </span>
-          <span class="fr-choice-tx">הצטרף לקבוצה קיימת<span class="fr-choice-sub">יש לך קוד או קישור הזמנה?</span></span>
+          <span class="fr-choice-tx">יש לי קוד משפחה</span>
           <span class="fr-choice-go" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
           </span>
@@ -5439,7 +5431,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
           <span class="fr-choice-ic" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
           </span>
-          <span class="fr-choice-tx">צור קבוצה חדשה<span class="fr-choice-sub">משפחה, זוג, שותפים או כל קבוצה שתרצה</span></span>
+          <span class="fr-choice-tx">אני רוצה ליצור משפחה חדשה</span>
           <span class="fr-choice-go" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
           </span>
@@ -5449,33 +5441,33 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
 
     <!-- ── STATE: create ── -->
     <div class="fr-state hidden" data-fr-state="create">
-      <div class="fr-hero fr-hero-create" role="img" aria-label="בואו ניצור מרחב משותף"></div>
+      <div class="fr-hero fr-hero-create" role="img" aria-label="בואו נקים את המשפחה שלכם"></div>
       <div class="fr-card">
-        <button type="button" class="fr-back" onclick="_frGoto('welcome')" aria-label="חזרה">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-        </button>
-        <div class="fr-h1">✨ בואו ניצור מרחב משותף</div>
-        <label class="fr-field-lbl" for="frUserName">מה השם שלך או איך תרצה/י להופיע באפליקציה?</label>
-        <input class="fr-input" id="frUserName" type="text" placeholder="" dir="rtl" maxlength="24" />
-        <label class="fr-field-lbl" for="frCreateName">שם הקבוצה (אופציונלי)</label>
-        <input class="fr-input" id="frCreateName" type="text" placeholder="למשל: הבית שלנו / השותפים" dir="rtl" maxlength="24" />
-        <button type="button" class="fr-cta fr-cta-create" onclick="_firstRunCreate()">צור קבוצה</button>
-        <div class="fr-hint">אפשר להזמין עוד אנשים אחר כך.</div>
+        <div class="fr-h1">✨ בואו נקים את המשפחה שלכם</div>
+        <label class="fr-field-lbl" for="frCreateName">שם המשפחה</label>
+        <input class="fr-input" id="frCreateName" type="text" placeholder="למשל: משפחת כהן" dir="rtl" maxlength="24" />
+        <div class="fr-role-q">מי משתמש במכשיר הזה?</div>
+        <div class="fr-roles">
+          <button type="button" class="fr-role" data-role="mom" onclick="_frPickRole(this)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M5 21c0-4 3-7 7-7s7 3 7 7"/></svg>
+            <span>אמא</span>
+          </button>
+          <button type="button" class="fr-role" data-role="dad" onclick="_frPickRole(this)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M5 21c0-4 3-7 7-7s7 3 7 7"/></svg>
+            <span>אבא</span>
+          </button>
+        </div>
+        <button type="button" class="fr-cta fr-cta-create" onclick="_firstRunCreate()">צור משפחה</button>
+        <div class="fr-hint">אפשר לחבר ילדים נוספים אחר כך בהגדרות בני המשפחה.</div>
       </div>
     </div>
 
     <!-- ── STATE: join ── -->
     <div class="fr-state hidden" data-fr-state="join">
-      <div class="fr-hero fr-hero-join" role="img" aria-label="הצטרפות לקבוצה קיימת"></div>
+      <div class="fr-hero fr-hero-join" role="img" aria-label="הצטרפות למשפחה שלכם"></div>
       <div class="fr-card">
-        <button type="button" class="fr-back" onclick="_frGoto('welcome')" aria-label="חזרה">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-        </button>
-        <div class="fr-h1">הצטרפו לקבוצה 🏡</div>
-        <div class="fr-sub">קיבלתם קוד הצטרפות? הכניסו אותו כאן.</div>
-        <label class="fr-field-lbl" for="frJoinUserName">מה השם שלך או איך תרצה/י להופיע באפליקציה?</label>
-        <input class="fr-input" id="frJoinUserName" type="text" placeholder="" dir="rtl" maxlength="24" />
-        <label class="fr-field-lbl" for="frCodeBoxes">קוד הצטרפות</label>
+        <div class="fr-h1">הצטרפו למשפחה שלכם 🏡</div>
+        <div class="fr-sub">קיבלתם קוד משפחה? הכניסו אותו כאן.</div>
         <div class="fr-code" id="frCodeBoxes" dir="ltr">
           <input class="fr-code-box" type="text" inputmode="text" autocomplete="off" maxlength="1" placeholder="–" aria-label="תו 1" oninput="_frCodeInput(this,0)" onkeydown="_frCodeKey(event,this,0)" onpaste="_frCodePaste(event)" />
           <input class="fr-code-box" type="text" inputmode="text" autocomplete="off" maxlength="1" placeholder="–" aria-label="תו 2" oninput="_frCodeInput(this,1)" onkeydown="_frCodeKey(event,this,1)" onpaste="_frCodePaste(event)" />
@@ -5486,16 +5478,8 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
         </div>
         <input type="hidden" id="firstRunJoinInp" />
         <div class="fr-err" id="firstRunErr"></div>
-        <button type="button" class="fr-cta fr-cta-join" onclick="_firstRunJoin()">הצטרף לקבוצה</button>
-      </div>
-    </div>
-
-    <!-- ── STATE: full ── -->
-    <div class="fr-state hidden" data-fr-state="full">
-      <div class="fr-card">
-        <div class="fr-h1">הקבוצה מלאה 💛</div>
-        <div class="fr-sub">כיום ניתן לצרף עד 6 חברים לקבוצה.<br>בהמשך נרחיב קבוצות גדולות יותר.</div>
-        <button type="button" class="fr-cta fr-cta-join" onclick="_frGoto('welcome')">הבנתי</button>
+        <button type="button" class="fr-cta fr-cta-join" onclick="_firstRunJoin()">הצטרף למשפחה</button>
+        <button type="button" class="fr-link" onclick="_frGoto('welcome')">אין לי קוד משפחה</button>
       </div>
     </div>
 
@@ -6274,10 +6258,6 @@ function _currentDeviceLegacyId() {
   return currentUser;
 }
 function currentDeviceDisplayName() {
-  // Prefer the free-text name the user entered during onboarding. Falls back
-  // to the legacy/seed member name only when no display name was set. Display
-  // only — task attribution resolves identity via myMemberId, not this.
-  if (DataAdapter.displayName) return DataAdapter.displayName;
   const legacyId = _currentDeviceLegacyId();
   if (legacyId) return t('family_' + legacyId) || ID_TO_PERSON[legacyId] || legacyId;
   const seed = DataAdapter.isFamily()
@@ -6465,14 +6445,10 @@ function _applyLang() {
   if (uswTitle) uswTitle.innerHTML = t('user_switch') + ' <span style="font-size:10px;background:#f0d8c8;color:#9e6040;border-radius:4px;padding:1px 5px;font-weight:700;vertical-align:middle;">DEMO</span>';
   // Avatar names
   const avNames = {mom:'av-mom', dad:'av-dad', dudi:'av-dudi', yonatan:'av-yona'};
-  // In family mode the strip is rendered dynamically from real participants
-  // (_renderTodayMembers); don't overwrite it with the static 4-slot labels.
-  if (!DataAdapter.isFamily()) {
-    document.querySelectorAll('#s-today .t-avname').forEach((el, i) => {
-      const f = FAMILY[i];
-      if (f) el.textContent = t('family_' + f.id);
-    });
-  }
+  document.querySelectorAll('#s-today .t-avname').forEach((el, i) => {
+    const f = FAMILY[i];
+    if (f) el.textContent = t('family_' + f.id);
+  });
   // tDateBadge & date-related are updated in updateDateBadge()
   if (typeof updateTodayTitle === 'function') updateTodayTitle();
 }
@@ -6649,7 +6625,6 @@ function goto(toId, leaveKf, enterKf, onDone) {
     if (toId === 's-family-members' && typeof syncFamilyMemberColors === 'function') { syncFamilyMemberColors(); if (typeof _mpApplyAllStripes === 'function') _mpApplyAllStripes(); }
     if (toId === 's-settings' && typeof _syncSettingsDeviceMember === 'function') _syncSettingsDeviceMember();
     if (toId === 's-invite-member' && typeof _inviteScreenEnter === 'function') _inviteScreenEnter();
-    if (toId === 's-today' && typeof _renderTodayMembers === 'function') _renderTodayMembers();
     if (onDone) onDone();
   }, dur);
 }
@@ -12224,14 +12199,12 @@ const _DA_MODE_KEY   = 'family-app-da-mode';
 const _DA_FAMILY_KEY = 'family-app-da-family-id';
 const _DA_USER_KEY   = 'family-app-da-user-id';
 const _DA_NAME_KEY   = 'family-app-da-display-name';
-const _DA_GROUP_KEY  = 'family-app-da-group-name';
 
 const DataAdapter = {
   mode:        localStorage.getItem(_DA_MODE_KEY)   || 'local',
   familyId:    localStorage.getItem(_DA_FAMILY_KEY) || null,
   userId:      localStorage.getItem(_DA_USER_KEY)   || null,
   displayName: localStorage.getItem(_DA_NAME_KEY)   || '',
-  groupName:   localStorage.getItem(_DA_GROUP_KEY)  || '',
   authUid:     null, // set by _fbInit after signInAnonymously — Auth-1 only, not yet used for writes
 
   get myMemberId() { return localStorage.getItem(MY_MEMBER_ID_KEY) || null; },
@@ -12259,14 +12232,6 @@ const DataAdapter = {
     this.displayName = name;
     if (name) localStorage.setItem(_DA_NAME_KEY, name);
     else      localStorage.removeItem(_DA_NAME_KEY);
-  },
-
-  setGroupName(name) {
-    const v = (name || '').trim();
-    this.groupName = v;
-    if (v) localStorage.setItem(_DA_GROUP_KEY, v);
-    else   localStorage.removeItem(_DA_GROUP_KEY);
-    try { if (typeof _applyGroupName === 'function') _applyGroupName(); } catch (e) {}
   },
 
   // Firestore stubs — implemented in Phase 3.
@@ -13747,26 +13712,21 @@ function _capNotifTestSection() {
     </div>`;
 }
 
-async function _daCreateFamily(groupName) {
+async function _daCreateFamily() {
   const familyId = _genCode(6);
   const userId   = DataAdapter.userId || _genCode(8);
   DataAdapter.setFamily(familyId, userId);
-  DataAdapter.setGroupName(groupName); // store locally for display (optional)
   _renderFamilySheet();
   console.log('[DA] created family', familyId, 'userId', userId);
 
   if (!_db) { console.warn('[FB] Firestore not ready — saved locally only'); return; }
   try {
     const ts = firebase.firestore.FieldValue.serverTimestamp();
-    const familyDoc = {
+    await _db.collection('families').doc(familyId).set({
       joinCode:  familyId,
       createdAt: ts,
       createdBy: userId,
-    };
-    const cleanName = (groupName || '').trim();
-    if (cleanName) familyDoc.name = cleanName;
-    familyDoc.memberCount = 1; // creator; used for the race-safe group cap
-    await _db.collection('families').doc(familyId).set(familyDoc);
+    });
     await _db.collection('families').doc(familyId)
              .collection('members').doc(userId).set({
       userId,
@@ -13778,10 +13738,6 @@ async function _daCreateFamily(groupName) {
     AppLog.warn('FB', 'createFamily Firestore write failed', e.message || e);
   }
 }
-
-// Max members per group (creator included). Not family-specific — applies to
-// any group type (family, couple, roommates, friends).
-const GROUP_MEMBER_LIMIT = 6;
 
 async function _daJoinFamily(codeArg) {
   const inp  = document.getElementById('famJoinInp');
@@ -13801,56 +13757,32 @@ async function _daJoinFamily(codeArg) {
   if (joinBtn) { joinBtn.disabled = true; joinBtn.textContent = 'בודק…'; }
 
   try {
-    const userId    = DataAdapter.userId || _genCode(8);
-    const ts        = firebase.firestore.FieldValue.serverTimestamp();
-    const familyRef = _db.collection('families').doc(code);
-    const memberRef = familyRef.collection('members').doc(userId);
-
-    // Membership decision + 6-member cap run inside ONE transaction against the
-    // family doc's memberCount counter. Counting the members subcollection then
-    // writing would be racy (two devices read 5, both write → 7). A transaction
-    // on a single counter doc serialises concurrent joins, so the cap holds.
-    let groupNameFromDoc = '';
-    const joinResult = await _db.runTransaction(async (tx) => {
-      const famDoc = await tx.get(familyRef);
-      const memDoc = await tx.get(memberRef);
-      if (!famDoc.exists) return 'missing';
-      const fam     = famDoc.data() || {};
-      groupNameFromDoc = fam.name || ''; // captured read-only value for display
-      const isOwner = (fam.createdBy === userId);
-      const count   = (typeof fam.memberCount === 'number') ? fam.memberCount : null;
-
-      if (isOwner) {
-        // Creator always gets/restores owner role; never counts as a new member.
-        tx.set(memberRef, { userId, role: 'owner', joinedAt: ts }, { merge: true });
-        return 'ok';
-      }
-      if (memDoc.exists) {
-        // Existing member rejoining — just touch lastSeen, no count change.
-        tx.update(memberRef, { lastSeenAt: ts });
-        return 'ok';
-      }
-      // Genuinely new member — enforce the cap. count===null means a legacy
-      // group created before the counter existed; allow (can't safely cap).
-      if (count !== null && count >= GROUP_MEMBER_LIMIT) return 'full';
-      tx.set(memberRef, { userId, role: 'member', joinedAt: ts });
-      tx.update(familyRef, { memberCount: firebase.firestore.FieldValue.increment(1) });
-      return 'ok';
-    });
-
-    if (joinResult === 'missing') {
-      _famShErr('לא נמצאה קבוצה עם הקוד הזה');
-      if (joinBtn) { joinBtn.disabled = false; joinBtn.textContent = 'הצטרף לקבוצה'; }
+    const familySnap = await _db.collection('families').doc(code).get();
+    if (!familySnap.exists) {
+      _famShErr('לא נמצאה משפחה עם הקוד הזה');
+      if (joinBtn) { joinBtn.disabled = false; joinBtn.textContent = 'הצטרף למשפחה'; }
       return false;
     }
-    if (joinResult === 'full') {
-      _famShErr('הקבוצה מלאה — ניתן לצרף עד 6 חברים');
-      if (joinBtn) { joinBtn.disabled = false; joinBtn.textContent = 'הצטרף לקבוצה'; }
-      return 'full';
+
+    const userId     = DataAdapter.userId || _genCode(8);
+    const familyData = familySnap.data();
+    const ts         = firebase.firestore.FieldValue.serverTimestamp();
+    const memberRef  = _db.collection('families').doc(code).collection('members').doc(userId);
+    const memberSnap = await memberRef.get();
+
+    const isOwner = (familyData.createdBy === userId);
+    if (isOwner) {
+      // Creator always gets/restores owner role, even if the document was corrupted
+      await memberRef.set({ userId, role: 'owner', joinedAt: ts }, { merge: true });
+    } else if (memberSnap.exists) {
+      // Existing non-owner member — only update last seen, never touch role
+      await memberRef.update({ lastSeenAt: ts });
+    } else {
+      // New member
+      await memberRef.set({ userId, role: 'member', joinedAt: ts });
     }
 
     DataAdapter.setFamily(code, userId);
-    DataAdapter.setGroupName(groupNameFromDoc); // store group name for display
     console.log('[DA] joined family', code, 'userId', userId);
     _renderFamilySheet();
     _loadFamilyMembersCache();
@@ -13859,7 +13791,7 @@ async function _daJoinFamily(codeArg) {
   } catch (e) {
     AppLog.warn('FB', 'joinFamily failed', e.message || e);
     _famShErr('שגיאה בהתחברות לענן — נסה שוב');
-    if (joinBtn) { joinBtn.disabled = false; joinBtn.textContent = 'הצטרף לקבוצה'; }
+    if (joinBtn) { joinBtn.disabled = false; joinBtn.textContent = 'הצטרף למשפחה'; }
     return false;
   }
 }
@@ -13898,30 +13830,14 @@ function _finishFirstRun() {
   // Device-member identity is now chosen later in the avatar/profile screen,
   // not via a blocking setup screen right after create/join. Skip it here.
   try { if (typeof updateTodayTitle === 'function') updateTodayTitle(); } catch (e) {}
-  try { if (typeof _renderTodayMembers === 'function') _renderTodayMembers(); } catch (e) {}
 }
 
 async function _firstRunCreate() {
-  const userInp  = document.getElementById('frUserName');
-  const userName = userInp ? userInp.value.trim() : '';
-  if (userName) { try { DataAdapter.setDisplayName(userName); } catch (e) {} }
-  const groupInp  = document.getElementById('frCreateName');
-  const groupName = groupInp ? groupInp.value.trim() : '';
-  await _daCreateFamily(groupName);
-  if (DataAdapter.isFamily()) {
-    _finishFirstRun();
-    // Surface the join code right away so the creator can invite others —
-    // otherwise the code is buried in settings. Reuses the existing invite
-    // screen (code card + copy + WhatsApp/SMS/link share). Back returns to the
-    // main app screen the user just landed on (NOT settings) — onboarding
-    // didn't come from settings.
-    try {
-      const landing = (document.querySelector('.app-screen.active') || {}).id || 's-today';
-      _inviteReturnScreen = landing;
-      _inviteFromOnboarding = true;
-      goto('s-invite-member', 'txSlideIn', 'txSlideOut');
-    } catch (e) {}
-  }
+  const nameInp = document.getElementById('frCreateName');
+  const name    = nameInp ? nameInp.value.trim() : '';
+  if (name) { try { DataAdapter.setDisplayName(name); } catch (e) {} }
+  await _daCreateFamily();
+  if (DataAdapter.isFamily()) _finishFirstRun();
 }
 
 function _frGoto(state) {
@@ -13936,6 +13852,11 @@ function _frGoto(state) {
   if (state === 'create') focusEl = document.getElementById('frCreateName');
   else if (state === 'join') focusEl = _frCodeBoxes()[0];
   if (focusEl) { try { focusEl.focus(); } catch (e) {} }
+}
+
+function _frPickRole(el) {
+  document.querySelectorAll('#firstRunScreen .fr-role').forEach(r => r.classList.remove('is-active'));
+  el.classList.add('is-active');
 }
 
 function _frCodeBoxes() {
@@ -13958,14 +13879,6 @@ function _frCodeKey(e, box, idx) {
     e.preventDefault();
   }
 }
-function _frPrefillJoinCode(code) {
-  const boxes = _frCodeBoxes();
-  boxes.forEach((b, i) => { b.value = code[i] || ''; });
-  _frCodeSync();
-  // Code already filled — put the cursor on the name field instead.
-  const nameInp = document.getElementById('frJoinUserName');
-  if (nameInp) { try { nameInp.focus(); } catch (e) {} }
-}
 function _frCodePaste(e) {
   e.preventDefault();
   const src = (e.clipboardData || window.clipboardData);
@@ -13983,13 +13896,9 @@ async function _firstRunJoin() {
   const code  = inp ? inp.value.trim().toUpperCase() : '';
   if (code.length < 4) { if (errEl) errEl.textContent = 'הכנס קוד בן 4-6 תווים'; return; }
   if (errEl) errEl.textContent = '';
-  const nameInp  = document.getElementById('frJoinUserName');
-  const joinName = nameInp ? nameInp.value.trim() : '';
-  if (joinName) { try { DataAdapter.setDisplayName(joinName); } catch (e) {} }
   const ok = await _daJoinFamily(code);
-  if (ok === 'full') { _frGoto('full'); return; }
   if (ok && DataAdapter.isFamily()) _finishFirstRun();
-  else if (errEl && !errEl.textContent) errEl.textContent = 'לא נמצאה קבוצה עם הקוד הזה';
+  else if (errEl && !errEl.textContent) errEl.textContent = 'לא נמצאה משפחה עם הקוד הזה';
 }
 
 async function _daSaveDisplayName() {
@@ -14085,17 +13994,8 @@ _applyLang();
 _capInit().then(() => _capRescheduleAll()).catch(() => {});
 // Preview-only: ?previewFirstRun=1 forces the onboarding screen for visual
 // review. Pure UI — touches no data, no family state, no listeners.
-const _urlJoinCode = (new URLSearchParams(location.search).get('code') || '')
-  .toUpperCase().replace(/[^A-Z2-9]/g, '').slice(0, 6);
 if (/[?&]previewFirstRun=1/.test(location.search)) {
   _showFirstRunScreen();
-} else if (_urlJoinCode) {
-  // Invite-link deep link — ALWAYS open the join flow with the code pre-filled,
-  // even if this device already belongs to a group. Clicking an invite clearly
-  // means "join this group", so we never silently auto-enter the previous one
-  // (which is what made a returning tester land in their old data).
-  _showFirstRunScreen();
-  try { _frGoto('join'); _frPrefillJoinCode(_urlJoinCode); } catch (e) {}
 } else if (DataAdapter.isFamily()) {
   _loadFamilyMembersCache();
   // While in the 72h post-reset recovery window, do NOT auto-sync — the wipe
@@ -14114,8 +14014,6 @@ if (/[?&]previewFirstRun=1/.test(location.search)) {
 }
 try { _updateRecoveryBanner(); } catch (e) { console.warn('recovery banner failed', e); }
 try { _syncSettingsDeviceMember(); } catch (e) { console.warn('settings device member sync failed', e); }
-try { _applyGroupName(); } catch (e) { console.warn('apply group name failed', e); }
-try { if (typeof _renderTodayMembers === 'function') _renderTodayMembers(); } catch (e) { console.warn('render today members failed', e); }
 if (activeTasks().length > 0) {
   renderToday();
   document.getElementById('s-voice').classList.remove('active');
@@ -15916,79 +15814,9 @@ function inviteViaShare() {
     window.location.href = `intent:#Intent;action=android.intent.action.SEND;type=text/plain;S.android.intent.extra.TEXT=${encoded};end`;
   }
 }
-// Where the invite screen's back arrow returns to. Set by whoever opens the
-// screen (settings → 's-family-members'; onboarding-create → the screen the
-// user was actually on). Defaults to settings for safety.
-let _inviteReturnScreen = 's-family-members';
-// True when the invite screen was opened as the last step of creating a group
-// (onboarding). In that case we show an explicit "continue to app" CTA so the
-// user isn't forced to use the back arrow to enter the app.
-let _inviteFromOnboarding = false;
-function inviteGoBack() {
-  goto(_inviteReturnScreen || 's-family-members', 'txSlideOut', 'txSlideIn');
-}
-function inviteContinueToApp() {
-  _inviteFromOnboarding = false;
-  goto(_inviteReturnScreen || 's-today', 'txSlideOut', 'txSlideIn');
-}
-
 function _inviteScreenEnter() {
   const codeEl = document.getElementById('inviteFamilyCode');
   if (codeEl) codeEl.textContent = _inviteGetCode();
-  try { _applyGroupName(); } catch (e) {}
-  const contBtn = document.getElementById('inviteContinueBtn');
-  if (contBtn) contBtn.style.display = _inviteFromOnboarding ? 'block' : 'none';
-}
-
-// Phase 1 (display only): render the today member strip from the REAL
-// participants (the userId-keyed member docs) instead of the fixed 4 demo
-// slots. Solo = 1 circle; grows as people join. The current device shows its
-// typed display name. Does NOT touch task attribution/visibility, which still
-// resolve via the seed member ids underneath.
-async function _renderTodayMembers() {
-  if (!DataAdapter.isFamily()) return; // demo mode keeps the static strip
-  const strip = document.querySelector('#s-today .t-avatars');
-  if (!strip) return;
-  const myId = DataAdapter.userId;
-  let participants = [];
-  if (_db) {
-    try {
-      const snap = await _db.collection('families').doc(DataAdapter.familyId)
-                            .collection('members').get();
-      participants = snap.docs.map(d => ({ id: d.id, ...(d.data() || {}) }))
-        .filter(m => m.userId && !IDENTITY_MEMBER_IDS.includes(m.memberId));
-    } catch (e) { /* offline — fall back to local-only below */ }
-  }
-  if (myId && !participants.some(p => p.userId === myId)) {
-    participants.push({ userId: myId, role: 'owner' });
-  }
-  if (!participants.length) participants = [{ userId: myId || 'me', role: 'owner' }];
-  participants.sort((a, b) => (b.userId === myId ? 1 : 0) - (a.userId === myId ? 1 : 0)); // me first
-  const grads = [
-    'linear-gradient(160deg,#f0d4c5,#c89f88)', 'linear-gradient(160deg,#d9d0c1,#9d917f)',
-    'linear-gradient(160deg,#ddd6c0,#a39c80)', 'linear-gradient(160deg,#e7d5b8,#b89972)',
-    'linear-gradient(160deg,#cfe0d2,#8fb39a)', 'linear-gradient(160deg,#d6cfe0,#998fb3)',
-  ];
-  strip.innerHTML = participants.map((p, i) => {
-    const isMe   = p.userId === myId;
-    const name   = isMe ? (DataAdapter.displayName || 'אני') : (p.displayName || 'חבר');
-    const letter = (name || '👤').trim().charAt(0) || '👤';
-    const grad   = grads[i % grads.length];
-    return `<div class="t-mem">
-      <div class="t-av online" style="background:${grad};color:#fff;font-weight:800;">${letter}</div>
-      <span class="t-avname">${name}</span>
-    </div>`;
-  }).join('');
-}
-
-// Render the (optional) group name into the settings header kicker and the
-// invite-screen hero title. Falls back to a neutral default when unset.
-function _applyGroupName() {
-  const g      = (DataAdapter.groupName || '').trim();
-  const kicker = document.getElementById('famGroupKicker');
-  if (kicker) kicker.textContent = g || 'המרחב שלנו';
-  const invTitle = document.getElementById('inviteGroupTitle');
-  if (invTitle) invTitle.textContent = g ? `הזמינו ל"${g}" להצטרף` : 'הזמינו את הקבוצה שלכם להצטרף';
 }
 
 // ── PIN / Biometric / Delete Data flows ──────────────────────────
