@@ -5449,6 +5449,9 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
         </button>
         <div class="fr-h1">הצטרפו לקבוצה 🏡</div>
         <div class="fr-sub">קיבלתם קוד הצטרפות? הכניסו אותו כאן.</div>
+        <label class="fr-field-lbl" for="frJoinUserName">מה השם שלך או איך תרצה/י להופיע באפליקציה?</label>
+        <input class="fr-input" id="frJoinUserName" type="text" placeholder="" dir="rtl" maxlength="24" />
+        <label class="fr-field-lbl" for="frCodeBoxes">קוד הצטרפות</label>
         <div class="fr-code" id="frCodeBoxes" dir="ltr">
           <input class="fr-code-box" type="text" inputmode="text" autocomplete="off" maxlength="1" placeholder="–" aria-label="תו 1" oninput="_frCodeInput(this,0)" onkeydown="_frCodeKey(event,this,0)" onpaste="_frCodePaste(event)" />
           <input class="fr-code-box" type="text" inputmode="text" autocomplete="off" maxlength="1" placeholder="–" aria-label="תו 2" oninput="_frCodeInput(this,1)" onkeydown="_frCodeKey(event,this,1)" onpaste="_frCodePaste(event)" />
@@ -13925,6 +13928,14 @@ function _frCodeKey(e, box, idx) {
     e.preventDefault();
   }
 }
+function _frPrefillJoinCode(code) {
+  const boxes = _frCodeBoxes();
+  boxes.forEach((b, i) => { b.value = code[i] || ''; });
+  _frCodeSync();
+  // Code already filled — put the cursor on the name field instead.
+  const nameInp = document.getElementById('frJoinUserName');
+  if (nameInp) { try { nameInp.focus(); } catch (e) {} }
+}
 function _frCodePaste(e) {
   e.preventDefault();
   const src = (e.clipboardData || window.clipboardData);
@@ -13942,6 +13953,9 @@ async function _firstRunJoin() {
   const code  = inp ? inp.value.trim().toUpperCase() : '';
   if (code.length < 4) { if (errEl) errEl.textContent = 'הכנס קוד בן 4-6 תווים'; return; }
   if (errEl) errEl.textContent = '';
+  const nameInp  = document.getElementById('frJoinUserName');
+  const joinName = nameInp ? nameInp.value.trim() : '';
+  if (joinName) { try { DataAdapter.setDisplayName(joinName); } catch (e) {} }
   const ok = await _daJoinFamily(code);
   if (ok === 'full') { _frGoto('full'); return; }
   if (ok && DataAdapter.isFamily()) _finishFirstRun();
@@ -14058,6 +14072,13 @@ if (/[?&]previewFirstRun=1/.test(location.search)) {
   // Fresh install / no family identity — force the onboarding gate so the app
   // never auto-enters a seeded/default family.
   _showFirstRunScreen();
+  // Invite-link deep link: /join?code=XXXX → open straight on the join step
+  // with the code pre-filled, so the recipient just adds their name and joins.
+  const _joinCode = (new URLSearchParams(location.search).get('code') || '')
+    .toUpperCase().replace(/[^A-Z2-9]/g, '').slice(0, 6);
+  if (_joinCode) {
+    try { _frGoto('join'); _frPrefillJoinCode(_joinCode); } catch (e) {}
+  }
 }
 try { _updateRecoveryBanner(); } catch (e) { console.warn('recovery banner failed', e); }
 try { _syncSettingsDeviceMember(); } catch (e) { console.warn('settings device member sync failed', e); }
