@@ -16529,12 +16529,12 @@ function _renderMemberProfile() {
     if (vWrap) vWrap.style.display = 'none';
   }
 
-  // Info row: birthday always + anniversary for parents only
+  // Info row: birthday + anniversary. In the real-identity model anyone can set
+  // their OWN dates (no parent role) — so dates are editable on your own profile.
   const infoRow = document.getElementById('mpInfoRow');
   const bdayAge = _mpCalcAge(m.birthday);
-  const canEditDates = _mpIsFamilyHead();
+  const canEditDates = isSelf;
   const bdayClick = canEditDates ? `onclick="mpEditField('birthday')"` : '';
-  const bdayEmpty = m.birthday ? '' : (canEditDates ? ' empty' : ' empty');
   const bdayVal   = m.birthday || (canEditDates ? 'לחץ להוספה' : '—');
   const bdayHtml = `
     <div class="mp-info-card" ${bdayClick} style="${canEditDates?'':'cursor:default'}">
@@ -16542,20 +16542,17 @@ function _renderMemberProfile() {
       <div class="mp-info-date${m.birthday?'':' empty'}">${bdayVal}</div>
       <div class="mp-info-sub">${bdayAge != null ? `<span>${bdayAge} שנים</span>` : '<span>—</span>'}</div>
     </div>`;
-  let anniHtml = '';
-  if (isParent) {
-    const anniAge = _mpCalcAge(m.anniversary);
-    const anniClick = canEditDates ? `onclick="mpEditField('anniversary')"` : '';
-    const anniVal   = m.anniversary || (canEditDates ? 'לחץ להוספה' : '—');
-    anniHtml = `
-      <div class="mp-info-card" ${anniClick} style="${canEditDates?'':'cursor:default'}">
-        <div class="mp-info-head"><span class="mp-info-label">יום נישואין</span><span class="mp-info-emoji">💍</span></div>
-        <div class="mp-info-date${m.anniversary?'':' empty'}">${anniVal}</div>
-        <div class="mp-info-sub">${anniAge != null ? `<span>${anniAge} שנים</span><span class="pp">💜</span>` : '<span>—</span>'}</div>
-      </div>`;
-  }
-  infoRow.className = 'mp-info-row ' + (isParent ? 'two-col' : 'one-col');
-  infoRow.innerHTML = (isParent ? anniHtml : '') + bdayHtml;
+  const anniAge = _mpCalcAge(m.anniversary);
+  const anniClick = canEditDates ? `onclick="mpEditField('anniversary')"` : '';
+  const anniVal   = m.anniversary || (canEditDates ? 'לחץ להוספה' : '—');
+  const anniHtml = `
+    <div class="mp-info-card" ${anniClick} style="${canEditDates?'':'cursor:default'}">
+      <div class="mp-info-head"><span class="mp-info-label">יום נישואין</span><span class="mp-info-emoji">💍</span></div>
+      <div class="mp-info-date${m.anniversary?'':' empty'}">${anniVal}</div>
+      <div class="mp-info-sub">${anniAge != null ? `<span>${anniAge} שנים</span><span class="pp">💜</span>` : '<span>—</span>'}</div>
+    </div>`;
+  infoRow.className = 'mp-info-row two-col';
+  infoRow.innerHTML = anniHtml + bdayHtml;
 
   // Color card — self only
   const colorCard = document.getElementById('mpColorCard');
@@ -17072,53 +17069,43 @@ function _mpCreateCountdownTasks(memberId, field, dateStr, calTypeOverride) {
   const name = m?.name || '';
   const isAnniv = field === 'anniversary';
 
-  // Anniversary: one SHARED reminder for both parents only (each parent sees
-  //   it once; children never see it).
-  // Birthday: one personal copy per OTHER family member (not the birthday person).
-  const birthdayRecipients = (_FAMILY_MEMBERS_SEED || [])
-    .map(x => x.memberId).filter(id => id !== memberId);
-
+  // Real-identity model: a group is a shared space, so each countdown is ONE
+  // shared reminder per day that every member sees (no per-recipient copies,
+  // no parent/child split). Visible-to lists all current members for back-compat.
   const _cdCreatedBy   = (typeof DataAdapter !== 'undefined' && DataAdapter.userId)     || null;
   const _cdCreatedByM  = (typeof DataAdapter !== 'undefined' && DataAdapter.myMemberId) || null;
+  const allMemberIds   = (_familyMembersCache || []).map(x => x.memberId).filter(Boolean);
 
   // Remove existing countdown tasks for this event this year
   const TAG = `_countdown_${memberId}_${field}_${eventYear}`;
   AppState.tasks = (AppState.tasks || []).filter(t => t._countdownTag !== TAG);
 
   // Create 7 reminders (days T-7 to T-1) — only future ones
+  const _cdCreated = [];
   for (let daysLeft = 7; daysLeft >= 1; daysLeft--) {
     const taskDate = new Date(eventDate);
     taskDate.setDate(taskDate.getDate() - daysLeft);
     if (taskDate < today) continue;
 
     const label = daysLeft === 1 ? 'מחר!' : `בעוד ${daysLeft} ימים!`;
-    const prefix = isAnniv ? `יום נישואין לאבא ואמא ${label}` : `יום הולדת ל${name} ${label}`;
+    const title = isAnniv ? `יום נישואין ${label}` : `יום הולדת ל${name} ${label}`;
     const ymd = `${taskDate.getFullYear()}-${String(taskDate.getMonth()+1).padStart(2,'0')}-${String(taskDate.getDate()).padStart(2,'0')}`;
-
-    if (isAnniv) {
-      AppState.tasks.push({
-        id: `_cd_${TAG}_${daysLeft}_anniv_${Date.now()}_${Math.random().toString(36).slice(2)}`,
-        title: prefix, emoji: '💍', date: ymd, mins: null, completed: false,
-        assignedTo: null, assignedToMemberId: null,
-        createdBy: _cdCreatedBy, createdByMemberId: _cdCreatedByM,
-        visibleTo: _parentVisibleIds(),     // both parents only
-        viewOnly: true, noNotification: true, _countdownTag: TAG, recurrence: { type:'none' }
-      });
-    } else {
-      birthdayRecipients.forEach(mid => {
-        const legId = _legacyIdForMemberId(mid) || mid;
-        AppState.tasks.push({
-          id: `_cd_${TAG}_${daysLeft}_${mid}_${Date.now()}_${Math.random().toString(36).slice(2)}`,
-          title: prefix, emoji: '🎂', date: ymd, mins: null, completed: false,
-          assignedTo: legId, assignedToMemberId: mid,
-          createdBy: _cdCreatedBy, createdByMemberId: _cdCreatedByM,
-          visibleTo: [legId, mid],          // only this recipient
-          viewOnly: true, noNotification: true, _countdownTag: TAG, recurrence: { type:'none' }
-        });
-      });
-    }
+    const task = {
+      id: `${TAG}_${daysLeft}`,            // deterministic → re-saving overwrites, no dupes
+      title, emoji: isAnniv ? '💍' : '🎂', date: ymd, mins: null, completed: false,
+      assignedTo: null, assignedToMemberId: null,
+      createdBy: _cdCreatedBy, createdByMemberId: _cdCreatedByM,
+      visibleTo: allMemberIds,
+      viewOnly: true, noNotification: true, _countdownTag: TAG, recurrence: { type:'none' }
+    };
+    AppState.tasks.push(task);
+    _cdCreated.push(task);
   }
   saveState();
+  // Sync to Firestore so every member sees the countdown (shared space).
+  if (DataAdapter.isFamily() && typeof _daWriteTask === 'function') {
+    _cdCreated.forEach(t => { try { _daWriteTask(t, true).catch(() => {}); } catch (e) {} });
+  }
 }
 
 // ── Save to Firestore + local cache ───────────────────────────────
