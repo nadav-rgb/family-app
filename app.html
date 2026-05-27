@@ -1463,6 +1463,7 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 }
 #firstRunScreen .fr-choice-ic svg{width:21px;height:21px;}
 #firstRunScreen .fr-choice-tx{flex:1 1 auto;text-align:right;line-height:1.25;}
+#firstRunScreen .fr-choice-sub{display:block;font-size:11.5px;font-weight:500;color:var(--fr-muted);margin-top:2px;line-height:1.35;}
 #firstRunScreen .fr-choice-go{flex:0 0 auto;color:var(--fr-muted);opacity:.7;}
 #firstRunScreen .fr-choice-go svg{width:18px;height:18px;display:block;}
 #firstRunScreen .fr-choice-join .fr-choice-ic{background:var(--fr-purple-soft);color:var(--fr-purple);}
@@ -1502,23 +1503,6 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 #firstRunScreen .fr-cta-create,
 #firstRunScreen .fr-cta-join{background:linear-gradient(135deg,#8B5CD6 0%,#7C3AED 55%,#6D28D9 100%);}
 
-/* create — role picker (visual only) */
-#firstRunScreen .fr-role-q{font-size:13px;font-weight:700;color:#8A6F5C;text-align:center;margin-top:2px;}
-#firstRunScreen .fr-roles{display:flex;gap:10px;}
-#firstRunScreen .fr-role{
-  flex:1 1 0;min-width:0;display:flex;align-items:center;justify-content:center;gap:7px;
-  padding:12px;border-radius:14px;cursor:pointer;background:#fff;
-  border:2px solid rgba(224,180,140,.4);
-  font-family:'Rubik',sans-serif;font-size:15px;font-weight:700;color:var(--fr-muted);
-  transition:border-color .15s, color .15s, background .15s;
-}
-#firstRunScreen .fr-role svg{width:18px;height:18px;}
-/* distinct accents per role (mom = pink, dad = blue) — icon tinted always,
-   full accent when selected. data-role already on the buttons; no JS change. */
-#firstRunScreen .fr-role[data-role="mom"] svg{color:#E85D9A;}
-#firstRunScreen .fr-role[data-role="dad"] svg{color:#3B82F6;}
-#firstRunScreen .fr-role[data-role="mom"].is-active{border-color:#E85D9A;color:#C23B7A;background:#FCE7F1;}
-#firstRunScreen .fr-role[data-role="dad"].is-active{border-color:#3B82F6;color:#2563EB;background:#E7F0FD;}
 
 /* join — 6 real code boxes */
 #firstRunScreen .fr-code{display:flex;gap:8px;justify-content:center;direction:ltr;}
@@ -5422,7 +5406,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
           <span class="fr-choice-ic" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="m10.8 12.2 6.2-6.2"/><path d="m16 6 2 2"/><path d="m19 3 2 2"/></svg>
           </span>
-          <span class="fr-choice-tx">יש לי קוד משפחה</span>
+          <span class="fr-choice-tx">הצטרף לקבוצה קיימת<span class="fr-choice-sub">יש לך קוד או קישור הזמנה?</span></span>
           <span class="fr-choice-go" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
           </span>
@@ -5431,7 +5415,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
           <span class="fr-choice-ic" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
           </span>
-          <span class="fr-choice-tx">אני רוצה ליצור משפחה חדשה</span>
+          <span class="fr-choice-tx">צור קבוצה חדשה<span class="fr-choice-sub">משפחה, זוג, שותפים או כל קבוצה שתרצה</span></span>
           <span class="fr-choice-go" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
           </span>
@@ -5441,33 +5425,24 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
 
     <!-- ── STATE: create ── -->
     <div class="fr-state hidden" data-fr-state="create">
-      <div class="fr-hero fr-hero-create" role="img" aria-label="בואו נקים את המשפחה שלכם"></div>
+      <div class="fr-hero fr-hero-create" role="img" aria-label="בואו ניצור מרחב משותף"></div>
       <div class="fr-card">
-        <div class="fr-h1">✨ בואו נקים את המשפחה שלכם</div>
-        <label class="fr-field-lbl" for="frCreateName">שם המשפחה</label>
-        <input class="fr-input" id="frCreateName" type="text" placeholder="למשל: משפחת כהן" dir="rtl" maxlength="24" />
-        <div class="fr-role-q">מי משתמש במכשיר הזה?</div>
-        <div class="fr-roles">
-          <button type="button" class="fr-role" data-role="mom" onclick="_frPickRole(this)">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M5 21c0-4 3-7 7-7s7 3 7 7"/></svg>
-            <span>אמא</span>
-          </button>
-          <button type="button" class="fr-role" data-role="dad" onclick="_frPickRole(this)">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M5 21c0-4 3-7 7-7s7 3 7 7"/></svg>
-            <span>אבא</span>
-          </button>
-        </div>
-        <button type="button" class="fr-cta fr-cta-create" onclick="_firstRunCreate()">צור משפחה</button>
-        <div class="fr-hint">אפשר לחבר ילדים נוספים אחר כך בהגדרות בני המשפחה.</div>
+        <div class="fr-h1">✨ בואו ניצור מרחב משותף</div>
+        <label class="fr-field-lbl" for="frUserName">מה השם שלך או איך תרצה/י להופיע באפליקציה?</label>
+        <input class="fr-input" id="frUserName" type="text" placeholder="נדב / אמא / שותף 1 / דניאל / הבית" dir="rtl" maxlength="24" />
+        <label class="fr-field-lbl" for="frCreateName">שם הקבוצה (אופציונלי)</label>
+        <input class="fr-input" id="frCreateName" type="text" placeholder="למשל: הבית שלנו / השותפים" dir="rtl" maxlength="24" />
+        <button type="button" class="fr-cta fr-cta-create" onclick="_firstRunCreate()">צור קבוצה</button>
+        <div class="fr-hint">אפשר להזמין עוד אנשים אחר כך.</div>
       </div>
     </div>
 
     <!-- ── STATE: join ── -->
     <div class="fr-state hidden" data-fr-state="join">
-      <div class="fr-hero fr-hero-join" role="img" aria-label="הצטרפות למשפחה שלכם"></div>
+      <div class="fr-hero fr-hero-join" role="img" aria-label="הצטרפות לקבוצה קיימת"></div>
       <div class="fr-card">
-        <div class="fr-h1">הצטרפו למשפחה שלכם 🏡</div>
-        <div class="fr-sub">קיבלתם קוד משפחה? הכניסו אותו כאן.</div>
+        <div class="fr-h1">הצטרפו לקבוצה 🏡</div>
+        <div class="fr-sub">קיבלתם קוד הצטרפות? הכניסו אותו כאן.</div>
         <div class="fr-code" id="frCodeBoxes" dir="ltr">
           <input class="fr-code-box" type="text" inputmode="text" autocomplete="off" maxlength="1" placeholder="–" aria-label="תו 1" oninput="_frCodeInput(this,0)" onkeydown="_frCodeKey(event,this,0)" onpaste="_frCodePaste(event)" />
           <input class="fr-code-box" type="text" inputmode="text" autocomplete="off" maxlength="1" placeholder="–" aria-label="תו 2" oninput="_frCodeInput(this,1)" onkeydown="_frCodeKey(event,this,1)" onpaste="_frCodePaste(event)" />
@@ -5478,8 +5453,8 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
         </div>
         <input type="hidden" id="firstRunJoinInp" />
         <div class="fr-err" id="firstRunErr"></div>
-        <button type="button" class="fr-cta fr-cta-join" onclick="_firstRunJoin()">הצטרף למשפחה</button>
-        <button type="button" class="fr-link" onclick="_frGoto('welcome')">אין לי קוד משפחה</button>
+        <button type="button" class="fr-cta fr-cta-join" onclick="_firstRunJoin()">הצטרף לקבוצה</button>
+        <button type="button" class="fr-link" onclick="_frGoto('welcome')">אין לי קוד הצטרפות</button>
       </div>
     </div>
 
@@ -13712,7 +13687,7 @@ function _capNotifTestSection() {
     </div>`;
 }
 
-async function _daCreateFamily() {
+async function _daCreateFamily(groupName) {
   const familyId = _genCode(6);
   const userId   = DataAdapter.userId || _genCode(8);
   DataAdapter.setFamily(familyId, userId);
@@ -13722,11 +13697,14 @@ async function _daCreateFamily() {
   if (!_db) { console.warn('[FB] Firestore not ready — saved locally only'); return; }
   try {
     const ts = firebase.firestore.FieldValue.serverTimestamp();
-    await _db.collection('families').doc(familyId).set({
+    const familyDoc = {
       joinCode:  familyId,
       createdAt: ts,
       createdBy: userId,
-    });
+    };
+    const cleanName = (groupName || '').trim();
+    if (cleanName) familyDoc.name = cleanName;
+    await _db.collection('families').doc(familyId).set(familyDoc);
     await _db.collection('families').doc(familyId)
              .collection('members').doc(userId).set({
       userId,
@@ -13833,10 +13811,12 @@ function _finishFirstRun() {
 }
 
 async function _firstRunCreate() {
-  const nameInp = document.getElementById('frCreateName');
-  const name    = nameInp ? nameInp.value.trim() : '';
-  if (name) { try { DataAdapter.setDisplayName(name); } catch (e) {} }
-  await _daCreateFamily();
+  const userInp  = document.getElementById('frUserName');
+  const userName = userInp ? userInp.value.trim() : '';
+  if (userName) { try { DataAdapter.setDisplayName(userName); } catch (e) {} }
+  const groupInp  = document.getElementById('frCreateName');
+  const groupName = groupInp ? groupInp.value.trim() : '';
+  await _daCreateFamily(groupName);
   if (DataAdapter.isFamily()) _finishFirstRun();
 }
 
@@ -13852,11 +13832,6 @@ function _frGoto(state) {
   if (state === 'create') focusEl = document.getElementById('frCreateName');
   else if (state === 'join') focusEl = _frCodeBoxes()[0];
   if (focusEl) { try { focusEl.focus(); } catch (e) {} }
-}
-
-function _frPickRole(el) {
-  document.querySelectorAll('#firstRunScreen .fr-role').forEach(r => r.classList.remove('is-active'));
-  el.classList.add('is-active');
 }
 
 function _frCodeBoxes() {
@@ -13898,7 +13873,7 @@ async function _firstRunJoin() {
   if (errEl) errEl.textContent = '';
   const ok = await _daJoinFamily(code);
   if (ok && DataAdapter.isFamily()) _finishFirstRun();
-  else if (errEl && !errEl.textContent) errEl.textContent = 'לא נמצאה משפחה עם הקוד הזה';
+  else if (errEl && !errEl.textContent) errEl.textContent = 'לא נמצאה קבוצה עם הקוד הזה';
 }
 
 async function _daSaveDisplayName() {
