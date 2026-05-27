@@ -3586,7 +3586,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
     <!-- Header -->
     <div class="header">
       <div class="head-text">
-        <span class="kicker"><span>מרחב משפחתי</span> <span aria-hidden="true">✨</span></span>
+        <span class="kicker"><span>מרחב משותף</span> <span aria-hidden="true">✨</span></span>
         <h1 class="title">הגדרות</h1>
       </div>
       <button class="bell" aria-label="התראות" type="button" onclick="openBellPanel()">
@@ -3598,8 +3598,8 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
     <!-- Family hero card -->
     <div class="fam-card">
       <div class="fam-text">
-        <div class="fam-name"><span>משפחת לבון</span> <span class="heart" aria-hidden="true">💗</span></div>
-        <div class="fam-desc">מרחב משפחתי משותף<br/>לנהל, לתכנן ולדאוג אחד לשני</div>
+        <div class="fam-name"><span id="settingsGroupName">המרחב שלי</span> <span class="heart" aria-hidden="true">💗</span></div>
+        <div class="fam-desc">מרחב משותף<br/>לנהל, לתכנן ולדאוג אחד לשני</div>
       </div>
       <div class="fam-avatar" data-avatar-bind="me" data-avatar-size="78"><div data-avatar-slot></div></div>
     </div>
@@ -6648,6 +6648,7 @@ function goto(toId, leaveKf, enterKf, onDone) {
     busy = false;
     if (toId === 's-family-members' && typeof syncFamilyMemberColors === 'function') { syncFamilyMemberColors(); if (typeof _mpApplyAllStripes === 'function') _mpApplyAllStripes(); }
     if (toId === 's-settings' && typeof _syncSettingsDeviceMember === 'function') _syncSettingsDeviceMember();
+    if (toId === 's-settings' && typeof _renderSettingsMembers === 'function') _renderSettingsMembers();
     if (toId === 's-invite-member' && typeof _inviteScreenEnter === 'function') _inviteScreenEnter();
     if (toId === 's-today' && typeof _renderTodayMembers === 'function') _renderTodayMembers();
     if (onDone) onDone();
@@ -13899,6 +13900,8 @@ function _finishFirstRun() {
   // not via a blocking setup screen right after create/join. Skip it here.
   try { if (typeof updateTodayTitle === 'function') updateTodayTitle(); } catch (e) {}
   try { if (typeof _renderTodayMembers === 'function') _renderTodayMembers(); } catch (e) {}
+  try { if (typeof _renderSettingsMembers === 'function') _renderSettingsMembers(); } catch (e) {}
+  try { if (typeof _applyGroupName === 'function') _applyGroupName(); } catch (e) {}
 }
 
 async function _firstRunCreate() {
@@ -14116,6 +14119,7 @@ try { _updateRecoveryBanner(); } catch (e) { console.warn('recovery banner faile
 try { _syncSettingsDeviceMember(); } catch (e) { console.warn('settings device member sync failed', e); }
 try { _applyGroupName(); } catch (e) { console.warn('apply group name failed', e); }
 try { if (typeof _renderTodayMembers === 'function') _renderTodayMembers(); } catch (e) { console.warn('render today members failed', e); }
+try { if (typeof _renderSettingsMembers === 'function') _renderSettingsMembers(); } catch (e) { console.warn('render settings members failed', e); }
 if (activeTasks().length > 0) {
   renderToday();
   document.getElementById('s-voice').classList.remove('active');
@@ -15940,18 +15944,22 @@ function _inviteScreenEnter() {
   if (contBtn) contBtn.style.display = _inviteFromOnboarding ? 'block' : 'none';
 }
 
-// Phase 1 (display only): render the today member strip from the REAL
-// participants (the userId-keyed member docs) instead of the fixed 4 demo
-// slots. Solo = 1 circle; grows as people join. The current device shows its
-// typed display name. Does NOT touch task attribution/visibility, which still
-// resolve via the seed member ids underneath.
-async function _renderTodayMembers() {
-  if (!DataAdapter.isFamily()) return; // demo mode keeps the static strip
-  const strip = document.querySelector('#s-today .t-avatars');
-  if (!strip) return;
+// Phase 1 (display only): the today strip + settings device strip are rendered
+// from the REAL participants (userId-keyed member docs) instead of the fixed 4
+// demo slots. Solo = 1 circle; grows as people join. The current device shows
+// its typed display name. Does NOT touch task attribution/visibility, which
+// still resolve via the seed member ids underneath.
+const _MEMBER_GRADS = [
+  'linear-gradient(160deg,#f0d4c5,#c89f88)', 'linear-gradient(160deg,#d9d0c1,#9d917f)',
+  'linear-gradient(160deg,#ddd6c0,#a39c80)', 'linear-gradient(160deg,#e7d5b8,#b89972)',
+  'linear-gradient(160deg,#cfe0d2,#8fb39a)', 'linear-gradient(160deg,#d6cfe0,#998fb3)',
+];
+// Returns the real participants (me first). Falls back to a solo "me" entry
+// when Firestore isn't reachable or the group is empty.
+async function _loadRealParticipants() {
   const myId = DataAdapter.userId;
   let participants = [];
-  if (_db) {
+  if (_db && DataAdapter.isFamily()) {
     try {
       const snap = await _db.collection('families').doc(DataAdapter.familyId)
                             .collection('members').get();
@@ -15964,19 +15972,43 @@ async function _renderTodayMembers() {
   }
   if (!participants.length) participants = [{ userId: myId || 'me', role: 'owner' }];
   participants.sort((a, b) => (b.userId === myId ? 1 : 0) - (a.userId === myId ? 1 : 0)); // me first
-  const grads = [
-    'linear-gradient(160deg,#f0d4c5,#c89f88)', 'linear-gradient(160deg,#d9d0c1,#9d917f)',
-    'linear-gradient(160deg,#ddd6c0,#a39c80)', 'linear-gradient(160deg,#e7d5b8,#b89972)',
-    'linear-gradient(160deg,#cfe0d2,#8fb39a)', 'linear-gradient(160deg,#d6cfe0,#998fb3)',
-  ];
+  return participants;
+}
+function _participantName(p, myId) {
+  return (p.userId === myId) ? (DataAdapter.displayName || 'אני') : (p.displayName || 'חבר');
+}
+async function _renderTodayMembers() {
+  if (!DataAdapter.isFamily()) return; // demo mode keeps the static strip
+  const strip = document.querySelector('#s-today .t-avatars');
+  if (!strip) return;
+  const myId = DataAdapter.userId;
+  const participants = await _loadRealParticipants();
   strip.innerHTML = participants.map((p, i) => {
-    const isMe   = p.userId === myId;
-    const name   = isMe ? (DataAdapter.displayName || 'אני') : (p.displayName || 'חבר');
+    const name   = _participantName(p, myId);
     const letter = (name || '👤').trim().charAt(0) || '👤';
-    const grad   = grads[i % grads.length];
+    const grad   = _MEMBER_GRADS[i % _MEMBER_GRADS.length];
     return `<div class="t-mem">
       <div class="t-av online" style="background:${grad};color:#fff;font-weight:800;">${letter}</div>
       <span class="t-avname">${name}</span>
+    </div>`;
+  }).join('');
+}
+async function _renderSettingsMembers() {
+  if (!DataAdapter.isFamily()) return; // demo mode keeps the static strip
+  const card = document.getElementById('settingsMembers');
+  if (!card) return;
+  const myId = DataAdapter.userId;
+  const participants = await _loadRealParticipants();
+  card.innerHTML = participants.map((p, i) => {
+    const isMe   = p.userId === myId;
+    const name   = _participantName(p, myId);
+    const letter = (name || '👤').trim().charAt(0) || '👤';
+    const grad   = _MEMBER_GRADS[i % _MEMBER_GRADS.length];
+    return `<div class="member${isMe ? ' active' : ''}">
+      <div class="ava-circle" style="background:${grad};color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:24px;">${letter}
+        <span class="badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg></span>
+      </div>
+      <div class="ava-name">${name}</div>
     </div>`;
   }).join('');
 }
@@ -15989,6 +16021,8 @@ function _applyGroupName() {
   if (kicker) kicker.textContent = g || 'המרחב שלנו';
   const invTitle = document.getElementById('inviteGroupTitle');
   if (invTitle) invTitle.textContent = g ? `הזמינו ל"${g}" להצטרף` : 'הזמינו את הקבוצה שלכם להצטרף';
+  const setName = document.getElementById('settingsGroupName');
+  if (setName) setName.textContent = g || 'המרחב שלי';
 }
 
 // ── PIN / Biometric / Delete Data flows ──────────────────────────
