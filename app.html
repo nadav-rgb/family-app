@@ -13858,7 +13858,13 @@ async function _firstRunCreate() {
   const groupInp  = document.getElementById('frCreateName');
   const groupName = groupInp ? groupInp.value.trim() : '';
   await _daCreateFamily(groupName);
-  if (DataAdapter.isFamily()) _finishFirstRun();
+  if (DataAdapter.isFamily()) {
+    _finishFirstRun();
+    // Surface the join code right away so the creator can invite others —
+    // otherwise the code is buried in settings. Reuses the existing invite
+    // screen (code card + copy + WhatsApp/SMS/link share).
+    try { goto('s-invite-member', 'txSlideIn', 'txSlideOut'); } catch (e) {}
+  }
 }
 
 function _frGoto(state) {
