@@ -22,7 +22,7 @@
 // Bump this version on every meaningful release. The activate handler
 // drops any cache whose name doesn't match, so users on a stale cache
 // will get fresh HTML/assets on next visit.
-const CACHE_NAME = 'family-app-v24-parse-timeout-8s-2026-05-28';
+const CACHE_NAME = 'family-app-v25-parse-timeout-12s-2026-05-28';
 const SHELL_FILES = [
   '/app.html',
   '/manifest.json',
