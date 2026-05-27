@@ -34,6 +34,9 @@ check('P0#2 → 1 task',                        t.length === 1,                 
 check('P0#2 title = "לקחת את לאלי לחוג"',     t[0] && t[0].title === 'לקחת את לאלי לחוג',     t[0] && t[0].title);
 check('P0#2 date = tomorrow',                 t[0] && t[0].date === 'tomorrow',              t[0] && t[0].date);
 check('P0#2 time = 14:00',                    t[0] && t[0].time === '14:00',                 t[0] && t[0].time);
+// control: time-only preamble (no "מחר") must also keep the time
+t = L('בשעה 2 לקחת את לאלי לחוג');
+check('P0#2 control (no מחר): time = 14:00',  t.length === 1 && t[0].time === '14:00',       t.map(x => ({ t: x.title, m: x.time, d: x.date })));
 
 // ── noun-phrase completion guard: never "verb + את" standalone ────────────────
 t = L('לסדר את ולקנות חלב');
