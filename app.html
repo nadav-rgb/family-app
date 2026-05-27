@@ -5458,6 +5458,15 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
       </div>
     </div>
 
+    <!-- ── STATE: full ── -->
+    <div class="fr-state hidden" data-fr-state="full">
+      <div class="fr-card">
+        <div class="fr-h1">הקבוצה מלאה 💛</div>
+        <div class="fr-sub">כיום ניתן לצרף עד 6 חברים לקבוצה.<br>בהמשך נרחיב קבוצות גדולות יותר.</div>
+        <button type="button" class="fr-cta fr-cta-join" onclick="_frGoto('welcome')">הבנתי</button>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -13704,6 +13713,7 @@ async function _daCreateFamily(groupName) {
     };
     const cleanName = (groupName || '').trim();
     if (cleanName) familyDoc.name = cleanName;
+    familyDoc.memberCount = 1; // creator; used for the race-safe group cap
     await _db.collection('families').doc(familyId).set(familyDoc);
     await _db.collection('families').doc(familyId)
              .collection('members').doc(userId).set({
@@ -13716,6 +13726,10 @@ async function _daCreateFamily(groupName) {
     AppLog.warn('FB', 'createFamily Firestore write failed', e.message || e);
   }
 }
+
+// Max members per group (creator included). Not family-specific — applies to
+// any group type (family, couple, roommates, friends).
+const GROUP_MEMBER_LIMIT = 6;
 
 async function _daJoinFamily(codeArg) {
   const inp  = document.getElementById('famJoinInp');
@@ -13735,29 +13749,50 @@ async function _daJoinFamily(codeArg) {
   if (joinBtn) { joinBtn.disabled = true; joinBtn.textContent = 'בודק…'; }
 
   try {
-    const familySnap = await _db.collection('families').doc(code).get();
-    if (!familySnap.exists) {
-      _famShErr('לא נמצאה משפחה עם הקוד הזה');
-      if (joinBtn) { joinBtn.disabled = false; joinBtn.textContent = 'הצטרף למשפחה'; }
+    const userId    = DataAdapter.userId || _genCode(8);
+    const ts        = firebase.firestore.FieldValue.serverTimestamp();
+    const familyRef = _db.collection('families').doc(code);
+    const memberRef = familyRef.collection('members').doc(userId);
+
+    // Membership decision + 6-member cap run inside ONE transaction against the
+    // family doc's memberCount counter. Counting the members subcollection then
+    // writing would be racy (two devices read 5, both write → 7). A transaction
+    // on a single counter doc serialises concurrent joins, so the cap holds.
+    const joinResult = await _db.runTransaction(async (tx) => {
+      const famDoc = await tx.get(familyRef);
+      const memDoc = await tx.get(memberRef);
+      if (!famDoc.exists) return 'missing';
+      const fam     = famDoc.data() || {};
+      const isOwner = (fam.createdBy === userId);
+      const count   = (typeof fam.memberCount === 'number') ? fam.memberCount : null;
+
+      if (isOwner) {
+        // Creator always gets/restores owner role; never counts as a new member.
+        tx.set(memberRef, { userId, role: 'owner', joinedAt: ts }, { merge: true });
+        return 'ok';
+      }
+      if (memDoc.exists) {
+        // Existing member rejoining — just touch lastSeen, no count change.
+        tx.update(memberRef, { lastSeenAt: ts });
+        return 'ok';
+      }
+      // Genuinely new member — enforce the cap. count===null means a legacy
+      // group created before the counter existed; allow (can't safely cap).
+      if (count !== null && count >= GROUP_MEMBER_LIMIT) return 'full';
+      tx.set(memberRef, { userId, role: 'member', joinedAt: ts });
+      tx.update(familyRef, { memberCount: firebase.firestore.FieldValue.increment(1) });
+      return 'ok';
+    });
+
+    if (joinResult === 'missing') {
+      _famShErr('לא נמצאה קבוצה עם הקוד הזה');
+      if (joinBtn) { joinBtn.disabled = false; joinBtn.textContent = 'הצטרף לקבוצה'; }
       return false;
     }
-
-    const userId     = DataAdapter.userId || _genCode(8);
-    const familyData = familySnap.data();
-    const ts         = firebase.firestore.FieldValue.serverTimestamp();
-    const memberRef  = _db.collection('families').doc(code).collection('members').doc(userId);
-    const memberSnap = await memberRef.get();
-
-    const isOwner = (familyData.createdBy === userId);
-    if (isOwner) {
-      // Creator always gets/restores owner role, even if the document was corrupted
-      await memberRef.set({ userId, role: 'owner', joinedAt: ts }, { merge: true });
-    } else if (memberSnap.exists) {
-      // Existing non-owner member — only update last seen, never touch role
-      await memberRef.update({ lastSeenAt: ts });
-    } else {
-      // New member
-      await memberRef.set({ userId, role: 'member', joinedAt: ts });
+    if (joinResult === 'full') {
+      _famShErr('הקבוצה מלאה — ניתן לצרף עד 6 חברים');
+      if (joinBtn) { joinBtn.disabled = false; joinBtn.textContent = 'הצטרף לקבוצה'; }
+      return 'full';
     }
 
     DataAdapter.setFamily(code, userId);
@@ -13769,7 +13804,7 @@ async function _daJoinFamily(codeArg) {
   } catch (e) {
     AppLog.warn('FB', 'joinFamily failed', e.message || e);
     _famShErr('שגיאה בהתחברות לענן — נסה שוב');
-    if (joinBtn) { joinBtn.disabled = false; joinBtn.textContent = 'הצטרף למשפחה'; }
+    if (joinBtn) { joinBtn.disabled = false; joinBtn.textContent = 'הצטרף לקבוצה'; }
     return false;
   }
 }
@@ -13872,6 +13907,7 @@ async function _firstRunJoin() {
   if (code.length < 4) { if (errEl) errEl.textContent = 'הכנס קוד בן 4-6 תווים'; return; }
   if (errEl) errEl.textContent = '';
   const ok = await _daJoinFamily(code);
+  if (ok === 'full') { _frGoto('full'); return; }
   if (ok && DataAdapter.isFamily()) _finishFirstRun();
   else if (errEl && !errEl.textContent) errEl.textContent = 'לא נמצאה קבוצה עם הקוד הזה';
 }
