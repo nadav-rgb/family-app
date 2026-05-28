@@ -3737,8 +3737,9 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
       </div>
     </div>
 
-    <!-- Members -->
-    <div class="members">
+    <!-- Members — rendered dynamically in family mode (_renderFamilyMembersScreen).
+         The static cards below are the demo fallback for local mode. -->
+    <div class="members" id="famMembersCards">
       <!-- Card 1 -->
       <div class="mcard">
         <div class="mavatar av-aba" data-avatar-for="member_dad" data-avatar-size="78" onclick="openMemberProfile('member_dad','s-family-members')">
@@ -3816,13 +3817,13 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
     </div>
 
     <!-- Add member → invite screen -->
-    <div class="add-card" style="cursor:pointer;" onclick="_inviteReturnScreen='s-family-members';goto('s-invite-member','txSlideIn','txSlideOut')">
-      <button class="add-plus" type="button" aria-label="הזמן" onclick="event.stopPropagation();_inviteReturnScreen='s-family-members';goto('s-invite-member','txSlideIn','txSlideOut')">
+    <div class="add-card" style="cursor:pointer;" onclick="_inviteReturnScreen='s-family-members';_inviteFromOnboarding=false;goto('s-invite-member','txSlideIn','txSlideOut')">
+      <button class="add-plus" type="button" aria-label="הזמן" onclick="event.stopPropagation();_inviteReturnScreen='s-family-members';_inviteFromOnboarding=false;goto('s-invite-member','txSlideIn','txSlideOut')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
       </button>
       <div class="add-text">
-        <div class="add-t">הזמן בן משפחה</div>
-        <div class="add-s">שלח הזמנה אישית להצטרפות למשפחה</div>
+        <div class="add-t">הזמן חבר/ה לקבוצה</div>
+        <div class="add-s">שלח הזמנה אישית להצטרפות לקבוצה</div>
       </div>
     </div>
 
@@ -3884,7 +3885,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
     <button class="back-btn" type="button" aria-label="חזרה" onclick="inviteGoBack()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
     </button>
-    <div class="app-title">הזמן בן משפחה</div>
+    <div class="app-title">שיתוף קוד הצטרפות</div>
   </div>
 
   <div class="scroll">
@@ -3893,12 +3894,12 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
     <div class="hero">
       <div class="hero-illu" aria-hidden="true">✉️</div>
       <div class="hero-title">
-        <span>הזמן את המשפחה שלך להצטרף</span>
+        <span>הזמינו את הקבוצה שלכם להצטרף</span>
         <span aria-hidden="true">🎉</span>
       </div>
       <div class="hero-sub">
         שלח הזמנה אישית.<br/>
-        בן המשפחה יקבל קישור הצטרפות, יוריד את האפליקציה (במידה ואיננה מותקנת במכשירו), ויצטרף למשפחה.
+        החבר/ה יקבל/ת קישור הצטרפות, יוריד/תוריד את האפליקציה (במידה ואיננה מותקנת במכשיר), ויצטרף/תצטרף לקבוצה.
       </div>
     </div>
 
@@ -3913,7 +3914,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
           </svg>
         </div>
         <div class="code-info">
-          <div class="lbl">קוד המשפחה שלכם</div>
+          <div class="lbl">קוד ההצטרפות שלכם</div>
           <div class="val" id="inviteFamilyCode"></div>
         </div>
       </div>
@@ -3996,9 +3997,15 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
       </div>
       <div class="privacy-body">
         <div class="privacy-title">פרטי ופרטיות</div>
-        <div class="privacy-sub">בן המשפחה ימלא בעצמו את פרטיו לאחר ההצטרפות.</div>
+        <div class="privacy-sub">כל חבר/ה ימלא/תמלא בעצמו/ה את פרטיו לאחר ההצטרפות.</div>
       </div>
     </div>
+
+    <!-- Forward CTA — shown ONLY when reached from onboarding-create.
+         Back arrow always goes back; this button is the explicit "enter the app". -->
+    <button id="inviteContinueBtn" type="button" onclick="inviteContinueToApp()" style="display:none;width:100%;margin-top:20px;padding:15px;border:none;border-radius:14px;background:#2EC4B6;color:#fff;font-family:inherit;font-size:16px;font-weight:800;cursor:pointer;box-shadow:0 6px 16px rgba(46,196,182,.32);">
+      המשך לאפליקציה ←
+    </button>
 
   </div>
 </div>
@@ -6282,6 +6289,11 @@ function _currentDeviceLegacyId() {
   return currentUser;
 }
 function currentDeviceDisplayName() {
+  // Wave Fix 2A — A2: prefer the free-text display name the user typed at
+  // onboarding (DataAdapter.displayName). Falls back to the legacy/seed name
+  // for sessions that don't have one yet. Display only — does NOT change task
+  // attribution, identity ids, or anything downstream.
+  if (DataAdapter.displayName) return DataAdapter.displayName;
   const legacyId = _currentDeviceLegacyId();
   if (legacyId) return t('family_' + legacyId) || ID_TO_PERSON[legacyId] || legacyId;
   const seed = DataAdapter.isFamily()
@@ -6467,12 +6479,15 @@ function _applyLang() {
   // User switcher
   const uswTitle = document.getElementById('uswTitle');
   if (uswTitle) uswTitle.innerHTML = t('user_switch') + ' <span style="font-size:10px;background:#f0d8c8;color:#9e6040;border-radius:4px;padding:1px 5px;font-weight:700;vertical-align:middle;">DEMO</span>';
-  // Avatar names
+  // Avatar names — in family mode the strip is rendered dynamically from real
+  // participants (_renderTodayMembers); don't overwrite it with seed labels.
   const avNames = {mom:'av-mom', dad:'av-dad', dudi:'av-dudi', yonatan:'av-yona'};
-  document.querySelectorAll('#s-today .t-avname').forEach((el, i) => {
-    const f = FAMILY[i];
-    if (f) el.textContent = t('family_' + f.id);
-  });
+  if (!DataAdapter.isFamily()) {
+    document.querySelectorAll('#s-today .t-avname').forEach((el, i) => {
+      const f = FAMILY[i];
+      if (f) el.textContent = t('family_' + f.id);
+    });
+  }
   // tDateBadge & date-related are updated in updateDateBadge()
   if (typeof updateTodayTitle === 'function') updateTodayTitle();
 }
@@ -6646,8 +6661,11 @@ function goto(toId, leaveKf, enterKf, onDone) {
     from.style.cssText = '';
     to.style.animation = '';
     busy = false;
+    if (toId === 's-family-members' && typeof _renderFamilyMembersScreen === 'function') _renderFamilyMembersScreen();
     if (toId === 's-family-members' && typeof syncFamilyMemberColors === 'function') { syncFamilyMemberColors(); if (typeof _mpApplyAllStripes === 'function') _mpApplyAllStripes(); }
     if (toId === 's-settings' && typeof _syncSettingsDeviceMember === 'function') _syncSettingsDeviceMember();
+    if (toId === 's-settings' && typeof _renderSettingsMembers === 'function') _renderSettingsMembers();
+    if (toId === 's-today' && typeof _renderTodayMembers === 'function') _renderTodayMembers();
     if (toId === 's-invite-member' && typeof _inviteScreenEnter === 'function') _inviteScreenEnter();
     if (onDone) onDone();
   }, dur);
@@ -12522,8 +12540,26 @@ async function _loadFamilyMembersCache() {
   try {
     const snap = await _db.collection('families').doc(DataAdapter.familyId)
                           .collection('members').get();
-    _familyMembersCache = snap.docs.map(d => d.data())
-      .filter(m => IDENTITY_MEMBER_IDS.includes(m.memberId));
+    // Wave Fix 2A — A3: additive cache widening. Keep the 4 seed docs (so
+    // resolveMember / avatar-slot / legacy attribution keep working untouched)
+    // AND include real userId-keyed participant docs alongside, with
+    // displayName normalized to `name` so existing readers don't need changes.
+    // No seed/bootstrap/attribution logic is modified by this widening.
+    _familyMembersCache = snap.docs
+      .map(d => d.data())
+      .filter(m => m && (
+        IDENTITY_MEMBER_IDS.includes(m.memberId) ||
+        (m.userId && !IDENTITY_MEMBER_IDS.includes(m.memberId))
+      ))
+      .map(m => {
+        if (m.userId && !IDENTITY_MEMBER_IDS.includes(m.memberId)) {
+          return Object.assign({}, m, {
+            memberId: m.memberId || m.userId,
+            name:     m.displayName || m.name || 'חבר',
+          });
+        }
+        return m;
+      });
     console.log('[DA] members cache loaded:', _familyMembersCache.length);
     try { localStorage.setItem(_MEMBER_CACHE_LS_KEY, JSON.stringify(_familyMembersCache)); } catch(e) {}
     if (typeof _renderAllAvatars === 'function') _renderAllAvatars();
@@ -13920,6 +13956,11 @@ function _finishFirstRun() {
   // Device-member identity is now chosen later in the avatar/profile screen,
   // not via a blocking setup screen right after create/join. Skip it here.
   try { if (typeof updateTodayTitle === 'function') updateTodayTitle(); } catch (e) {}
+  // Render real participants immediately so the member surfaces show "me"
+  // (and any joiners already in the cache) instead of the static 4 phantoms.
+  try { if (typeof _renderTodayMembers === 'function') _renderTodayMembers(); } catch (e) {}
+  try { if (typeof _renderSettingsMembers === 'function') _renderSettingsMembers(); } catch (e) {}
+  try { if (typeof _renderFamilyMembersScreen === 'function') _renderFamilyMembersScreen(); } catch (e) {}
 }
 
 async function _firstRunCreate() {
@@ -13933,11 +13974,13 @@ async function _firstRunCreate() {
   if (DataAdapter.isFamily()) {
     _finishFirstRun();
     // Show the new group's join code immediately so the creator can invite.
-    // Capture the landing screen as the invite-screen back target so pressing
-    // back doesn't dump the user into settings.
+    // Capture the landing screen as both the back-arrow target AND the forward
+    // ("המשך לאפליקציה") target — _inviteFromOnboarding flag drives the CTA
+    // visibility so the back arrow stays a true "back" action.
     try {
       const landing = (document.querySelector('.app-screen.active') || {}).id || 's-today';
-      _inviteReturnScreen = landing;
+      _inviteReturnScreen   = landing;
+      _inviteFromOnboarding = true;
       goto('s-invite-member', 'txSlideIn', 'txSlideOut');
     } catch (e) {}
   }
@@ -14053,22 +14096,17 @@ async function _loadFamilyMembers() {
     return;
   }
   try {
-    const snap = await _db.collection('families').doc(DataAdapter.familyId)
-                          .collection('members').get();
+    // Wave Fix 2A — A4: render real userId participants only. Refresh the
+    // cache first so newly-joined members appear; then iterate the real ones.
+    await _loadFamilyMembersCache();
+    const myId = DataAdapter.userId;
+    const list = _loadRealParticipants();
     if (!listEl) return; // sheet may have closed while we waited
-    const identityDocs = new Map();
-    snap.docs.forEach(d => {
-      const m = d.data() || {};
-      const memberId = m.memberId || d.id;
-      if (IDENTITY_MEMBER_IDS.includes(memberId)) identityDocs.set(memberId, m);
-    });
-    const roleLabel = { parent: 'הורה', child: 'ילד', owner: 'בעלים', member: 'חבר' };
-    listEl.innerHTML = _FAMILY_MEMBERS_SEED.map(seed => {
-      const m      = identityDocs.get(seed.memberId) || {};
-      const isMe   = (DataAdapter.myMemberId === seed.memberId);
-      const letter = seed.avatar && seed.avatar.type === 'emoji' ? seed.avatar.value : seed.name[0];
-      const name   = seed.name;
-      const role   = m.role || seed.role;
+    listEl.innerHTML = list.map(p => {
+      const isMe   = (p.userId === myId);
+      const name   = _participantDisplayName(p, myId);
+      const letter = (name || '👤').trim().charAt(0) || '👤';
+      const role   = (p.roleLabel || '').trim();
       return `
         <div class="fam-sh-member-row">
           <div class="fam-sh-member-avatar">${letter}</div>
@@ -14076,13 +14114,13 @@ async function _loadFamilyMembers() {
             <div class="fam-sh-member-name">
               ${isMe ? '<span class="fam-sh-member-you">אני</span>' : ''}${name}
             </div>
-            <div class="fam-sh-member-role">${roleLabel[role] || role}</div>
+            ${role ? `<div class="fam-sh-member-role">${role}</div>` : ''}
           </div>
         </div>`;
     }).join('');
   } catch (e) {
     AppLog.warn('FB', 'loadMembers failed', e.message || e);
-    if (listEl) listEl.innerHTML = '<div class="fam-sh-members-loading">שגיאה בטעינת בני המשפחה</div>';
+    if (listEl) listEl.innerHTML = '<div class="fam-sh-members-loading">שגיאה בטעינת חברי הקבוצה</div>';
   }
 }
 
@@ -14135,6 +14173,11 @@ if (/[?&]previewFirstRun=1/.test(location.search)) {
   try { if (typeof _bootstrapFamilyMembers === 'function') _bootstrapFamilyMembers(); } catch (e) {}
   // Device-member identity is deferred to the avatar/profile screen — do not
   // surface the blocking "who uses this device?" screen on boot.
+  // Wave Fix 2A — A4: render real participants in the member surfaces on
+  // boot, so a returning user never briefly sees the 4 static phantoms.
+  try { if (typeof _renderTodayMembers === 'function') _renderTodayMembers(); } catch (e) {}
+  try { if (typeof _renderSettingsMembers === 'function') _renderSettingsMembers(); } catch (e) {}
+  try { if (typeof _renderFamilyMembersScreen === 'function') _renderFamilyMembersScreen(); } catch (e) {}
 } else {
   // Fresh install / no family identity — force the onboarding gate so the app
   // never auto-enters a seeded/default family.
@@ -15947,12 +15990,136 @@ function inviteViaShare() {
 // screen the user landed on). Defaults to settings for safety.
 let _inviteReturnScreen = 's-family-members';
 function inviteGoBack() {
+  _inviteFromOnboarding = false; // ensure the CTA is hidden on next entry
   goto(_inviteReturnScreen || 's-family-members', 'txSlideOut', 'txSlideIn');
+}
+// True ONLY when reached as the last step of onboarding-create. Drives the
+// visibility of the "המשך לאפליקציה" forward CTA. Back arrow remains the
+// natural "back" action (never doubles as forward).
+let _inviteFromOnboarding = false;
+function inviteContinueToApp() {
+  _inviteFromOnboarding = false;
+  goto(_inviteReturnScreen || 's-today', 'txSlideOut', 'txSlideIn');
 }
 
 function _inviteScreenEnter() {
   const codeEl = document.getElementById('inviteFamilyCode');
   if (codeEl) codeEl.textContent = _inviteGetCode();
+  const contBtn = document.getElementById('inviteContinueBtn');
+  if (contBtn) contBtn.style.display = _inviteFromOnboarding ? 'block' : 'none';
+}
+
+// ─── Wave Fix 2A — A4: dynamic real-participant rendering ─────────
+// Reads the real userId-keyed member docs from _familyMembersCache (post-A3)
+// and renders them in the visible member surfaces. Falls back to a single
+// "self" entry when the cache hasn't loaded yet (offline / preview / fresh).
+// Does NOT touch task attribution, resolveMember, seed, or bootstrap.
+const _MEMBER_GRADS = [
+  'linear-gradient(160deg,#f0d4c5,#c89f88)', 'linear-gradient(160deg,#d9d0c1,#9d917f)',
+  'linear-gradient(160deg,#cfe0d2,#8fb39a)', 'linear-gradient(160deg,#e7d5b8,#b89972)',
+  'linear-gradient(160deg,#d6cfe0,#998fb3)', 'linear-gradient(160deg,#ddd6c0,#a39c80)',
+];
+function _isRealMember(m) { return !!(m && m.userId && !IDENTITY_MEMBER_IDS.includes(m.memberId)); }
+function _loadRealParticipants() {
+  const myId = DataAdapter.userId;
+  let list = (_familyMembersCache || []).filter(_isRealMember);
+  // Safety fallback: cache not loaded yet (offline / preview / fresh) — show
+  // self only so the user never sees 4 phantom members.
+  if (!list.length && myId) {
+    list = [{
+      userId: myId,
+      memberId: myId,
+      role: 'owner',
+      displayName: DataAdapter.displayName || '',
+      name: DataAdapter.displayName || 'אני',
+      roleLabel: DataAdapter.roleLabel || '',
+    }];
+  }
+  // Sort me-first.
+  list.sort((a, b) => (b.userId === myId ? 1 : 0) - (a.userId === myId ? 1 : 0));
+  return list;
+}
+function _participantDisplayName(p, myId) {
+  if (p.userId === myId) return DataAdapter.displayName || p.displayName || p.name || 'אני';
+  return p.displayName || p.name || 'חבר';
+}
+function _participantInner(p, name, gradIdx, sizePx) {
+  const av = p.avatar;
+  if (av && (av.type === 'photo' || av.type === 'ai-photo') && av.url) {
+    return '<img src="' + _escAttr(av.url) + '" style="width:100%;height:100%;border-radius:inherit;object-fit:cover;display:block;" alt="" />';
+  }
+  const letter = (name || '👤').trim().charAt(0) || '👤';
+  const grad   = _MEMBER_GRADS[gradIdx % _MEMBER_GRADS.length];
+  const fs     = Math.round((Number(sizePx) || 54) * 0.42);
+  return '<span style="width:100%;height:100%;border-radius:inherit;display:flex;align-items:center;justify-content:center;background:' + grad + ';color:#fff;font-weight:800;font-size:' + fs + 'px;">' + letter + '</span>';
+}
+
+function _renderTodayMembers() {
+  if (!DataAdapter.isFamily()) return;
+  const strip = document.querySelector('#s-today .t-avatars');
+  if (!strip) return;
+  const myId = DataAdapter.userId;
+  const list = _loadRealParticipants();
+  strip.innerHTML = list.map((p, i) => {
+    const name  = _participantDisplayName(p, myId);
+    const inner = _participantInner(p, name, i, 54);
+    const safeId = _escAttr(p.userId || '');
+    return '<div class="t-mem" onclick="openMemberProfile(\'' + safeId + '\',\'s-today\')">'
+         +   '<div class="t-av online" style="overflow:hidden;">' + inner + '</div>'
+         +   '<span class="t-avname">' + name + '</span>'
+         + '</div>';
+  }).join('');
+}
+
+function _renderSettingsMembers() {
+  if (!DataAdapter.isFamily()) return;
+  const card = document.getElementById('settingsMembers');
+  if (!card) return;
+  const myId = DataAdapter.userId;
+  const list = _loadRealParticipants();
+  card.innerHTML = list.map((p, i) => {
+    const isMe  = p.userId === myId;
+    const name  = _participantDisplayName(p, myId);
+    const inner = _participantInner(p, name, i, 56);
+    const safeId = _escAttr(p.userId || '');
+    return '<div class="member' + (isMe ? ' active' : '') + '" onclick="openMemberProfile(\'' + safeId + '\',\'s-settings\')">'
+         +   '<div class="ava-circle" style="overflow:hidden;">' + inner
+         +     '<span class="badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg></span>'
+         +   '</div>'
+         +   '<div class="ava-name">' + name + '</div>'
+         + '</div>';
+  }).join('');
+}
+
+function _renderFamilyMembersScreen() {
+  if (!DataAdapter.isFamily()) return;
+  const wrap = document.getElementById('famMembersCards');
+  if (!wrap) return;
+  const myId = DataAdapter.userId;
+  const list = _loadRealParticipants();
+  wrap.innerHTML = list.map((p, i) => {
+    const isMe  = p.userId === myId;
+    const name  = _participantDisplayName(p, myId);
+    const inner = _participantInner(p, name, i, 78);
+    const safeId = _escAttr(p.userId || '');
+    const rolePart = (p.roleLabel || '').trim();
+    const crown = (p.role === 'owner')
+      ? '<span class="icn-mini crown" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 17 L5 8 L9.5 12 L12 6 L14.5 12 L19 8 L21 17 Z"/></svg></span>'
+      : '';
+    const metaRow = (rolePart || p.role === 'owner')
+      ? '<div class="meta-row">' + (rolePart ? '<span>' + rolePart + '</span>' : '') + crown + '</div>'
+      : '';
+    return '<div class="mcard">'
+         +   '<div class="mavatar" style="overflow:hidden;" onclick="openMemberProfile(\'' + safeId + '\',\'s-family-members\')">' + inner + '</div>'
+         +   '<div class="mbody">'
+         +     '<div class="name-row">'
+         +       '<div class="name">' + name + '</div>'
+         +       (isMe ? '<span class="me-pill">המכשיר הזה</span>' : '')
+         +     '</div>'
+         +     metaRow
+         +   '</div>'
+         + '</div>';
+  }).join('');
 }
 
 // ── PIN / Biometric / Delete Data flows ──────────────────────────
