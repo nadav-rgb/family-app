@@ -5463,6 +5463,10 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
       <div class="fr-hero fr-hero-create" role="img" aria-label="בואו ניצור קבוצה משותפת"></div>
       <div class="fr-card">
         <div class="fr-h1">✨ בואו ניצור קבוצה משותפת</div>
+        <label class="fr-field-lbl" for="frUserName">מה השם שלך או איך תרצה/י להופיע באפליקציה?</label>
+        <input class="fr-input" id="frUserName" type="text" placeholder="" dir="rtl" maxlength="24" />
+        <label class="fr-field-lbl" for="frRoleLabel">התפקיד שלך (אופציונלי)</label>
+        <input class="fr-input" id="frRoleLabel" type="text" placeholder="למשל: אבא, אמא, ילד, סבתא, מטפל, שותף, אחר" dir="rtl" maxlength="20" />
         <label class="fr-field-lbl" for="frCreateName">שם הקבוצה (אופציונלי)</label>
         <input class="fr-input" id="frCreateName" type="text" placeholder="למשל: הבית שלנו / השותפים" dir="rtl" maxlength="24" />
         <button type="button" class="fr-cta fr-cta-create" onclick="_firstRunCreate()">צור קבוצה</button>
@@ -5476,6 +5480,9 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
       <div class="fr-card">
         <div class="fr-h1">הצטרפו לקבוצה 🏡</div>
         <div class="fr-sub">קיבלתם קוד הצטרפות? הכניסו אותו כאן.</div>
+        <label class="fr-field-lbl" for="frJoinUserName">מה השם שלך או איך תרצה/י להופיע באפליקציה?</label>
+        <input class="fr-input" id="frJoinUserName" type="text" placeholder="" dir="rtl" maxlength="24" />
+        <label class="fr-field-lbl" for="frCodeBoxes">קוד הצטרפות</label>
         <div class="fr-code" id="frCodeBoxes" dir="ltr">
           <input class="fr-code-box" type="text" inputmode="text" autocomplete="off" maxlength="1" placeholder="–" aria-label="תו 1" oninput="_frCodeInput(this,0)" onkeydown="_frCodeKey(event,this,0)" onpaste="_frCodePaste(event)" />
           <input class="fr-code-box" type="text" inputmode="text" autocomplete="off" maxlength="1" placeholder="–" aria-label="תו 2" oninput="_frCodeInput(this,1)" onkeydown="_frCodeKey(event,this,1)" onpaste="_frCodePaste(event)" />
@@ -12240,12 +12247,14 @@ const _DA_MODE_KEY   = 'family-app-da-mode';
 const _DA_FAMILY_KEY = 'family-app-da-family-id';
 const _DA_USER_KEY   = 'family-app-da-user-id';
 const _DA_NAME_KEY   = 'family-app-da-display-name';
+const _DA_ROLE_LABEL_KEY = 'family-app-da-role-label';
 
 const DataAdapter = {
-  mode:        localStorage.getItem(_DA_MODE_KEY)   || 'local',
-  familyId:    localStorage.getItem(_DA_FAMILY_KEY) || null,
-  userId:      localStorage.getItem(_DA_USER_KEY)   || null,
-  displayName: localStorage.getItem(_DA_NAME_KEY)   || '',
+  mode:        localStorage.getItem(_DA_MODE_KEY)        || 'local',
+  familyId:    localStorage.getItem(_DA_FAMILY_KEY)      || null,
+  userId:      localStorage.getItem(_DA_USER_KEY)        || null,
+  displayName: localStorage.getItem(_DA_NAME_KEY)        || '',
+  roleLabel:   localStorage.getItem(_DA_ROLE_LABEL_KEY)  || '',
   authUid:     null, // set by _fbInit after signInAnonymously — Auth-1 only, not yet used for writes
 
   get myMemberId() { return localStorage.getItem(MY_MEMBER_ID_KEY) || null; },
@@ -12273,6 +12282,16 @@ const DataAdapter = {
     this.displayName = name;
     if (name) localStorage.setItem(_DA_NAME_KEY, name);
     else      localStorage.removeItem(_DA_NAME_KEY);
+  },
+
+  // Free-text role label entered by the user at onboarding (e.g. אבא, אמא,
+  // ילד, סבתא, מטפל, שותף, אחר). Strictly additive — does NOT replace the
+  // member-doc `role` field (owner/member/parent/child) used by existing logic.
+  setRoleLabel(label) {
+    const v = (label || '').trim();
+    this.roleLabel = v;
+    if (v) localStorage.setItem(_DA_ROLE_LABEL_KEY, v);
+    else   localStorage.removeItem(_DA_ROLE_LABEL_KEY);
   },
 
   // Firestore stubs — implemented in Phase 3.
@@ -13769,12 +13788,11 @@ async function _daCreateFamily() {
       createdBy:   userId,
       memberCount: 1, // creator; used for the race-safe 6-member cap on join
     });
+    const _ownerDoc = { userId, role: 'owner', joinedAt: ts };
+    if (DataAdapter.displayName) _ownerDoc.displayName = DataAdapter.displayName;
+    if (DataAdapter.roleLabel)   _ownerDoc.roleLabel   = DataAdapter.roleLabel;
     await _db.collection('families').doc(familyId)
-             .collection('members').doc(userId).set({
-      userId,
-      role:     'owner',
-      joinedAt: ts,
-    });
+             .collection('members').doc(userId).set(_ownerDoc);
     console.log('[FB] family', familyId, 'written to Firestore');
   } catch (e) {
     AppLog.warn('FB', 'createFamily Firestore write failed', e.message || e);
@@ -13819,20 +13837,26 @@ async function _daJoinFamily(codeArg) {
       const isOwner = (fam.createdBy === userId);
       const count   = (typeof fam.memberCount === 'number') ? fam.memberCount : null;
 
+      const myName  = DataAdapter.displayName || '';
+      const myRole  = DataAdapter.roleLabel   || '';
+      const namePatch = {};
+      if (myName) namePatch.displayName = myName;
+      if (myRole) namePatch.roleLabel   = myRole;
+
       if (isOwner) {
         // Creator always gets/restores owner role; never counts as a new member.
-        tx.set(memberRef, { userId, role: 'owner', joinedAt: ts }, { merge: true });
+        tx.set(memberRef, Object.assign({ userId, role: 'owner', joinedAt: ts }, namePatch), { merge: true });
         return 'ok';
       }
       if (memDoc.exists) {
-        // Existing non-owner rejoining — just touch lastSeen, no count change.
-        tx.update(memberRef, { lastSeenAt: ts });
+        // Existing non-owner rejoining — touch lastSeen + refresh name/role if set.
+        tx.update(memberRef, Object.assign({ lastSeenAt: ts }, namePatch));
         return 'ok';
       }
       // Genuinely new member — enforce the cap. count===null means a legacy
       // group created before the counter existed; allow (can't safely cap).
       if (count !== null && count >= GROUP_MEMBER_LIMIT) return 'full';
-      tx.set(memberRef, { userId, role: 'member', joinedAt: ts });
+      tx.set(memberRef, Object.assign({ userId, role: 'member', joinedAt: ts }, namePatch));
       tx.update(familyRef, { memberCount: firebase.firestore.FieldValue.increment(1) });
       return 'ok';
     });
@@ -13899,9 +13923,12 @@ function _finishFirstRun() {
 }
 
 async function _firstRunCreate() {
-  const nameInp = document.getElementById('frCreateName');
-  const name    = nameInp ? nameInp.value.trim() : '';
-  if (name) { try { DataAdapter.setDisplayName(name); } catch (e) {} }
+  const userInp  = document.getElementById('frUserName');
+  const userName = userInp ? userInp.value.trim() : '';
+  if (userName) { try { DataAdapter.setDisplayName(userName); } catch (e) {} }
+  const roleInp  = document.getElementById('frRoleLabel');
+  const roleVal  = roleInp ? roleInp.value.trim() : '';
+  if (roleVal)  { try { DataAdapter.setRoleLabel(roleVal); } catch (e) {} }
   await _daCreateFamily();
   if (DataAdapter.isFamily()) {
     _finishFirstRun();
@@ -13980,6 +14007,9 @@ async function _firstRunJoin() {
   const code  = inp ? inp.value.trim().toUpperCase() : '';
   if (code.length < 4) { if (errEl) errEl.textContent = 'הכנס קוד בן 4-6 תווים'; return; }
   if (errEl) errEl.textContent = '';
+  const joinNameInp = document.getElementById('frJoinUserName');
+  const joinName    = joinNameInp ? joinNameInp.value.trim() : '';
+  if (joinName) { try { DataAdapter.setDisplayName(joinName); } catch (e) {} }
   const ok = await _daJoinFamily(code);
   if (ok === 'full') { _frGoto('full'); return; }
   if (ok && DataAdapter.isFamily()) _finishFirstRun();
