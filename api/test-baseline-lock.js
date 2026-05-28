@@ -18,6 +18,34 @@
  *   / date, since AI phrasing varies and we don't want a flaky baseline.
  *
  *     node api/test-baseline-lock.js --prod
+ *
+ * ───────────────────────────────────────────────────────────────────────────
+ * LATENCY CATEGORIES (informational — not enforced by automated tests yet)
+ * ───────────────────────────────────────────────────────────────────────────
+ *
+ *   short  : 1–2s target  — single task, ≤2 verbs, no long modifiers.
+ *                           Examples: "לקנות חלב בשעה 14:00", "להתקשר לאמא"
+ *   medium : 2–4s target  — 2–3 tasks or one with rich modifiers.
+ *                           Examples: "להתקשר לשמעון ואז להשאיר הודעה לסבתא מרי"
+ *   long   : ~5s soft     — 30–40s dictations; 12s hard client abort then
+ *                           local-fallback. Examples: 6+ tasks in one breath.
+ *
+ * FUTURE FAST-PATH CANDIDATES (NOT enabled in production)
+ *   If a local deterministic split is added later, these would be eligible
+ *   (≥3 infinitive verbs from a whitelist + no markers below + length<200):
+ *
+ *     לקנות בסופר להתקשר ליוסי לשלוח הודעה לבנק       (4 clean verbs)
+ *     לקבוע תור לבדוק מייל לתאם פגישה                (3 clean verbs)
+ *
+ * MUST REMAIN AI — never delegate to a future fast-path:
+ *   - any time marker     (בשעה, \bב[־-]?\d, \d{1,2}:\d{2}, בבוקר/בערב/הלילה)
+ *   - any date marker     (מחר, היום, אתמול, ימי שבוע, מחרתיים)
+ *   - any conditional     (אם, כש, אחרי ש, לפני ש, בזמן ש, לאחר, מיד, ברגע ש)
+ *   - any preamble        ("X צריך", "X צריכה")
+ *   - any shopping list   (isShoppingListTitle matches)
+ *   - all 6 baseline cases below — each falls under at least one rule above
+ *     and must always return source:"ai" / fallback:false. These tests are
+ *     the guardrail against any future speed-work silently breaking quality.
  */
 
 const PROD       = process.argv.includes('--prod');

@@ -14094,6 +14094,11 @@ async function _loadFamilyMembers() {
 console.log('%c[Family App] build: rt-hero-portrait-diag-2026-05-14', 'background:#ff5e14;color:#fff;padding:3px 8px;border-radius:6px;font-weight:bold');
 loadState();
 try { _migrateCountdownVisibility(); } catch (e) { console.warn('countdown migration (init) failed', e); }
+// Boot-time warm-up: fire an OPTIONS to /api/parse-tasks so the Vercel
+// serverless function is warm by the time the user first taps the mic.
+// Non-blocking, throttled (60s) inside _warmParseEndpoint, and fire-and-
+// forget. Cuts ~1–3s off the first parse of the session on cold starts.
+try { _warmParseEndpoint(); } catch (e) {}
 loadAppearance();
 applyAppearance();
 renderAppearance();
