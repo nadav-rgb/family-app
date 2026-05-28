@@ -50,5 +50,20 @@ check('REG1 local: 1 task @14:00',            t.length === 1 && t[0].time === '1
 t = L('לקנות חלב גבינה צהובה עגבניות מלפפונים');
 check('shopping local: stays 1 task',         t.length === 1,                                t.map(x => x.title));
 
+// ── BASELINE LOCK (local layer A) ─────────────────────────────────────────────
+// These guard structural contracts of the LOCAL fallback. Quality of split for
+// AI-only cases is asserted in api/test-baseline-lock.js, not here.
+
+// Baseline case 5 — short shopping phrase stays one task locally.
+t = L('לקנות עגבניות פלפל בצל');
+check('baseline#5 local: shopping phrase = 1 task', t.length === 1, t.map(x => x.title));
+
+// Baseline case 6 — long natural speech must not crash and must return a
+// non-empty canonical array. We do NOT assert split quality here (that's AI).
+t = L('ללכת ליוסי להתקשר לעורך דין לשאול אותו מה קורה עם הערכת חוזה עם נעמי לקנות עגבניות פלפל בצל לנסוע לים לברר עם דודי מה קורה עם הדוד שמש');
+check('baseline#6 local: returns Array',           Array.isArray(t),       typeof t);
+check('baseline#6 local: at least 1 task',         t.length >= 1,          t.length);
+check('baseline#6 local: each task has title',     t.every(x => x && typeof x.title === 'string' && x.title.length > 0), t.map(x => x && x.title));
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
