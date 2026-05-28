@@ -6225,6 +6225,16 @@ function avImg(id) {
 function updateHeroPortrait(id) {
   const img = document.getElementById('heroPortraitImg');
   if (!img) return;
+  // Wave 2A.5: if `id` is a real userId (real member), prefer the cache hit
+  // by userId/memberId — the avatar will be the real one (or normalized).
+  if (id && _familyMembersCache) {
+    const direct = _familyMembersCache.find(m => m.userId === id || m.memberId === id);
+    if (direct && direct.avatar && (direct.avatar.type === 'photo' || direct.avatar.type === 'ai-photo') && direct.avatar.url) {
+      img.src = direct.avatar.url;
+      return;
+    }
+    if (direct) { img.src = ''; return; } // real member without photo — keep portrait blank
+  }
   // Prefer the canonical avatar from members cache / seed, so the hero
   // portrait shows the uploaded photo without depending on the today strip
   // having been rendered first.
@@ -6511,16 +6521,27 @@ function setLang(lang) {
 // Convert a HebrewParser result → app task shape
 function parsedToTask(p, idx) {
   const assignedTo = p.assignedTo || _currentDeviceLegacyId();
+  // Wave 2A.5: in family mode default ownership to the real creator userId
+  // (so resolveMember finds the real participant). Keep the seed mapping
+  // ONLY when the parser explicitly named an assignee (mom/dad/...).
   const assignedToMemberId = DataAdapter.isFamily()
-    ? (_memberIdForLegacyId(assignedTo) || DataAdapter.myMemberId)
+    ? ((p.assignedTo && _memberIdForLegacyId(p.assignedTo)) || DataAdapter.userId || DataAdapter.myMemberId)
     : null;
   const person       = ID_TO_PERSON[assignedTo] || 'Dad';
   const dateStr      = p.date && p.date.date
     ? dateToYMD(p.date.date)
     : todayDate();
+  // Wave 2B: creator must always see their own task. Default visibility is
+  // creator-only — no one else auto-selected. Plus the assignee if different.
   const defaultVisibleTo = DataAdapter.isFamily()
-    ? [assignedToMemberId].filter(Boolean)
+    ? [DataAdapter.userId, assignedToMemberId].filter(Boolean).filter((v,i,a) => a.indexOf(v) === i)
     : _defaultVisibleToIds();
+  // Wave 2B: notify defaults — ON for creator only when task has a time;
+  // OFF entirely when no time.
+  const hasTime = (p.mins != null);
+  const defaultNotifyTo = DataAdapter.isFamily()
+    ? (hasTime ? [DataAdapter.userId].filter(Boolean) : [])
+    : [assignedToMemberId || assignedTo];
   return {
     id:                    DataAdapter.isFamily() ? _genCode(16) : Date.now() + idx,
     title:                 p.title,
@@ -6533,7 +6554,7 @@ function parsedToTask(p, idx) {
     completed:             false,
     notify:                true,
     visibleTo:             defaultVisibleTo,
-    notifyTo:              [DataAdapter.isFamily() && assignedToMemberId ? assignedToMemberId : assignedTo],
+    notifyTo:              defaultNotifyTo,
     reminderOffsetMinutes: 10,
     reminderOffsets:       (_loadNotifPrefs().defaultReminderMinutes.length ? _loadNotifPrefs().defaultReminderMinutes : [10]),
     overdueReminderOffsets:[5, 10, 15],
@@ -6550,8 +6571,9 @@ function parsedToTask(p, idx) {
 // Convert AI canonical schema → app task shape
 function aiParsedToTask(t, idx) {
   const assignedTo = t.assignee || _currentDeviceLegacyId();
+  // Wave 2A.5: same ownership defaults as parsedToTask.
   const assignedToMemberId = DataAdapter.isFamily()
-    ? (_memberIdForLegacyId(assignedTo) || DataAdapter.myMemberId)
+    ? ((t.assignee && _memberIdForLegacyId(t.assignee)) || DataAdapter.userId || DataAdapter.myMemberId)
     : null;
   const person     = ID_TO_PERSON[assignedTo] || 'Dad';
 
@@ -6567,9 +6589,14 @@ function aiParsedToTask(t, idx) {
     mins = h * 60 + m;
   }
 
+  // Wave 2B: creator-only visibility by default; notify ON only with time.
   const defaultVisibleTo = DataAdapter.isFamily()
-    ? [assignedToMemberId].filter(Boolean)
+    ? [DataAdapter.userId, assignedToMemberId].filter(Boolean).filter((v,i,a) => a.indexOf(v) === i)
     : _defaultVisibleToIds();
+  const hasTime = (mins != null);
+  const defaultNotifyTo = DataAdapter.isFamily()
+    ? (hasTime ? [DataAdapter.userId].filter(Boolean) : [])
+    : [assignedToMemberId || assignedTo];
   return {
     id:                    DataAdapter.isFamily() ? _genCode(16) : Date.now() + idx,
     title:                 t.title,
@@ -6582,7 +6609,7 @@ function aiParsedToTask(t, idx) {
     completed:             false,
     notify:                true,
     visibleTo:             defaultVisibleTo,
-    notifyTo:              [DataAdapter.isFamily() && assignedToMemberId ? assignedToMemberId : assignedTo],
+    notifyTo:              defaultNotifyTo,
     reminderOffsetMinutes: 10,
     overdueReminderOffsets:[5, 10, 15],
     sentInitialReminder:   false,
@@ -8004,29 +8031,28 @@ function renderAssignedSection() {
   const cont = document.getElementById('shareAssignedRows');
   cont.innerHTML = '';
 
-  // Always use IDENTITY seed in family mode — no dependency on async cache
+  // Wave 2A.5: iterate real participants in family mode (post-A3 cache),
+  // not the static 4 seeds. Each chip's id is the real userId.
   if (DataAdapter.isFamily()) {
-    _FAMILY_MEMBERS_SEED.forEach(m => {
+    const myId = DataAdapter.userId;
+    const real = (typeof _loadRealParticipants === 'function') ? _loadRealParticipants() : [];
+    real.forEach((p, idx) => {
       const row      = document.createElement('div');
       row.className  = 'share-member';
-      const sel      = task.assignedToMemberId === m.memberId;
-      // 1B: prefer cache (has latest avatar including photo) over seed.
-      const live     = (_familyMembersCache && _familyMembersCache.find(x => x.memberId === m.memberId)) || m;
-      const av       = (live && live.avatar) || m.avatar;
-      const hasPhoto = av && (av.type === 'photo' || av.type === 'ai-photo') && av.url;
-      const emHtml   = hasPhoto
-        ? `<span class="share-em" data-avatar-for="${m.memberId}" data-avatar-size="36" style="width:36px;height:36px;border-radius:50%;overflow:hidden;flex-shrink:0;display:inline-block;background:#f4e8dc;">${renderAvatarHTML(av, 36)}</span>`
-        : `<span class="share-em" data-avatar-for="${m.memberId}" data-avatar-size="36" style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#ffd0a8,#f0a870);display:inline-flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">${(av && av.value) || m.avatar.value}</span>`;
-      row.innerHTML  = `${emHtml}<span class="share-lbl" style="flex:1;">${m.name}</span><span class="share-radio${sel ? ' on' : ''}"></span>`;
+      const sel      = task.assignedToMemberId === p.userId;
+      const name     = (typeof _participantDisplayName === 'function')
+        ? _participantDisplayName(p, myId)
+        : (p.displayName || p.name || 'חבר');
+      const inner    = (typeof _participantInner === 'function')
+        ? _participantInner(p, name, idx, 36)
+        : '<span style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:22px;">👤</span>';
+      row.innerHTML  = `<span class="share-em" style="width:36px;height:36px;border-radius:50%;overflow:hidden;flex-shrink:0;display:inline-block;">${inner}</span><span class="share-lbl" style="flex:1;">${name}</span><span class="share-radio${sel ? ' on' : ''}"></span>`;
       row.addEventListener('click', () => {
-        const legacyId  = m.memberId.replace('member_', '');
-        console.warn('[ASSIGN-CLICK] before:', JSON.stringify({assignedTo:task.assignedTo,assignedToMemberId:task.assignedToMemberId}));
-        task.assignedToMemberId = m.memberId;
-        task.assignedToName     = m.name;
-        task.assignedToUserId   = null;
-        task.assignedTo = legacyId;
-        task.person     = ID_TO_PERSON[legacyId] || (legacyId.charAt(0).toUpperCase() + legacyId.slice(1));
-        console.warn('[ASSIGN-CLICK] after:', JSON.stringify({assignedTo:task.assignedTo,person:task.person,assignedToMemberId:task.assignedToMemberId}));
+        task.assignedToMemberId = p.userId;
+        task.assignedToName     = name;
+        task.assignedToUserId   = p.userId;
+        task.assignedTo         = null; // clear legacy mapping for real-user assignment
+        task.person             = name;
         renderAssignedSection();
         renderShareRows();
       });
@@ -8178,13 +8204,18 @@ function renderShareRows() {
   const task       = shareTask;
   const notifyOff  = task.notify === false;
   const notifyInactive = notifyOff || !_taskHasNotificationRecipients(task);
-  // Always use IDENTITY seed in family mode — no dependency on async cache
-  const members = DataAdapter.isFamily()
-    ? _FAMILY_MEMBERS_SEED.map(m => ({
-        id:    m.memberId,
-        label: m.name,
-        emoji: m.avatar.value,
-        ltr:   null,
+  // Wave 2A.5: iterate real participants in family mode (post-A3 cache),
+  // not the static 4 seeds. Each chip's id is the real userId.
+  const myId = DataAdapter.userId;
+  const real = DataAdapter.isFamily() && typeof _loadRealParticipants === 'function'
+    ? _loadRealParticipants()
+    : null;
+  const members = real
+    ? real.map((p, idx) => ({
+        id:    p.userId,
+        label: (typeof _participantDisplayName === 'function') ? _participantDisplayName(p, myId) : (p.displayName || p.name || 'חבר'),
+        emoji: null,
+        ltr:   ((p.displayName || p.name || 'חבר').trim().charAt(0) || '👤'),
       }))
     : FAMILY.map(f => ({
         id:    f.id,
@@ -11545,14 +11576,27 @@ function _taskNotifiesThisDevice(task) {
 
   if (DataAdapter.isFamily()) {
     const myMemberId = DataAdapter.myMemberId;
+    const myUserId   = DataAdapter.userId;
     const myLegacyId = _legacyIdForMemberId(myMemberId) || currentUser;
-    if (notifyTo.length) {
+    // Wave 2B: an EXPLICIT notifyTo array — even empty — means the creator
+    // declared who gets notified. Honor it. Fall back to the assignee only
+    // for legacy tasks where the field is missing entirely.
+    if (Array.isArray(task.notifyTo)) {
+      if (notifyTo.length === 0) return false;
+      // Wave 2A.5: also accept userId, since new tasks store the real
+      // creator userId in notifyTo (not a seed memberId).
       return !!(
+        (myUserId   && notifyTo.includes(myUserId))   ||
         (myMemberId && notifyTo.includes(myMemberId)) ||
         (myLegacyId && notifyTo.includes(myLegacyId))
       );
     }
-    if (task.assignedToMemberId) return !!(myMemberId && task.assignedToMemberId === myMemberId);
+    if (task.assignedToMemberId) {
+      return !!(
+        (myUserId   && task.assignedToMemberId === myUserId) ||
+        (myMemberId && task.assignedToMemberId === myMemberId)
+      );
+    }
     if (task.assignedTo) return !!(myLegacyId && task.assignedTo === myLegacyId);
     return false;
   }
@@ -15145,6 +15189,57 @@ function _visIdAliases(visId) {
   return set;
 }
 
+// Wave 2A.5: post-process the static s-visibility chips to show real
+// participants from _familyMembersCache instead of the 4 hardcoded seed
+// slots. Click handlers are wired ONCE to the static elements; they read
+// dataset.id at click time, so changing data-id to userId picks up the
+// real member without re-wiring. Extra slots are hidden.
+function _visApplyRealMembers() {
+  if (!DataAdapter.isFamily()) return;
+  if (typeof _loadRealParticipants !== 'function') return;
+  var myId = DataAdapter.userId;
+  var real = _loadRealParticipants();
+
+  ['#visSeeRow', '#visNotifyRow'].forEach(function (rowSel) {
+    var chips = document.querySelectorAll(rowSel + ' .vis-ava-frame');
+    chips.forEach(function (b, i) {
+      if (i >= real.length) { b.style.display = 'none'; return; }
+      b.style.display = '';
+      var p = real[i];
+      var name = (typeof _participantDisplayName === 'function')
+        ? _participantDisplayName(p, myId)
+        : (p.displayName || p.name || 'חבר');
+      b.dataset.id = p.userId;
+      var nameEl = b.querySelector('.vis-ava-name');
+      if (nameEl) nameEl.textContent = name;
+      var circle = b.querySelector('.vis-ava-circle');
+      if (circle && typeof _participantInner === 'function') {
+        circle.innerHTML = _participantInner(p, name, i, 48);
+        circle.removeAttribute('data-avatar-for'); // avoid avatar-slot overriding
+      }
+      b.classList.remove('dimmed');
+    });
+  });
+
+  // Hero "performer" name + avatar — use real member when assignedTo/createdBy is a userId.
+  var task = AppState._editingTask || (AppState.previewTasks && AppState.previewTasks[0]);
+  if (task) {
+    var aid = task.assignedToMemberId || task.createdBy;
+    var cached = aid && (_familyMembersCache || []).find(function (m) { return m.userId === aid || m.memberId === aid; });
+    if (cached) {
+      var nm = cached.name || 'חבר';
+      var perfName = document.getElementById('visHeroPerfName');
+      if (perfName) perfName.textContent = nm;
+      var bigAva = document.getElementById('visHeroBigAva');
+      if (bigAva && typeof _participantInner === 'function') {
+        bigAva.innerHTML  = _participantInner(cached, nm, 0, 56);
+        bigAva.className  = 'vis-hero-big-ava';
+        bigAva.removeAttribute('data-avatar-for');
+      }
+    }
+  }
+}
+
 function renderVisibility() {
   var editing = AppState._editingTask;
   var t = editing || (AppState.previewTasks && AppState.previewTasks[0]);
@@ -15182,6 +15277,7 @@ function renderVisibility() {
     }
   } catch (_) {}
   _visUpdateHero();
+  try { _visApplyRealMembers(); } catch (e) {}
 }
 // ── end #s-visibility globals ──────────────────────────────────────
 
