@@ -1,20 +1,39 @@
 /**
- * BASELINE LOCK — production endpoint regression tests for parse-tasks.
+ * BASELINE LOCK — regression tests for parse-tasks.
  *
  * Locks the CURRENT good OpenAI parsing behavior so future speed work cannot
  * destroy task splitting / time-date handling / shopping recognition.
  *
- * Asserts on: count, title (substring), time, date, source, fallback.
- * Does NOT assert on: assignee (out of scope for this lock).
+ * Two modes:
  *
- * Run:   node --env-file=.env.local api/test-baseline-lock.js
+ *   LOCAL (default) — in-process handler call. Requires a valid local key.
+ *   Asserts on: count, title (substring), time, date, source, fallback.
+ *   Does NOT assert on: assignee.
  *
- * Requires .env.local with:
- *   AI_PROVIDER=openai
- *   OPENAI_API_KEY=sk-...
+ *     node --env-file=.env.local api/test-baseline-lock.js
+ *
+ *   PROD (--prod flag) — HTTPS POST against the live Vercel endpoint. Uses
+ *   the deployment's env, so no local key is needed. SMOKE-LEVEL assertions
+ *   only (envelope + non-empty result) — does NOT enforce exact count / time
+ *   / date, since AI phrasing varies and we don't want a flaky baseline.
+ *
+ *     node api/test-baseline-lock.js --prod
  */
 
-const handler = require('./parse-tasks');
+const PROD       = process.argv.includes('--prod');
+const PROD_URL   = 'https://family-app-roan.vercel.app/api/parse-tasks';
+
+// In LOCAL mode the in-process require pulls in the OpenAI provider, which
+// throws at construction time if OPENAI_API_KEY is missing. Detect early and
+// print a friendly hint instead of an opaque stack trace.
+if (!PROD && !process.env.OPENAI_API_KEY) {
+  console.log('LOCAL mode needs OPENAI_API_KEY. Run one of:');
+  console.log('  node --env-file=.env.local api/test-baseline-lock.js');
+  console.log('  node api/test-baseline-lock.js --prod');
+  process.exit(0);
+}
+
+const handler = PROD ? null : require('./parse-tasks');
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
@@ -43,15 +62,36 @@ function checkEnvelope(b, status) {
   check('tasks is Array',     b && Array.isArray(b.tasks),               b && typeof b.tasks);
 }
 
+// SMOKE-level: every prod case must clear at least these. No quality assertions
+// here — AI phrasing varies and we don't want a flaky tester-rollout baseline.
+function lightAsserts(b) {
+  const tasks = (b && Array.isArray(b.tasks)) ? b.tasks : [];
+  check('tasks.length >= 1', tasks.length >= 1, tasks.length);
+  check('every task has non-empty title',
+    tasks.every(t => t && typeof t.title === 'string' && t.title.trim().length > 0),
+    tasks.map(t => t && t.title));
+}
+
 // title-substring matcher (LLM may phrase slightly differently)
 const titleHas = (t, sub) => typeof t.title === 'string' && t.title.indexOf(sub) !== -1;
 
 const now = new Date();
-async function runCase(label, transcript, asserts) {
-  console.log('\n' + '─'.repeat(60));
-  console.log(label);
-  console.log('INPUT: ' + transcript);
-
+async function callProd(transcript) {
+  const r = await fetch(PROD_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      transcript,
+      lang: 'he',
+      date: now.toISOString().split('T')[0],
+      time: now.toTimeString().slice(0, 5),
+    }),
+  });
+  let body = null;
+  try { body = await r.json(); } catch (_) { body = null; }
+  return { status: r.status, body };
+}
+async function callLocal(transcript) {
   const req = {
     method: 'POST',
     body: {
@@ -62,12 +102,25 @@ async function runCase(label, transcript, asserts) {
     },
   };
   const res = makeFakeRes();
+  await handler(req, res);
+  return { status: res._status, body: res._body };
+}
+
+async function runCase(label, transcript, asserts) {
+  console.log('\n' + '─'.repeat(60));
+  console.log(label);
+  console.log('INPUT: ' + transcript);
+
   try {
-    await handler(req, res);
-    const b = res._body;
-    console.log('RESULT: ' + JSON.stringify(b));
-    checkEnvelope(b, res._status);
-    if (b && Array.isArray(b.tasks)) asserts(b.tasks);
+    const { status, body } = PROD ? await callProd(transcript) : await callLocal(transcript);
+    console.log('RESULT: ' + JSON.stringify(body));
+    checkEnvelope(body, status);
+    if (PROD) {
+      // Smoke-level only — no quality assertions in prod mode.
+      lightAsserts(body);
+    } else if (body && Array.isArray(body.tasks)) {
+      asserts(body.tasks);
+    }
   } catch (err) {
     console.log('  ❌ EXCEPTION: ' + err.message);
     fail++;
@@ -76,8 +129,9 @@ async function runCase(label, transcript, asserts) {
 
 async function run() {
   console.log('═'.repeat(60));
-  console.log('BASELINE LOCK — production parse-tasks behavior');
-  console.log('AI_PROVIDER: ' + (process.env.AI_PROVIDER || '(default)'));
+  console.log('BASELINE LOCK — parse-tasks behavior');
+  console.log('MODE: ' + (PROD ? 'PROD (HTTPS → ' + PROD_URL + ')' : 'LOCAL (in-process handler)'));
+  console.log('AI_PROVIDER: ' + (PROD ? '(remote — Vercel env)' : (process.env.AI_PROVIDER || '(default)')));
   console.log('═'.repeat(60));
 
   // ── 1. Shopping with a time — one task, time:14:00, no "בשעה" standalone ────
