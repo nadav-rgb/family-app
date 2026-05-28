@@ -2,6 +2,25 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
+<!-- Tester reset: any URL with ?reset=1 wipes local identity, caches and
+     service workers, then reloads into a clean first-run. Cloud data is NOT
+     touched. Must run first, before any app/Firebase script. -->
+<script>
+(function(){
+  if (!/[?&]reset=1\b/.test(location.search)) return;
+  try { localStorage.clear(); } catch(e){}
+  try { sessionStorage.clear(); } catch(e){}
+  var done = function(){ location.replace(location.origin + '/app.html?fresh=' + Date.now()); };
+  var jobs = [];
+  if (window.caches && caches.keys) {
+    jobs.push(caches.keys().then(function(ks){ return Promise.all(ks.map(function(k){ return caches.delete(k); })); }));
+  }
+  if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
+    jobs.push(navigator.serviceWorker.getRegistrations().then(function(rs){ return Promise.all(rs.map(function(r){ return r.unregister(); })); }));
+  }
+  (jobs.length ? Promise.all(jobs) : Promise.resolve()).then(done, done);
+})();
+</script>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
 <title>Family App</title>
 <!-- PWA: installable + offline + foundation for push notifications -->
@@ -3797,8 +3816,8 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
     </div>
 
     <!-- Add member → invite screen -->
-    <div class="add-card" style="cursor:pointer;" onclick="goto('s-invite-member','txSlideIn','txSlideOut')">
-      <button class="add-plus" type="button" aria-label="הזמן" onclick="event.stopPropagation();goto('s-invite-member','txSlideIn','txSlideOut')">
+    <div class="add-card" style="cursor:pointer;" onclick="_inviteReturnScreen='s-family-members';goto('s-invite-member','txSlideIn','txSlideOut')">
+      <button class="add-plus" type="button" aria-label="הזמן" onclick="event.stopPropagation();_inviteReturnScreen='s-family-members';goto('s-invite-member','txSlideIn','txSlideOut')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
       </button>
       <div class="add-text">
@@ -3862,7 +3881,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
   </div>
 
   <div class="app-header">
-    <button class="back-btn" type="button" aria-label="חזרה" onclick="goto('s-family-members','txSlideOut','txSlideIn')">
+    <button class="back-btn" type="button" aria-label="חזרה" onclick="inviteGoBack()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
     </button>
     <div class="app-title">הזמן בן משפחה</div>
@@ -13850,7 +13869,17 @@ async function _firstRunCreate() {
   const name    = nameInp ? nameInp.value.trim() : '';
   if (name) { try { DataAdapter.setDisplayName(name); } catch (e) {} }
   await _daCreateFamily();
-  if (DataAdapter.isFamily()) _finishFirstRun();
+  if (DataAdapter.isFamily()) {
+    _finishFirstRun();
+    // Show the new group's join code immediately so the creator can invite.
+    // Capture the landing screen as the invite-screen back target so pressing
+    // back doesn't dump the user into settings.
+    try {
+      const landing = (document.querySelector('.app-screen.active') || {}).id || 's-today';
+      _inviteReturnScreen = landing;
+      goto('s-invite-member', 'txSlideIn', 'txSlideOut');
+    } catch (e) {}
+  }
 }
 
 function _frGoto(state) {
@@ -13891,6 +13920,14 @@ function _frCodeKey(e, box, idx) {
     boxes[idx - 1].focus(); boxes[idx - 1].value = ''; _frCodeSync();
     e.preventDefault();
   }
+}
+function _frPrefillJoinCode(code) {
+  const boxes = _frCodeBoxes();
+  boxes.forEach((b, i) => { b.value = code[i] || ''; });
+  _frCodeSync();
+  // Focus the last filled box so the user can adjust if needed.
+  const last = Math.min(code.length, boxes.length) - 1;
+  if (last >= 0 && boxes[last]) { try { boxes[last].focus(); } catch (e) {} }
 }
 function _frCodePaste(e) {
   e.preventDefault();
@@ -14007,8 +14044,16 @@ _applyLang();
 _capInit().then(() => _capRescheduleAll()).catch(() => {});
 // Preview-only: ?previewFirstRun=1 forces the onboarding screen for visual
 // review. Pure UI — touches no data, no family state, no listeners.
+const _urlJoinCode = (new URLSearchParams(location.search).get('code') || '')
+  .toUpperCase().replace(/[^A-Z2-9]/g, '').slice(0, 6);
 if (/[?&]previewFirstRun=1/.test(location.search)) {
   _showFirstRunScreen();
+} else if (_urlJoinCode) {
+  // Invite-link deep link — ALWAYS open the join flow with the code pre-filled,
+  // even if this device already belongs to a group. Clicking an invite means
+  // "join this group", so we never silently auto-enter the previous one.
+  _showFirstRunScreen();
+  try { _frGoto('join'); _frPrefillJoinCode(_urlJoinCode); } catch (e) {}
 } else if (DataAdapter.isFamily()) {
   _loadFamilyMembersCache();
   // While in the 72h post-reset recovery window, do NOT auto-sync — the wipe
@@ -15827,6 +15872,14 @@ function inviteViaShare() {
     window.location.href = `intent:#Intent;action=android.intent.action.SEND;type=text/plain;S.android.intent.extra.TEXT=${encoded};end`;
   }
 }
+// Where the invite screen's back arrow returns to. Set by whoever opens
+// the screen (settings entry → 's-family-members'; onboarding-create → the
+// screen the user landed on). Defaults to settings for safety.
+let _inviteReturnScreen = 's-family-members';
+function inviteGoBack() {
+  goto(_inviteReturnScreen || 's-family-members', 'txSlideOut', 'txSlideIn');
+}
+
 function _inviteScreenEnter() {
   const codeEl = document.getElementById('inviteFamilyCode');
   if (codeEl) codeEl.textContent = _inviteGetCode();
