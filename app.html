@@ -516,8 +516,11 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 .t-greeting{font-size:12.5px;font-weight:600;color:#e07c3a;letter-spacing:.15px;margin-bottom:4px;}
 .t-title{font-size:27px;font-weight:900;color:#1c110a;line-height:1.15;}
 
-#s-today .t-avatars{display:flex;gap:12px;padding:10px 24px 10px;animation:fadeUp .4s ease .08s both;}
-.t-mem{display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;}
+/* Wave 2 Fix #3 (cosmetic): make the member strip horizontally scrollable so
+   5+ members are never clipped. CSS-only; no HTML/JS/data changes. */
+#s-today .t-avatars{display:flex;gap:12px;padding:10px 24px 10px;animation:fadeUp .4s ease .08s both;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+#s-today .t-avatars::-webkit-scrollbar{display:none;}
+.t-mem{display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;flex-shrink:0;}
 .t-mem:active .t-av{transform:scale(.88);}
 .t-av{width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 4px 14px rgba(0,0,0,.1);transition:transform .18s;position:relative;}
 @keyframes avFloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-3px);}}
@@ -1431,8 +1434,17 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
   container-type:inline-size; /* enables cqw units for the hero crop below */
 }
 /* Each state is a self-contained hero + card unit (one visible at a time). */
-#firstRunScreen .fr-state{display:flex;flex-direction:column;}
+#firstRunScreen .fr-state{display:flex;flex-direction:column;position:relative;}
 #firstRunScreen .fr-state.hidden{display:none;}
+/* Wave2: minimal back arrow on create/join → returns to welcome (Create/Join choice) */
+#firstRunScreen .fr-back{
+  position:absolute;top:calc(12px + env(safe-area-inset-top));right:14px;z-index:3;
+  width:38px;height:38px;display:flex;align-items:center;justify-content:center;
+  border:none;border-radius:50%;cursor:pointer;
+  background:rgba(255,255,255,.82);color:var(--fr-ink);
+  box-shadow:0 3px 10px rgba(120,70,25,.16);
+}
+#firstRunScreen .fr-back svg{width:20px;height:20px;}
 /* Each hero shows only the TOP of its artwork — down to where the drawn
    card begins; the real HTML card overlaps just below. Scales by width only. */
 #firstRunScreen .fr-hero{
@@ -3443,22 +3455,26 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
     </div>
 
     <!-- Avatar strip — SVG illustrated portraits -->
+    <!-- Wave 2 Fix #3 (cosmetic): labels start blank to avoid legacy English
+         placeholders (Mom/Dad/Dudi/Yonatan) flashing before the first render.
+         Solo mode refills these via _applyLang(); family mode replaces the
+         whole strip via _renderTodayMembers(). -->
     <div class="t-avatars">
       <div class="t-mem" onclick="openMemberProfile('member_mom','s-today')">
         <div class="t-av av-mom online" data-avatar-for="member_mom" data-avatar-size="54"><div data-avatar-slot></div></div>
-        <span class="t-avname">Mom</span>
+        <span class="t-avname"></span>
       </div>
       <div class="t-mem" onclick="openMemberProfile('member_dad','s-today')">
         <div class="t-av av-dad online" data-avatar-for="member_dad" data-avatar-size="54"><div data-avatar-slot></div></div>
-        <span class="t-avname">Dad</span>
+        <span class="t-avname"></span>
       </div>
       <div class="t-mem" onclick="openMemberProfile('member_laali','s-today')">
         <div class="t-av av-dudi" data-avatar-for="member_laali" data-avatar-size="54"><div data-avatar-slot></div></div>
-        <span class="t-avname">Dudi</span>
+        <span class="t-avname"></span>
       </div>
       <div class="t-mem" onclick="openMemberProfile('member_aharon','s-today')">
         <div class="t-av av-yona" data-avatar-for="member_aharon" data-avatar-size="54"><div data-avatar-slot></div></div>
-        <span class="t-avname">Yonatan</span>
+        <span class="t-avname"></span>
       </div>
     </div>
 
@@ -5467,11 +5483,15 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
 
     <!-- ── STATE: create ── -->
     <div class="fr-state hidden" data-fr-state="create">
+      <button type="button" class="fr-back" aria-label="חזרה" onclick="_frGoto('welcome')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+      </button>
       <div class="fr-hero fr-hero-create" role="img" aria-label="בואו ניצור קבוצה משותפת"></div>
       <div class="fr-card">
         <div class="fr-h1">✨ בואו ניצור קבוצה משותפת</div>
         <label class="fr-field-lbl" for="frUserName">מה השם שלך או איך תרצה/י להופיע באפליקציה?</label>
-        <input class="fr-input" id="frUserName" type="text" placeholder="" dir="rtl" maxlength="24" />
+        <input class="fr-input" id="frUserName" type="text" placeholder="" dir="rtl" maxlength="24" oninput="_frClearCreateErr()" />
+        <div class="fr-err" id="frCreateErr"></div>
         <label class="fr-field-lbl" for="frRoleLabel">התפקיד שלך (אופציונלי)</label>
         <input class="fr-input" id="frRoleLabel" type="text" placeholder="למשל: אבא, אמא, ילד, סבתא, מטפל, שותף, אחר" dir="rtl" maxlength="20" />
         <label class="fr-field-lbl" for="frCreateName">שם הקבוצה (אופציונלי)</label>
@@ -5483,12 +5503,15 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
 
     <!-- ── STATE: join ── -->
     <div class="fr-state hidden" data-fr-state="join">
+      <button type="button" class="fr-back" aria-label="חזרה" onclick="_frGoto('welcome')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+      </button>
       <div class="fr-hero fr-hero-join" role="img" aria-label="הצטרפות לקבוצה"></div>
       <div class="fr-card">
         <div class="fr-h1">הצטרפו לקבוצה 🏡</div>
         <div class="fr-sub">קיבלתם קוד הצטרפות? הכניסו אותו כאן.</div>
         <label class="fr-field-lbl" for="frJoinUserName">מה השם שלך או איך תרצה/י להופיע באפליקציה?</label>
-        <input class="fr-input" id="frJoinUserName" type="text" placeholder="" dir="rtl" maxlength="24" />
+        <input class="fr-input" id="frJoinUserName" type="text" placeholder="" dir="rtl" maxlength="24" oninput="if(document.getElementById('firstRunErr'))document.getElementById('firstRunErr').textContent='';" />
         <label class="fr-field-lbl" for="frCodeBoxes">קוד הצטרפות</label>
         <div class="fr-code" id="frCodeBoxes" dir="ltr">
           <input class="fr-code-box" type="text" inputmode="text" autocomplete="off" maxlength="1" placeholder="–" aria-label="תו 1" oninput="_frCodeInput(this,0)" onkeydown="_frCodeKey(event,this,0)" onpaste="_frCodePaste(event)" />
@@ -6304,12 +6327,13 @@ function currentDeviceDisplayName() {
   // for sessions that don't have one yet. Display only — does NOT change task
   // attribution, identity ids, or anything downstream.
   if (DataAdapter.displayName) return DataAdapter.displayName;
+  // Family mode — displayName ONLY. If the user hasn't chosen one yet → ''
+  // (never a seed/role/legacy label).
+  if (DataAdapter.isFamily()) return '';
+  // Non-family (solo/demo) — legacy identity space, unchanged.
   const legacyId = _currentDeviceLegacyId();
   if (legacyId) return t('family_' + legacyId) || ID_TO_PERSON[legacyId] || legacyId;
-  const seed = DataAdapter.isFamily()
-    ? _FAMILY_MEMBERS_SEED.find(m => m.memberId === DataAdapter.myMemberId)
-    : null;
-  return seed?.name || 'Family';
+  return 'Family';
 }
 function _defaultVisibleToIds() {
   return (DataAdapter.isFamily() ? _FAMILY_MEMBERS_SEED.map(m => m.memberId) : ALL_MEMBER_IDS)
@@ -6344,6 +6368,8 @@ function _taskLegacyAssigneeId(task) {
 }
 function _taskDisplayName(task) {
   const resolved = resolveMember(task);
+  // Family mode — displayName only (may be ''); never fall back to person label.
+  if (DataAdapter.isFamily()) return resolved.name;
   return resolved.name || personLabel(task.person);
 }
 
@@ -6363,6 +6389,19 @@ function _taskCreatorLegacyId(task) {
   return null;
 }
 function _taskCreatorName(task) {
+  // Family mode — displayName ONLY. Self → DataAdapter.displayName; others →
+  // member.displayName from cache (by createdByMemberId / createdBy userId);
+  // if missing → '' (never seed/role/legacy label).
+  if (DataAdapter.isFamily()) {
+    const myId = DataAdapter.userId;
+    const cb   = task && task.createdBy;
+    const cbm  = task && task.createdByMemberId;
+    const fromCache = (_familyMembersCache || []).find(m => m.memberId === cbm || m.userId === cb || m.memberId === cb);
+    const isMe = (cb && cb === myId) || (cbm && cbm === DataAdapter.myMemberId) || (fromCache && fromCache.userId === myId);
+    if (isMe && DataAdapter.displayName) return DataAdapter.displayName;
+    if (fromCache) return _realName(fromCache.displayName || fromCache.name);
+    return '';
+  }
   const mid = _taskCreatorMemberId(task);
   if (mid) {
     const c = (_familyMembersCache || []).find(m => m.memberId === mid);
@@ -6521,11 +6560,14 @@ function setLang(lang) {
 // Convert a HebrewParser result → app task shape
 function parsedToTask(p, idx) {
   const assignedTo = p.assignedTo || _currentDeviceLegacyId();
+  // Wave 2 Fix 2: safe creator fallback — never null. Prevents broken writes
+  // (createdBy:null / empty visibleTo) when identity is only partially hydrated.
+  const creatorId = DataAdapter.userId || DataAdapter.myMemberId || currentUser;
   // Wave 2A.5: in family mode default ownership to the real creator userId
   // (so resolveMember finds the real participant). Keep the seed mapping
   // ONLY when the parser explicitly named an assignee (mom/dad/...).
   const assignedToMemberId = DataAdapter.isFamily()
-    ? ((p.assignedTo && _memberIdForLegacyId(p.assignedTo)) || DataAdapter.userId || DataAdapter.myMemberId)
+    ? ((p.assignedTo && _memberIdForLegacyId(p.assignedTo)) || DataAdapter.userId || DataAdapter.myMemberId || creatorId)
     : null;
   const person       = ID_TO_PERSON[assignedTo] || 'Dad';
   const dateStr      = p.date && p.date.date
@@ -6534,7 +6576,7 @@ function parsedToTask(p, idx) {
   // Wave 2B: creator must always see their own task. Default visibility is
   // creator-only — no one else auto-selected. Plus the assignee if different.
   const defaultVisibleTo = DataAdapter.isFamily()
-    ? [DataAdapter.userId, assignedToMemberId].filter(Boolean).filter((v,i,a) => a.indexOf(v) === i)
+    ? [creatorId, DataAdapter.userId, assignedToMemberId].filter(Boolean).filter((v,i,a) => a.indexOf(v) === i)
     : _defaultVisibleToIds();
   // Wave 2B: notify defaults — ON for creator only when task has a time;
   // OFF entirely when no time.
@@ -6547,7 +6589,7 @@ function parsedToTask(p, idx) {
     title:                 p.title,
     person,
     assignedTo,
-    createdBy:             DataAdapter.isFamily() ? DataAdapter.userId : currentUser,
+    createdBy:             DataAdapter.isFamily() ? creatorId : currentUser,
     createdByMemberId:     (() => { const id = DataAdapter.myMemberId; if (!id) console.warn('[Identity] myMemberId not set — createdByMemberId null'); return id; })(),
     assignedToMemberId,
     mins:                  p.mins,
@@ -6567,13 +6609,14 @@ function parsedToTask(p, idx) {
     recurrence:            { type: 'none' },
   };
 }
-
 // Convert AI canonical schema → app task shape
 function aiParsedToTask(t, idx) {
   const assignedTo = t.assignee || _currentDeviceLegacyId();
+  // Wave 2 Fix 2: safe creator fallback — never null (see parsedToTask).
+  const creatorId = DataAdapter.userId || DataAdapter.myMemberId || currentUser;
   // Wave 2A.5: same ownership defaults as parsedToTask.
   const assignedToMemberId = DataAdapter.isFamily()
-    ? ((t.assignee && _memberIdForLegacyId(t.assignee)) || DataAdapter.userId || DataAdapter.myMemberId)
+    ? ((t.assignee && _memberIdForLegacyId(t.assignee)) || DataAdapter.userId || DataAdapter.myMemberId || creatorId)
     : null;
   const person     = ID_TO_PERSON[assignedTo] || 'Dad';
 
@@ -6591,7 +6634,7 @@ function aiParsedToTask(t, idx) {
 
   // Wave 2B: creator-only visibility by default; notify ON only with time.
   const defaultVisibleTo = DataAdapter.isFamily()
-    ? [DataAdapter.userId, assignedToMemberId].filter(Boolean).filter((v,i,a) => a.indexOf(v) === i)
+    ? [creatorId, DataAdapter.userId, assignedToMemberId].filter(Boolean).filter((v,i,a) => a.indexOf(v) === i)
     : _defaultVisibleToIds();
   const hasTime = (mins != null);
   const defaultNotifyTo = DataAdapter.isFamily()
@@ -6602,7 +6645,7 @@ function aiParsedToTask(t, idx) {
     title:                 t.title,
     person,
     assignedTo,
-    createdBy:             DataAdapter.isFamily() ? DataAdapter.userId : currentUser,
+    createdBy:             DataAdapter.isFamily() ? creatorId : currentUser,
     createdByMemberId:     (() => { const id = DataAdapter.myMemberId; if (!id) console.warn('[Identity] myMemberId not set — createdByMemberId null'); return id; })(),
     assignedToMemberId,
     mins,
@@ -6627,7 +6670,6 @@ function aiParsedToTask(t, idx) {
     _isNew:                AGENDA_SUMMARY_ENABLED && !t._subItemsFromAgenda,
   };
 }
-
 function offsetDate(days) {
   const d = new Date();
   d.setDate(d.getDate() + days);
@@ -8582,7 +8624,12 @@ function renderConfirmationTasks() {
 
   listEl.innerHTML = tasks.map(function(task) {
     const avClass  = LEGACY_TO_AVATAR[task.assignedTo] || 'av-aba';
-    const name     = t('family_' + task.assignedTo) || task.person || task.assignedTo || '—';
+    // Wave 2 — displayName-only rule. Route through _taskDisplayName so the
+    // confirmation card uses the same identity source as Today (self →
+    // DataAdapter.displayName; others → member.displayName; missing → '').
+    const name     = (typeof _taskDisplayName === 'function')
+      ? _taskDisplayName(task)
+      : (t('family_' + task.assignedTo) || task.person || task.assignedTo || '');
     // ─ 1B: resolve member's current avatar (cache → seed) and inject into the
     // empty .avatar circle so a photo shows here too, not just the gradient.
     const _confMemberId = (typeof LEGACY_ID_TO_MEMBER_ID === 'object' && LEGACY_ID_TO_MEMBER_ID[task.assignedTo]) || null;
@@ -9659,6 +9706,12 @@ function activeTasks() {
   const isVisible = t =>
     (myDynId && t.createdBy === myDynId)
     || (!DataAdapter.isFamily() && t.createdBy === currentUser)
+    // Wave 2 Fix 1: stable member_* identity anchor. Covers tasks whose
+    // userId-based fields are null/stale (createdBy null at create-time, or
+    // a userId that changed across sessions). Matches ONLY this device's own
+    // member id, so it never over-exposes another member's tasks.
+    || (myMemberId && t.createdByMemberId  === myMemberId)
+    || (myMemberId && t.assignedToMemberId === myMemberId)
     || (t.visibleTo && (
          (myDynId    && t.visibleTo.includes(myDynId))
       || t.visibleTo.includes(currentUser)
@@ -12534,12 +12587,20 @@ async function _daWriteTask(task, isNew) {
       deleted:               task.deleted || false,
       deletedAt:             task.deletedAt || null,
       deletedBy:             task.deletedBy || null,
-      createdBy:             task.createdBy  || DataAdapter.userId,
-      createdByMemberId:     task.createdByMemberId  || null,
+      createdBy:             task.createdBy  || DataAdapter.userId || DataAdapter.myMemberId || null,
+      createdByMemberId:     task.createdByMemberId  || DataAdapter.myMemberId || null,
       assignedTo:            task.assignedTo || null,
       assignedToMemberId:    task.assignedToMemberId || null,
       assignedToName:        task.assignedToName   || null,
-      visibleTo:             (task.visibleTo || _defaultVisibleToIds()).filter(v => v !== undefined && v !== null && v !== ''),
+      // Wave 2 Fix 2: never persist an empty visibleTo — fall back to a stable
+      // creator anchor so the task stays visible to its owner after refresh.
+      visibleTo:             (() => {
+        let v = (Array.isArray(task.visibleTo) ? task.visibleTo : _defaultVisibleToIds())
+                  .filter(x => x !== undefined && x !== null && x !== '');
+        if (!v.length) v = [DataAdapter.userId, DataAdapter.myMemberId, task.createdByMemberId, task.assignedToMemberId]
+                              .filter(x => x !== undefined && x !== null && x !== '');
+        return v.filter((x,i,a) => a.indexOf(x) === i);
+      })(),
       notifyTo:              task.notifyTo  || [],
       recurrence:            task.recurrence || { type: 'none' },
       reminderOffsetMinutes: task.reminderOffsetMinutes ?? 10,
@@ -12599,7 +12660,8 @@ async function _loadFamilyMembersCache() {
         if (m.userId && !IDENTITY_MEMBER_IDS.includes(m.memberId)) {
           return Object.assign({}, m, {
             memberId: m.memberId || m.userId,
-            name:     m.displayName || m.name || 'חבר',
+            // displayName ONLY — never inject a 'חבר' placeholder into the cache.
+            name:     m.displayName || m.name || '',
           });
         }
         return m;
@@ -12617,15 +12679,45 @@ async function _loadFamilyMembersCache() {
 // Single source of truth for UI display of any task's assignee.
 // Returns { name, avatar: { type, value }, memberId } — always the same shape.
 // Priority: assignedToMemberId (new) → assignedTo legacy → safe default.
+// Wave 2 Fix #3 — UI-only display fallback. When a member has no real
+// displayName, the seed/cache name is a placeholder ("חבר 1".."חבר 4").
+// Never show that to a tester: substitute a role-based Hebrew name.
+// Display fallback only — does NOT write anything to localStorage/Firestore.
+function _isPlaceholderName(name) {
+  return !name || /^חבר(\s|$)/.test(String(name).trim());
+}
+// Wave 2 — Identity rule: displayName is the ONLY source of truth in family UI.
+// Returns a real chosen name, or '' when it's missing/placeholder. Never a
+// seed/role/legacy label.
+function _realName(v) {
+  return _isPlaceholderName(v) ? '' : String(v).trim();
+}
+
 function resolveMember(task) {
+  // Family mode — displayName ONLY. Self → DataAdapter.displayName; others →
+  // member.displayName from the cache; if missing → '' (never a fallback label).
+  if (DataAdapter.isFamily()) {
+    const myId = DataAdapter.userId;
+    const aid  = task.assignedToMemberId;
+    if (aid) {
+      const fromCache = _familyMembersCache.find(m => m.memberId === aid || m.userId === aid);
+      const isMe = (aid === myId) || (aid === DataAdapter.myMemberId) || (fromCache && fromCache.userId === myId);
+      if (isMe && DataAdapter.displayName) {
+        return { name: DataAdapter.displayName, avatar: (fromCache && fromCache.avatar) || { type: 'emoji', value: '👤' }, memberId: (fromCache && fromCache.memberId) || aid };
+      }
+      if (fromCache) {
+        return { name: _realName(fromCache.displayName || fromCache.name), avatar: fromCache.avatar, memberId: fromCache.memberId };
+      }
+    }
+    return { name: '', avatar: { type: 'emoji', value: '👤' }, memberId: null };
+  }
+  // Non-family (solo/demo) — legacy identity space, unchanged.
   if (task.assignedToMemberId) {
-    const fromCache = _familyMembersCache.find(m => m.memberId === task.assignedToMemberId);
-    if (fromCache) return { name: fromCache.name, avatar: fromCache.avatar, memberId: fromCache.memberId };
     const fromSeed = _FAMILY_MEMBERS_SEED.find(s => s.memberId === task.assignedToMemberId);
     if (fromSeed) return { name: fromSeed.name, avatar: fromSeed.avatar, memberId: fromSeed.memberId };
   }
   const legacy = FAMILY.find(f => f.id === (task.assignedTo || ''));
-  if (legacy) return { name: legacy.label, avatar: { type: 'emoji', value: legacy.emoji }, memberId: null };
+  if (legacy) return { name: t('family_' + legacy.id) || legacy.label, avatar: { type: 'emoji', value: legacy.emoji }, memberId: null };
   return { name: task.person || task.assignedTo || '?', avatar: { type: 'emoji', value: '👤' }, memberId: null };
 }
 
@@ -14007,10 +14099,21 @@ function _finishFirstRun() {
   try { if (typeof _renderFamilyMembersScreen === 'function') _renderFamilyMembersScreen(); } catch (e) {}
 }
 
+function _frClearCreateErr() {
+  const e = document.getElementById('frCreateErr');
+  if (e) e.textContent = '';
+}
 async function _firstRunCreate() {
   const userInp  = document.getElementById('frUserName');
   const userName = userInp ? userInp.value.trim() : '';
-  if (userName) { try { DataAdapter.setDisplayName(userName); } catch (e) {} }
+  // Patch C — displayName is required. Block create on an empty name.
+  if (!userName) {
+    const errEl = document.getElementById('frCreateErr');
+    if (errEl) errEl.textContent = 'צריך שם כדי שנדע איך להציג אותך 🙂';
+    if (userInp) { try { userInp.focus(); } catch (e) {} }
+    return;
+  }
+  try { DataAdapter.setDisplayName(userName); } catch (e) {}
   const roleInp  = document.getElementById('frRoleLabel');
   const roleVal  = roleInp ? roleInp.value.trim() : '';
   if (roleVal)  { try { DataAdapter.setRoleLabel(roleVal); } catch (e) {} }
@@ -14091,12 +14194,18 @@ function _frCodePaste(e) {
 async function _firstRunJoin() {
   const inp   = document.getElementById('firstRunJoinInp');
   const errEl = document.getElementById('firstRunErr');
+  const joinNameInp = document.getElementById('frJoinUserName');
+  const joinName    = joinNameInp ? joinNameInp.value.trim() : '';
+  // Patch C — displayName is required. Block join on an empty name.
+  if (!joinName) {
+    if (errEl) errEl.textContent = 'צריך שם כדי שנדע איך להציג אותך 🙂';
+    if (joinNameInp) { try { joinNameInp.focus(); } catch (e) {} }
+    return;
+  }
   const code  = inp ? inp.value.trim().toUpperCase() : '';
   if (code.length < 4) { if (errEl) errEl.textContent = 'הכנס קוד בן 4-6 תווים'; return; }
   if (errEl) errEl.textContent = '';
-  const joinNameInp = document.getElementById('frJoinUserName');
-  const joinName    = joinNameInp ? joinNameInp.value.trim() : '';
-  if (joinName) { try { DataAdapter.setDisplayName(joinName); } catch (e) {} }
+  try { DataAdapter.setDisplayName(joinName); } catch (e) {}
   const ok = await _daJoinFamily(code);
   if (ok === 'full') { _frGoto('full'); return; }
   if (ok && DataAdapter.isFamily()) _finishFirstRun();
@@ -14777,7 +14886,11 @@ function renderTimeDateScreen(taskId) {
   var titleEl = document.getElementById('tdTaskTitle');
   var ownerEl = document.getElementById('tdTaskOwner');
   if (titleEl) titleEl.textContent = task.title || '—';
-  if (ownerEl) ownerEl.textContent = (typeof t === 'function' ? t('family_' + task.assignedTo) : '') || task.assignedTo || '';
+  // Wave 2 — displayName-only rule (Patch A). Use the same identity source as
+  // Today; never t('family_'+assignedTo)/seed/'חבר 1'.
+  if (ownerEl) ownerEl.textContent = (typeof _taskDisplayName === 'function')
+    ? _taskDisplayName(task)
+    : ((typeof t === 'function' ? t('family_' + task.assignedTo) : '') || task.assignedTo || '');
 
   _tdBuildDateStrip(task.date || null);
 
@@ -15282,6 +15395,15 @@ function renderVisibility() {
 // ── end #s-visibility globals ──────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', function() {
+  // Wave 2 Fix #3 (cosmetic) — on a returning family-mode cold boot, the Today
+  // member strip shows the static "Mom/Dad/Dudi/Yonatan" HTML until the first
+  // dynamic render is triggered (by navigation or the Firestore listener).
+  // Render real participants immediately so testers never see legacy English
+  // placeholders. UI-only; falls back to a "me" skeleton if the cache is cold.
+  try {
+    if (DataAdapter.isFamily() && typeof _renderTodayMembers === 'function') _renderTodayMembers();
+  } catch (e) {}
+
   var calToggle = document.getElementById('tdCalToggle');
   var calWrap   = document.getElementById('tdCalWrap');
   if (calToggle && calWrap) {
@@ -16127,7 +16249,7 @@ function _loadRealParticipants() {
       memberId: myId,
       role: 'owner',
       displayName: DataAdapter.displayName || '',
-      name: DataAdapter.displayName || 'אני',
+      name: DataAdapter.displayName || '',
       roleLabel: DataAdapter.roleLabel || '',
     }];
   }
@@ -16136,8 +16258,10 @@ function _loadRealParticipants() {
   return list;
 }
 function _participantDisplayName(p, myId) {
-  if (p.userId === myId) return DataAdapter.displayName || p.displayName || p.name || 'אני';
-  return p.displayName || p.name || 'חבר';
+  // displayName ONLY. Self → DataAdapter.displayName; others → member.displayName.
+  // Missing → '' (never 'חבר'/role/seed label).
+  if (p.userId === myId) return DataAdapter.displayName || '';
+  return _realName(p.displayName || p.name);
 }
 function _participantInner(p, name, gradIdx, sizePx) {
   const av = p.avatar;
@@ -16641,8 +16765,23 @@ function _renderMemberProfile() {
   // Back button
   document.getElementById('mpBackBtn').onclick = () => goto(_mpFromScreen, 'txLeaveFade', 'txEnterFade');
 
-  // Name
-  document.getElementById('mpName').textContent = m.name || '—';
+  // Name — Wave 2 displayName-only rule (Patch B). In family mode never show a
+  // seed/placeholder name: self → DataAdapter.displayName; other → real
+  // member.displayName from cache; missing → '—'. m.name may be a seed label
+  // ('חבר 1') because _mpGetMember merges seed, so resolve it explicitly here.
+  let _mpName;
+  if (DataAdapter.isFamily()) {
+    if (isSelf && DataAdapter.displayName) {
+      _mpName = DataAdapter.displayName;
+    } else {
+      const _live = (_familyMembersCache || []).find(c => c.memberId === memberId || c.userId === memberId);
+      _mpName = (_live && _realName(_live.displayName || _live.name)) || '';
+    }
+    if (!_mpName) _mpName = '—';
+  } else {
+    _mpName = m.name || '—';
+  }
+  document.getElementById('mpName').textContent = _mpName;
 
   // Subtitle
   document.getElementById('mpSubtitleText').textContent = m.subtitle || (isParent ? 'הורה' : 'ילד/ה');
