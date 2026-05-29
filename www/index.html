@@ -2035,6 +2035,15 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 #s-confirmation .lock-hint{margin-top:14px;text-align:center;font-size:10px;font-weight:600;color:var(--muted);display:flex;align-items:center;justify-content:center;gap:5px;}
 #s-confirmation .lock-hint svg{width:10px;height:10px;color:var(--muted);}
 #s-confirmation .lock-hint u{text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:2px;}
+/* Phase 2: local-first reconcile chip */
+#s-confirmation .conf-ai-chip{margin-top:12px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;background:var(--accent-soft,#FFE9D2);border:1px solid rgba(229,98,26,0.18);border-radius:16px;padding:9px 12px;animation:confChipIn .28s ease;}
+#s-confirmation .conf-ai-chip.syncing{justify-content:center;}
+#s-confirmation .conf-ai-chip.syncing .conf-ai-chip-actions{display:none;}
+#s-confirmation .conf-ai-chip-text{font-size:12px;font-weight:700;color:var(--accent-deep,#E5621A);}
+#s-confirmation .conf-ai-chip-actions{display:flex;gap:6px;}
+#s-confirmation .conf-ai-chip-btn{font-family:inherit;font-size:11px;font-weight:700;border:none;border-radius:11px;padding:6px 12px;cursor:pointer;background:rgba(255,255,255,0.75);color:var(--accent-deep,#E5621A);}
+#s-confirmation .conf-ai-chip-btn.primary{background:var(--accent,#FF7A3D);color:#fff;}
+@keyframes confChipIn{from{opacity:0;transform:translateY(-4px);}to{opacity:1;transform:none;}}
 #s-confirmation .who-card{margin-top:14px;width:100%;background:var(--card-bg);border:1px solid rgba(255,255,255,0.7);border-radius:18px;padding:11px 12px;box-shadow:var(--card-shadow);display:flex;align-items:center;gap:10px;cursor:pointer;font-family:inherit;text-align:right;}
 #s-confirmation .who-icon{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#FFE9D2 0%,#FDD9B6 100%);display:flex;align-items:center;justify-content:center;color:var(--orange-deep);flex:0 0 auto;}
 #s-confirmation .who-icon svg{width:16px;height:16px;}
@@ -4417,6 +4426,15 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
       <div id="confirmTasksList"></div>
     </div>
 
+    <!-- Phase 2: gentle AI-reconcile chip (hidden by default) -->
+    <div id="confAiChip" class="conf-ai-chip" style="display:none;">
+      <span class="conf-ai-chip-text">✨ שיפרנו כמה פרטים</span>
+      <div class="conf-ai-chip-actions">
+        <button type="button" id="confAiUpdate" class="conf-ai-chip-btn primary">עדכן</button>
+        <button type="button" id="confAiKeep" class="conf-ai-chip-btn">השאר כמו שזה</button>
+      </div>
+    </div>
+
     <!-- Lock hint -->
     <div class="lock-hint">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
@@ -5835,7 +5853,13 @@ const STORAGE_KEY = 'family-app-v1';
 const APPEARANCE_KEY = 'family-app-appearance';
 const AppState = { tasks: [], previewTasks: [], recurringCompletions: {}, recurringExclusions: {}, lang: 'he', voiceText: '', splitSuggestions: [],
   theme: 'bright', accentColor: '#FF7A3D', accentDeep: '#E5621A', accentSoft: '#FFE9D2',
-  textSize: 'normal', voiceStyle: 'classic', avatarMode: null };
+  textSize: 'normal', voiceStyle: 'classic', avatarMode: null,
+  // ── Phase 2: local-first optimistic preview ──────────────────────────────
+  previewGen: 0,            // monotonic token; AI results with a stale gen are dropped
+  previewUserEdited: false, // set true the moment the user edits any preview task
+  previewReconciled: false, // false while the AI final is still pending
+  previewAiResult: null,    // stored AI tasks awaiting user decision (when edited)
+  previewCommitPending: false }; // user tapped OK before AI returned
 
 // ─── Debug logger (?debug=1 in URL  OR  window.APP_DEBUG = true) ─
 const _urlDbg  = new URLSearchParams(window.location.search).get('debug') === '1';
@@ -6030,7 +6054,7 @@ const I18N = {
     dp_back:'Back', dp_tag:'✨ Ready', dp_h1:'We organized<br>your day ✨',
     dp_sub:'Feel free to tweak anything',
     dp_adj_banner:'✏️ Editing schedule — tap any time to change it',
-    dp_ok:'Looks good ✓', dp_ok_done:'✓ Your day is set!', dp_adjust:'Adjust',
+    dp_ok:'Looks good ✓', dp_ok_done:'✓ Your day is set!', dp_finalizing:'Finalizing…', dp_adjust:'Adjust',
     dp_tap_time:'Tap a time to edit ✏️', dp_perfect:'Perfect ✨',
     dp_time_explicit:'From your words', dp_time_suggested:'Suggested',
     dp_time_manual:'Adjusted', dp_edit_manually:'✏️\nEdit manually', dp_tasks_lbl:'tasks',
@@ -6109,7 +6133,7 @@ const I18N = {
     dp_back:'חזרה', dp_tag:'✨ מוכן', dp_h1:'סידרנו לך<br>את היום ✨',
     dp_sub:'אפשר לשנות כל דבר',
     dp_adj_banner:'✏️ עריכת לוח זמנים — לחץ על שעה לשינוי',
-    dp_ok:'נראה טוב ✓', dp_ok_done:'✓ היום מוכן!', dp_adjust:'שנה',
+    dp_ok:'נראה טוב ✓', dp_ok_done:'✓ היום מוכן!', dp_finalizing:'מסדרים סופית…', dp_adjust:'שנה',
     dp_tap_time:'לחץ על שעה לעריכה ✏️', dp_perfect:'מושלם ✨',
     dp_time_explicit:'מדבריך', dp_time_suggested:'מוצע',
     dp_time_manual:'מעודכן', dp_edit_manually:'✏️\nעריכה ידנית', dp_tasks_lbl:'משימות',
@@ -8091,6 +8115,7 @@ function renderAssignedSection() {
       row.innerHTML  = `<span class="share-em" style="width:36px;height:36px;border-radius:50%;overflow:hidden;flex-shrink:0;display:inline-block;">${inner}</span><span class="share-lbl" style="flex:1;">${name}</span><span class="share-radio${sel ? ' on' : ''}"></span>`;
       row.addEventListener('click', () => {
         task.assignedToMemberId = p.userId;
+        _markPreviewEdited(task);
         task.assignedToName     = name;
         task.assignedToUserId   = p.userId;
         task.assignedTo         = null; // clear legacy mapping for real-user assignment
@@ -8111,6 +8136,7 @@ function renderAssignedSection() {
     row.innerHTML = `<span class="share-em">${avImg(f.id)}</span><span class="share-lbl">${t('family_' + f.id)}</span><span class="share-radio${sel?' on':''}"></span>`;
     row.addEventListener('click', () => {
       task.assignedTo = f.id;
+      _markPreviewEdited(task);
       if (!task.visibleTo.includes(f.id)) task.visibleTo.push(f.id);
       if (!task.notifyTo.includes(f.id))  task.notifyTo.push(f.id);
       renderAssignedSection();
@@ -8677,7 +8703,7 @@ function renderConfirmationTasks() {
     if (span) {
       span.addEventListener('input', function() {
         var updated = span.textContent.trim();
-        if (updated) task.title = updated;
+        if (updated) { task.title = updated; _markPreviewEdited(task); }
       });
       span.addEventListener('keydown', function(e) {
         if (e.key === 'Enter') { e.preventDefault(); span.blur(); }
@@ -8803,77 +8829,22 @@ async function vOrganize() {
   AppLog.group('parsing started');
   AppLog.info('text', spokenText);
   AppLog.info('lang', AppState.lang);
-
-  let result;
-  try {
-    result = spokenText
-      ? await HebrewParser.parseTasks(spokenText, { lang: AppState.lang })
-      : { tasks: [], needsReview: false, uncertainParts: [], source: 'local', fallback: true };
-  } catch (err) {
-    AppLog.warn('parseTasks error', err.message);
-    result = HebrewParser.parseTasksLocal(spokenText || '', { lang: AppState.lang });
-  }
-
-  AppLog.info('source', result.source);
-  AppLog.info('fallback', result.fallback);
-  AppLog.info('needsReview', result.needsReview);
-  AppLog.info('tasks', result.tasks.length);
-  AppLog.info('result', result);
   AppLog.groupEnd();
 
-  // ── Agenda-merge pass ─────────────────────────────────────────────
-  // Gated by AGENDA_SUMMARY_ENABLED (currently false — see flag def).
-  // When enabled: if the parser split the transcript into multiple tasks
-  // AND the original is long with multiple commas, ask /api/summarize-task
-  // whether it's actually one multi-part task (meeting agenda etc.) and
-  // override the split. While disabled, parser output is used verbatim.
-  if (AGENDA_SUMMARY_ENABLED
-      && spokenText && result.tasks && result.tasks.length >= 2
-      && spokenText.length >= 30 && !isShoppingListTitle(spokenText)) {
-    const commaCount   = (spokenText.match(/,|،/g) || []).length;
-    const wConnectors  = (spokenText.match(/\s+ו[א-ת]/g) || []).length;
-    if (commaCount >= 2 || (commaCount >= 1 && wConnectors >= 1) || wConnectors >= 2) {
-      try {
-        const sumRes = await fetch('/api/summarize-task', {
-          method:  'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body:    JSON.stringify({ title: spokenText, lang: AppState.lang }),
-        });
-        if (sumRes.ok) {
-          const sumData = await sumRes.json();
-          if (sumData && !sumData.skip
-              && typeof sumData.mainTitle === 'string' && sumData.mainTitle.trim()
-              && Array.isArray(sumData.items) && sumData.items.length >= 2) {
-            const cleanItems = sumData.items.map(s => String(s).trim()).filter(Boolean);
-            if (cleanItems.length >= 2) {
-              AppLog.info('agenda merge', `${result.tasks.length} parsed tasks → 1 agenda task`);
-              // Replace the parser's split with one agenda task. The
-              // _subItemsFromAgenda hint is consumed by aiParsedToTask.
-              result.tasks = [{
-                title:    sumData.mainTitle.trim(),
-                time:     null,
-                date:     null,
-                assignee: null,
-                _subItemsFromAgenda: {
-                  mainTitle: sumData.mainTitle.trim(),
-                  items:     cleanItems,
-                },
-              }];
-              // The merged task counts as AI-reviewed at the agenda level;
-              // not "uncertain" even if the parser flagged any individual
-              // sub-tasks as such.
-              result.needsReview = false;
-            }
-          }
-        }
-      } catch (e) {
-        AppLog.warn('agenda check failed', e.message || '');
-        // Fall through with the parser's split — feature is enrichment only.
-      }
-    }
-  }
+  const _perceiveT0 = Date.now(); // perceived-latency clock: parse start → preview shown
 
+  // ── Add-mode still awaits the AI (it inserts straight into an open preview) ──
   if (addMode) {
+    let result;
+    try {
+      result = spokenText
+        ? await HebrewParser.parseTasks(spokenText, { lang: AppState.lang })
+        : { tasks: [], needsReview: false, uncertainParts: [], source: 'local', fallback: true };
+    } catch (err) {
+      AppLog.warn('parseTasks error', err.message);
+      result = HebrewParser.parseTasksLocal(spokenText || '', { lang: AppState.lang });
+    }
+    result = await _applyAgendaMerge(result, spokenText);
     const newTasks = result.tasks.length > 0
       ? result.tasks.map(aiParsedToTask)
       : [aiParsedToTask({ title: spokenText || '?', time: null, date: null, assignee: null }, 0)];
@@ -8884,37 +8855,255 @@ async function vOrganize() {
     return;
   }
 
-  if (result.tasks.length > 0) {
-    AppState.previewTasks = result.tasks.map(aiParsedToTask);
-    AppLog.info('preview generated', AppState.previewTasks.map(t => t.title));
-  } else {
-    AppLog.warn('fallback mode', 'empty parse result → raw text task');
-    AppState.previewTasks = [aiParsedToTask({ title: spokenText || t('voice_tap'), time: null, date: null, assignee: null }, 0)];
-  }
+  // ── Phase 2: local-first optimistic preview ─────────────────────────────────
+  // Show the instant rule-based result, then quietly reconcile with the AI.
+  // Each run bumps _gen; an AI result tagged with a stale gen is dropped.
+  const _gen = ++_organizeGen;
+  AppState.previewGen           = _gen;
+  AppState.previewUserEdited    = false;
+  AppState.previewReconciled    = false;
+  AppState.previewAiResult      = null;
+  AppState.previewCommitPending = false;
 
-  // Show/hide AI banners
-  const reviewBanner   = document.getElementById('dpReviewBanner');
-  const fallbackBanner = document.getElementById('dpFallbackBanner');
-  if (reviewBanner)   reviewBanner.classList.toggle('on',   !!result.needsReview && !result.fallback);
-  if (fallbackBanner) fallbackBanner.classList.toggle('on', !!result.fallback);
+  const local = HebrewParser.parseTasksLocal(spokenText || '', { lang: AppState.lang });
+  AppState.previewTasks = local.tasks.length > 0
+    ? local.tasks.map(aiParsedToTask)
+    : [aiParsedToTask({ title: spokenText || t('voice_tap'), time: null, date: null, assignee: null }, 0)];
+
+  // Banners are hidden during the sync; _reconcileAi sets their real state.
+  const _rb = document.getElementById('dpReviewBanner');
+  const _fb = document.getElementById('dpFallbackBanner');
+  if (_rb) _rb.classList.remove('on');
+  if (_fb) _fb.classList.remove('on');
 
   _vOrganizerBusy = false;
-  // No artificial delay here: the "organizing" animation already showed for the
-  // full duration of the parse call, so reveal the preview as soon as it's ready.
-  const _showPreview = () => {
-    _stopParseStages();
-    zone.classList.remove('rec');
-    zone.classList.remove('processing');
-    ltxt.className = 'ltxt';
-    document.getElementById('dpSub').style.color = '';
-    document.getElementById('dpSub').textContent = t('dp_sub');
-    dpRender(true);
-    const sh = document.querySelector('#s-dp .list-shimmer');
-    if (sh) { sh.style.animation = 'none'; void sh.offsetWidth; sh.style.animation = ''; }
+  _stopParseStages();
+  zone.classList.remove('rec');
+  zone.classList.remove('processing');
+  ltxt.className = 'ltxt';
+  document.getElementById('dpSub').style.color = '';
+  document.getElementById('dpSub').textContent = t('dp_sub');
+  dpRender(true);
+  const _sh = document.querySelector('#s-dp .list-shimmer');
+  if (_sh) { _sh.style.animation = 'none'; void _sh.offsetWidth; _sh.style.animation = ''; }
+  renderConfirmationTasks();
+  goto('s-confirmation', 'txLeaveBloom', 'txEnterFocus');
+
+  AppLog.info('phase2-timing', `localShownMs=${Date.now() - _perceiveT0} localTasks=${AppState.previewTasks.length} gen=${_gen}`);
+
+  // No transcript → the local result is final; nothing to reconcile.
+  if (!spokenText) { AppState.previewReconciled = true; return; }
+
+  _setPreviewSyncing(true);
+  const _aiT0 = Date.now();
+  HebrewParser.parseTasks(spokenText, { lang: AppState.lang })
+    .then(r => _applyAgendaMerge(r, spokenText))
+    .then(r => _reconcileAi(_gen, r, _aiT0, false))
+    .catch(() => _reconcileAi(_gen, null, _aiT0, true));
+}
+
+// ─── Phase 2 helpers: local-first reconcile + commit ──────────────────────────
+let _organizeGen     = 0;
+let _commitDelayed   = false;
+let _pendingGraceTimer = null;
+let _aiChipMode      = null; // null | 'idle' | 'pending'
+
+// Agenda-merge pass (gated by AGENDA_SUMMARY_ENABLED; passthrough while disabled).
+async function _applyAgendaMerge(result, spokenText) {
+  if (!(AGENDA_SUMMARY_ENABLED
+        && spokenText && result.tasks && result.tasks.length >= 2
+        && spokenText.length >= 30 && !isShoppingListTitle(spokenText))) {
+    return result;
+  }
+  const commaCount  = (spokenText.match(/,|،/g) || []).length;
+  const wConnectors = (spokenText.match(/\s+ו[א-ת]/g) || []).length;
+  if (!(commaCount >= 2 || (commaCount >= 1 && wConnectors >= 1) || wConnectors >= 2)) {
+    return result;
+  }
+  try {
+    const sumRes = await fetch('/api/summarize-task', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ title: spokenText, lang: AppState.lang }),
+    });
+    if (sumRes.ok) {
+      const sumData = await sumRes.json();
+      if (sumData && !sumData.skip
+          && typeof sumData.mainTitle === 'string' && sumData.mainTitle.trim()
+          && Array.isArray(sumData.items) && sumData.items.length >= 2) {
+        const cleanItems = sumData.items.map(s => String(s).trim()).filter(Boolean);
+        if (cleanItems.length >= 2) {
+          AppLog.info('agenda merge', `${result.tasks.length} parsed tasks → 1 agenda task`);
+          result.tasks = [{
+            title:    sumData.mainTitle.trim(),
+            time:     null,
+            date:     null,
+            assignee: null,
+            _subItemsFromAgenda: { mainTitle: sumData.mainTitle.trim(), items: cleanItems },
+          }];
+          result.needsReview = false;
+        }
+      }
+    }
+  } catch (e) {
+    AppLog.warn('agenda check failed', e.message || '');
+  }
+  return result;
+}
+
+// Flag a user edit ONLY when the edited task belongs to the live preview set.
+// (The assignee/title/time handlers are shared with the Today screen.)
+function _markPreviewEdited(task) {
+  if (task && AppState.previewTasks.indexOf(task) !== -1) AppState.previewUserEdited = true;
+}
+
+function _applyReconcileBanners(aiResult) {
+  const rb = document.getElementById('dpReviewBanner');
+  const fb = document.getElementById('dpFallbackBanner');
+  if (rb) rb.classList.toggle('on', !!aiResult.needsReview && !aiResult.fallback);
+  if (fb) fb.classList.toggle('on', !!aiResult.fallback);
+}
+
+function _setPreviewSyncing(on) {
+  const chip = document.getElementById('confAiChip');
+  if (!chip) return;
+  if (on) {
+    _aiChipMode = null;
+    chip.classList.add('syncing');
+    const txt = chip.querySelector('.conf-ai-chip-text');
+    if (txt) txt.textContent = '✨ משדרגים פרטים…';
+    chip.style.display = 'flex';
+  } else {
+    chip.classList.remove('syncing');
+    if (_aiChipMode === null) chip.style.display = 'none';
+  }
+}
+
+function _showAiOfferChip(mode) {
+  _aiChipMode = mode || 'idle';
+  const chip = document.getElementById('confAiChip');
+  if (!chip) return;
+  chip.classList.remove('syncing');
+  const txt = chip.querySelector('.conf-ai-chip-text');
+  if (txt) txt.textContent = mode === 'pending'
+    ? 'מצאנו כמה שיפורים למשימות — לעדכן?'
+    : '✨ שיפרנו כמה פרטים';
+  chip.style.display = 'flex';
+}
+
+function _hideAiChip() {
+  _aiChipMode = null;
+  const chip = document.getElementById('confAiChip');
+  if (chip) chip.style.display = 'none';
+}
+
+function _beginPendingCommit() {
+  AppState.previewCommitPending = true;
+  _commitDelayed = false;
+  const btn = document.getElementById('btnOk');
+  if (btn) { btn.disabled = true; btn.textContent = t('dp_finalizing'); }
+  if (_pendingGraceTimer) clearTimeout(_pendingGraceTimer);
+  _pendingGraceTimer = setTimeout(() => { _commitDelayed = true; }, 1200);
+}
+
+function _restoreOkBtn() {
+  if (_pendingGraceTimer) { clearTimeout(_pendingGraceTimer); _pendingGraceTimer = null; }
+  const btn = document.getElementById('btnOk');
+  if (btn) { btn.disabled = false; btn.classList.remove('success'); btn.textContent = t('dp_ok'); }
+}
+
+// Reconcile the background AI result into the (already-visible) local preview.
+function _reconcileAi(gen, aiResult, aiT0, failed) {
+  if (gen !== AppState.previewGen) return; // a newer run superseded this one
+  AppState.previewReconciled = true;
+  _setPreviewSyncing(false);
+
+  const aiMs = Date.now() - aiT0;
+
+  // AI failed or fell back to local → keep what we already show.
+  if (failed || !aiResult || aiResult.fallback) {
+    _applyReconcileBanners(aiResult || { fallback: true });
+    AppLog.info('phase2-reconcile', `gen=${gen} kept-local aiMs=${aiMs} failed=${!!failed}`);
+    if (AppState.previewCommitPending) {
+      AppState.previewCommitPending = false;
+      _restoreOkBtn();
+      _doCommitPreview();
+    }
+    return;
+  }
+
+  const aiTasks = (aiResult.tasks && aiResult.tasks.length)
+    ? aiResult.tasks.map(aiParsedToTask)
+    : AppState.previewTasks; // AI returned nothing usable → keep local
+  AppLog.info('phase2-reconcile',
+    `gen=${gen} aiMs=${aiMs} aiTasks=${aiTasks.length} edited=${AppState.previewUserEdited} pending=${AppState.previewCommitPending} delayed=${_commitDelayed}`);
+
+  // User tapped OK before the AI returned.
+  if (AppState.previewCommitPending) {
+    AppState.previewCommitPending = false;
+    if (AppState.previewUserEdited || _commitDelayed) {
+      // Edited, or the grace window elapsed → never override silently; offer a choice.
+      AppState.previewAiResult = aiTasks;
+      _restoreOkBtn();
+      _showAiOfferChip('pending');
+      return;
+    }
+    // Fast path: AI back within the grace window and untouched → adopt + commit.
+    AppState.previewTasks = aiTasks;
+    _applyReconcileBanners(aiResult);
+    _restoreOkBtn();
+    _doCommitPreview();
+    return;
+  }
+
+  // No commit pending.
+  if (!AppState.previewUserEdited) {
+    // Silent replace-the-set.
+    AppState.previewTasks = aiTasks;
     renderConfirmationTasks();
-    goto('s-confirmation', 'txLeaveBloom', 'txEnterFocus');
-  };
-  _showPreview();
+    dpRender(true);
+    _applyReconcileBanners(aiResult);
+  } else {
+    // User edited → don't override; store the AI set and offer a gentle chip.
+    AppState.previewAiResult = aiTasks;
+    _showAiOfferChip('idle');
+  }
+}
+
+// Commit the current preview set into the main task list (extracted from btnOk).
+function _doCommitPreview() {
+  const newTasks   = AppState.previewTasks.map(t => ({ ...t, completed: false, date: activeDate }));
+  const commitMode = _appendToToday ? 'append' : 'replace';
+  if (_appendToToday) {
+    AppState.tasks = [...AppState.tasks, ...newTasks];
+  } else {
+    const kept = AppState.tasks.filter(t => (t.date || todayDate()) !== activeDate);
+    AppState.tasks = [...kept, ...newTasks];
+  }
+  _appendToToday = false;
+  AppLog.group('tasks committed');
+  AppLog.info('mode', commitMode);
+  AppLog.info('count', newTasks.length);
+  AppLog.info('titles', newTasks.map(t => t.title));
+  AppLog.info('date', activeDate);
+  AppLog.groupEnd();
+  AppState.previewTasks         = [];
+  AppState.previewReconciled    = false;
+  AppState.previewCommitPending = false;
+  AppState.previewAiResult      = null;
+  _hideAiChip();
+  saveState();
+  newTasks.forEach(task => _daWriteTask(task, true).catch(() => {}));
+  _capRescheduleAll().catch(() => {});
+  renderToday();
+  goto('s-today', 'txLeaveRise', 'txEnterSettle', () => {
+    const fill = document.getElementById('tPfill');
+    fill.style.transition = 'none';
+    fill.style.width = '0%';
+    void fill.offsetWidth;
+    fill.style.transition = '';
+    updateProgress();
+  });
 }
 
 function vBurst() {
@@ -9141,6 +9330,7 @@ function openSplitSheet(task, cardEl, onConfirm) {
           timeSource: i === 0 ? task.timeSource : 'suggested',
         }));
         AppState.previewTasks.splice(idx, 1, ...newTasks);
+        AppState.previewUserEdited = true;
       }
       if (typeof onConfirm === 'function') {
         setTimeout(onConfirm, 360);
@@ -9306,7 +9496,7 @@ function _buildCardEl(task) {
   });
   const titleEl = c.querySelector('.card-title');
   titleEl.setAttribute('contenteditable', 'plaintext-only');
-  titleEl.addEventListener('input', () => { const u = titleEl.textContent.trim(); if (u) task.title = u; });
+  titleEl.addEventListener('input', () => { const u = titleEl.textContent.trim(); if (u) { task.title = u; _markPreviewEdited(task); } });
   titleEl.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); titleEl.blur(); } });
   attachSplitGesture(c, task);
   c.querySelector('.t-split-btn')?.addEventListener('click', e => { e.stopPropagation(); openSplitSheet(task, c); });
@@ -9344,6 +9534,7 @@ function insertNewTasks(newTasks) {
 
   // Append new tasks then sort all by time
   AppState.previewTasks.push(...newTasks);
+  AppState.previewUserEdited = true;
   AppState.previewTasks.sort((a, b) => (a.mins ?? 9999) - (b.mins ?? 9999));
 
   const list = document.getElementById('dpList');
@@ -9483,6 +9674,7 @@ function openTimeStrip(taskId, cardEl) {
       });
     } else {
       task.mins = mins;
+      _markPreviewEdited(task);
       updateCardTime(taskId);
       closeTimeStrip();
     }
@@ -9579,7 +9771,7 @@ function openManualTimeModal(task, onDone) {
   function commit() {
     if (digits.length === 4) {
       const h = parseInt(digits[0]+digits[1]), m = parseInt(digits[2]+digits[3]);
-      if (h <= 23 && m <= 59 && !_kpIsPastTime(h, m)) task.mins = h * 60 + m;
+      if (h <= 23 && m <= 59 && !_kpIsPastTime(h, m)) { task.mins = h * 60 + m; _markPreviewEdited(task); }
     }
     dismiss();
   }
@@ -9598,10 +9790,12 @@ function openManualTimeModal(task, onDone) {
 
 
 // Warm the parse-tasks serverless function on voice/type screen entry so the
-// first real parse after the user finishes speaking/typing doesn't pay a Vercel
-// cold start. OPTIONS returns 200 before any LLM call (api/parse-tasks.js), so
-// this costs nothing — no model invocation, no token spend. Fire-and-forget,
-// throttled so rapid re-entry won't spam the endpoint.
+// first real parse after the user finishes speaking/typing doesn't pay a cold
+// start. Sends a real POST with {warm:true}: the server exercises the full
+// parser path (Vercel container + OpenAI/Claude connection + model) with a
+// trivial fixed transcript and short-circuits before post-processing — it never
+// reaches the task pipeline, so there is no user-visible behavior. Fire-and-
+// forget, throttled so rapid re-entry won't spam the endpoint.
 let _lastParseWarm = 0;
 function _warmParseEndpoint() {
   const nowTs = Date.now();
@@ -9610,11 +9804,27 @@ function _warmParseEndpoint() {
   const base = (typeof window !== 'undefined' && window.Capacitor)
     ? 'https://family-app-roan.vercel.app'
     : '';
-  try { fetch(base + '/api/parse-tasks', { method: 'OPTIONS' }).catch(() => {}); } catch (_) {}
+  try {
+    fetch(base + '/api/parse-tasks', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ warm: true, lang: (window.AppState && AppState.lang) || 'he' }),
+    }).catch(() => {});
+  } catch (_) {}
 }
 
 function resetVoiceScreen() {
   _warmParseEndpoint();
+  // Phase 2: clear any in-flight local-first reconcile state from a prior run.
+  AppState.previewGen++;            // invalidate any pending AI result
+  AppState.previewReconciled    = false;
+  AppState.previewUserEdited    = false;
+  AppState.previewCommitPending = false;
+  AppState.previewAiResult      = null;
+  _commitDelayed = false;
+  if (_pendingGraceTimer) { clearTimeout(_pendingGraceTimer); _pendingGraceTimer = null; }
+  _setPreviewSyncing(false);
+  _hideAiChip();
   vListening  = false;
   vTranscript = '';
   if (recognition) { try { recognition.abort(); } catch(_) {} }
@@ -9648,6 +9858,9 @@ document.getElementById('dpBack').addEventListener('click', () => {
 
 document.getElementById('btnOk').addEventListener('click', function() {
   if (!_requireDeviceMemberForTaskCreation()) return;
+  // Local-first: if the AI final hasn't landed yet, hold a short grace ("מסדרים
+  // סופית…") and let _reconcileAi decide whether to auto-commit or offer a choice.
+  if (!AppState.previewReconciled) { _beginPendingCommit(); return; }
   this.textContent = t('dp_ok_done');
   this.classList.add('success');
   document.querySelectorAll('#dpList .task-card').forEach((c,i) => {
@@ -9656,40 +9869,27 @@ document.getElementById('btnOk').addEventListener('click', function() {
   const sub = document.getElementById('dpSub');
   sub.style.color = '#e07c3a';
   sub.textContent = t('dp_perfect');
-  setTimeout(() => {
-    // Commit preview → main tasks
-    const newTasks   = AppState.previewTasks.map(t => ({ ...t, completed: false, date: activeDate }));
-    const commitMode = _appendToToday ? 'append' : 'replace';
-    if (_appendToToday) {
-      // Append: keep ALL existing tasks (including today's) and add new ones at the end
-      AppState.tasks = [...AppState.tasks, ...newTasks];
-    } else {
-      // Replace: wipe today's tasks and set fresh (initial plan flow)
-      const kept = AppState.tasks.filter(t => (t.date || todayDate()) !== activeDate);
-      AppState.tasks = [...kept, ...newTasks];
-    }
-    _appendToToday = false;
-    AppLog.group('tasks committed');
-    AppLog.info('mode', commitMode);
-    AppLog.info('count', newTasks.length);
-    AppLog.info('titles', newTasks.map(t => t.title));
-    AppLog.info('date', activeDate);
-    AppLog.groupEnd();
-    AppState.previewTasks = [];
-    saveState();
-    newTasks.forEach(task => _daWriteTask(task, true).catch(() => {}));
-    _capRescheduleAll().catch(() => {});
-    renderToday();
-    goto('s-today', 'txLeaveRise', 'txEnterSettle', () => {
-      // Animate bar in from 0
-      const fill = document.getElementById('tPfill');
-      fill.style.transition = 'none';
-      fill.style.width = '0%';
-      void fill.offsetWidth;
-      fill.style.transition = '';
-      updateProgress();
-    });
-  }, 720);
+  setTimeout(_doCommitPreview, 720);
+});
+
+// Phase 2 reconcile-chip choices
+document.getElementById('confAiUpdate').addEventListener('click', () => {
+  const mode = _aiChipMode;
+  if (AppState.previewAiResult) {
+    AppState.previewTasks      = AppState.previewAiResult;
+    AppState.previewAiResult   = null;
+    AppState.previewUserEdited = false;
+    renderConfirmationTasks();
+    dpRender(true);
+  }
+  _hideAiChip();
+  if (mode === 'pending') { _restoreOkBtn(); _doCommitPreview(); }
+});
+document.getElementById('confAiKeep').addEventListener('click', () => {
+  const mode = _aiChipMode;
+  AppState.previewAiResult = null;
+  _hideAiChip();
+  if (mode === 'pending') { _restoreOkBtn(); _doCommitPreview(); }
 });
 
 // btnAdjust handler removed — the entire adjust-mode concept was
@@ -10232,6 +10432,7 @@ function undoDelete() {
   if (type === 'preview') {
     if (idx >= 0 && idx <= AppState.previewTasks.length) AppState.previewTasks.splice(idx, 0, task);
     else AppState.previewTasks.push(task);
+    AppState.previewUserEdited = true;
     dpRender(false);
   } else if (type === 'recur-exclude') {
     if (state.exKey && AppState.recurringExclusions) delete AppState.recurringExclusions[state.exKey];
@@ -10365,6 +10566,7 @@ function doDelete(task, screen) {
   if (screen === 'preview') {
     const idx = AppState.previewTasks.findIndex(t => t.id === task.id);
     if (idx >= 0) AppState.previewTasks.splice(idx, 1);
+    AppState.previewUserEdited = true;
     state.idx  = idx;
     state.type = 'preview';
     console.log('[delete] preview — surgical meta refresh (smooth-delete v2)');
@@ -15702,6 +15904,7 @@ function splitSave() {
           return Object.assign({}, s, { id: s.id || (now + i) });
         });
         AppState.previewTasks.splice(idx, 1, newTasks[0], newTasks[1]);
+        AppState.previewUserEdited = true;
       }
     }
     _splitTargetId = null;
@@ -15711,6 +15914,7 @@ function splitSave() {
       AppState.previewTasks = AppState.splitSuggestions.map(function(s, i) {
         return Object.assign({}, s, { id: s.id || (now + i) });
       });
+      AppState.previewUserEdited = true;
     }
   }
 
