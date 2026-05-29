@@ -8804,6 +8804,7 @@ async function vOrganize() {
   AppLog.info('text', spokenText);
   AppLog.info('lang', AppState.lang);
 
+  const _perceiveT0 = Date.now(); // perceived-latency clock: parse start → preview shown
   let result;
   try {
     result = spokenText
@@ -8914,6 +8915,14 @@ async function vOrganize() {
     renderConfirmationTasks();
     goto('s-confirmation', 'txLeaveBloom', 'txEnterFocus');
   };
+  // ─── Speed instrumentation (additive, removable) ──────────────────────────
+  const _tm = (result && result._timing) || {};
+  AppLog.info('parse-timing',
+    `perceived=${Date.now() - _perceiveT0}ms ` +
+    `serverMs=${_tm.serverMs != null ? _tm.serverMs : '?'} ` +
+    `aiMs=${_tm.aiMs != null ? _tm.aiMs : '?'} ` +
+    `cold=${_tm.cold != null ? _tm.cold : '?'} ` +
+    `src=${result.source} fallback=${!!result.fallback}`);
   _showPreview();
 }
 
@@ -9598,10 +9607,12 @@ function openManualTimeModal(task, onDone) {
 
 
 // Warm the parse-tasks serverless function on voice/type screen entry so the
-// first real parse after the user finishes speaking/typing doesn't pay a Vercel
-// cold start. OPTIONS returns 200 before any LLM call (api/parse-tasks.js), so
-// this costs nothing — no model invocation, no token spend. Fire-and-forget,
-// throttled so rapid re-entry won't spam the endpoint.
+// first real parse after the user finishes speaking/typing doesn't pay a cold
+// start. Sends a real POST with {warm:true}: the server exercises the full
+// parser path (Vercel container + OpenAI/Claude connection + model) with a
+// trivial fixed transcript and short-circuits before post-processing — it never
+// reaches the task pipeline, so there is no user-visible behavior. Fire-and-
+// forget, throttled so rapid re-entry won't spam the endpoint.
 let _lastParseWarm = 0;
 function _warmParseEndpoint() {
   const nowTs = Date.now();
@@ -9610,7 +9621,13 @@ function _warmParseEndpoint() {
   const base = (typeof window !== 'undefined' && window.Capacitor)
     ? 'https://family-app-roan.vercel.app'
     : '';
-  try { fetch(base + '/api/parse-tasks', { method: 'OPTIONS' }).catch(() => {}); } catch (_) {}
+  try {
+    fetch(base + '/api/parse-tasks', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ warm: true, lang: (window.AppState && AppState.lang) || 'he' }),
+    }).catch(() => {});
+  } catch (_) {}
 }
 
 function resetVoiceScreen() {

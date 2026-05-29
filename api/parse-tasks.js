@@ -4,6 +4,11 @@ const { parseWithOpenAI } = require('./_providers/openai');
 const PROVIDER = process.env.AI_PROVIDER || 'claude';
 const CONFIDENCE_THRESHOLD = 0.7;
 
+// Container-scoped cold/warm marker: a fresh Vercel container starts with
+// _invocations=0 → that first request paid the cold-start. Lets timing logs
+// distinguish a cold container from a warm reuse. Additive instrumentation only.
+let _invocations = 0;
+
 // ─── Post-processing helpers ──────────────────────────────────────────────────
 
 // Strip a leading ו that the AI left on a title ("ולשלם חשמל" → "לשלם חשמל").
@@ -109,7 +114,30 @@ module.exports = async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { transcript, lang = 'he', date, time } = req.body || {};
+  const _serverT0 = Date.now();
+  const _cold     = _invocations === 0; // first request on this container
+  _invocations++;
+
+  const { transcript, lang = 'he', date, time, warm } = req.body || {};
+
+  // ─── Keep-warm ping ───────────────────────────────────────────────────────
+  // A real (not OPTIONS) POST sent on voice-screen entry to exercise the live
+  // parser path — Vercel container + module init + OpenAI/Claude TLS connection
+  // + model — so the user's first real parse after speaking skips the cold cost.
+  // Fire-and-forget from the client; we run the provider with a trivial fixed
+  // transcript and short-circuit before any post-processing. No user-visible
+  // behavior, never reaches the task pipeline.
+  if (warm) {
+    let _ok = true;
+    try {
+      await (PROVIDER === 'openai'
+        ? parseWithOpenAI('חימום', { lang, date, time })
+        : parseWithClaude('חימום', { lang, date, time }));
+    } catch (_) { _ok = false; }
+    const ms = Date.now() - _serverT0;
+    console.log(`[parse-tasks] warm ping cold=${_cold} ok=${_ok} ${ms}ms`);
+    return res.status(200).json({ warmed: true, cold: _cold, serverMs: ms });
+  }
 
   if (!transcript || typeof transcript !== 'string' || !transcript.trim()) {
     return res.status(400).json({ error: 'transcript is required' });
@@ -120,9 +148,11 @@ module.exports = async function handler(req, res) {
 
   try {
     const context = { lang, date, time };
+    const _aiT0 = Date.now();
     const raw = PROVIDER === 'openai'
       ? await parseWithOpenAI(transcript, context)
       : await parseWithClaude(transcript, context);
+    const _aiMs = Date.now() - _aiT0;
 
     // 1. Trust the AI's split — the model is the brain. No local re-splitting.
     //    Exception: merge back any bare time/date fragment the model split off
@@ -150,12 +180,16 @@ module.exports = async function handler(req, res) {
     const tasks      = cleaned.filter(t => !isContextlessTitle(t.title));
     const droppedAny = tasks.length !== cleaned.length;
 
+    const _serverMs = Date.now() - _serverT0;
+    console.log(`[parse-tasks] cold=${_cold} serverMs=${_serverMs} aiMs=${_aiMs} tasks=${tasks.length}`);
+
     return res.status(200).json({
       tasks,
       needsReview:    raw.needsReview || droppedAny,
       uncertainParts,
       source:         'ai',
       fallback:       false,
+      _timing:        { serverMs: _serverMs, aiMs: _aiMs, cold: _cold },
     });
   } catch (err) {
     console.error('[parse-tasks] error:', err.message);

@@ -54,7 +54,6 @@ Examples:
   "לקנות חלב לשלם חשבון חשמל" → TWO independent tasks: "לקנות חלב" + "לשלם חשבון חשמל"
   "להתקשר לשמעון להשאיר הודעה לסבתא מרי" → TWO tasks (different people): "להתקשר לשמעון" + "להשאיר הודעה לסבתא מרי"
   "להתקשר לשמעון ואז להשאיר הודעה לסבתא מרי" → TWO tasks ("ואז"/"אחר כך" = sequential, independent actions)
-  "לקנות חלב בשעה 14:00" → ONE task: "לקנות חלב", mins=840 (14:00) — a time phrase is NEVER its own task
 
 Keep together as ONE task (do not split):
   • Movement + its purpose:   "לנסוע לסופר לקנות ירקות"
