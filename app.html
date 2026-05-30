@@ -12803,7 +12803,18 @@ async function _daWriteTask(task, isNew) {
                               .filter(x => x !== undefined && x !== null && x !== '');
         return v.filter((x,i,a) => a.indexOf(x) === i);
       })(),
-      notifyTo:              task.notifyTo  || [],
+      // Default-notify Fix: never persist an empty notifyTo — fall back to the
+      // CREATOR ONLY so the owner reliably gets notified. An empty array is a
+      // bug state (the UI never produces one intentionally), so treat both
+      // undefined and [] as "notify creator". A populated notifyTo (manual
+      // choice / shared task) is preserved exactly as-is.
+      notifyTo:              (() => {
+        let n = (Array.isArray(task.notifyTo) ? task.notifyTo : [])
+                  .filter(x => x !== undefined && x !== null && x !== '');
+        if (!n.length) n = [DataAdapter.userId, DataAdapter.myMemberId, task.createdByMemberId]
+                              .filter(x => x !== undefined && x !== null && x !== '');
+        return n.filter((x,i,a) => a.indexOf(x) === i);
+      })(),
       recurrence:            task.recurrence || { type: 'none' },
       reminderOffsetMinutes: task.reminderOffsetMinutes ?? 10,
       overdueReminderOffsets:task.overdueReminderOffsets || [5, 10, 15],
