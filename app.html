@@ -6594,17 +6594,17 @@ function parsedToTask(p, idx) {
     ? ((p.assignedTo && _memberIdForLegacyId(p.assignedTo)) || DataAdapter.userId || DataAdapter.myMemberId || creatorId)
     : null;
   const person       = ID_TO_PERSON[assignedTo] || 'Dad';
-  const dateStr      = p.date && p.date.date
-    ? dateToYMD(p.date.date)
-    : todayDate();
+  // Beta: never auto-derive a date from speech. Tasks default to today; the
+  // user sets a date only via the "זמן ותאריך" screen. (p.date is ignored.)
+  const dateStr      = todayDate();
   // Wave 2B: creator must always see their own task. Default visibility is
   // creator-only — no one else auto-selected. Plus the assignee if different.
   const defaultVisibleTo = DataAdapter.isFamily()
     ? [creatorId, DataAdapter.userId, assignedToMemberId].filter(Boolean).filter((v,i,a) => a.indexOf(v) === i)
     : _defaultVisibleToIds();
-  // Wave 2B: notify defaults — ON for creator only when task has a time;
-  // OFF entirely when no time.
-  const hasTime = (p.mins != null);
+  // Beta: speech never creates a time/reminder, so a new task always has no
+  // time at creation. (p.mins is ignored; user sets time via "זמן ותאריך".)
+  const hasTime = false;
   const defaultNotifyTo = DataAdapter.isFamily()
     ? (hasTime ? [DataAdapter.userId].filter(Boolean) : [])
     : [assignedToMemberId || assignedTo];
@@ -6616,7 +6616,7 @@ function parsedToTask(p, idx) {
     createdBy:             DataAdapter.isFamily() ? creatorId : currentUser,
     createdByMemberId:     (() => { const id = DataAdapter.myMemberId; if (!id) console.warn('[Identity] myMemberId not set — createdByMemberId null'); return id; })(),
     assignedToMemberId,
-    mins:                  p.mins,
+    mins:                  null,
     completed:             false,
     notify:                true,
     visibleTo:             defaultVisibleTo,
@@ -6628,7 +6628,7 @@ function parsedToTask(p, idx) {
     sentReminderOffsets:   [],
     sentReminderStages:    [],
     lastReminderSentAt:    null,
-    timeSource:            p.timeFromText ? 'explicit' : 'suggested',
+    timeSource:            null,
     date:                  dateStr,
     recurrence:            { type: 'none' },
   };
@@ -6644,23 +6644,17 @@ function aiParsedToTask(t, idx) {
     : null;
   const person     = ID_TO_PERSON[assignedTo] || 'Dad';
 
-  let dateStr = todayDate();
-  if (t.date === 'today')               dateStr = todayDate();
-  else if (t.date === 'tomorrow')       dateStr = offsetDate(1);
-  else if (t.date === 'day-after-tomorrow') dateStr = offsetDate(2);
-  else if (t.date && /^\d{4}-\d{2}-\d{2}$/.test(t.date)) dateStr = t.date;
-
-  let mins = null;
-  if (t.time && /^\d{2}:\d{2}$/.test(t.time)) {
-    const [h, m] = t.time.split(':').map(Number);
-    mins = h * 60 + m;
-  }
+  // Beta: speech never creates a date/time. Ignore the AI's t.date/t.time —
+  // tasks default to today with no time; the user sets both only via the
+  // "זמן ותאריך" screen. (The AI still keeps time/date words in the title.)
+  const dateStr = todayDate();
+  const mins = null;
 
   // Wave 2B: creator-only visibility by default; notify ON only with time.
   const defaultVisibleTo = DataAdapter.isFamily()
     ? [creatorId, DataAdapter.userId, assignedToMemberId].filter(Boolean).filter((v,i,a) => a.indexOf(v) === i)
     : _defaultVisibleToIds();
-  const hasTime = (mins != null);
+  const hasTime = false;
   const defaultNotifyTo = DataAdapter.isFamily()
     ? (hasTime ? [DataAdapter.userId].filter(Boolean) : [])
     : [assignedToMemberId || assignedTo];
@@ -6682,7 +6676,7 @@ function aiParsedToTask(t, idx) {
     sentInitialReminder:   false,
     sentReminderStages:    [],
     lastReminderSentAt:    null,
-    timeSource:            t.time ? 'explicit' : 'suggested',
+    timeSource:            null,
     date:                  dateStr,
     recurrence:            { type: 'none' },
     // Agenda-summary fields — both gated by AGENDA_SUMMARY_ENABLED.

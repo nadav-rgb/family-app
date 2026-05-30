@@ -13,7 +13,7 @@ Return this exact structure:
 {
   "tasks": [
     {
-      "title": "task in Hebrew — clean (no time words, no date words, no filler, no person names)",
+      "title": "task in Hebrew — keep time/date words exactly as spoken; strip only filler and the doer's name",
       "assignedTo": "mom|dad|dudi|yonatan|null",
       "mins": 540,
       "date": "today|tomorrow|day-after-tomorrow|null",
@@ -36,7 +36,7 @@ How many tasks:
   • CRITICAL — NEVER output a task whose title is only a time or date. A clock time
     ("14:00", "9:30", "בשעה 14:00"), a date ("מחר", "היום"), or a part-of-day ("בבוקר",
     "בערב") is ALWAYS part of the action it modifies — put it in that task's mins/date.
-    WRONG → ["לקנות חלב", "בשעה 14:00"].   RIGHT → ["לקנות חלב" with mins=840].
+    WRONG → ["לקנות חלב", "בשעה 14:00"].   RIGHT → ONE task "לקנות חלב בשעה 14:00" (keep the phrase in the title; mins=840 is internal only).
   • When unsure whether it is one task or two, return ONE task.
 
 Each task title must make sense on its own. If you do split and the parts share a
@@ -45,7 +45,7 @@ topic, include that shared topic in every title (don't leave a bare verb like "�
 Examples:
   "לקנות חלב"        → ONE task: "לקנות חלב"
   "להתקשר לאמא"      → ONE task: "להתקשר לאמא"
-  "לבדוק חומר ב-11"  → ONE task: "לבדוק חומר", mins=660 (11:00)
+  "לבדוק חומר ב-11"  → ONE task: "לבדוק חומר ב-11" (keep "ב-11" in title), mins=660 (11:00, internal only)
   "הרצאה של שחר לייבו לבדוק חומר להכין" → shared topic is "חומר להרצאה של שחר לייבו":
       ONE task:  "להכין ולבדוק חומר להרצאה של שחר לייבו"   (preferred)
       or TWO:    "לבדוק חומר להרצאה של שחר לייבו"
@@ -78,7 +78,7 @@ title:
   MUST be Hebrew words exactly as spoken — NEVER translate verbs to English.
   NEVER use English action identifiers such as "take_", "call_", "buy_", "go_", etc.
   Keep the Hebrew infinitive verb verbatim: לקחת / להתקשר / לקנות / ללכת / לשלם …
-  Strip: time phrases, date words ("מחר", "היום"), filler
+  Strip: filler ONLY. KEEP time phrases and date words ("מחר", "היום", "בשעה 4", "ב-21:00") verbatim in the title — they are part of the spoken text and must stay.
   Filler to strip: "אני צריך", "אני חייב", "צריך", "בבקשה", "תזכיר לי", "תזכרי לי"
   Strip person name ONLY when it is the grammatical SUBJECT/DOER of the task:
     "אמא תקנה חלב" → assignee=mom, title="לקנות חלב" (strip "אמא" — she is the doer)
@@ -105,7 +105,7 @@ mins:
   Minutes from midnight as an integer.
 
   Digital clock times map directly to mins: "14:00" → 840, "9:30" → 570, "08:15" → 495.
-  "בשעה" before a time is only a marker — strip it from the title and set mins.
+  "בשעה" before a time stays in the title verbatim; still set mins (internal only).
 
   Vague time-of-day words spoken ALONE (no specific hour) do NOT set a time —
   set mins=null for them. NEVER convert a part-of-day into a clock time:
