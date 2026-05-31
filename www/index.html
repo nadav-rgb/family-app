@@ -820,6 +820,14 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 .title-tip.structured .tip-cat-name{font-size:13px;font-weight:900;color:#1c110a;letter-spacing:.1px;}
 .title-tip.structured .tip-cat-items{font-size:12.5px;font-weight:600;color:#5a3e2b;line-height:1.65;word-break:break-word;}
 .title-tip.structured .tip-cat-sep{color:#d49060;font-weight:800;margin:0 5px;display:inline-block;}
+/* Interactive shopping checklist rows */
+.title-tip.structured .shop-item{display:flex;align-items:center;gap:9px;width:100%;background:none;border:none;padding:6px 2px;margin:0;cursor:pointer;text-align:start;font-family:'Rubik',sans-serif;font-size:12.5px;font-weight:600;color:#5a3e2b;border-radius:9px;transition:background .12s,opacity .18s;}
+.title-tip.structured .shop-item:active{background:rgba(212,144,96,.10);}
+.title-tip.structured .shop-item + .shop-item{border-top:1px solid rgba(224,180,140,.16);}
+.title-tip.structured .shop-item-box{flex:0 0 auto;width:19px;height:19px;border-radius:6px;border:2px solid #d9b08c;display:flex;align-items:center;justify-content:center;font-size:12px;line-height:1;color:#fff;background:#fff;transition:background .14s,border-color .14s;}
+.title-tip.structured .shop-item.checked .shop-item-box{background:#34c759;border-color:#34c759;}
+.title-tip.structured .shop-item-name{flex:1 1 auto;transition:opacity .18s;}
+.title-tip.structured .shop-item.checked .shop-item-name{text-decoration:line-through;opacity:.5;}
 .title-tip.structured .tip-close{position:absolute;top:9px;left:9px;width:28px;height:28px;border-radius:14px;border:none;background:rgba(28,17,10,.06);color:#5a3e2b;font-size:20px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:700;transition:background .15s,transform .12s;padding:0 0 2px;font-family:'Rubik',sans-serif;z-index:2;}
 .title-tip.structured .tip-close:hover{background:rgba(28,17,10,.11);}
 .title-tip.structured .tip-close:active{transform:scale(.9);background:rgba(28,17,10,.16);}
@@ -7624,6 +7632,7 @@ let shareTask = null, shareSaveCb = null;
 // Renders structured shopping-list breakdown when task.shoppingList is set.
 let _titleTip = null, _titleTipAnchor = null, _titleTipTimer = null;
 let _titleTipDismissCl = null, _titleTipDismissScroll = null;
+let _openShopTipTaskId = null;
 
 // Detect shopping-list intent in a title (Hebrew). Two paths:
 //   (a) explicit shopping verb/noun + 6+ words (covers voice "ללכת לסופר לקנות...")
@@ -7643,6 +7652,23 @@ function isShoppingListTitle(title) {
   const groceryHits = (title.match(GROCERY_RX) || []).length;
   if (groceryHits >= 2 && words.length >= 3) return true;
   return false;
+}
+
+// Normalize a shoppingList so each item is a { name, checked } object.
+// Idempotent: bare strings (the API shape + tasks created before the
+// interactive checklist) become { name, checked:false }; existing objects are
+// preserved with their checked state. Safe to run on every read/write.
+function _normalizeShoppingList(sl) {
+  if (!sl || !sl.categories || typeof sl.categories !== 'object') return sl;
+  const cats = {};
+  for (const [cat, items] of Object.entries(sl.categories)) {
+    if (!Array.isArray(items)) continue;
+    cats[cat] = items.map(it => {
+      if (it && typeof it === 'object') return { name: String(it.name != null ? it.name : ''), checked: !!it.checked };
+      return { name: String(it), checked: false };
+    }).filter(x => x.name);
+  }
+  return { action: sl.action || '', categories: cats };
 }
 
 // Async-categorize a task title via /api/categorize-shopping. Idempotent + dedupe.
@@ -7674,8 +7700,11 @@ function categorizeShoppingTitle(task) {
       if (!res.ok) throw new Error('categorize HTTP ' + res.status);
       const data = await res.json();
       if (data && data.action && data.categories && Object.keys(data.categories).length > 0) {
-        task.shoppingList = { action: data.action, categories: data.categories };
+        task.shoppingList = _normalizeShoppingList({ action: data.action, categories: data.categories });
         try { saveState(); } catch(_) {}
+        // Persist the resolved list to the cloud so it survives sync merges and
+        // reaches other family devices (categorization runs only on one device).
+        try { if (typeof _daWriteTask === 'function') _daWriteTask(task, false).catch(() => {}); } catch (_) {}
       }
     } catch (err) {
       console.error('[categorize-shopping] failed for:', task.title, err?.message || err);
@@ -7849,7 +7878,7 @@ function _renderAgendaTipContent(tip, subItems) {
 }
 
 // Build the structured tooltip content for a shopping-list task — premium card layout.
-function _renderShoppingTipContent(tip, shoppingList) {
+function _renderShoppingTipContent(tip, shoppingList, task) {
   tip.classList.add('structured');
 
   // Close button — required for shopping-list popup (no auto-dismiss)
@@ -7890,42 +7919,89 @@ function _renderShoppingTipContent(tip, shoppingList) {
   }
 
   // Categories — each as its own soft card with staggered entrance.
+  // Items are interactive checklist rows: tapping toggles "purchased", which
+  // strikes the item through, dims it, sorts it to the bottom of its category,
+  // and persists + syncs (so the rest of the family sees what's been bought).
   const catsContainer = document.createElement('div');
   catsContainer.className = 'tip-cats';
-  let idx = 0;
-  for (const [catName, items] of Object.entries(shoppingList.categories)) {
-    const card = document.createElement('div');
-    card.className = 'tip-cat-card';
-    card.style.animationDelay = (60 + idx * 55) + 'ms';
 
-    const head = document.createElement('div');
-    head.className = 'tip-cat-head';
-    const emoji = document.createElement('span');
-    emoji.className = 'tip-cat-emoji';
-    emoji.textContent = _CAT_EMOJI[catName] || '🛒';
-    head.appendChild(emoji);
-    const name = document.createElement('span');
-    name.className = 'tip-cat-name';
-    name.textContent = catName;
-    head.appendChild(name);
-    card.appendChild(head);
-
-    const itemsDiv = document.createElement('div');
-    itemsDiv.className = 'tip-cat-items';
-    items.forEach((it, i) => {
-      if (i > 0) {
-        const sep = document.createElement('span');
-        sep.className = 'tip-cat-sep';
-        sep.textContent = '•';
-        itemsDiv.appendChild(sep);
-      }
-      itemsDiv.appendChild(document.createTextNode(it));
-    });
-    card.appendChild(itemsDiv);
-
-    catsContainer.appendChild(card);
-    idx++;
+  // Persist a toggle and re-sync to the family, then repaint in place.
+  function _persistShop() {
+    try { saveState(); } catch (_) {}
+    try { if (task && typeof _daWriteTask === 'function') _daWriteTask(task).catch(() => {}); } catch (_) {}
   }
+
+  // animate=true → entrance stagger (initial open). animate=false → silent
+  // rebuild (used by remote-sync repaint so it doesn't replay the animation).
+  function paint(animate) {
+    const sl = (task && task.shoppingList) || shoppingList;
+    if (!sl || !sl.categories) return;
+    catsContainer.innerHTML = '';
+    let idx = 0;
+    for (const [catName, items] of Object.entries(sl.categories)) {
+      if (!Array.isArray(items) || !items.length) continue;
+      const card = document.createElement('div');
+      card.className = 'tip-cat-card';
+      if (animate) {
+        card.style.animationDelay = (60 + idx * 55) + 'ms';
+      } else {
+        // Silent repaint: the base .tip-cat-card rule starts at opacity:0 and
+        // relies on the entrance animation to reveal it — so when we suppress
+        // the animation we must pin the visible end-state, or the card vanishes.
+        card.style.animation = 'none';
+        card.style.opacity   = '1';
+        card.style.transform = 'none';
+      }
+
+      const head = document.createElement('div');
+      head.className = 'tip-cat-head';
+      const emoji = document.createElement('span');
+      emoji.className = 'tip-cat-emoji';
+      emoji.textContent = _CAT_EMOJI[catName] || '🛒';
+      head.appendChild(emoji);
+      const name = document.createElement('span');
+      name.className = 'tip-cat-name';
+      name.textContent = catName;
+      head.appendChild(name);
+      card.appendChild(head);
+
+      const itemsDiv = document.createElement('div');
+      itemsDiv.className = 'tip-cat-items';
+      // Keep items in their original order — checking just marks them in place.
+      items.forEach((it) => {
+        const row = document.createElement('button');
+        row.type = 'button';
+        row.className = 'shop-item' + (it.checked ? ' checked' : '');
+        const box = document.createElement('span');
+        box.className = 'shop-item-box';
+        box.textContent = it.checked ? '✓' : '';
+        const nm = document.createElement('span');
+        nm.className = 'shop-item-name';
+        nm.textContent = it.name;
+        row.appendChild(box);
+        row.appendChild(nm);
+        row.addEventListener('click', e => {
+          e.stopPropagation();
+          // In-place toggle — mark this row only, no reordering. Calm + simple.
+          it.checked = !it.checked;
+          row.classList.toggle('checked', it.checked);
+          box.textContent = it.checked ? '✓' : '';
+          _persistShop();
+        });
+        itemsDiv.appendChild(row);
+      });
+      card.appendChild(itemsDiv);
+      catsContainer.appendChild(card);
+      idx++;
+    }
+  }
+
+  paint(true);
+  // Expose repaint + remember which task is open, so a real-time sync update
+  // (another family member checking items) refreshes this open page in place
+  // — silent (no entrance animation) so it never jumps.
+  tip._repaintShop = () => paint(false);
+  _openShopTipTaskId = task ? String(task.id) : null;
   tip.appendChild(catsContainer);
 }
 
@@ -7937,10 +8013,17 @@ function showTitleTip(textOrTask, anchorEl) {
   let text = '';
   let shoppingList = null;
   let subItems     = null;
+  let taskRef      = null;
   if (typeof textOrTask === 'string') {
     text = textOrTask;
   } else if (textOrTask && typeof textOrTask === 'object') {
     text         = textOrTask.title || '';
+    taskRef      = textOrTask;
+    // Normalize on read so tasks persisted/synced as plain string arrays gain
+    // { name, checked } items; write it back so toggles + sync use one shape.
+    if (textOrTask.shoppingList) {
+      textOrTask.shoppingList = _normalizeShoppingList(textOrTask.shoppingList);
+    }
     shoppingList = textOrTask.shoppingList;
     subItems     = textOrTask.subItems;
   } else { return; }
@@ -7950,7 +8033,7 @@ function showTitleTip(textOrTask, anchorEl) {
   const tip = document.createElement('div');
   tip.className = 'title-tip';
   if (willRenderShopping) {
-    _renderShoppingTipContent(tip, shoppingList);
+    _renderShoppingTipContent(tip, shoppingList, taskRef);
   } else if (willRenderAgenda) {
     _renderAgendaTipContent(tip, subItems);
   } else {
@@ -8002,7 +8085,7 @@ function showTitleTip(textOrTask, anchorEl) {
 function hideTitleTip() {
   if (!_titleTip) return;
   const tip = _titleTip;
-  _titleTip = null; _titleTipAnchor = null;
+  _titleTip = null; _titleTipAnchor = null; _openShopTipTaskId = null;
   tip.classList.remove('show');
   setTimeout(() => tip.remove(), 240);
   if (_titleTipTimer) { clearTimeout(_titleTipTimer); _titleTipTimer = null; }
@@ -10749,6 +10832,25 @@ document.getElementById('undoBtn').addEventListener('click', () => {
       task.completed = false;
       task.completedAt = null;
       task.completedBy = null;
+      // Reverse a shopping-list split: restore the full list and drop the
+      // spawned "נותר לקנות" task so undo leaves no duplicate items behind.
+      if (task._shopSplitBackup) {
+        const bk = task._shopSplitBackup;
+        task.shoppingList = bk.prev;
+        const spawned = AppState.tasks.find(t => String(t.id) === String(bk.spawnedId));
+        AppState.tasks = AppState.tasks.filter(t => String(t.id) !== String(bk.spawnedId));
+        if (spawned) {
+          spawned.deleted = true;
+          _daWriteTask(spawned, false).catch(() => {});
+        }
+        delete task._shopSplitBackup;
+        _daWriteTask(task, false).catch(() => {});
+        _capRescheduleAll().catch(() => {});
+        saveState();
+        _renderTodayKeepScroll();
+        clearUndoToast(false);
+        return;
+      }
       _daWriteTask(task, false).catch(() => {});
       _capRescheduleAll().catch(() => {});
     }
@@ -10757,6 +10859,58 @@ document.getElementById('undoBtn').addEventListener('click', () => {
   _surgicalUncomplete(id);
   clearUndoToast(false);
 });
+
+// Build the follow-up "נותר לקנות" task that carries the unbought items
+// forward when a shopping list is marked done. Mirrors the assignment +
+// visibility of the original so the same people see it.
+function _makeRemainingShoppingTask(src, remainingCats) {
+  return {
+    id:                    '_shop_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+    title:                 'נותר לקנות 🛒',
+    date:                  todayDate(),
+    mins:                  null,
+    completed:             false,
+    createdBy:             DataAdapter.userId || src.createdBy || null,
+    createdByMemberId:     DataAdapter.myMemberId || src.createdByMemberId || null,
+    assignedTo:            src.assignedTo || null,
+    assignedToMemberId:    src.assignedToMemberId || null,
+    assignedToName:        src.assignedToName || null,
+    visibleTo:             Array.isArray(src.visibleTo) ? src.visibleTo.slice() : _defaultVisibleToIds(),
+    notifyTo:              Array.isArray(src.notifyTo)  ? src.notifyTo.slice()  : [],
+    recurrence:            { type: 'none' },
+    shoppingList:          { action: (src.shoppingList && src.shoppingList.action) || '', categories: remainingCats },
+    reminderOffsetMinutes: src.reminderOffsetMinutes ?? 10,
+    notify:                src.notify !== false,
+    updatedAt:             Date.now(),
+    createdAt:             Date.now(),
+  };
+}
+
+// When a shopping task is completed: keep only the BOUGHT items on the original
+// (so the done card shows what was actually purchased) and, if anything was
+// left unbought, spin off a fresh "נותר לקנות" task with the remainder.
+// Returns the new task (or null when everything was bought / not a list).
+function _splitShoppingOnDone(task) {
+  const sl = task && task.shoppingList;
+  if (!sl || !sl.categories) return null;
+  const remaining = {}, kept = {};
+  let remainCount = 0;
+  for (const [cat, items] of Object.entries(sl.categories)) {
+    if (!Array.isArray(items)) continue;
+    const un = items.filter(it => !it.checked).map(it => ({ name: it.name, checked: false }));
+    const ch = items.filter(it =>  it.checked).map(it => ({ name: it.name, checked: true }));
+    if (un.length) { remaining[cat] = un; remainCount += un.length; }
+    if (ch.length) { kept[cat] = ch; }
+  }
+  if (remainCount === 0) return null; // bought everything → no follow-up
+  const newTask = _makeRemainingShoppingTask(task, remaining);
+  // Stash a backup so "undo" can restore the full list + drop the spawned task.
+  task._shopSplitBackup = { prev: sl, spawnedId: newTask.id };
+  task.shoppingList = { action: sl.action || '', categories: kept };
+  AppState.tasks.push(newTask);
+  try { _daWriteTask(newTask, true).catch(() => {}); } catch (_) {}
+  return newTask;
+}
 
 document.getElementById('tTasks').addEventListener('click', e => {
   // Completion now requires a click on the checkbox circle itself, not
@@ -10771,6 +10925,7 @@ document.getElementById('tTasks').addEventListener('click', e => {
   const isRecurring = el.dataset.recurring === 'true';
   const recId       = el.dataset.recurrenceid;
   let task;
+  let _shopSpawned = null;
 
   if (isRecurring) {
     task = activeTasks().find(t => t.id === id);
@@ -10784,12 +10939,23 @@ document.getElementById('tTasks').addEventListener('click', e => {
       task.completedBy = DataAdapter.userId;
       task.completedAt = new Date().toISOString();
     }
+    // Shopping list: carry unbought items into a fresh "נותר לקנות" task.
+    try { _shopSpawned = _splitShoppingOnDone(task); } catch (_) {}
   }
   _clearBellItems(String(task.id));
   saveState();
   _daWriteTask(task).catch(() => {});
   _capCancelTask(task.id).catch(() => {});
   _cancelScheduledPushesForTask(task.id).catch(() => {});
+
+  // Shopping split spawned a follow-up task — a full repaint is simpler and
+  // correct here (shows the done card + the new "נותר לקנות" task). Undo still
+  // works: it finds the task by id and _surgicalUncomplete re-queries the DOM.
+  if (_shopSpawned) {
+    showUndoToast(task.id, task.title);
+    _renderTodayKeepScroll();
+    return;
+  }
 
   // Animate then settle
   el.classList.add('completing');
@@ -12404,6 +12570,7 @@ async function _daLoadTasksFromCloud() {
         visibleTo:              (Array.isArray(d.visibleTo) ? d.visibleTo : _defaultVisibleToIds()).filter(v => v !== undefined && v !== null && v !== ''),
         notifyTo:               d.notifyTo   || [],
         recurrence:             d.recurrence || { type: 'none' },
+        shoppingList:           d.shoppingList ? _normalizeShoppingList(d.shoppingList) : null,
         reminderOffsetMinutes:  d.reminderOffsetMinutes  ?? 10,
         reminderOffsets:        Array.isArray(d.reminderOffsets) ? d.reminderOffsets : null,
         sentReminderOffsets:    Array.isArray(d.sentReminderOffsets) ? d.sentReminderOffsets : [],
@@ -12428,7 +12595,11 @@ async function _daLoadTasksFromCloud() {
         // Rule 3: both exist → newer updatedAt wins
         const localMs = _toMs(local.updatedAt) || _toMs(local.createdAt) || 0;
         if (ct.updatedAt > localMs) {
+          // Don't let a cloud doc written before categorization (no shoppingList)
+          // wipe a shopping list we already resolved locally.
+          const _keepShop = (ct.shoppingList == null && local.shoppingList) ? local.shoppingList : undefined;
           Object.assign(local, ct);
+          if (_keepShop !== undefined) local.shoppingList = _keepShop;
           changed = true;
         }
         // else local is newer or equal — leave it untouched (Rule 4)
@@ -12505,6 +12676,7 @@ function _daStartListener() {
           visibleTo:              (Array.isArray(d.visibleTo) ? d.visibleTo : _defaultVisibleToIds()).filter(v => v !== undefined && v !== null && v !== ''),
           notifyTo:               d.notifyTo               || [],
           recurrence:             d.recurrence             || { type: 'none' },
+          shoppingList:           d.shoppingList ? _normalizeShoppingList(d.shoppingList) : null,
           reminderOffsetMinutes:  d.reminderOffsetMinutes  ?? 10,
           overdueReminderOffsets: d.overdueReminderOffsets || [5, 10, 15],
           notify:                 d.notify !== false,
@@ -12523,7 +12695,11 @@ function _daStartListener() {
           if (cloudMs === 0 && localMs === 0) {
             console.log('[RT] task', key, '— no updatedAt on either side, keeping local (conservative)');
           } else if (cloudMs > localMs) {
+            // Don't let a cloud doc written before categorization (no
+            // shoppingList) wipe a shopping list we already resolved locally.
+            const _keepShop = (ct.shoppingList == null && local.shoppingList) ? local.shoppingList : undefined;
             Object.assign(local, ct);
+            if (_keepShop !== undefined) local.shoppingList = _keepShop;
             mergedCount++;
           }
           // localMs >= cloudMs → local is newer or equal, leave untouched
@@ -12537,6 +12713,9 @@ function _daStartListener() {
         try { _migrateCountdownVisibility(); } catch (_) {}
         saveState();
         renderToday();
+        // If a shopping page is open, repaint it in place so a family member's
+        // remote check/uncheck appears live without closing the page.
+        try { if (_titleTip && _titleTip._repaintShop) _titleTip._repaintShop(); } catch (_) {}
         _capRescheduleAll().catch(() => {});
         const activeScreen = document.querySelector('.app-screen.active');
         if (activeTasks().length > 0
@@ -12815,6 +12994,9 @@ async function _daWriteTask(task, isNew) {
         return n.filter((x,i,a) => a.indexOf(x) === i);
       })(),
       recurrence:            task.recurrence || { type: 'none' },
+      // Interactive shopping checklist — sync the categorized list + checked
+      // state so the whole family sees what's already been bought.
+      shoppingList:          task.shoppingList ? _normalizeShoppingList(task.shoppingList) : null,
       reminderOffsetMinutes: task.reminderOffsetMinutes ?? 10,
       overdueReminderOffsets:task.overdueReminderOffsets || [5, 10, 15],
       notify:                task.notify !== false,
