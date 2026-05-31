@@ -828,6 +828,31 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 .title-tip.structured .shop-item.checked .shop-item-box{background:#34c759;border-color:#34c759;}
 .title-tip.structured .shop-item-name{flex:1 1 auto;transition:opacity .18s;}
 .title-tip.structured .shop-item.checked .shop-item-name{text-decoration:line-through;opacity:.5;}
+/* Weekly view */
+#s-week{background:radial-gradient(circle at top right,rgba(255,244,232,0.9),transparent 35%),linear-gradient(180deg,#FBF8F5 0%,#F7F2ED 45%,#F4EEE8 100%);}
+#s-week .wk-scroll{height:100%;overflow-y:auto;padding:max(18px,env(safe-area-inset-top)) 16px calc(96px + env(safe-area-inset-bottom));scrollbar-width:none;}
+#s-week .wk-scroll::-webkit-scrollbar{display:none;}
+#s-week .wk-header{display:flex;align-items:center;gap:12px;margin:6px 2px 16px;}
+#s-week .wk-back{width:42px;height:42px;border-radius:50%;background:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(110,84,60,.10);color:#5a3e2b;flex:0 0 auto;}
+#s-week .wk-back svg{width:18px;height:18px;}
+#s-week .wk-title{font-size:26px;font-weight:800;color:#3a2a1c;line-height:1.05;}
+#s-week .wk-sub{font-size:12.5px;font-weight:600;color:#a8917f;margin-top:2px;}
+#s-week .wk-day{margin-bottom:14px;}
+#s-week .wk-day-head{display:flex;align-items:center;gap:8px;padding:0 4px 8px;cursor:pointer;}
+#s-week .wk-day-name{font-size:15px;font-weight:800;color:#5a3e2b;}
+#s-week .wk-day-name.is-today{color:var(--orange-deep,#d35400);}
+#s-week .wk-day-count{font-size:11px;font-weight:700;color:#a8917f;background:rgba(168,145,127,.12);border-radius:10px;padding:2px 8px;}
+#s-week .wk-day-arrow{margin-inline-start:auto;color:#c9b6a4;font-size:18px;}
+#s-week .wk-card{background:#fff;border-radius:16px;box-shadow:0 1px 3px rgba(80,40,10,.05),inset 0 0 0 1px rgba(224,180,140,.12);overflow:hidden;}
+#s-week .wk-row{display:flex;align-items:center;gap:10px;padding:11px 13px;border-top:1px solid rgba(224,180,140,.13);}
+#s-week .wk-row:first-child{border-top:none;}
+#s-week .wk-row.done .wk-row-title{text-decoration:line-through;opacity:.5;}
+#s-week .wk-dot{flex:0 0 auto;width:9px;height:9px;border-radius:50%;background:var(--orange,#ff8c42);}
+#s-week .wk-row.done .wk-dot{background:#34c759;}
+#s-week .wk-time{flex:0 0 auto;font-size:12.5px;font-weight:800;color:#8a6d57;min-width:42px;font-variant-numeric:tabular-nums;}
+#s-week .wk-row-title{flex:1 1 auto;font-size:13.5px;font-weight:600;color:#4a3322;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+#s-week .wk-who{flex:0 0 auto;font-size:11px;font-weight:700;color:#a8917f;}
+#s-week .wk-empty{padding:13px;font-size:12.5px;font-weight:600;color:#bfa890;text-align:center;}
 .title-tip.structured .tip-close{position:absolute;top:9px;left:9px;width:28px;height:28px;border-radius:14px;border:none;background:rgba(28,17,10,.06);color:#5a3e2b;font-size:20px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:700;transition:background .15s,transform .12s;padding:0 0 2px;font-family:'Rubik',sans-serif;z-index:2;}
 .title-tip.structured .tip-close:hover{background:rgba(28,17,10,.11);}
 .title-tip.structured .tip-close:active{transform:scale(.9);background:rgba(28,17,10,.16);}
@@ -3472,6 +3497,9 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
         <div class="hm-subtitle"><span id="hmSubDay">היום</span> · <span class="hm-sub-count" id="hmSubCount">0</span> משימות להיום</div>
       </div>
       <div class="hm-header-actions">
+        <button class="hm-cal" id="hmWeekBtn" aria-label="תצוגה שבועית" onclick="openWeekView()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/><circle cx="4" cy="6" r="0.6" fill="currentColor"/></svg>
+        </button>
         <button class="hm-cal" id="hmCalBtn" aria-label="לוח שנה" onclick="openCalDrawer()">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
         </button>
@@ -3637,6 +3665,22 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
       </div>
       <div class="fam-sh-body" id="famShBody"></div>
     </div>
+  </div>
+</div>
+
+<!-- ════ SCREEN: WEEKLY VIEW — next 7 days grouped by day ════ -->
+<div class="app-screen" id="s-week">
+  <div class="wk-scroll">
+    <div class="wk-header">
+      <button class="wk-back" id="wkBackBtn" aria-label="חזרה">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+      </button>
+      <div class="wk-htext">
+        <div class="wk-title">השבוע</div>
+        <div class="wk-sub">7 הימים הקרובים</div>
+      </div>
+    </div>
+    <div id="wkList" class="wk-list"></div>
   </div>
 </div>
 
@@ -9978,8 +10022,11 @@ document.getElementById('confAiKeep').addEventListener('click', () => {
 // banner, the button, and dpAdjustMode are all gone.
 
 // ─── Today screen ─────────────────────────────────────────────────
-function activeTasks() {
-  const dt  = new Date(activeDate + 'T00:00:00');
+function activeTasks(forDate) {
+  // forDate lets callers (e.g. the weekly view) query a specific day without
+  // disturbing the global activeDate; defaults to the currently viewed date.
+  const theDate = forDate || activeDate;
+  const dt  = new Date(theDate + 'T00:00:00');
   const dow = dt.getDay();
   const myDynId      = DataAdapter.userId;
   const myMemberId   = DataAdapter.myMemberId;
@@ -9998,7 +10045,7 @@ function activeTasks() {
       || (myMemberId && t.visibleTo.includes(myMemberId))
     ));
   const regular = AppState.tasks.filter(t =>
-    (t.date || todayDate()) === activeDate &&
+    (t.date || todayDate()) === theDate &&
     (!t.recurrence || t.recurrence.type === 'none') &&
     !t.deleted &&
     isVisible(t)
@@ -10019,9 +10066,9 @@ function activeTasks() {
     .filter(t => {
       if (!t.recurrence) return false;
       if (t.deleted) return false;
-      if ((t.date || todayDate()) > activeDate) return false;   // template created after this date
+      if ((t.date || todayDate()) > theDate) return false;   // template created after this date
       if (!isVisible(t)) return false;
-      if (AppState.recurringExclusions && AppState.recurringExclusions[`${t.id}_${activeDate}`]) return false;
+      if (AppState.recurringExclusions && AppState.recurringExclusions[`${t.id}_${theDate}`]) return false;
       if (t.recurrence.type === 'daily') return true;
       if (t.recurrence.type === 'weekly') {
         const days = Array.isArray(t.recurrence.daysOfWeek) ? t.recurrence.daysOfWeek
@@ -10032,11 +10079,11 @@ function activeTasks() {
     })
     .map(t => ({
       ...t,
-      id: `rec_${t.id}_${activeDate}`,
+      id: `rec_${t.id}_${theDate}`,
       recurrenceId: t.id,
       isRecurring: true,
-      date: activeDate,
-      completed: !!AppState.recurringCompletions[`${t.id}_${activeDate}`],
+      date: theDate,
+      completed: !!AppState.recurringCompletions[`${t.id}_${theDate}`],
     }));
   return [...regular, ...recurring].sort((a, b) => a.mins - b.mins);
 }
@@ -10089,6 +10136,74 @@ function updateOtherDayBanner() {
 // re-renders (data sync, undo, completion, date change) set this false first
 // so the list never re-animates / "jumps".
 let _todayAnimateEntry = true;
+// ── Weekly view — next 7 days grouped by day (read overview; tap to open) ──
+function _ymdPlus(days) {
+  const d = new Date(todayDate() + 'T00:00:00');
+  d.setDate(d.getDate() + days);
+  const y = d.getFullYear(), m = String(d.getMonth() + 1).padStart(2, '0'), da = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${da}`;
+}
+
+function renderWeek() {
+  const list = document.getElementById('wkList');
+  if (!list) return;
+  list.innerHTML = '';
+  const today = todayDate();
+  for (let i = 0; i < 7; i++) {
+    const ds = _ymdPlus(i);
+    const tasks = activeTasks(ds);
+    const day = document.createElement('div');
+    day.className = 'wk-day';
+
+    const head = document.createElement('div');
+    head.className = 'wk-day-head';
+    const nameEl = document.createElement('span');
+    nameEl.className = 'wk-day-name' + (ds === today ? ' is-today' : '');
+    nameEl.textContent = dateLabelFor(ds);
+    const countEl = document.createElement('span');
+    countEl.className = 'wk-day-count';
+    countEl.textContent = tasks.length;
+    const arrowEl = document.createElement('span');
+    arrowEl.className = 'wk-day-arrow';
+    arrowEl.textContent = '›';
+    head.appendChild(nameEl); head.appendChild(countEl); head.appendChild(arrowEl);
+    head.addEventListener('click', () => { activeDate = ds; renderToday(); goto('s-today', 'txLeaveFade', 'txEnterFade'); });
+    day.appendChild(head);
+
+    const card = document.createElement('div');
+    card.className = 'wk-card';
+    if (!tasks.length) {
+      const e = document.createElement('div');
+      e.className = 'wk-empty';
+      e.textContent = 'אין משימות';
+      card.appendChild(e);
+    } else {
+      tasks.forEach(t => {
+        const row = document.createElement('div');
+        row.className = 'wk-row' + (t.completed ? ' done' : '');
+        const dot = document.createElement('span'); dot.className = 'wk-dot';
+        const time = document.createElement('span'); time.className = 'wk-time'; time.textContent = (t.mins != null ? m2t(t.mins) : '—');
+        const title = document.createElement('span'); title.className = 'wk-row-title'; title.textContent = (t.subItems && t.subItems.mainTitle) || t.title || '';
+        row.appendChild(dot); row.appendChild(time); row.appendChild(title);
+        let who = '';
+        try { who = (typeof _taskDisplayName === 'function') ? _taskDisplayName(t) : ''; } catch (_) {}
+        if (who) { const w = document.createElement('span'); w.className = 'wk-who'; w.textContent = who; row.appendChild(w); }
+        row.addEventListener('click', () => { activeDate = ds; renderToday(); goto('s-today', 'txLeaveFade', 'txEnterFade'); });
+        card.appendChild(row);
+      });
+    }
+    day.appendChild(card);
+    list.appendChild(day);
+  }
+}
+
+function openWeekView() {
+  renderWeek();
+  goto('s-week', 'txLeaveFade', 'txEnterFade');
+}
+
+document.getElementById('wkBackBtn').addEventListener('click', () => goto('s-today', 'txLeaveFade', 'txEnterFade'));
+
 function renderToday() {
   const _animEntryThisRender = _todayAnimateEntry;
   _todayAnimateEntry = false;
@@ -14711,6 +14826,7 @@ _capInit().then(() => _capRescheduleAll()).catch(() => {});
 // onboarding/first-run gate) fall through to a real app exit.
 const _BACK_MAP = {
   's-voice':          's-today',
+  's-week':           's-today',
   's-dp':             's-voice',
   's-confirmation':   's-voice',
   's-settings':       's-today',
