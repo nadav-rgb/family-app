@@ -21,13 +21,13 @@
   (jobs.length ? Promise.all(jobs) : Promise.resolve()).then(done, done);
 })();
 </script>
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"/>
 <title>Family App</title>
 <!-- PWA: installable + offline + foundation for push notifications -->
 <link rel="manifest" href="/manifest.json"/>
 <meta name="theme-color" content="#ff5e14"/>
 <link rel="icon" type="image/svg+xml" href="/icon.svg"/>
-<link rel="apple-touch-icon" href="/icon.svg"/>
+<link rel="apple-touch-icon" href="/apple-touch-icon.png"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
 <meta name="apple-mobile-web-app-title" content="Family"/>
@@ -58,7 +58,7 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 #s-today .t-scroll,#s-dp .dp-list{overscroll-behavior:contain;}
 
 /* ── Screen layer system ── */
-.app-screen{position:absolute;inset:0;display:flex;flex-direction:column;opacity:0;pointer-events:none;overflow:hidden;background:linear-gradient(175deg,#fffaf5 0%,#fff4e8 55%,#fdebd8 100%);}
+.app-screen{position:absolute;top:env(safe-area-inset-top,0px);bottom:env(safe-area-inset-bottom,0px);left:env(safe-area-inset-left,0px);right:env(safe-area-inset-right,0px);display:flex;flex-direction:column;opacity:0;pointer-events:none;overflow:hidden;background:linear-gradient(175deg,#fffaf5 0%,#fff4e8 55%,#fdebd8 100%);}
 .app-screen.active{opacity:1;pointer-events:auto;}
 /* Inactive screens are visually hidden (opacity:0) but their descendants
    can still steal clicks if they declare pointer-events:auto explicitly
@@ -409,7 +409,14 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 .atd-status{font-size:12px;font-weight:700;color:#b09080;letter-spacing:.2px;}
 .atd-status.rec{color:#e07c3a;}
 .atd-bubble{width:100%;min-height:40px;background:#fff3ec;border-radius:14px;padding:10px 14px;font-size:15px;font-weight:700;color:#2d1a0e;direction:rtl;text-align:right;line-height:1.5;display:none;word-break:break-word;}
-.atd-bubble.has-text{display:block;}
+.atd-bubble.has-text{display:block;animation:atdBubbleIn .26s cubic-bezier(.34,1.1,.64,1);}
+@keyframes atdBubbleIn{from{opacity:0;transform:translateY(6px) scale(.985);}to{opacity:1;transform:translateY(0) scale(1);}}
+/* Live waveform under the mic while recording — same bars as the main voice
+   screen, so the add sheet feels just as alive during the engine's result lag. */
+.atd-wdots{margin-top:2px;}
+/* Fast (one-tap) mode — hide live captions; tapping the mic to stop auto-adds. */
+.atd-mode-row{margin:0 auto;}
+.atd-bg.atd-fast .atd-bubble{display:none!important;}
 
 /* Typing mode — toggle + textarea, mirroring the main voice screen's
    pattern. When .atd-bg has class .typing-mode, the mic + status +
@@ -427,7 +434,7 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 .atd-bg.typing-mode .atd-type-toggle{display:none;}
 .atd-bg.typing-mode .atd-type-area{display:flex;}
 .atd-bg.typing-mode .atd-voice-back{display:inline-block;}
-.atd-foot{padding:8px 20px 24px;}
+.atd-foot{padding:8px 20px calc(24px + env(safe-area-inset-bottom,0px));}
 .btn-add-more{width:100%;padding:13px;border-radius:18px;border:1.5px dashed rgba(224,124,58,.35);cursor:pointer;background:rgba(255,112,51,.04);font-family:'Nunito',sans-serif;font-size:14px;font-weight:800;color:#e07c3a;transition:background .18s;}
 .btn-add-more:active{background:rgba(224,124,58,.1);}
 /* Adjust mode */
@@ -3394,6 +3401,16 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
         <button class="atd-cancel" id="atdCancel">ביטול</button>
       </div>
       <div class="atd-body">
+        <div class="v-mode-row atd-mode-row" id="atdModeRow">
+          <button class="v-mode-btn sel" id="atdModeText" type="button" onclick="setAtdFast(false)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><line x1="7" y1="11" x2="11" y2="11"/><line x1="14" y1="11" x2="17" y2="11"/><line x1="7" y1="15" x2="13" y2="15"/></svg>
+            עם טקסט
+          </button>
+          <button class="v-mode-btn" id="atdModeFast" type="button" onclick="setAtdFast(true)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            מהיר
+          </button>
+        </div>
         <div class="atd-mic-area" id="atdMicArea">
           <div class="atd-mic-ring" id="atdMicRing">
             <svg width="38" height="38" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -3414,6 +3431,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
             </svg>
           </div>
           <div class="atd-status" id="atdStatus">לחץ לדיבור</div>
+          <div class="wdots atd-wdots" id="atdWdots"><div class="wd wd1"></div><div class="wd wd2"></div><div class="wd wd3"></div><div class="wd wd4"></div><div class="wd wd5"></div></div>
         </div>
         <div class="atd-type-toggle" id="atdTypeToggle">או הקלד במקום</div>
         <div class="atd-type-area" id="atdTypeArea">
@@ -6594,17 +6612,17 @@ function parsedToTask(p, idx) {
     ? ((p.assignedTo && _memberIdForLegacyId(p.assignedTo)) || DataAdapter.userId || DataAdapter.myMemberId || creatorId)
     : null;
   const person       = ID_TO_PERSON[assignedTo] || 'Dad';
-  const dateStr      = p.date && p.date.date
-    ? dateToYMD(p.date.date)
-    : todayDate();
+  // Beta: never auto-derive a date from speech. Tasks default to today; the
+  // user sets a date only via the "זמן ותאריך" screen. (p.date is ignored.)
+  const dateStr      = todayDate();
   // Wave 2B: creator must always see their own task. Default visibility is
   // creator-only — no one else auto-selected. Plus the assignee if different.
   const defaultVisibleTo = DataAdapter.isFamily()
     ? [creatorId, DataAdapter.userId, assignedToMemberId].filter(Boolean).filter((v,i,a) => a.indexOf(v) === i)
     : _defaultVisibleToIds();
-  // Wave 2B: notify defaults — ON for creator only when task has a time;
-  // OFF entirely when no time.
-  const hasTime = (p.mins != null);
+  // Beta: speech never creates a time/reminder, so a new task always has no
+  // time at creation. (p.mins is ignored; user sets time via "זמן ותאריך".)
+  const hasTime = false;
   const defaultNotifyTo = DataAdapter.isFamily()
     ? (hasTime ? [DataAdapter.userId].filter(Boolean) : [])
     : [assignedToMemberId || assignedTo];
@@ -6616,7 +6634,7 @@ function parsedToTask(p, idx) {
     createdBy:             DataAdapter.isFamily() ? creatorId : currentUser,
     createdByMemberId:     (() => { const id = DataAdapter.myMemberId; if (!id) console.warn('[Identity] myMemberId not set — createdByMemberId null'); return id; })(),
     assignedToMemberId,
-    mins:                  p.mins,
+    mins:                  null,
     completed:             false,
     notify:                true,
     visibleTo:             defaultVisibleTo,
@@ -6628,7 +6646,7 @@ function parsedToTask(p, idx) {
     sentReminderOffsets:   [],
     sentReminderStages:    [],
     lastReminderSentAt:    null,
-    timeSource:            p.timeFromText ? 'explicit' : 'suggested',
+    timeSource:            null,
     date:                  dateStr,
     recurrence:            { type: 'none' },
   };
@@ -6644,23 +6662,17 @@ function aiParsedToTask(t, idx) {
     : null;
   const person     = ID_TO_PERSON[assignedTo] || 'Dad';
 
-  let dateStr = todayDate();
-  if (t.date === 'today')               dateStr = todayDate();
-  else if (t.date === 'tomorrow')       dateStr = offsetDate(1);
-  else if (t.date === 'day-after-tomorrow') dateStr = offsetDate(2);
-  else if (t.date && /^\d{4}-\d{2}-\d{2}$/.test(t.date)) dateStr = t.date;
-
-  let mins = null;
-  if (t.time && /^\d{2}:\d{2}$/.test(t.time)) {
-    const [h, m] = t.time.split(':').map(Number);
-    mins = h * 60 + m;
-  }
+  // Beta: speech never creates a date/time. Ignore the AI's t.date/t.time —
+  // tasks default to today with no time; the user sets both only via the
+  // "זמן ותאריך" screen. (The AI still keeps time/date words in the title.)
+  const dateStr = todayDate();
+  const mins = null;
 
   // Wave 2B: creator-only visibility by default; notify ON only with time.
   const defaultVisibleTo = DataAdapter.isFamily()
     ? [creatorId, DataAdapter.userId, assignedToMemberId].filter(Boolean).filter((v,i,a) => a.indexOf(v) === i)
     : _defaultVisibleToIds();
-  const hasTime = (mins != null);
+  const hasTime = false;
   const defaultNotifyTo = DataAdapter.isFamily()
     ? (hasTime ? [DataAdapter.userId].filter(Boolean) : [])
     : [assignedToMemberId || assignedTo];
@@ -6682,7 +6694,7 @@ function aiParsedToTask(t, idx) {
     sentInitialReminder:   false,
     sentReminderStages:    [],
     lastReminderSentAt:    null,
-    timeSource:            t.time ? 'explicit' : 'suggested',
+    timeSource:            null,
     date:                  dateStr,
     recurrence:            { type: 'none' },
     // Agenda-summary fields — both gated by AGENDA_SUMMARY_ENABLED.
@@ -7233,8 +7245,16 @@ function showBubble(text) {
   if (addMode) {
     const atdBub = document.getElementById('atdBubble');
     const atdBtn = document.getElementById('atdAddBtn');
-    if (atdBub) { atdBub.textContent = ''; atdBub.classList.remove('has-text'); }
-    if (atdBtn) atdBtn.disabled = !incoming;
+    // Show the live transcript (parity with the main voice screen) so the user
+    // gets feedback that speech is being heard — previously this was suppressed
+    // ("ללא דיבוב"), which left no indication and led to early stops.
+    if (atdBub) {
+      atdBub.textContent = incoming || '';
+      atdBub.classList.toggle('has-text', !!incoming);
+    }
+    // Button is already enabled from recording start; only ever (re)enable it
+    // here — never disable mid-recording just because a transcript frame is empty.
+    if (atdBtn && incoming) atdBtn.disabled = false;
   }
 }
 
@@ -8833,22 +8853,17 @@ async function vOrganize() {
 
   const _perceiveT0 = Date.now(); // perceived-latency clock: parse start → preview shown
 
-  // ── Add-mode still awaits the AI (it inserts straight into an open preview) ──
+  // ── Add-mode: local-first insert (no network wait) ──
+  // Previously this awaited the remote AI (~2-3s), which made adding a task feel
+  // painfully slow. Use the instant rule parser instead — same speed model as the
+  // main voice screen. A single quick add doesn't need the AI's heavier splitting.
+  // (Does NOT touch the main screen's local-first preview / AI reconcile flow.)
   if (addMode) {
-    let result;
-    try {
-      result = spokenText
-        ? await HebrewParser.parseTasks(spokenText, { lang: AppState.lang })
-        : { tasks: [], needsReview: false, uncertainParts: [], source: 'local', fallback: true };
-    } catch (err) {
-      AppLog.warn('parseTasks error', err.message);
-      result = HebrewParser.parseTasksLocal(spokenText || '', { lang: AppState.lang });
-    }
-    result = await _applyAgendaMerge(result, spokenText);
+    const result = HebrewParser.parseTasksLocal(spokenText || '', { lang: AppState.lang });
     const newTasks = result.tasks.length > 0
       ? result.tasks.map(aiParsedToTask)
       : [aiParsedToTask({ title: spokenText || '?', time: null, date: null, assignee: null }, 0)];
-    AppLog.info('add-mode insert', newTasks.map(t => t.title));
+    AppLog.info('add-mode insert (local-first)', newTasks.map(t => t.title));
     insertNewTasks(newTasks);
     _stopParseStages();
     _vOrganizerBusy = false;
@@ -12803,7 +12818,18 @@ async function _daWriteTask(task, isNew) {
                               .filter(x => x !== undefined && x !== null && x !== '');
         return v.filter((x,i,a) => a.indexOf(x) === i);
       })(),
-      notifyTo:              task.notifyTo  || [],
+      // Default-notify Fix: never persist an empty notifyTo — fall back to the
+      // CREATOR ONLY so the owner reliably gets notified. An empty array is a
+      // bug state (the UI never produces one intentionally), so treat both
+      // undefined and [] as "notify creator". A populated notifyTo (manual
+      // choice / shared task) is preserved exactly as-is.
+      notifyTo:              (() => {
+        let n = (Array.isArray(task.notifyTo) ? task.notifyTo : [])
+                  .filter(x => x !== undefined && x !== null && x !== '');
+        if (!n.length) n = [DataAdapter.userId, DataAdapter.myMemberId, task.createdByMemberId]
+                              .filter(x => x !== undefined && x !== null && x !== '');
+        return n.filter((x,i,a) => a.indexOf(x) === i);
+      })(),
       recurrence:            task.recurrence || { type: 'none' },
       reminderOffsetMinutes: task.reminderOffsetMinutes ?? 10,
       overdueReminderOffsets:task.overdueReminderOffsets || [5, 10, 15],
@@ -14609,6 +14635,20 @@ function _setAtdRecording(isRec) {
   const st = document.getElementById('atdStatus');
   st.textContent = isRec ? t('atd_recording') : t('atd_tap');
   st.classList.toggle('rec', isRec);
+  // Live waveform — pulses continuously while recording (masks the engine's
+  // 1-2s result lag with a "we're hearing you" feel, like the main screen).
+  const aw = document.getElementById('atdWdots');
+  if (aw) aw.classList.toggle('on', isRec);
+}
+
+// Add-sheet "fast" (one-tap) mode: hides captions and makes a mic-stop tap
+// finish + add the task immediately, mirroring the main screen's "מהיר".
+let _atdFast = false;
+function setAtdFast(on) {
+  _atdFast = !!on;
+  document.getElementById('atdBg')?.classList.toggle('atd-fast', _atdFast);
+  document.getElementById('atdModeText')?.classList.toggle('sel', !_atdFast);
+  document.getElementById('atdModeFast')?.classList.toggle('sel', _atdFast);
 }
 
 function _atdStartRec() {
@@ -14620,6 +14660,10 @@ function _atdStartRec() {
   _startKeepAlive();
   vListening = true;
   _setAtdRecording(true);
+  // Enable "הוסף ליום" the moment recording starts so there's no wait for the
+  // engine's first result — tapping it finishes + organizes (empty speech just
+  // closes the sheet via vOrganize's empty-transcript guard).
+  { const ab = document.getElementById('atdAddBtn'); if (ab) ab.disabled = false; }
   if (recognition) {
     recognition.lang = AppState.lang === 'he' ? 'he-IL' : 'en-US';
     if (!_recStart()) {
@@ -14640,16 +14684,24 @@ function _atdStopAndOrganize() {
   clearTimeout(_restartTimer);
   vListening = false;
   _setAtdRecording(false);
-  if (recognition) { try { recognition.abort(); } catch(_) {} }
-  // Tightened from 320ms to 120ms — transcript is already in vTranscript by
-  // the time we get here (we aborted above); the original delay was just
-  // belt-and-suspenders.
-  setTimeout(() => { if (addMode) vOrganize(); }, 120);
+  // Use stop() (not abort) so the final audio chunk is delivered before we
+  // organize — last words ("...לחם") are not cut off. onend (via _pendingOrganize)
+  // triggers vOrganize once the engine flushes; fall back to a timer if stop throws.
+  if (recognition) {
+    try { _pendingOrganize = true; recognition.stop(); }
+    catch(_) { _pendingOrganize = false; setTimeout(() => { if (addMode) vOrganize(); }, 120); }
+  } else {
+    setTimeout(() => { if (addMode) vOrganize(); }, 120);
+  }
 }
 
 document.getElementById('atdMicArea').addEventListener('click', () => {
   if (!addMode) return;
   if (vListening) {
+    // Fast (one-tap) mode: stopping the mic finishes + adds the task right away
+    // — no separate "הוסף ליום" tap. _atdStopAndOrganize delivers the final
+    // audio (stop, not abort) then organizes.
+    if (_atdFast) { _atdStopAndOrganize(); return; }
     // Stop the recording immediately WITH an audible stop cue (previously the
     // stop sound only fired later on "הוסף ליום"). Captured text stays ready.
     _sfxMute(false);
@@ -14657,7 +14709,9 @@ document.getElementById('atdMicArea').addEventListener('click', () => {
     _clearMaxRecTimers();
     clearTimeout(_restartTimer);
     vListening = false;
-    if (recognition) { try { recognition.abort(); } catch(_) {} }
+    // Use stop() (not abort) so the final audio chunk is delivered — the last
+    // words ("...לחם") are finalized via onresult instead of being discarded.
+    if (recognition) { try { recognition.stop(); } catch(_) {} }
     _beepStop();
     _setAtdRecording(false);
   } else {

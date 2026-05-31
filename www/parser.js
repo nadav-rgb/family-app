@@ -575,9 +575,11 @@
       ? time
       : (fbTime && fbTime.fromText ? fbTime : time);
 
-    // time.match intentionally excluded: stripping only the number leaves dangling
-    // preposition words ("בשעה", "ב") in the title. Keep the full natural phrasing.
-    const title = cleanTitle(text, [resolvedDate.match, assignee.match], config);
+    // Beta: keep the spoken text intact. time.match was already excluded (it
+    // left dangling "בשעה"/"ב" prepositions); now resolvedDate.match is also
+    // excluded so date words ("מחר", "היום") stay in the title verbatim. Only
+    // the assignee doer-name is stripped. Time/date are no longer auto-applied.
+    const title = cleanTitle(text, [assignee.match], config);
     // No explicit time → leave it empty. We never invent a clock time from a
     // vague part-of-day (or from nothing); the task stays "ללא שעה".
     const mins  = resolvedTime.mins !== null
