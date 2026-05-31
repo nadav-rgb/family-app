@@ -1606,7 +1606,8 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 #s-settings .header{display:flex;align-items:flex-start;justify-content:space-between;margin-top:11px;gap:10px;}
 #s-settings .bell{width:34px;height:34px;border-radius:11px;background:#fff;box-shadow:var(--card-shadow);display:flex;align-items:center;justify-content:center;color:var(--ink);border:1px solid rgba(255,255,255,0.6);cursor:pointer;flex:0 0 auto;position:relative;}
 #s-settings .bell svg{width:14px;height:14px;}
-#s-settings .bell .dot{position:absolute;top:6px;right:7px;width:6px;height:6px;border-radius:50%;background:var(--orange);box-shadow:0 0 0 1.5px #fff;}
+#s-settings .bell .dot{position:absolute;top:6px;right:7px;width:6px;height:6px;border-radius:50%;background:var(--orange);box-shadow:0 0 0 1.5px #fff;display:none;}
+#s-settings .bell .dot.visible{display:block;}
 #s-settings .head-text{flex:1 1 auto;text-align:right;display:flex;flex-direction:column;align-items:flex-start;gap:2px;}
 #s-settings .kicker{color:var(--orange-deep);font-size:11px;font-weight:600;display:inline-flex;align-items:center;gap:5px;}
 #s-settings .title{margin:0;font-size:30px;font-weight:800;line-height:1.05;letter-spacing:-0.02em;color:var(--ink);}
@@ -3636,14 +3637,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
      Access for testing: open app.html#s-settings in the browser.
      No existing screen logic or styling is touched. -->
 <div class="app-screen" id="s-settings">
-  <div class="status">
-    <span class="time">10:30</span>
-    <span class="icons" aria-hidden="true">
-      <svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="0.8"/><rect x="4.5" y="5" width="3" height="6" rx="0.8"/><rect x="9" y="2.5" width="3" height="8.5" rx="0.8"/><rect x="13.5" y="0" width="3" height="11" rx="0.8"/></svg>
-      <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor"><path d="M8 12a1.4 1.4 0 1 0 0-2.8A1.4 1.4 0 0 0 8 12Zm3.6-3.4-.06.06.06-.06Zm-7.2 0a4.6 4.6 0 0 1 7.2 0l1.2-1.2a6.4 6.4 0 0 0-9.6 0l1.2 1.2Zm-2.4-2.4a8.4 8.4 0 0 1 12 0l1.2-1.2a10.2 10.2 0 0 0-14.4 0l1.2 1.2Z"/></svg>
-      <svg width="26" height="12" viewBox="0 0 26 12" fill="none"><rect x="0.5" y="0.5" width="22" height="11" rx="2.6" stroke="currentColor" opacity=".5"/><rect x="2" y="2" width="19" height="8" rx="1.6" fill="currentColor"/><rect x="23.5" y="4" width="2" height="4" rx="0.8" fill="currentColor" opacity=".5"/></svg>
-    </span>
-  </div>
+  <!-- Fake status bar (static clock/battery/signal mock) removed — confused testers; real device status bar is shown by the OS. -->
 
   <div class="scroll">
 
@@ -3655,7 +3649,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
       </div>
       <button class="bell" aria-label="התראות" type="button" onclick="openBellPanel()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
-        <span class="dot"></span>
+        <span class="dot" id="bellDotSettings"></span>
       </button>
     </div>
 
@@ -3762,14 +3756,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
      button have no destination yet — they carry data-todo markers
      until matching screens are built. -->
 <div class="app-screen" id="s-family-members">
-  <div class="status">
-    <span class="time">10:30</span>
-    <span class="icons" aria-hidden="true">
-      <svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="0.8"/><rect x="4.5" y="5" width="3" height="6" rx="0.8"/><rect x="9" y="2.5" width="3" height="8.5" rx="0.8"/><rect x="13.5" y="0" width="3" height="11" rx="0.8"/></svg>
-      <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor"><path d="M8 12a1.4 1.4 0 1 0 0-2.8A1.4 1.4 0 0 0 8 12Zm3.6-3.4-.06.06.06-.06Zm-7.2 0a4.6 4.6 0 0 1 7.2 0l1.2-1.2a6.4 6.4 0 0 0-9.6 0l1.2 1.2Zm-2.4-2.4a8.4 8.4 0 0 1 12 0l1.2-1.2a10.2 10.2 0 0 0-14.4 0l1.2 1.2Z"/></svg>
-      <svg width="26" height="12" viewBox="0 0 26 12" fill="none"><rect x="0.5" y="0.5" width="22" height="11" rx="2.6" stroke="currentColor" opacity=".5"/><rect x="2" y="2" width="19" height="8" rx="1.6" fill="currentColor"/><rect x="23.5" y="4" width="2" height="4" rx="0.8" fill="currentColor" opacity=".5"/></svg>
-    </span>
-  </div>
+  <!-- Fake status bar (static clock/battery/signal mock) removed — confused testers; real device status bar is shown by the OS. -->
 
   <div class="scroll">
 
@@ -4073,9 +4060,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
       <button class="mp-icon-btn" id="mpBackBtn" aria-label="חזרה">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
       </button>
-      <button class="mp-icon-btn" aria-label="עוד">
-        <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>
-      </button>
+      <!-- Three-dots "more" button removed — it was a dead legacy control with no menu/handler behind it. -->
     </div>
 
     <!-- Profile hero -->
@@ -4230,14 +4215,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
      Back → s-settings. All action buttons carry data-todo markers.
      The spinning animation on "בדוק סנכרון" is visual-only. -->
 <div class="app-screen" id="s-sync">
-  <div class="status">
-    <span class="time">10:30</span>
-    <span class="icons" aria-hidden="true">
-      <svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="0.8"/><rect x="4.5" y="5" width="3" height="6" rx="0.8"/><rect x="9" y="2.5" width="3" height="8.5" rx="0.8"/><rect x="13.5" y="0" width="3" height="11" rx="0.8"/></svg>
-      <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor"><path d="M8 12a1.4 1.4 0 1 0 0-2.8A1.4 1.4 0 0 0 8 12Zm3.6-3.4-.06.06.06-.06Zm-7.2 0a4.6 4.6 0 0 1 7.2 0l1.2-1.2a6.4 6.4 0 0 0-9.6 0l1.2 1.2Zm-2.4-2.4a8.4 8.4 0 0 1 12 0l1.2-1.2a10.2 10.2 0 0 0-14.4 0l1.2 1.2Z"/></svg>
-      <svg width="26" height="12" viewBox="0 0 26 12" fill="none"><rect x="0.5" y="0.5" width="22" height="11" rx="2.6" stroke="currentColor" opacity=".5"/><rect x="2" y="2" width="19" height="8" rx="1.6" fill="currentColor"/><rect x="23.5" y="4" width="2" height="4" rx="0.8" fill="currentColor" opacity=".5"/></svg>
-    </span>
-  </div>
+  <!-- Fake status bar (static clock/battery/signal mock) removed — confused testers; real device status bar is shown by the OS. -->
 
   <div class="scroll">
 
@@ -4419,14 +4397,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
      Back → s-voice. Save → s-today. Redo → s-voice.
      Edit pill, who-card, and task menus carry data-todo markers. -->
 <div class="app-screen" id="s-confirmation">
-  <div class="status">
-    <span class="time">10:30</span>
-    <span class="icons" aria-hidden="true">
-      <svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="0.8"/><rect x="4.5" y="5" width="3" height="6" rx="0.8"/><rect x="9" y="2.5" width="3" height="8.5" rx="0.8"/><rect x="13.5" y="0" width="3" height="11" rx="0.8"/></svg>
-      <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor"><path d="M8 12a1.4 1.4 0 1 0 0-2.8A1.4 1.4 0 0 0 8 12Zm3.6-3.4-.06.06.06-.06Zm-7.2 0a4.6 4.6 0 0 1 7.2 0l1.2-1.2a6.4 6.4 0 0 0-9.6 0l1.2 1.2Zm-2.4-2.4a8.4 8.4 0 0 1 12 0l1.2-1.2a10.2 10.2 0 0 0-14.4 0l1.2 1.2Z"/></svg>
-      <svg width="26" height="12" viewBox="0 0 26 12" fill="none"><rect x="0.5" y="0.5" width="22" height="11" rx="2.6" stroke="currentColor" opacity=".5"/><rect x="2" y="2" width="19" height="8" rx="1.6" fill="currentColor"/><rect x="23.5" y="4" width="2" height="4" rx="0.8" fill="currentColor" opacity=".5"/></svg>
-    </span>
-  </div>
+  <!-- Fake status bar (static clock/battery/signal mock) removed — confused testers; real device status bar is shown by the OS. -->
 
   <div class="scroll">
 
@@ -4482,14 +4453,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
      All other rows carry data-todo markers until sub-screens are built.
      Back button → s-settings. -->
 <div class="app-screen" id="s-privacy">
-  <div class="status">
-    <span class="time">10:30</span>
-    <span class="icons" aria-hidden="true">
-      <svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="0.8"/><rect x="4.5" y="5" width="3" height="6" rx="0.8"/><rect x="9" y="2.5" width="3" height="8.5" rx="0.8"/><rect x="13.5" y="0" width="3" height="11" rx="0.8"/></svg>
-      <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor"><path d="M8 12a1.4 1.4 0 1 0 0-2.8A1.4 1.4 0 0 0 8 12Zm3.6-3.4-.06.06.06-.06Zm-7.2 0a4.6 4.6 0 0 1 7.2 0l1.2-1.2a6.4 6.4 0 0 0-9.6 0l1.2 1.2Zm-2.4-2.4a8.4 8.4 0 0 1 12 0l1.2-1.2a10.2 10.2 0 0 0-14.4 0l1.2 1.2Z"/></svg>
-      <svg width="26" height="12" viewBox="0 0 26 12" fill="none"><rect x="0.5" y="0.5" width="22" height="11" rx="2.6" stroke="currentColor" opacity=".5"/><rect x="2" y="2" width="19" height="8" rx="1.6" fill="currentColor"/><rect x="23.5" y="4" width="2" height="4" rx="0.8" fill="currentColor" opacity=".5"/></svg>
-    </span>
-  </div>
+  <!-- Fake status bar (static clock/battery/signal mock) removed — confused testers; real device status bar is shown by the OS. -->
 
   <div class="scroll">
 
@@ -4650,14 +4614,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
      Source: App Appearance (1).html — Claude Design
 ════════════════════════════════════════════════════════════════════════ -->
 <div class="app-screen" id="s-appearance">
-  <div class="status">
-    <span class="time">10:30</span>
-    <span class="icons" aria-hidden="true">
-      <svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="0.8"/><rect x="4.5" y="5" width="3" height="6" rx="0.8"/><rect x="9" y="2.5" width="3" height="8.5" rx="0.8"/><rect x="13.5" y="0" width="3" height="11" rx="0.8"/></svg>
-      <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor"><path d="M8 12a1.4 1.4 0 1 0 0-2.8A1.4 1.4 0 0 0 8 12Zm3.6-3.4-.06.06.06-.06Zm-7.2 0a4.6 4.6 0 0 1 7.2 0l1.2-1.2a6.4 6.4 0 0 0-9.6 0l1.2 1.2Zm-2.4-2.4a8.4 8.4 0 0 1 12 0l1.2-1.2a10.2 10.2 0 0 0-14.4 0l1.2 1.2Z"/></svg>
-      <svg width="26" height="12" viewBox="0 0 26 12" fill="none"><rect x="0.5" y="0.5" width="22" height="11" rx="2.6" stroke="currentColor" opacity=".5"/><rect x="2" y="2" width="19" height="8" rx="1.6" fill="currentColor"/><rect x="23.5" y="4" width="2" height="4" rx="0.8" fill="currentColor" opacity=".5"/></svg>
-    </span>
-  </div>
+  <!-- Fake status bar (static clock/battery/signal mock) removed — confused testers; real device status bar is shown by the OS. -->
 
   <div class="scroll">
     <div class="header">
@@ -4791,14 +4748,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
      Access for testing: app.html#s-notifications
 ════════════════════════════════════════════════════════════════════════ -->
 <div class="app-screen" id="s-notifications">
-  <div class="status">
-    <span class="time">10:30</span>
-    <span class="icons" aria-hidden="true">
-      <svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="0.8"/><rect x="4.5" y="5" width="3" height="6" rx="0.8"/><rect x="9" y="2.5" width="3" height="8.5" rx="0.8"/><rect x="13.5" y="0" width="3" height="11" rx="0.8"/></svg>
-      <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor"><path d="M8 12a1.4 1.4 0 1 0 0-2.8A1.4 1.4 0 0 0 8 12Zm3.6-3.4-.06.06.06-.06Zm-7.2 0a4.6 4.6 0 0 1 7.2 0l1.2-1.2a6.4 6.4 0 0 0-9.6 0l1.2 1.2Zm-2.4-2.4a8.4 8.4 0 0 1 12 0l1.2-1.2a10.2 10.2 0 0 0-14.4 0l1.2 1.2Z"/></svg>
-      <svg width="26" height="12" viewBox="0 0 26 12" fill="none"><rect x="0.5" y="0.5" width="22" height="11" rx="2.6" stroke="currentColor" opacity=".5"/><rect x="2" y="2" width="19" height="8" rx="1.6" fill="currentColor"/><rect x="23.5" y="4" width="2" height="4" rx="0.8" fill="currentColor" opacity=".5"/></svg>
-    </span>
-  </div>
+  <!-- Fake status bar (static clock/battery/signal mock) removed — confused testers; real device status bar is shown by the OS. -->
 
   <div class="scroll" id="notifScroll">
 
@@ -4879,14 +4829,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
      Access for testing: app.html#s-visibility
 ════════════════════════════════════════════════════════════════════════ -->
 <div class="app-screen" id="s-visibility">
-  <div class="status">
-    <span class="time">10:30</span>
-    <span class="icons" aria-hidden="true">
-      <svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="0.8"/><rect x="4.5" y="5" width="3" height="6" rx="0.8"/><rect x="9" y="2.5" width="3" height="8.5" rx="0.8"/><rect x="13.5" y="0" width="3" height="11" rx="0.8"/></svg>
-      <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor"><path d="M8 12a1.4 1.4 0 1 0 0-2.8A1.4 1.4 0 0 0 8 12Zm3.6-3.4-.06.06.06-.06Zm-7.2 0a4.6 4.6 0 0 1 7.2 0l1.2-1.2a6.4 6.4 0 0 0-9.6 0l1.2 1.2Zm-2.4-2.4a8.4 8.4 0 0 1 12 0l1.2-1.2a10.2 10.2 0 0 0-14.4 0l1.2 1.2Z"/></svg>
-      <svg width="26" height="12" viewBox="0 0 26 12" fill="none"><rect x="0.5" y="0.5" width="22" height="11" rx="2.6" stroke="currentColor" opacity=".5"/><rect x="2" y="2" width="19" height="8" rx="1.6" fill="currentColor"/><rect x="23.5" y="4" width="2" height="4" rx="0.8" fill="currentColor" opacity=".5"/></svg>
-    </span>
-  </div>
+  <!-- Fake status bar (static clock/battery/signal mock) removed — confused testers; real device status bar is shown by the OS. -->
 
   <div class="scroll">
 
@@ -7716,7 +7659,14 @@ function categorizeShoppingTitle(task) {
   task._categorizing = true;
   task._categorizingPromise = (async () => {
     try {
-      const res = await fetch('/api/categorize-shopping', {
+      // In the native Capacitor app the WebView origin has no backend, so a
+      // bare '/api/...' resolves to localhost and fails — the shopping
+      // categories never load. Prefix the Vercel base on native (same pattern
+      // as /api/parse-tasks). On web the base is '' (relative).
+      const _base = (typeof window !== 'undefined' && window.Capacitor)
+        ? 'https://family-app-roan.vercel.app'
+        : '';
+      const res = await fetch(_base + '/api/categorize-shopping', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({ title: task.title }),
@@ -8609,6 +8559,20 @@ function extractTimeFromText(text) {
   }
 
   return null;
+}
+
+function _attachDpShoppingBtn(task, cardEl) {
+  if (cardEl.querySelector('.conf-shop-btn')) return;
+  const body = cardEl.querySelector('.card-body');
+  if (!body) return;
+  const btn = document.createElement('button');
+  btn.className = 'conf-shop-btn';
+  btn.textContent = '🛒 רשימת קניות מסודרת';
+  btn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    showTitleTip(task, btn);
+  });
+  body.appendChild(btn);
 }
 
 function _attachConfShoppingBtn(task, taskEl) {
@@ -9521,7 +9485,20 @@ function _buildCardEl(task) {
   attachSplitGesture(c, task);
   c.querySelector('.t-split-btn')?.addEventListener('click', e => { e.stopPropagation(); openSplitSheet(task, c); });
   attachSwipeDelete(c, task, 'preview');
-  categorizeShoppingTitle(task);
+  // Shopping-list button on the day-preview card — mirrors the confirmation
+  // and Today screens. Without this, a shopping list created via the quick "+"
+  // add (which lands here) showed no 🛒 button and looked like a plain task.
+  if (isShoppingListTitle(task.title)) {
+    if (task.shoppingList) {
+      _attachDpShoppingBtn(task, c);
+    } else if (!task._shopError) {
+      categorizeShoppingTitle(task).then(function() {
+        if (task.shoppingList) _attachDpShoppingBtn(task, c);
+      });
+    }
+  } else {
+    categorizeShoppingTitle(task);
+  }
   summarizeAgendaTitle(task);
   return c;
 }
@@ -11594,10 +11571,12 @@ function _clearBellItems(taskId) {
 }
 
 function _updateBellDot() {
-  const dot = document.getElementById('bellDot');
-  if (!dot) return;
   const hasUnseen = _loadBellItems().some(i => !i.seen);
-  dot.classList.toggle('visible', hasUnseen);
+  // Today screen bell + Settings screen bell share the same unseen-state rule.
+  ['bellDot', 'bellDotSettings'].forEach(id => {
+    const dot = document.getElementById(id);
+    if (dot) dot.classList.toggle('visible', hasUnseen);
+  });
 }
 
 function _renderBellList() {
@@ -14542,6 +14521,48 @@ localStorage.setItem(LANG_KEY, 'he');
 AppState.lang = 'he';
 _applyLang();
 _capInit().then(() => _capRescheduleAll()).catch(() => {});
+
+// ── Android hardware Back button ────────────────────────────────────────────
+// Without a handler, Android's WebView default exits the app on every Back
+// press. Map each internal screen to its parent so Back behaves like a normal
+// mobile app; only the home screen (s-today) and unmapped screens (e.g. the
+// onboarding/first-run gate) fall through to a real app exit.
+const _BACK_MAP = {
+  's-voice':          's-today',
+  's-dp':             's-voice',
+  's-confirmation':   's-voice',
+  's-settings':       's-today',
+  's-family-members': 's-settings',
+  's-invite-member':  's-family-members',
+  's-sync':           's-settings',
+  's-privacy':        's-settings',
+  's-appearance':     's-settings',
+  's-notifications':  's-settings',
+  's-visibility':     's-settings',
+  's-time-date':      's-settings',
+  's-lang':           's-today',
+};
+function _initBackButton() {
+  try {
+    const App = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App;
+    if (!App || !App.addListener) return;
+    App.addListener('backButton', () => {
+      const active = document.querySelector('.app-screen.active');
+      const id = active && active.id;
+      if (!id || id === 's-today' || !(id in _BACK_MAP || id === 's-member-profile')) {
+        // Home screen or an unmapped screen → normal exit.
+        try { App.exitApp(); } catch (_) {}
+        return;
+      }
+      // Member profile remembers where it was opened from.
+      const dest = id === 's-member-profile'
+        ? (typeof _mpFromScreen !== 'undefined' && _mpFromScreen) || 's-family-members'
+        : _BACK_MAP[id];
+      goto(dest, 'txLeaveFade', 'txEnterFade');
+    });
+  } catch (_) {}
+}
+_initBackButton();
 // Preview-only: ?previewFirstRun=1 forces the onboarding screen for visual
 // review. Pure UI — touches no data, no family state, no listeners.
 const _urlJoinCode = (new URLSearchParams(location.search).get('code') || '')
@@ -17262,7 +17283,18 @@ function mpEditField(field) {
   document.getElementById('mpeChipRow').style.display = 'none';
   document.getElementById('mpeSaveBtn').onclick = () => {
     const val = document.getElementById('mpeInput').value.trim();
-    _mpSaveField(_mpCurrentId, { [field]: val });
+    const updates = { [field]: val };
+    if (field === 'name') {
+      // The profile + task cards render the name from `displayName` (which takes
+      // precedence over `name`), and "self" reads from DataAdapter.displayName.
+      // Saving only `name` therefore never showed up. Update displayName too,
+      // and the device's own identity when editing self — mirrors _saveFamilyName.
+      updates.displayName = val;
+      if (typeof _mpIsSelf === 'function' && _mpIsSelf(_mpCurrentId)) {
+        try { DataAdapter.setDisplayName(val); } catch (_) {}
+      }
+    }
+    _mpSaveField(_mpCurrentId, updates);
     closeMpEdit();
     _renderMemberProfile();
   };
@@ -17726,6 +17758,10 @@ async function _mpSaveField(memberId, updates) {
     const seedIdx = (_FAMILY_MEMBERS_SEED || []).findIndex(m => m.memberId === memberId);
     if (seedIdx >= 0) Object.assign(_FAMILY_MEMBERS_SEED[seedIdx], updates);
   }
+  // Re-render the Today screen so a changed name/identity is reflected on task
+  // cards immediately (they resolve names from the member cache we just updated)
+  // — without this the old name stayed on screen until reinstall/refresh.
+  try { if (typeof renderToday === 'function') renderToday(); } catch(_) {}
   // Persist to Firestore if in family mode
   if (DataAdapter.isFamily() && _db) {
     try {
