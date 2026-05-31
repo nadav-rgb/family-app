@@ -2,6 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
+<!-- Critical CSS — applied before the large inline stylesheet parses, so the
+     correct screen is visible from the very first paint on cold launch. Without
+     this, the WebView briefly shows the DOM-earlier voice screen (FOUC) before
+     the full stylesheet's opacity rules kick in, causing a jarring flash. -->
+<style>.app-screen{opacity:0}.app-screen.active{opacity:1}html,body{background:#fdece0}</style>
 <!-- Tester reset: any URL with ?reset=1 wipes local identity, caches and
      service workers, then reloads into a clean first-run. Cloud data is NOT
      touched. Must run first, before any app/Firebase script. -->
@@ -2887,7 +2892,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
    The 9999px box-shadow trick paints a dark mask everywhere except the circle. */
 .avcrop-canvas-wrap .cropper-view-box,
 .avcrop-canvas-wrap .cropper-face{border-radius:50%;}
-.avcrop-canvas-wrap .cropper-view-box{outline:3px solid #ff9a4e !important;outline-offset:-1px;box-shadow:0 0 0 9999px rgba(0,0,0,.55);}
+.avcrop-canvas-wrap .cropper-view-box{outline:3px solid #ff9a4e !important;outline-offset:-1px;box-shadow:0 0 0 1200px rgba(0,0,0,.55);}
 .avcrop-canvas-wrap .cropper-face{background-color:transparent !important;}
 .avcrop-canvas-wrap .cropper-modal{opacity:0 !important;}
 .avcrop-canvas-wrap .cropper-line,
@@ -3299,7 +3304,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
 </div>
 
 <!-- ════ SCREEN 1: VOICE ════ -->
-<div class="app-screen active" id="s-voice">
+<div class="app-screen no-captions" id="s-voice" style="display:none">
   <div class="v-topbar">
     <button class="back-btn" onclick="goto('s-today','txLeaveFade','txEnterFade')"><svg width="8" height="14" viewBox="0 0 8 14" fill="none"><path d="M7 1L1 7l6 6" stroke="#9e8878" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span id="vBackTxt">היום</span></button>
     <button class="v-settings-btn" id="vSettingsBtn"><svg width="20" height="16" viewBox="0 0 20 16" fill="none"><line x1="1" y1="2.5" x2="19" y2="2.5" stroke="#9e8878" stroke-width="1.8" stroke-linecap="round"/><circle cx="14" cy="2.5" r="2.2" fill="#fffaf5" stroke="#9e8878" stroke-width="1.6"/><line x1="1" y1="8" x2="19" y2="8" stroke="#9e8878" stroke-width="1.8" stroke-linecap="round"/><circle cx="6" cy="8" r="2.2" fill="#fffaf5" stroke="#9e8878" stroke-width="1.6"/><line x1="1" y1="13.5" x2="19" y2="13.5" stroke="#9e8878" stroke-width="1.8" stroke-linecap="round"/><circle cx="14" cy="13.5" r="2.2" fill="#fffaf5" stroke="#9e8878" stroke-width="1.6"/></svg></button>
@@ -3307,13 +3312,13 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
   <div class="sp"></div>
   <div class="prompt"><div class="v-eyebrow" id="vPromptEyebrow">✨ קלט קולי</div><div class="v-ptxt" id="vPromptText">ספר לי מה<br>צריך לקרות היום</div></div>
   <div class="v-mode-row" id="vModeRow">
-    <button class="v-mode-btn sel" id="vModeCaptions" type="button" onclick="setVoiceCaptions(true)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><line x1="7" y1="11" x2="11" y2="11"/><line x1="14" y1="11" x2="17" y2="11"/><line x1="7" y1="15" x2="13" y2="15"/></svg>
-      עם טקסט
-    </button>
-    <button class="v-mode-btn" id="vModeQuick" type="button" onclick="setVoiceCaptions(false)">
+    <button class="v-mode-btn sel" id="vModeQuick" type="button" onclick="setVoiceCaptions(false)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
       מהיר
+    </button>
+    <button class="v-mode-btn" id="vModeCaptions" type="button" onclick="setVoiceCaptions(true)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><line x1="7" y1="11" x2="11" y2="11"/><line x1="14" y1="11" x2="17" y2="11"/><line x1="7" y1="15" x2="13" y2="15"/></svg>
+      עם טקסט
     </button>
   </div>
   <div class="sp-lg"></div>
@@ -3402,13 +3407,13 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
       </div>
       <div class="atd-body">
         <div class="v-mode-row atd-mode-row" id="atdModeRow">
-          <button class="v-mode-btn sel" id="atdModeText" type="button" onclick="setAtdFast(false)">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><line x1="7" y1="11" x2="11" y2="11"/><line x1="14" y1="11" x2="17" y2="11"/><line x1="7" y1="15" x2="13" y2="15"/></svg>
-            עם טקסט
-          </button>
-          <button class="v-mode-btn" id="atdModeFast" type="button" onclick="setAtdFast(true)">
+          <button class="v-mode-btn sel" id="atdModeFast" type="button" onclick="setAtdFast(true)">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
             מהיר
+          </button>
+          <button class="v-mode-btn" id="atdModeText" type="button" onclick="setAtdFast(false)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><line x1="7" y1="11" x2="11" y2="11"/><line x1="14" y1="11" x2="17" y2="11"/><line x1="7" y1="15" x2="13" y2="15"/></svg>
+            עם טקסט
           </button>
         </div>
         <div class="atd-mic-area" id="atdMicArea">
@@ -3448,7 +3453,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
 </div>
 
 <!-- ════ SCREEN 3: TODAY ════ -->
-<div class="app-screen" id="s-today">
+<div class="app-screen active" id="s-today">
   <div class="t-scroll">
 
     <!-- ═══ NEW HOME HEADER (Home.html redesign) ═══ -->
@@ -12898,6 +12903,12 @@ async function _loadFamilyMembersCache() {
     try { localStorage.setItem(_MEMBER_CACHE_LS_KEY, JSON.stringify(_familyMembersCache)); } catch(e) {}
     if (typeof _renderAllAvatars === 'function') _renderAllAvatars();
     if (typeof _mpApplyAllStripes === 'function') _mpApplyAllStripes();
+    // Re-render the member surfaces now that real participants are loaded, so
+    // the today strip / settings / family list fill in immediately instead of
+    // staying empty until the next navigation (removes the ~1s blank gap).
+    if (typeof _renderTodayMembers === 'function') _renderTodayMembers();
+    if (typeof _renderSettingsMembers === 'function') _renderSettingsMembers();
+    if (typeof _renderFamilyMembersScreen === 'function') _renderFamilyMembersScreen();
   } catch (e) {
     AppLog.warn('DA', 'loadMembersCache failed', e.message || e);
   }
@@ -14571,6 +14582,30 @@ if (activeTasks().length > 0) {
   document.getElementById('s-voice').classList.remove('active');
   document.getElementById('s-today').classList.add('active');
 }
+// Release the boot-time inline display:none on the voice screen now that the
+// full stylesheet is applied. During cold launch the WebView paints the body
+// progressively before the 1MB <style> takes effect; the inline display:none
+// (set in the HTML) keeps the DOM-earlier voice screen from flashing until
+// here. From now on its visibility is governed normally by the .active class.
+try { const _sv = document.getElementById('s-voice'); if (_sv) _sv.style.display = ''; } catch (e) {}
+
+// Native splash control: the launch theme keeps the system splash on screen
+// (launchAutoHide:false) so Android never reveals its stale starting-window /
+// task snapshot of a previous screen before the WebView paints. We hide it only
+// AFTER the home screen has actually painted (two RAFs = one painted frame),
+// with a hard safety timeout so the splash can never get stuck.
+(function _hideNativeSplashWhenReady() {
+  let _done = false;
+  const hide = () => {
+    if (_done) return; _done = true;
+    try {
+      const SS = window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.SplashScreen;
+      if (SS && SS.hide) SS.hide();
+    } catch (e) {}
+  };
+  try { requestAnimationFrame(() => requestAnimationFrame(hide)); } catch (e) { hide(); }
+  setTimeout(hide, 2500); // safety: never let the splash stick
+})();
 
 // ─── Add-to-day sheet ─────────────────────────────────────────────
 // opts.autoRecord (default true): start dictation automatically on open.
@@ -14606,6 +14641,9 @@ function openAddSheet(opts) {
   const typeInp = document.getElementById('atdTypeInp');
   if (typeInp) typeInp.innerHTML = '';
   _setAtdRecording(false);
+  // Sync fast/captions mode (default fast) so the toggle + caption visibility
+  // reflect the current choice every time the sheet opens.
+  if (typeof setAtdFast === 'function') setAtdFast(_atdFast);
   sheet.classList.add('open');
   // Start recording automatically only when asked (day-preview flow). From the
   // confirmation screen we leave the sheet idle so the user chooses record/type.
@@ -14643,7 +14681,7 @@ function _setAtdRecording(isRec) {
 
 // Add-sheet "fast" (one-tap) mode: hides captions and makes a mic-stop tap
 // finish + add the task immediately, mirroring the main screen's "מהיר".
-let _atdFast = false;
+let _atdFast = true;
 function setAtdFast(on) {
   _atdFast = !!on;
   document.getElementById('atdBg')?.classList.toggle('atd-fast', _atdFast);
@@ -16600,6 +16638,18 @@ function _renderFamilyMembersScreen() {
   }).join('');
 }
 
+// Clear the static "חבר 1-4" demo placeholders at load in family mode so they
+// never flash before the dynamic real-member renders (_renderSettingsMembers /
+// _renderFamilyMembersScreen) populate these surfaces with the actual joined
+// members. The static cards remain the fallback only for local (demo) mode.
+(function _clearStaticMemberPlaceholders() {
+  try {
+    if (typeof DataAdapter === 'undefined' || !DataAdapter.isFamily || !DataAdapter.isFamily()) return;
+    const s = document.getElementById('settingsMembers'); if (s) s.innerHTML = '';
+    const f = document.getElementById('famMembersCards'); if (f) f.innerHTML = '';
+  } catch (e) {}
+})();
+
 // ── PIN / Biometric / Delete Data flows ──────────────────────────
 var _pinBuffer = '';
 var _pinMode = 'setup'; // 'setup' | 'confirm' | 'delete'
@@ -16664,7 +16714,7 @@ function _pinSubmit() {
 }
 
 // Voice capture: caption mode toggle (true = live captions, false = quick/no captions)
-window._vCaptions = true;
+window._vCaptions = false;
 function setVoiceCaptions(on) {
   window._vCaptions = on;
   const sv = document.getElementById('s-voice');
@@ -16963,7 +17013,14 @@ function _mpGetMember(memberId) {
 }
 
 function _mpIsSelf(memberId) {
-  if (DataAdapter.isFamily()) return DataAdapter.myMemberId === memberId;
+  if (DataAdapter.isFamily()) {
+    // Member profiles are opened by userId in the real-participant model
+    // (today strip / settings / family screen all pass p.userId). Treat the
+    // device's own userId as self too — myMemberId is frequently unset, which
+    // previously hid the edit pencil (photo / AI avatar) for everyone.
+    return (!!DataAdapter.myMemberId && DataAdapter.myMemberId === memberId)
+        || (!!DataAdapter.userId && memberId === DataAdapter.userId);
+  }
   const legacyId = _legacyIdForMemberId(memberId);
   return legacyId === currentUser;
 }

@@ -18,5 +18,11 @@
 
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
         <item name="android:background">@drawable/splash</item>
+        <!-- Cream splash background (Android 12+) so the held splash matches the
+             app and the stale starting-window/task-snapshot is never revealed.
+             The @capacitor/splash-screen plugin (launchAutoHide:false) keeps this
+             splash on screen until the web layer calls SplashScreen.hide() after
+             the home screen has painted — covering the native pre-paint window. -->
+        <item name="android:windowSplashScreenBackground">#FFFAF5</item>
     </style>
 </resources>
