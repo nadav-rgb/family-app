@@ -2566,7 +2566,7 @@ body.text-large .phone{font-size:17px}
 #s-notifications .n-sound-select.ic-due.open .n-sound-trigger{background:rgba(229,98,26,0.10);box-shadow:0 0 0 2px rgba(229,98,26,0.25);}
 #s-notifications .n-sound-select.ic-overdue.open .n-sound-trigger{background:rgba(197,48,48,0.10);box-shadow:0 0 0 2px rgba(197,48,48,0.25);}
 #s-notifications .n-sound-menu{overflow:hidden;max-height:0;opacity:0;transition:max-height .25s ease,opacity .2s ease,margin-top .25s ease;display:flex;flex-direction:column;gap:3px;}
-#s-notifications .n-sound-select.open .n-sound-menu{max-height:360px;opacity:1;margin-top:6px;}
+#s-notifications .n-sound-select.open .n-sound-menu{max-height:300px;opacity:1;margin-top:6px;overflow-y:auto;-webkit-overflow-scrolling:touch;}
 #s-notifications .n-sound-item{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 14px;border-radius:12px;border:none;background:transparent;cursor:pointer;font-family:'Nunito',sans-serif;font-size:13px;font-weight:700;color:var(--ink);transition:background .15s,color .15s;text-align:right;}
 #s-notifications .n-sound-item .ns-cur{display:flex;align-items:center;gap:8px;}
 #s-notifications .n-sound-item .so-em{font-size:16px;line-height:1;}
@@ -11709,13 +11709,41 @@ async function _requestNotifPermission() {
 }
 
 // ─── Notification sound catalogue + per-scenario picker ──────────
+// Curated library of ~24 procedural notification sounds (Web Audio — no files).
+// Grouped by feel; every option previews instantly when tapped. See
+// docs/sound-library-proposal.md for the full rationale.
 const SOUND_OPTIONS = [
-  { id: 'chime',  label: 'צלצול', emoji: '🔔' },
-  { id: 'ping',   label: 'פינג',  emoji: '💫' },
-  { id: 'waves',  label: 'גלים',  emoji: '〰️' },
-  { id: 'joy',    label: 'שמחה',  emoji: '🎵' },
-  { id: 'soft',   label: 'עדין',  emoji: '🍃' },
-  { id: 'none',   label: 'ללא',   emoji: '🔕' },
+  // — Bells & chimes —
+  { id: 'chime',     label: 'צלצול',      emoji: '🔔' },
+  { id: 'bell-soft', label: 'פעמון רך',   emoji: '🛎️' },
+  { id: 'crystal',   label: 'קריסטל',     emoji: '💎' },
+  { id: 'temple',    label: 'גונג',       emoji: '🪷' },
+  { id: 'musicbox',  label: 'תיבת נגינה', emoji: '🎶' },
+  // — Digital & light —
+  { id: 'ping',      label: 'פינג',       emoji: '💫' },
+  { id: 'blip',      label: 'בליפ',       emoji: '📟' },
+  { id: 'pop',       label: 'פופ',        emoji: '🫧' },
+  { id: 'tick',      label: 'טיק',        emoji: '⏱️' },
+  { id: 'coin',      label: 'מטבע',       emoji: '🪙' },
+  // — Melodic —
+  { id: 'waves',     label: 'גלים',       emoji: '〰️' },
+  { id: 'joy',       label: 'שמחה',       emoji: '🎵' },
+  { id: 'sunrise',   label: 'זריחה',      emoji: '🌅' },
+  { id: 'fanfare',   label: 'פאנפרה',     emoji: '🎺' },
+  { id: 'twinkle',   label: 'נצנוץ',      emoji: '✨' },
+  { id: 'arpeggio',  label: 'ארפג׳יו',    emoji: '🎹' },
+  // — Calm & nature —
+  { id: 'soft',      label: 'עדין',       emoji: '🍃' },
+  { id: 'zen',       label: 'זן',         emoji: '🧘' },
+  { id: 'droplet',   label: 'טיפה',       emoji: '💧' },
+  { id: 'harp',      label: 'נבל',        emoji: '🎼' },
+  // — Playful & alerts —
+  { id: 'bubbly',    label: 'בועתי',      emoji: '🥤' },
+  { id: 'alarm',     label: 'אזעקה',      emoji: '⏰' },
+  { id: 'siren',     label: 'סירנה',      emoji: '🚨' },
+  { id: 'knock',     label: 'דפיקה',      emoji: '🚪' },
+  // — Off —
+  { id: 'none',      label: 'ללא',        emoji: '🔕' },
 ];
 
 const SCENARIO_DEFS = [
@@ -11727,34 +11755,59 @@ const SCENARIO_DEFS = [
     svgPath: '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>' },
 ];
 
+// Each recipe is a list of notes: [freq, atTime, dur, vol, wave?, freqEnd?].
+// freqEnd (optional) glides the pitch for sweeps. All times in seconds.
+const _SOUND_RECIPES = {
+  // — Bells & chimes —
+  chime:     [[880,0,0.22,0.10],[1175,0.14,0.28,0.09]],
+  'bell-soft':[[660,0,0.34,0.09,'sine'],[990,0.05,0.40,0.06,'sine']],
+  crystal:   [[1568,0,0.18,0.08],[2093,0.10,0.30,0.06],[2637,0.20,0.34,0.04]],
+  temple:    [[196,0,0.9,0.13,'sine'],[294,0.02,0.8,0.05,'sine']],
+  musicbox:  [[1047,0,0.16,0.08],[1319,0.13,0.16,0.08],[1568,0.26,0.30,0.07]],
+  // — Digital & light —
+  ping:      [[1047,0,0.18,0.13]],
+  blip:      [[1320,0,0.07,0.12,'square'],[1760,0.08,0.10,0.10,'square']],
+  pop:       [[520,0,0.06,0.13,'sine',880]],
+  tick:      [[2000,0,0.04,0.10,'square']],
+  coin:      [[988,0,0.08,0.11,'square'],[1319,0.08,0.20,0.11,'square']],
+  // — Melodic —
+  waves:     [[523,0,0.20,0.10],[659,0.14,0.20,0.10],[784,0.28,0.26,0.10]],
+  joy:       [[523,0,0.13,0.10],[659,0.10,0.13,0.10],[784,0.20,0.13,0.10],[1047,0.30,0.22,0.10]],
+  sunrise:   [[392,0,0.16,0.09],[523,0.14,0.16,0.09],[659,0.28,0.16,0.09],[784,0.42,0.30,0.09]],
+  fanfare:   [[523,0,0.12,0.11,'triangle'],[523,0.12,0.10,0.10,'triangle'],[784,0.24,0.34,0.11,'triangle']],
+  twinkle:   [[2093,0,0.10,0.06],[1568,0.10,0.10,0.06],[2637,0.22,0.22,0.05]],
+  arpeggio:  [[523,0,0.11,0.09],[659,0.09,0.11,0.09],[784,0.18,0.11,0.09],[1047,0.27,0.11,0.09],[1319,0.36,0.24,0.09]],
+  // — Calm & nature —
+  soft:      [[330,0,0.30,0.07,'triangle'],[440,0.18,0.34,0.06,'triangle']],
+  zen:       [[294,0,1.0,0.10,'sine'],[440,0.04,0.9,0.04,'sine']],
+  droplet:   [[1320,0,0.10,0.10,'sine',660]],
+  harp:      [[440,0,0.14,0.08],[554,0.10,0.14,0.08],[659,0.20,0.14,0.08],[880,0.30,0.30,0.07]],
+  // — Playful & alerts —
+  bubbly:    [[400,0,0.07,0.10,'sine',700],[500,0.10,0.07,0.10,'sine',800],[600,0.20,0.10,0.10,'sine',950]],
+  alarm:     [[880,0,0.12,0.12,'square'],[660,0.14,0.12,0.12,'square'],[880,0.28,0.12,0.12,'square'],[660,0.42,0.16,0.12,'square']],
+  siren:     [[600,0,0.4,0.10,'sawtooth',1000],[1000,0.4,0.4,0.10,'sawtooth',600]],
+  knock:     [[180,0,0.06,0.13,'sine'],[180,0.12,0.07,0.12,'sine']],
+};
+
 function _playNotifSound(soundId) {
   try {
-    if (soundId === 'none') return;
+    if (soundId === 'none' || !soundId) return;
     const ctx = _getAudio();
-    const tone = (freq, atTime, dur, vol, waveType) => {
+    const recipe = _SOUND_RECIPES[soundId] || _SOUND_RECIPES.chime;
+    recipe.forEach(n => {
+      const freq = n[0], at = n[1], dur = n[2], vol = n[3], wave = n[4], freqEnd = n[5];
       const osc = ctx.createOscillator();
       const g   = ctx.createGain();
-      osc.type = waveType || 'sine';
-      osc.frequency.value = freq;
-      const t = ctx.currentTime + atTime;
+      osc.type = wave || 'sine';
+      const t = ctx.currentTime + at;
+      osc.frequency.setValueAtTime(freq, t);
+      if (freqEnd) osc.frequency.linearRampToValueAtTime(freqEnd, t + dur);
       g.gain.setValueAtTime(0, t);
       g.gain.linearRampToValueAtTime(vol, t + 0.018);
       g.gain.exponentialRampToValueAtTime(0.0008, t + dur);
       osc.connect(g); g.connect(ctx.destination);
       osc.start(t); osc.stop(t + dur + 0.05);
-    };
-    switch (soundId) {
-      case 'chime':
-        tone(880,  0.00, 0.22, 0.10); tone(1175, 0.14, 0.28, 0.09); break;
-      case 'ping':
-        tone(1047, 0.00, 0.18, 0.13); break;
-      case 'waves':
-        tone(523, 0.00, 0.20, 0.10); tone(659, 0.14, 0.20, 0.10); tone(784, 0.28, 0.26, 0.10); break;
-      case 'joy':
-        tone(523, 0.00, 0.13, 0.10); tone(659, 0.10, 0.13, 0.10); tone(784, 0.20, 0.13, 0.10); tone(1047, 0.30, 0.22, 0.10); break;
-      case 'soft':
-        tone(330, 0.00, 0.30, 0.07, 'triangle'); tone(440, 0.18, 0.34, 0.06, 'triangle'); break;
-    }
+    });
   } catch (_) {}
 }
 
