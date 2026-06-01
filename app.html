@@ -6232,7 +6232,29 @@ function dateLabelFor(dateStr) {
 
 let activeDate = todayDate();
 
+// Safety net against duplicate tasks: collapse any entries that share the same
+// id, keeping the newest (and preferring a completed copy on a tie). A sync
+// race could occasionally push a second copy of a task; this self-heals it on
+// every persist so duplicates can never accumulate ("more and more copies").
+function _dedupeTasksById() {
+  if (!Array.isArray(AppState.tasks)) return;
+  const seen = new Map();
+  for (const t of AppState.tasks) {
+    const k = String(t && t.id);
+    const prev = seen.get(k);
+    if (!prev) { seen.set(k, t); continue; }
+    const pMs = (typeof _toMs === 'function' ? (_toMs(prev.updatedAt) || _toMs(prev.createdAt)) : 0) || 0;
+    const tMs = (typeof _toMs === 'function' ? (_toMs(t.updatedAt)    || _toMs(t.createdAt))    : 0) || 0;
+    if (tMs > pMs || (tMs === pMs && t.completed && !prev.completed)) seen.set(k, t);
+  }
+  if (seen.size !== AppState.tasks.length) {
+    console.warn('[dedupe] collapsed', AppState.tasks.length - seen.size, 'duplicate task(s)');
+    AppState.tasks = Array.from(seen.values());
+  }
+}
+
 function saveState() {
+  _dedupeTasksById();
   localStorage.setItem(STORAGE_KEY, JSON.stringify({
     tasks: AppState.tasks,
     recurringCompletions: AppState.recurringCompletions,
@@ -6257,6 +6279,8 @@ function loadState() {
         delete t.recurrence.dayOfWeek;
       }
     });
+    // Clean any duplicate tasks already persisted on this device (self-heal).
+    try { _dedupeTasksById(); } catch (_) {}
   } catch(e) {}
 }
 
@@ -12756,7 +12780,9 @@ async function _daLoadTasksFromCloud() {
       const key   = String(ct.id);
       const local = localById[key];
       if (!local) {
-        // Rule 1: cloud-only → add
+        // Rule 1: cloud-only → add. Guard against a stale-map race re-adding an
+        // id that already exists in AppState (would create a duplicate copy).
+        if (AppState.tasks.some(t => String(t.id) === key)) continue;
         AppState.tasks.push(ct);
         changed = true;
       } else {
@@ -12809,10 +12835,13 @@ function _daStartListener() {
   const familyId = DataAdapter.familyId;
   console.log('[RT] listener start family=' + familyId);
   const ref = _db.collection('families').doc(familyId).collection('tasks');
+  let firstSnap = true;  // skip notifications for the initial bulk load
   _rtUnsubscribe = ref.onSnapshot(
     snap => {
       const fromCache = snap.metadata.fromCache;
       console.log('[RT] snapshot docs=' + snap.size + ' fromCache=' + fromCache);
+      const isInitial = firstSnap;
+      firstSnap = false;
 
       const localById = {};
       for (const t of AppState.tasks) localById[String(t.id)] = t;
@@ -12851,9 +12880,35 @@ function _daStartListener() {
           updatedAt:              _toMs(d.updatedAt) || _toMs(d.createdAt) || 0,
         };
 
+        // Shared-task alert: a NEW task added by another family member that is
+        // visible to me → notify (via the bell + a toast if the app is open).
+        // Skipped on the initial bulk load so existing tasks don't all alert.
+        if (!isInitial && change.type === 'added' && !ct.deleted) {
+          const mine = (DataAdapter.userId && ct.createdBy === DataAdapter.userId)
+                    || (DataAdapter.myMemberId && ct.createdByMemberId === DataAdapter.myMemberId);
+          const visibleToMe = (Array.isArray(ct.visibleTo) && ct.visibleTo.some(v =>
+                       v === DataAdapter.userId || v === DataAdapter.myMemberId))
+                    || (DataAdapter.myMemberId && ct.assignedToMemberId === DataAdapter.myMemberId);
+          if (!mine && visibleToMe) {
+            let who = '';
+            try {
+              const cid = ct.createdByMemberId || ct.createdBy;
+              const m = (_familyMembersCache || []).find(c => c.memberId === cid || c.userId === cid);
+              if (m) who = (typeof _realName === 'function' ? _realName(m.displayName || m.name) : (m.displayName || m.name)) || '';
+            } catch (_) {}
+            const label = (who || 'בן משפחה') + ' הוסיף משימה חדשה';
+            try { _addBellItem(String(ct.id), ct.title, label, 'shared'); } catch (_) {}
+            if (document.visibilityState === 'visible') {
+              try { showNotifToast('🔔 ' + label); } catch (_) {}
+            }
+          }
+        }
+
         const key   = String(ct.id);
         const local = localById[key];
         if (!local) {
+          // Guard against a stale-map race re-adding an id already in AppState.
+          if (AppState.tasks.some(t => String(t.id) === key)) return;
           AppState.tasks.push(ct);
           localById[key] = ct;
           mergedCount++;
