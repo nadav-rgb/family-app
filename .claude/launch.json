@@ -4,8 +4,9 @@
     {
       "name": "family-app",
       "runtimeExecutable": "npx",
-      "runtimeArgs": ["serve", "C:\\Users\\LENOVO\\OneDrive\\Desktop\\family-app", "-p", "3456", "--no-clipboard"],
-      "port": 3456
+      "runtimeArgs": ["serve", "C:\\Users\\LENOVO\\OneDrive\\Desktop\\family-app", "--no-clipboard"],
+      "autoPort": true,
+      "port": 3461
     }
   ]
 }

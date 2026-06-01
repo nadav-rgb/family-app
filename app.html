@@ -6322,6 +6322,15 @@ function loadState() {
         delete t.recurrence.dayOfWeek;
       }
     });
+    // Self-heal: purge phantom recurring-instance tasks accidentally persisted
+    // by the recurring-complete bug. Their id is the synthetic `rec_<id>_<date>`;
+    // a real task id is never shaped that way, so this only removes the garbage.
+    try {
+      const before = AppState.tasks.length;
+      AppState.tasks = AppState.tasks.filter(t => !/^rec_/.test(String(t && t.id)));
+      if (AppState.tasks.length !== before)
+        console.warn('[heal] purged', before - AppState.tasks.length, 'phantom rec_ task(s)');
+    } catch (_) {}
     // Clean any duplicate tasks already persisted on this device (self-heal).
     try { _dedupeTasksById(); } catch (_) {}
   } catch(e) {}
@@ -11230,9 +11239,17 @@ document.getElementById('tTasks').addEventListener('click', e => {
   }
   _clearBellItems(String(task.id));
   saveState();
-  _daWriteTask(task).catch(() => {});
-  _capCancelTask(task.id).catch(() => {});
-  _cancelScheduledPushesForTask(task.id).catch(() => {});
+  // ROOT FIX: a recurring "task" here is a VIRTUAL instance whose id is the
+  // synthetic `rec_<templateId>_<date>`. Persisting it to Firestore would write
+  // a phantom doc that the listener reads back as a brand-new recurring task —
+  // which then spawns its own virtual instances, so every "done" multiplied the
+  // task and resurrected old phantoms on reload. Recurring completion is tracked
+  // locally via AppState.recurringCompletions; only REAL tasks get written.
+  if (!isRecurring) {
+    _daWriteTask(task).catch(() => {});
+    _capCancelTask(task.id).catch(() => {});
+    _cancelScheduledPushesForTask(task.id).catch(() => {});
+  }
 
   // Shopping split spawned a follow-up task — a full repaint is simpler and
   // correct here (shows the done card + the new "נותר לקנות" task). Undo still
@@ -12999,6 +13016,13 @@ function _daStartListener() {
       snap.docChanges().forEach(change => {
         if (change.type === 'removed') { removedIgnored++; return; }
 
+        // Neutralize phantom docs from the recurring-complete bug: any doc whose
+        // id is the synthetic `rec_<templateId>_<date>` should never have been
+        // written. Ignore it so already-accumulated phantoms in testers' clouds
+        // stop resurrecting on every snapshot. (Root cause fixed at the write
+        // site; this is the defense-in-depth read guard for existing data.)
+        if (/^rec_/.test(change.doc.id) || /^rec_/.test(change.doc.data().taskId || '')) return;
+
         const d  = change.doc.data();
         const ct = {
           id:                     d.taskId || change.doc.id,
@@ -13054,6 +13078,10 @@ function _daStartListener() {
         const key   = String(ct.id);
         const local = localById[key];
         if (!local) {
+          // Don't resurrect a soft-deleted task that's no longer in local state.
+          // Pushing a deleted doc back was a second resurrection path ("old
+          // tasks reappear"). A new (non-deleted) cloud task still gets added.
+          if (ct.deleted) return;
           // Guard against a stale-map race re-adding an id already in AppState.
           if (AppState.tasks.some(t => String(t.id) === key)) return;
           AppState.tasks.push(ct);
