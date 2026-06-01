@@ -1884,6 +1884,12 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 #s-member-profile .mp-status .icons{display:flex;align-items:center;gap:6px}
 #s-member-profile .mp-scroll{flex:1 1 auto;overflow-y:auto;padding:8px 18px 36px;scrollbar-width:none;}
 #s-member-profile .mp-scroll::-webkit-scrollbar{display:none}
+#s-member-profile #mpOwnerActions{margin-top:20px;}
+#s-member-profile .mp-remove-btn{width:100%;height:48px;border:1.5px solid rgba(220,53,69,0.4);border-radius:15px;background:rgba(220,53,69,0.05);color:#dc3545;font-family:'Rubik',sans-serif;font-size:14px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;transition:background .18s ease,transform .12s ease;}
+#s-member-profile .mp-remove-btn:hover{background:rgba(220,53,69,0.1);}
+#s-member-profile .mp-remove-btn:active{transform:scale(0.98);}
+#s-member-profile .mp-remove-btn svg{width:16px;height:16px;}
+#s-member-profile .mp-owner-hint{margin-top:8px;font-size:10px;font-weight:500;color:var(--mp-muted,#9E8878);text-align:center;}
 #s-member-profile .mp-header{display:flex;align-items:center;justify-content:space-between;margin-top:6px;}
 #s-member-profile .mp-icon-btn{width:42px;height:42px;border-radius:50%;background:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(110,84,163,0.10),inset 0 0 0 1px rgba(255,255,255,0.7);color:var(--mp-ink);}
 #s-member-profile .mp-icon-btn svg{width:18px;height:18px}
@@ -4244,6 +4250,9 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
       </div>
       <div class="mp-chips" id="mpChips"></div>
     </div>
+
+    <!-- Owner-only actions (e.g. remove member) — populated by _renderMemberProfile -->
+    <div id="mpOwnerActions"></div>
   </div>
 </div>
 
@@ -8892,7 +8901,7 @@ function renderConfirmationTasks() {
       : '<div class="time-row no-time">' + CLOCK_SVG + '<span>--:--</span></div>' +
         '<div class="date">ללא שעה</div>';
     return '<div class="task' + (isPast ? ' task-past' : '') + '" data-taskid="' + task.id + '">' +
-      '<button class="menu" aria-label="אפשרויות" onclick="_visBackScreen=\'s-confirmation\';goto(\'s-visibility\',\'txLeaveBloom\',\'txEnterFocus\')">' + MENU_SVG + '</button>' +
+      '<button class="menu" aria-label="אפשרויות" onclick="_visBackScreen=\'s-confirmation\';AppState._editingTask=(AppState.previewTasks||[]).find(function(t){return String(t.id)===\'' + task.id + '\';})||AppState._editingTask;if(typeof renderVisibility===\'function\')renderVisibility();goto(\'s-visibility\',\'txLeaveBloom\',\'txEnterFocus\')">' + MENU_SVG + '</button>' +
       '<button class="col-left" type="button" aria-label="ערוך שעה">' + timeHTML + '</button>' +
       '<div class="col-mid"><div class="t-title"><span contenteditable="plaintext-only" role="textbox" aria-label="כותרת משימה">' + esc(task.title) + '</span></div>' +
         (sanitizeSegments(mockSplit(task.subItems ? task.subItems.mainTitle || task.title : task.title)).length >= 2 ?
@@ -9948,7 +9957,12 @@ function openManualTimeModal(task, onDone) {
   // Past-time guard: only when the task's date is today. An unchanged existing
   // value stays allowed (so an already-saved past time can be displayed/kept).
   function _kpIsPastTime(h, m) {
-    const iso = task.date || (typeof todayDate === 'function' ? todayDate() : null);
+    // Use the date currently selected on the time-date strip (live DOM), not the
+    // task's saved date. task.date only updates on tdSave(), so picking "tomorrow"
+    // and immediately opening manual edit would still see the old (today) date and
+    // wrongly block past times. _tdSelectedIso() matches the chevron guard exactly.
+    const live = (typeof _tdSelectedIso === 'function') ? _tdSelectedIso() : null;
+    const iso = live || task.date || (typeof todayDate === 'function' ? todayDate() : null);
     const tod = (typeof todayDate === 'function') ? todayDate() : null;
     if (!iso || iso !== tod) return false;
     const now = new Date();
@@ -12906,6 +12920,12 @@ async function _daLoadTasksFromCloud() {
     const cloudTasks = [];
     snap.forEach(doc => {
       const d = doc.data();
+      // Skip (and clean) phantom recurring-instance docs from the old bug, same
+      // as the live listener — otherwise this fallback path would re-import them.
+      if (/^rec_/.test(doc.id) || /^rec_/.test(d.taskId || '')) {
+        try { doc.ref.delete().catch(() => {}); } catch (_) {}
+        return;
+      }
       cloudTasks.push({
         id:                     d.taskId || doc.id,
         title:                  d.title  || '',
@@ -13021,7 +13041,19 @@ function _daStartListener() {
         // written. Ignore it so already-accumulated phantoms in testers' clouds
         // stop resurrecting on every snapshot. (Root cause fixed at the write
         // site; this is the defense-in-depth read guard for existing data.)
-        if (/^rec_/.test(change.doc.id) || /^rec_/.test(change.doc.data().taskId || '')) return;
+        if (/^rec_/.test(change.doc.id) || /^rec_/.test(change.doc.data().taskId || '')) {
+          // Defense-in-depth → ACTIVE cleanup: don't just ignore the phantom,
+          // delete it from Firestore so it stops resurrecting for the whole
+          // family forever (even on devices that never had the buggy build).
+          // Idempotent + best-effort; a failed delete just falls back to ignore.
+          try {
+            _db.collection('families').doc(familyId).collection('tasks')
+               .doc(change.doc.id).delete()
+               .then(() => console.warn('[heal] deleted phantom rec_ doc from cloud:', change.doc.id))
+               .catch(() => {});
+          } catch (_) {}
+          return;
+        }
 
         const d  = change.doc.data();
         const ct = {
@@ -16101,7 +16133,11 @@ function _visUpdateTip() {
   var active = document.querySelectorAll('#visNotifyRow .vis-ava-frame.active');
   if (active.length === 1) {
     var id   = active[0].dataset.id;
-    var name = _visMemberNames[id] || id;
+    // Prefer the real name rendered on the chip (set by _visApplyRealMembers from
+    // the registered displayName); fall back to the seed map only for non-family.
+    var nameEl = active[0].querySelector('.vis-ava-name');
+    var chipName = nameEl ? (nameEl.textContent || '').trim() : '';
+    var name = chipName || _visMemberNames[id] || id;
     var span = document.getElementById('visNotifyTip');
     if (span) span.innerHTML = 'רק <u>' + name + '</u> יקבל התראה, כדי לא להפריע לאחרים.';
     wrap.style.display = '';
@@ -17051,6 +17087,97 @@ function _mpIsFamilyHead() {
   return myId === head;
 }
 
+// ── Family OWNER (admin) — the member who created the family (role:'owner',
+// written at createFamily). Distinct from _mpIsFamilyHead (legacy memberId head).
+// Generic gate so future capabilities can be delegated via _ownerCan('cap').
+function _amIOwner() {
+  if (!DataAdapter.isFamily()) return false;
+  const me = (_familyMembersCache || []).find(m => m.userId === DataAdapter.userId);
+  return !!(me && me.role === 'owner');
+}
+function _ownerCan(_cap) { return _amIOwner(); }
+
+// All tasks "owned" by a user — assigned to them OR created by them. Used when
+// removing a member: these are deleted permanently (per product decision).
+function _tasksOwnedBy(uid) {
+  if (!uid) return [];
+  const u = String(uid);
+  return (AppState.tasks || []).filter(t =>
+    String(t.createdBy) === u || String(t.createdByMemberId) === u ||
+    String(t.assignedToMemberId) === u || String(t.assignedToUserId) === u ||
+    String(t.assignedTo) === u
+  );
+}
+
+// Lightweight confirm modal (no generic helper existed). Calls onYes on confirm.
+function _ownerConfirm(title, body, confirmLabel, onYes) {
+  const phone = document.querySelector('.phone') || document.body;
+  const bg = document.createElement('div');
+  bg.className = 'ts-modal-bg ts-bg-in';
+  bg.innerHTML =
+    '<div class="ts-modal ts-modal-in" style="text-align:center;">' +
+      '<div style="font-size:17px;font-weight:900;color:#1A0F08;margin-bottom:8px;">' + title + '</div>' +
+      '<div style="font-size:13px;font-weight:500;color:#6b5a4d;line-height:1.5;margin-bottom:18px;">' + body + '</div>' +
+      '<button id="_ocYes" style="width:100%;height:48px;border:none;border-radius:14px;background:#dc3545;color:#fff;font-family:inherit;font-size:15px;font-weight:800;cursor:pointer;">' + confirmLabel + '</button>' +
+      '<button id="_ocNo" style="width:100%;height:44px;margin-top:8px;border:none;border-radius:14px;background:none;color:#6b5a4d;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;">ביטול</button>' +
+    '</div>';
+  phone.appendChild(bg);
+  function close() {
+    const modal = bg.querySelector('.ts-modal');
+    bg.classList.remove('ts-bg-in'); bg.classList.add('ts-bg-out');
+    if (modal) { modal.classList.remove('ts-modal-in'); modal.classList.add('ts-modal-out'); }
+    bg.addEventListener('animationend', () => bg.remove(), { once: true });
+    setTimeout(() => { if (bg.parentNode) bg.remove(); }, 400);
+  }
+  bg.querySelector('#_ocYes').onclick = () => { close(); try { onYes(); } catch (e) { console.warn(e); } };
+  bg.querySelector('#_ocNo').onclick  = close;
+  bg.addEventListener('click', e => { if (e.target === bg) close(); });
+}
+
+// Remove a member from the family (owner only). Deletes the member doc AND all
+// their tasks permanently from Firestore + local state.
+async function removeMember(userId) {
+  if (!_amIOwner()) { if (typeof showNotifToast === 'function') showNotifToast('רק מנהל המשפחה יכול להסיר חברים'); return; }
+  if (String(userId) === String(DataAdapter.userId)) { if (typeof showNotifToast === 'function') showNotifToast('אי אפשר להסיר את עצמך'); return; }
+  const member = (_familyMembersCache || []).find(m => m.userId === userId || m.memberId === userId);
+  if (member && member.role === 'owner') { if (typeof showNotifToast === 'function') showNotifToast('אי אפשר להסיר מנהל משפחה'); return; }
+  const name  = (member && _realName(member.displayName || member.name)) || 'חבר זה';
+  const tasks = _tasksOwnedBy(userId);
+  const body  = 'כל המשימות שלו (' + tasks.length + ') יימחקו לצמיתות. פעולה בלתי הפיכה.';
+  _ownerConfirm('להסיר את ' + name + '?', body, 'הסר לצמיתות', async () => {
+    // 1) Delete the member's tasks permanently from Firestore.
+    if (_db && DataAdapter.isFamily()) {
+      for (const tk of tasks) {
+        try {
+          await _db.collection('families').doc(DataAdapter.familyId)
+                   .collection('tasks').doc(String(tk.id)).delete();
+        } catch (_) {}
+      }
+    }
+    // 2) Drop those tasks from local state.
+    const delIds = new Set(tasks.map(t => String(t.id)));
+    AppState.tasks = (AppState.tasks || []).filter(t => !delIds.has(String(t.id)));
+    // 3) Delete the member doc (doc id is the userId, per createFamily/join).
+    if (_db && DataAdapter.isFamily()) {
+      try {
+        await _db.collection('families').doc(DataAdapter.familyId)
+                 .collection('members').doc(String((member && member.userId) || userId)).delete();
+      } catch (e) { console.warn('[removeMember] member delete failed', e); }
+    }
+    // 4) Purge from local cache + persist.
+    _familyMembersCache = (_familyMembersCache || []).filter(m => m.userId !== userId && m.memberId !== userId);
+    try { localStorage.setItem(_MEMBER_CACHE_LS_KEY, JSON.stringify(_familyMembersCache)); } catch (_) {}
+    try { saveState(); } catch (_) {}
+    // 5) Re-render all member surfaces + tasks.
+    try { if (typeof _renderTodayMembers === 'function') _renderTodayMembers(); } catch (_) {}
+    try { if (typeof _renderSettingsMembers === 'function') _renderSettingsMembers(); } catch (_) {}
+    try { if (typeof _renderFamilyMembersScreen === 'function') _renderFamilyMembersScreen(); } catch (_) {}
+    try { if (typeof renderToday === 'function') renderToday(); } catch (_) {}
+    if (typeof showNotifToast === 'function') showNotifToast(name + ' הוסר מהמשפחה');
+    try { goto(_mpFromScreen || 's-family-members', 'txLeaveFade', 'txEnterFade'); } catch (_) {}
+  });
+}
+
 // ── Sync color-dots on the family members screen ──────────────────
 function syncFamilyMemberColors() {
   document.querySelectorAll('[data-color-for]').forEach(dot => {
@@ -17735,6 +17862,26 @@ function _renderMemberProfile() {
   } else {
     const vWrap = document.getElementById('mpVariants');
     if (vWrap) vWrap.style.display = 'none';
+  }
+
+  // Owner-only actions — "remove member". Shown only when the current device is
+  // the family owner, the profile is someone else, and the target isn't an owner.
+  const ownerBox = document.getElementById('mpOwnerActions');
+  if (ownerBox) {
+    ownerBox.innerHTML = '';
+    const live = (_familyMembersCache || []).find(c => c.userId === memberId || c.memberId === memberId);
+    const targetIsOwner = !!(live && live.role === 'owner');
+    if (DataAdapter.isFamily() && _amIOwner() && !isSelf && !targetIsOwner) {
+      const uid = (live && live.userId) || memberId;
+      ownerBox.innerHTML =
+        '<button class="mp-remove-btn" type="button" id="mpRemoveBtn">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M10 11v6M14 11v6"/></svg>' +
+          'הסר מהמשפחה' +
+        '</button>' +
+        '<div class="mp-owner-hint">המשתמש וכל המשימות שלו יימחקו לצמיתות</div>';
+      const btn = document.getElementById('mpRemoveBtn');
+      if (btn) btn.onclick = () => removeMember(uid);
+    }
   }
 
   // Info row: birthday always + anniversary for parents only
