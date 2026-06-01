@@ -913,7 +913,7 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 .user-sw-btn:active{transform:scale(.88);}
 .usw-bg{position:fixed;inset:0;z-index:950;background:rgba(28,17,10,.32);opacity:0;pointer-events:none;transition:opacity .22s;}
 .usw-bg.open{opacity:1;pointer-events:auto;}
-.usw-drawer{position:fixed;bottom:0;left:0;right:0;z-index:951;background:#fff9f5;border-radius:24px 24px 0 0;padding:10px 20px 36px;box-shadow:0 -6px 32px rgba(100,60,20,.14);transform:translateY(100%);transition:transform .3s cubic-bezier(.34,1.1,.64,1);}
+.usw-drawer{position:fixed;bottom:0;left:0;right:0;z-index:951;background:#fff9f5;border-radius:24px 24px 0 0;padding:10px 20px max(36px, calc(env(safe-area-inset-bottom,0px) + 16px));box-shadow:0 -6px 32px rgba(100,60,20,.14);transform:translateY(100%);transition:transform .3s cubic-bezier(.34,1.1,.64,1);}
 .usw-bg.open .usw-drawer{transform:translateY(0);}
 .usw-handle{width:36px;height:4px;border-radius:2px;background:#e0d4c8;margin:0 auto 14px;}
 .usw-title{font-size:13px;font-weight:800;color:#9e8878;text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px;}
