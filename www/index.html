@@ -7905,6 +7905,22 @@ const _CAT_EMOJI = {
   'אחר':                '🛒',
 };
 
+// Stable canonical category order for rendering a shopping list. Firestore stores
+// `categories` as a map and returns its keys in its OWN order, not our insertion
+// order — so after a write→sync echo the raw Object.keys() order changes and the
+// categories visibly jump on every item tap. Rendering through this fixed order
+// (the _CAT_EMOJI sequence; unknown categories appended alphabetically) keeps the
+// list identical before/after a sync and across every family device.
+const _CAT_ORDER = Object.keys(_CAT_EMOJI);
+function _orderedCatEntries(categories) {
+  if (!categories || typeof categories !== 'object') return [];
+  return Object.entries(categories).sort((a, b) => {
+    let ia = _CAT_ORDER.indexOf(a[0]); if (ia < 0) ia = _CAT_ORDER.length;
+    let ib = _CAT_ORDER.indexOf(b[0]); if (ib < 0) ib = _CAT_ORDER.length;
+    return ia !== ib ? ia - ib : a[0].localeCompare(b[0], 'he');
+  });
+}
+
 // Build the structured tooltip content for an agenda-style task —
 // a clean bulleted list of sub-items, with a header showing the main
 // title and an optional gentle pill that hints at the count.
@@ -8022,7 +8038,7 @@ function _renderShoppingTipContent(tip, shoppingList, task) {
     if (!sl || !sl.categories) return;
     catsContainer.innerHTML = '';
     let idx = 0;
-    for (const [catName, items] of Object.entries(sl.categories)) {
+    for (const [catName, items] of _orderedCatEntries(sl.categories)) {
       if (!Array.isArray(items) || !items.length) continue;
       const card = document.createElement('div');
       card.className = 'tip-cat-card';
