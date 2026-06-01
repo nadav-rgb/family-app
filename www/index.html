@@ -6253,13 +6253,22 @@ function _dedupeTasksById() {
   }
 }
 
+// Transient per-task runtime flags that must never be persisted. _categorizingPromise
+// is a live Promise that JSON-serializes to a useless {} and then breaks .then() on
+// the next load (froze the app on the splash screen); _categorizing / _shopError are
+// in-flight markers that should reset each session, not stick forever.
+const _TRANSIENT_TASK_KEYS = ['_categorizingPromise', '_categorizing', '_shopError'];
+function _stripTransient(key, value) {
+  return _TRANSIENT_TASK_KEYS.includes(key) ? undefined : value;
+}
+
 function saveState() {
   _dedupeTasksById();
   localStorage.setItem(STORAGE_KEY, JSON.stringify({
     tasks: AppState.tasks,
     recurringCompletions: AppState.recurringCompletions,
     recurringExclusions: AppState.recurringExclusions
-  }));
+  }, _stripTransient));
 }
 
 function loadState() {
@@ -7749,7 +7758,14 @@ function categorizeShoppingTitle(task) {
   // both call this for the same task — without sharing, the second call returns
   // immediately and its .then() runs before shoppingList is populated, so the
   // confirmation screen never learns categorization succeeded).
-  if (task._categorizingPromise) return task._categorizingPromise;
+  // Require a real thenable: a persisted task can come back from localStorage /
+  // cloud with _categorizingPromise serialized to a plain {} (promises stringify
+  // to an empty object). Returning that would make callers' .then() throw — an
+  // uncaught error at boot render that aborts the splash-hide and freezes the
+  // app on the launch screen. Treat a non-thenable as "not categorizing yet".
+  if (task._categorizingPromise && typeof task._categorizingPromise.then === 'function') {
+    return task._categorizingPromise;
+  }
   task._categorizing = true;
   task._categorizingPromise = (async () => {
     try {
@@ -15023,15 +15039,25 @@ try { const _sv = document.getElementById('s-voice'); if (_sv) _sv.style.display
 // with a hard safety timeout so the splash can never get stuck.
 (function _hideNativeSplashWhenReady() {
   let _done = false;
-  const hide = () => {
-    if (_done) return; _done = true;
+  // Only mark _done AFTER the plugin actually hid the splash. On a slow cold
+  // boot the Capacitor bridge can expose SplashScreen later than the first RAF;
+  // a one-shot guard that flips _done before the SS check would burn the guard
+  // prematurely and leave the splash stuck forever (launchAutoHide:false). So
+  // we retry until the bridge is ready, with a hard ceiling so it can't loop.
+  const tryHide = () => {
+    if (_done) return;
     try {
       const SS = window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.SplashScreen;
-      if (SS && SS.hide) SS.hide();
+      if (SS && SS.hide) { SS.hide(); _done = true; }
     } catch (e) {}
   };
-  try { requestAnimationFrame(() => requestAnimationFrame(hide)); } catch (e) { hide(); }
-  setTimeout(hide, 2500); // safety: never let the splash stick
+  try { requestAnimationFrame(() => requestAnimationFrame(tryHide)); } catch (e) { tryHide(); }
+  let _tries = 0;
+  const _iv = setInterval(() => {
+    if (_done || _tries++ > 40) { clearInterval(_iv); return; } // ~6s ceiling
+    tryHide();
+  }, 150);
+  setTimeout(tryHide, 2500); // extra safety: never let the splash stick
 })();
 
 // ─── Add-to-day sheet ─────────────────────────────────────────────
