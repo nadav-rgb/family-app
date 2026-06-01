@@ -853,6 +853,30 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 #s-week .wk-row-title{flex:1 1 auto;font-size:13.5px;font-weight:600;color:#4a3322;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 #s-week .wk-who{flex:0 0 auto;font-size:11px;font-weight:700;color:#a8917f;}
 #s-week .wk-empty{padding:13px;font-size:12.5px;font-weight:600;color:#bfa890;text-align:center;}
+#s-week .wk-htext{flex:1 1 auto;}
+/* Week view — segmented mode toggle */
+#s-week .wk-toggle{display:flex;gap:4px;background:rgba(168,145,127,.12);border-radius:14px;padding:4px;margin:0 2px 16px;}
+#s-week .wk-toggle button{flex:1 1 0;border:none;background:none;cursor:pointer;font-family:inherit;font-size:13px;font-weight:800;color:#a8917f;padding:9px 6px;border-radius:10px;display:flex;align-items:center;justify-content:center;gap:6px;transition:background .18s,color .18s,box-shadow .18s,transform .12s;}
+#s-week .wk-toggle button svg{width:16px;height:16px;flex:0 0 auto;}
+#s-week .wk-toggle button.active{background:#fff;color:var(--orange-deep,#d35400);box-shadow:0 2px 8px rgba(110,84,60,.12);}
+#s-week .wk-toggle button:active{transform:scale(.96);}
+/* Columns mode — Google-Calendar-style day columns, no grid, no hour axis */
+#s-week .wk-cols{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;padding:2px 2px 8px;scrollbar-width:none;-webkit-overflow-scrolling:touch;}
+#s-week .wk-cols::-webkit-scrollbar{display:none;}
+#s-week .wk-col{flex:0 0 calc((100% - 12px) / 2.2);scroll-snap-align:start;display:flex;flex-direction:column;}
+#s-week .wk-col-head{padding:0 3px 9px;cursor:pointer;}
+#s-week .wk-col-dname{font-size:14.5px;font-weight:800;color:#5a3e2b;line-height:1.1;}
+#s-week .wk-col-date{font-size:11.5px;font-weight:700;color:#a8917f;margin-top:1px;font-variant-numeric:tabular-nums;}
+#s-week .wk-col.is-today .wk-col-dname{color:var(--orange-deep,#d35400);}
+#s-week .wk-col.is-today .wk-col-date{color:var(--orange,#ff8c42);}
+#s-week .wk-col-body{background:#fff;border-radius:16px;box-shadow:0 1px 3px rgba(80,40,10,.05),inset 0 0 0 1px rgba(224,180,140,.12);overflow:hidden;flex:1 1 auto;min-height:60px;}
+#s-week .wk-col.is-today .wk-col-body{box-shadow:0 4px 14px rgba(255,140,66,.16),inset 0 0 0 1.5px rgba(255,140,66,.40);}
+/* Task chip inside a column: stacked (time on top, title wraps below) */
+#s-week .wk-col .wk-row{flex-direction:column;align-items:stretch;gap:4px;padding:9px 10px;}
+#s-week .wk-col .wk-rowtop{display:flex;align-items:center;gap:7px;}
+#s-week .wk-col .wk-time{min-width:0;}
+#s-week .wk-col .wk-row-title{white-space:normal;font-size:12.5px;line-height:1.25;}
+#s-week .wk-col .wk-who{color:#bba48f;}
 .title-tip.structured .tip-close{position:absolute;top:9px;left:9px;width:28px;height:28px;border-radius:14px;border:none;background:rgba(28,17,10,.06);color:#5a3e2b;font-size:20px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:700;transition:background .15s,transform .12s;padding:0 0 2px;font-family:'Rubik',sans-serif;z-index:2;}
 .title-tip.structured .tip-close:hover{background:rgba(28,17,10,.11);}
 .title-tip.structured .tip-close:active{transform:scale(.9);background:rgba(28,17,10,.16);}
@@ -3679,6 +3703,16 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
         <div class="wk-title">השבוע</div>
         <div class="wk-sub">7 הימים הקרובים</div>
       </div>
+    </div>
+    <div class="wk-toggle">
+      <button id="wkModeCols" type="button" aria-label="תצוגת עמודות">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="5" height="16" rx="1.4"/><rect x="10" y="4" width="5" height="16" rx="1.4"/><rect x="17" y="4" width="4" height="16" rx="1.4"/></svg>
+        עמודות
+      </button>
+      <button id="wkModeList" type="button" aria-label="תצוגת רשימה">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
+        רשימה
+      </button>
     </div>
     <div id="wkList" class="wk-list"></div>
   </div>
@@ -10200,15 +10234,106 @@ function _ymdPlus(days) {
   return `${y}-${m}-${da}`;
 }
 
+// Week view supports two layouts the user toggles between: 'cols' (Google-
+// Calendar-style horizontal day columns) and 'list' (vertical day-by-day).
+let _weekViewMode = (function () {
+  try { return localStorage.getItem('family-app-week-mode') || 'cols'; }
+  catch (_) { return 'cols'; }
+})();
+
+function _setWeekMode(m) {
+  _weekViewMode = (m === 'list') ? 'list' : 'cols';
+  try { localStorage.setItem('family-app-week-mode', _weekViewMode); } catch (_) {}
+  renderWeek();
+}
+
+// Order a day's tasks: timed tasks first by their set time (early→late), then
+// untimed tasks in the order they were created (createdAt; stable fallback).
+function _weekSortTasks(tasks) {
+  return (tasks || []).slice().sort((a, b) => {
+    const at = a.mins != null, bt = b.mins != null;
+    if (at && bt) return a.mins - b.mins;
+    if (at !== bt) return at ? -1 : 1;
+    return (a.createdAt || 0) - (b.createdAt || 0);
+  });
+}
+
+function _wkOpenDay(ds) {
+  activeDate = ds; renderToday(); goto('s-today', 'txLeaveFade', 'txEnterFade');
+}
+
+function _wkTaskRow(t, ds, mode) {
+  const row = document.createElement('div');
+  row.className = 'wk-row' + (t.completed ? ' done' : '');
+  const titleText = (t.subItems && t.subItems.mainTitle) || t.title || '';
+  let who = '';
+  try { who = (typeof _taskDisplayName === 'function') ? _taskDisplayName(t) : ''; } catch (_) {}
+  const dot   = document.createElement('span'); dot.className  = 'wk-dot';
+  const time  = document.createElement('span'); time.className = 'wk-time';
+  const title = document.createElement('span'); title.className = 'wk-row-title'; title.textContent = titleText;
+  if (mode === 'cols') {
+    time.textContent = (t.mins != null ? m2t(t.mins) : 'ללא שעה');
+    const top = document.createElement('div'); top.className = 'wk-rowtop';
+    top.appendChild(dot); top.appendChild(time);
+    row.appendChild(top); row.appendChild(title);
+  } else {
+    time.textContent = (t.mins != null ? m2t(t.mins) : '—');
+    row.appendChild(dot); row.appendChild(time); row.appendChild(title);
+  }
+  if (who) { const w = document.createElement('span'); w.className = 'wk-who'; w.textContent = who; row.appendChild(w); }
+  row.addEventListener('click', () => _wkOpenDay(ds));
+  return row;
+}
+
 function renderWeek() {
   const list = document.getElementById('wkList');
   if (!list) return;
+  const bCols = document.getElementById('wkModeCols');
+  const bList = document.getElementById('wkModeList');
+  if (bCols) bCols.classList.toggle('active', _weekViewMode === 'cols');
+  if (bList) bList.classList.toggle('active', _weekViewMode === 'list');
+  list.className = 'wk-list wk-mode-' + _weekViewMode;
   list.innerHTML = '';
   const today = todayDate();
+
+  if (_weekViewMode === 'cols') {
+    const cols = document.createElement('div');
+    cols.className = 'wk-cols';
+    for (let i = 0; i < 7; i++) {
+      const ds    = _ymdPlus(i);
+      const tasks = _weekSortTasks(activeTasks(ds));
+      const col   = document.createElement('div');
+      col.className = 'wk-col' + (ds === today ? ' is-today' : '');
+
+      const head = document.createElement('div');
+      head.className = 'wk-col-head';
+      const dn = document.createElement('div'); dn.className = 'wk-col-dname'; dn.textContent = dateLabelFor(ds);
+      const dd = document.createElement('div'); dd.className = 'wk-col-date';
+      const p  = ds.split('-'); dd.textContent = parseInt(p[2], 10) + '.' + parseInt(p[1], 10);
+      head.appendChild(dn); head.appendChild(dd);
+      head.addEventListener('click', () => _wkOpenDay(ds));
+      col.appendChild(head);
+
+      const body = document.createElement('div');
+      body.className = 'wk-col-body';
+      if (!tasks.length) {
+        const e = document.createElement('div'); e.className = 'wk-empty'; e.textContent = '—';
+        body.appendChild(e);
+      } else {
+        tasks.forEach(t => body.appendChild(_wkTaskRow(t, ds, 'cols')));
+      }
+      col.appendChild(body);
+      cols.appendChild(col);
+    }
+    list.appendChild(cols);
+    return;
+  }
+
+  // 'list' mode — vertical day-by-day
   for (let i = 0; i < 7; i++) {
-    const ds = _ymdPlus(i);
-    const tasks = activeTasks(ds);
-    const day = document.createElement('div');
+    const ds    = _ymdPlus(i);
+    const tasks = _weekSortTasks(activeTasks(ds));
+    const day   = document.createElement('div');
     day.className = 'wk-day';
 
     const head = document.createElement('div');
@@ -10223,7 +10348,7 @@ function renderWeek() {
     arrowEl.className = 'wk-day-arrow';
     arrowEl.textContent = '›';
     head.appendChild(nameEl); head.appendChild(countEl); head.appendChild(arrowEl);
-    head.addEventListener('click', () => { activeDate = ds; renderToday(); goto('s-today', 'txLeaveFade', 'txEnterFade'); });
+    head.addEventListener('click', () => _wkOpenDay(ds));
     day.appendChild(head);
 
     const card = document.createElement('div');
@@ -10234,19 +10359,7 @@ function renderWeek() {
       e.textContent = 'אין משימות';
       card.appendChild(e);
     } else {
-      tasks.forEach(t => {
-        const row = document.createElement('div');
-        row.className = 'wk-row' + (t.completed ? ' done' : '');
-        const dot = document.createElement('span'); dot.className = 'wk-dot';
-        const time = document.createElement('span'); time.className = 'wk-time'; time.textContent = (t.mins != null ? m2t(t.mins) : '—');
-        const title = document.createElement('span'); title.className = 'wk-row-title'; title.textContent = (t.subItems && t.subItems.mainTitle) || t.title || '';
-        row.appendChild(dot); row.appendChild(time); row.appendChild(title);
-        let who = '';
-        try { who = (typeof _taskDisplayName === 'function') ? _taskDisplayName(t) : ''; } catch (_) {}
-        if (who) { const w = document.createElement('span'); w.className = 'wk-who'; w.textContent = who; row.appendChild(w); }
-        row.addEventListener('click', () => { activeDate = ds; renderToday(); goto('s-today', 'txLeaveFade', 'txEnterFade'); });
-        card.appendChild(row);
-      });
+      tasks.forEach(t => card.appendChild(_wkTaskRow(t, ds, 'list')));
     }
     day.appendChild(card);
     list.appendChild(day);
@@ -10259,6 +10372,8 @@ function openWeekView() {
 }
 
 document.getElementById('wkBackBtn').addEventListener('click', () => goto('s-today', 'txLeaveFade', 'txEnterFade'));
+document.getElementById('wkModeCols').addEventListener('click', () => _setWeekMode('cols'));
+document.getElementById('wkModeList').addEventListener('click', () => _setWeekMode('list'));
 
 function renderToday() {
   const _animEntryThisRender = _todayAnimateEntry;
