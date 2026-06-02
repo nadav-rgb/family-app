@@ -14894,11 +14894,14 @@ async function _daJoinFamily(codeArg) {
     DataAdapter.setFamily(code, userId);
     console.log('[DA] joined family', code, 'userId', userId);
     _renderFamilySheet();
+    // Write the uid-keyed membership marker FIRST and AWAIT it, so the marker
+    // exists before any members/tasks read (list/listen) below. Required once
+    // Firestore rules gate reads on belongs(membership). Non-fatal if authUid
+    // isn't ready yet — backfill-on-open covers it. (Creator path is already
+    // marker-first: _daCreateFamily awaits the link before _finishFirstRun.)
+    try { await _fbLinkAuthToMember(DataAdapter.authUid); } catch (_) {}
     _loadFamilyMembersCache();
     _daStartListener();
-    // Step A: link this device's uid-keyed membership marker immediately on join
-    // (isFamily() is now true). Non-fatal if authUid isn't ready — backfill-on-open covers it.
-    try { _fbLinkAuthToMember(DataAdapter.authUid).catch(function(){}); } catch (_) {}
     return true;
   } catch (e) {
     AppLog.warn('FB', 'joinFamily failed', e.message || e);
