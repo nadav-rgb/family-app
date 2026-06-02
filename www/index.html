@@ -13296,7 +13296,7 @@ function _fbLoadAuth() {
 }
 
 async function _fbLinkAuthToMember(authUid) {
-  if (!_db || !DataAdapter.isFamily() || !DataAdapter.userId) return;
+  if (!authUid || !_db || !DataAdapter.isFamily() || !DataAdapter.userId) return;
   const ref = _db.collection('families').doc(DataAdapter.familyId)
                  .collection('members').doc(DataAdapter.userId);
   console.log('[Auth] linking', DataAdapter.userId, '→ authUid', authUid);
@@ -13307,6 +13307,19 @@ async function _fbLinkAuthToMember(authUid) {
   if (!hasLinkedAt) payload.authLinkedAt = ts;
   await ref.set(payload, { merge: true });
   console.log('[Auth] member updated —', hasLinkedAt ? 'lastSeenAt refreshed' : 'authUid linked (first time)');
+
+  // Step A (security migration, ADDITIVE — nothing reads this yet): write the
+  // uid-keyed membership marker that future Firestore rules will check. Rules can
+  // only exists()/get() by a path derived from request.auth.uid — they cannot
+  // query the authUid field on the member doc — so this parallel doc is required.
+  // Keyed by authUid; carries the legacy userId + role for the eventual rules.
+  try {
+    const role = (snap.exists && snap.data().role) || 'member';
+    await _db.collection('families').doc(DataAdapter.familyId)
+             .collection('memberUids').doc(authUid)
+             .set({ userId: DataAdapter.userId, role: role, linkedAt: ts }, { merge: true });
+    console.log('[Auth] memberUids marker written for', authUid);
+  } catch (e) { console.warn('[Auth] memberUids write failed (non-fatal)', e.message || e); }
 }
 
 (function _fbInit() {
@@ -14796,6 +14809,10 @@ async function _daCreateFamily() {
     await _db.collection('families').doc(familyId)
              .collection('members').doc(userId).set(_ownerDoc);
     console.log('[FB] family', familyId, 'written to Firestore');
+    // Step A: write the uid-keyed membership marker now (isFamily() is true after
+    // setFamily above). Backfill-on-open also covers it, but this links the
+    // creator immediately. Non-fatal if authUid isn't ready yet.
+    try { await _fbLinkAuthToMember(DataAdapter.authUid); } catch (_) {}
   } catch (e) {
     AppLog.warn('FB', 'createFamily Firestore write failed', e.message || e);
   }
@@ -14879,6 +14896,9 @@ async function _daJoinFamily(codeArg) {
     _renderFamilySheet();
     _loadFamilyMembersCache();
     _daStartListener();
+    // Step A: link this device's uid-keyed membership marker immediately on join
+    // (isFamily() is now true). Non-fatal if authUid isn't ready — backfill-on-open covers it.
+    try { _fbLinkAuthToMember(DataAdapter.authUid).catch(function(){}); } catch (_) {}
     return true;
   } catch (e) {
     AppLog.warn('FB', 'joinFamily failed', e.message || e);
