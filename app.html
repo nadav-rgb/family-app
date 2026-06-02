@@ -1707,7 +1707,9 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 #s-settings .av-ima{background:radial-gradient(120% 120% at 30% 25%,#ffffff 0%,#FFF4F0 55%,#FCE5DC 100%);}
 #s-settings .av-leali{background:radial-gradient(120% 120% at 30% 25%,#ffffff 0%,#FBF1FA 55%,#F2E1F2 100%);}
 #s-settings .av-uri{background:radial-gradient(120% 120% at 30% 25%,#ffffff 0%,#F1FAF3 55%,#DDF1E3 100%);}
-#s-settings .badge{position:absolute;top:-2px;right:-2px;width:20px;height:20px;border-radius:50%;background:linear-gradient(135deg,var(--orange-light),var(--orange));color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 5px rgba(229,98,26,0.4),0 0 0 2px #fff;opacity:0;transform:scale(0.7);transition:opacity .2s ease,transform .2s ease;}
+/* Avatar ✓ badge removed per request — the active member is still indicated
+   by the orange ring on .ava-circle below. */
+#s-settings .badge{display:none !important;}
 #s-settings .badge svg{width:11px;height:11px;}
 #s-settings .member.active .badge{opacity:1;transform:scale(1);}
 #s-settings .member.active .ava-circle{box-shadow:0 0 0 2px var(--orange),0 5px 11px rgba(229,98,26,0.20),inset 0 1px 2px rgba(255,255,255,0.9);}
@@ -9658,10 +9660,10 @@ function _buildCardEl(task) {
     <div class="card-swipe-bg"><svg class="swipe-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></div>
     <div class="card-swipe-track">
       <div class="card-inner">
-        <div class="card-accent" style="background:${p.color}"></div>
+        <div class="card-accent" style="background:${_taskCreatorColor(task) || p.color}"></div>
         <div class="card-time-col"><span class="card-time${task.mins==null?' empty':''}">${m2t(task.mins) || '__:__'}</span><span class="card-ampm">${ampm(task.mins)}</span><span class="card-ts ${task.timeSource}">${task.mins==null?'':tsLabel[task.timeSource]}</span></div>
         <div class="card-vline"></div>
-        <div class="card-body"><div class="card-title">${task.subItems?.mainTitle || task.title}</div><div class="card-chip"><span class="chip-dot" style="background:${p.color}"></span>${_taskDisplayName(task)}</div>${canSplit?'<button class="t-split-btn">פצל</button>':''}</div>
+        <div class="card-body"><div class="card-title">${task.subItems?.mainTitle || task.title}</div><div class="card-chip"><span class="chip-dot" style="background:${_taskCreatorColor(task) || p.color}"></span>${_taskDisplayName(task)}</div>${canSplit?'<button class="t-split-btn">פצל</button>':''}</div>
         <div class="card-av" style="background:${p.bg}">${taskAvImg(task)}</div>
         <div class="card-bell${_taskShowsActiveBell(task)?'':' off'}">${_taskShowsActiveBell(task)?'🔔':'🔕'}</div>
       </div>
@@ -10118,8 +10120,11 @@ document.getElementById('btnOk').addEventListener('click', function() {
   setTimeout(_doCommitPreview, 720);
 });
 
-// Phase 2 reconcile-chip choices
-document.getElementById('confAiUpdate').addEventListener('click', () => {
+// Phase 2 reconcile-chip choices (decision dialog). Guard against missing
+// markup so a conditional render can't throw at load — mirrors the chip helpers.
+const _confAiUpdateBtn = document.getElementById('confAiUpdate');
+const _confAiKeepBtn   = document.getElementById('confAiKeep');
+if (_confAiUpdateBtn) _confAiUpdateBtn.addEventListener('click', () => {
   const mode = _aiChipMode;
   if (AppState.previewAiResult) {
     AppState.previewTasks      = AppState.previewAiResult;
@@ -10131,7 +10136,7 @@ document.getElementById('confAiUpdate').addEventListener('click', () => {
   _hideAiChip();
   if (mode === 'pending') { _restoreOkBtn(); _doCommitPreview(); }
 });
-document.getElementById('confAiKeep').addEventListener('click', () => {
+if (_confAiKeepBtn) _confAiKeepBtn.addEventListener('click', () => {
   const mode = _aiChipMode;
   AppState.previewAiResult = null;
   _hideAiChip();
@@ -13180,6 +13185,10 @@ const DataAdapter = {
     this.mode     = 'local';
     localStorage.removeItem(_DA_MODE_KEY);
     localStorage.removeItem(_DA_FAMILY_KEY);
+    // Clear any stale device→member mapping. A leftover seed memberId (from the
+    // old device-setup screen or a cloud-recovery restore) would otherwise leak
+    // a wrong identity (e.g. "אמא") into the NEXT family on re-join.
+    localStorage.removeItem('family-app-my-member-id');
     // userId and displayName stay so same device keeps its identity on re-join
   },
 
@@ -15116,7 +15125,17 @@ async function _firstRunJoin() {
   try { DataAdapter.setDisplayName(joinName); } catch (e) {}
   const ok = await _daJoinFamily(code);
   if (ok === 'full') { _frGoto('full'); return; }
-  if (ok && DataAdapter.isFamily()) _finishFirstRun();
+  if (ok && DataAdapter.isFamily()) {
+    _finishFirstRun();
+    // Let the joiner complete their profile (avatar/color/birthday) right away,
+    // mirroring how the creator lands on the invite screen. Fully guarded: any
+    // failure leaves them on the home screen — the prior behaviour.
+    try {
+      if (typeof openMemberProfile === 'function' && DataAdapter.userId) {
+        openMemberProfile(DataAdapter.userId, 's-today');
+      }
+    } catch (e) {}
+  }
   else if (errEl && !errEl.textContent) errEl.textContent = 'לא נמצאה קבוצה עם הקוד הזה';
 }
 
@@ -17464,6 +17483,11 @@ function _renderFamilyMembersScreen() {
     if (typeof DataAdapter === 'undefined' || !DataAdapter.isFamily || !DataAdapter.isFamily()) return;
     const s = document.getElementById('settingsMembers'); if (s) s.innerHTML = '';
     const f = document.getElementById('famMembersCards'); if (f) f.innerHTML = '';
+    // Today avatar strip: the static Mom/Dad/Laali/Aharon placeholders carry
+    // onclick="openMemberProfile('member_mom',…)" — tapping one before
+    // _renderTodayMembers() repaints would flash English labels and save edits
+    // to a phantom seed doc. Clear it in family mode; the real renderer refills.
+    const t = document.querySelector('.t-avatars'); if (t) t.innerHTML = '';
   } catch (e) {}
 })();
 
