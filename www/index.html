@@ -55,9 +55,9 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
      The Today list (#s-today .t-scroll) is an independent overflow:auto
      container, so it keeps scrolling normally. */
   html,body{overflow:hidden;overscroll-behavior:none;}
-  body{padding:0;align-items:stretch;min-height:100vh;min-height:100dvh;
+  body{padding:0;align-items:stretch;min-height:100vh;min-height:100svh;min-height:100dvh;
        background:linear-gradient(175deg,#fffaf5 0%,#fff4e8 55%,#fdebd8 100%);}
-  .phone{width:100%;height:100vh;height:100dvh;border-radius:0;box-shadow:none;border:none;}
+  .phone{width:100%;height:100vh;height:100svh;height:100dvh;border-radius:0;box-shadow:none;border:none;}
 }
 /* Inner scrollers: stop at their own edges without a rubber-band bounce. */
 #s-today .t-scroll,#s-dp .dp-list{overscroll-behavior:contain;}
@@ -830,7 +830,7 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 .title-tip.structured .shop-item.checked .shop-item-name{text-decoration:line-through;opacity:.5;}
 /* Weekly view */
 #s-week{background:radial-gradient(circle at top right,rgba(255,244,232,0.9),transparent 35%),linear-gradient(180deg,#FBF8F5 0%,#F7F2ED 45%,#F4EEE8 100%);}
-#s-week .wk-scroll{height:100%;overflow-y:auto;padding:max(18px,env(safe-area-inset-top)) 16px calc(96px + env(safe-area-inset-bottom));scrollbar-width:none;}
+#s-week .wk-scroll{height:100%;overflow-y:auto;padding:18px 16px 96px;scrollbar-width:none;}
 #s-week .wk-scroll::-webkit-scrollbar{display:none;}
 #s-week .wk-header{display:flex;align-items:center;gap:12px;margin:6px 2px 16px;}
 #s-week .wk-back{width:42px;height:42px;border-radius:50%;background:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(110,84,60,.10);color:#5a3e2b;flex:0 0 auto;}
@@ -3706,8 +3706,8 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
       </button>
       <div class="wk-htext">
-        <div class="wk-title">השבוע</div>
-        <div class="wk-sub">7 הימים הקרובים</div>
+        <div class="wk-title">השבוע שלי</div>
+        <div class="wk-sub">ציר הזמן · עבר ועתיד</div>
       </div>
     </div>
     <div class="wk-toggle">
@@ -6142,7 +6142,7 @@ const I18N = {
     repeat_none:'None', repeat_daily:'Daily', repeat_weekly:'Weekly',
     user_switch:'Switch user',
     family_mom:'Member 2', family_dad:'Member 1', family_dudi:'Member 3', family_yonatan:'Member 4',
-    date_today:'Today', date_tomorrow:'Tomorrow',
+    date_today:'Today', date_tomorrow:'Tomorrow', date_yesterday:'Yesterday',
     months:['January','February','March','April','May','June','July','August','September','October','November','December'],
     months_short:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
     days:['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'],
@@ -6221,7 +6221,7 @@ const I18N = {
     repeat_none:'ללא', repeat_daily:'יומי', repeat_weekly:'שבועי',
     user_switch:'החלף משתמש',
     family_mom:'חבר 2', family_dad:'חבר 1', family_dudi:'חבר 3', family_yonatan:'חבר 4',
-    date_today:'היום', date_tomorrow:'מחר',
+    date_today:'היום', date_tomorrow:'מחר', date_yesterday:'אתמול',
     months:['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'],
     months_short:['ינו','פבר','מרץ','אפר','מאי','יוני','יולי','אוג','ספט','אוק','נוב','דצמ'],
     days:['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'],
@@ -6266,8 +6266,11 @@ function dateLabelFor(dateStr) {
   const td = todayDate();
   const d  = new Date(new Date().setDate(new Date().getDate() + 1));
   const tm = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  const yd = new Date(new Date().setDate(new Date().getDate() - 1));
+  const ys = `${yd.getFullYear()}-${String(yd.getMonth()+1).padStart(2,'0')}-${String(yd.getDate()).padStart(2,'0')}`;
   if (dateStr === td) return t('date_today');
   if (dateStr === tm) return t('date_tomorrow');
+  if (dateStr === ys) return t('date_yesterday');
   const dt = new Date(dateStr + 'T00:00:00');
   const lng = (I18N[AppState.lang] || I18N.en);
   return `${lng.days_short[dt.getDay()]} ${lng.months_short[dt.getMonth()]} ${dt.getDate()}`;
@@ -10249,7 +10252,9 @@ function updateOtherDayBanner() {
 // re-renders (data sync, undo, completion, date change) set this false first
 // so the list never re-animates / "jumps".
 let _todayAnimateEntry = true;
-// ── Weekly view — next 7 days grouped by day (read overview; tap to open) ──
+// ── Weekly view — fixed timeline window: 14 days past → today → 13 future ──
+// (28 days total, no infinite scroll). Both display modes share this range.
+const WK_PAST = 14, WK_FUTURE = 13;
 function _ymdPlus(days) {
   const d = new Date(todayDate() + 'T00:00:00');
   d.setDate(d.getDate() + days);
@@ -10322,11 +10327,13 @@ function renderWeek() {
   if (_weekViewMode === 'cols') {
     const cols = document.createElement('div');
     cols.className = 'wk-cols';
-    for (let i = 0; i < 7; i++) {
+    let todayCol = null;
+    for (let i = -WK_PAST; i <= WK_FUTURE; i++) {
       const ds    = _ymdPlus(i);
       const tasks = _weekSortTasks(activeTasks(ds));
       const col   = document.createElement('div');
       col.className = 'wk-col' + (ds === today ? ' is-today' : '');
+      if (ds === today) todayCol = col;
 
       const head = document.createElement('div');
       head.className = 'wk-col-head';
@@ -10349,15 +10356,24 @@ function renderWeek() {
       cols.appendChild(col);
     }
     list.appendChild(cols);
+    // Land on Today (not the oldest past day). scroll-snap resets scrollLeft
+    // on DOM injection, so position after layout. inline:'center' is RTL-safe.
+    if (todayCol) {
+      requestAnimationFrame(() => {
+        try { todayCol.scrollIntoView({ inline: 'center', block: 'nearest' }); } catch (_) {}
+      });
+    }
     return;
   }
 
-  // 'list' mode — vertical day-by-day
-  for (let i = 0; i < 7; i++) {
+  // 'list' mode — vertical day-by-day, same 28-day window as cols
+  let todayDay = null;
+  for (let i = -WK_PAST; i <= WK_FUTURE; i++) {
     const ds    = _ymdPlus(i);
     const tasks = _weekSortTasks(activeTasks(ds));
     const day   = document.createElement('div');
     day.className = 'wk-day';
+    if (ds === today) todayDay = day;
 
     const head = document.createElement('div');
     head.className = 'wk-day-head';
@@ -10386,6 +10402,12 @@ function renderWeek() {
     }
     day.appendChild(card);
     list.appendChild(day);
+  }
+  // Land on Today rather than the oldest past day at the top of the list.
+  if (todayDay) {
+    requestAnimationFrame(() => {
+      try { todayDay.scrollIntoView({ block: 'start', behavior: 'auto' }); } catch (_) {}
+    });
   }
 }
 
@@ -13592,13 +13614,48 @@ function _escAttr(s) {
   ));
 }
 
+// Max dimension + JPEG quality for the blob we actually upload. AI output is a
+// ~1MB webp at full res; downscaling to 768px JPEG q0.85 typically yields
+// 120–200KB — a 5–8× cut that makes cellular uploads reliable.
+const AVATAR_UPLOAD_MAX_DIM = 768;
+const AVATAR_UPLOAD_QUALITY = 0.85;
+
+// Best-effort downscale + recompress. Returns the smaller of {compressed,
+// original}; on ANY failure returns the original blob so upload never breaks.
+async function _compressAvatarBlob(blob) {
+  try {
+    const bmp   = await createImageBitmap(blob);
+    const maxSide = Math.max(bmp.width, bmp.height) || 1;
+    const scale = Math.min(1, AVATAR_UPLOAD_MAX_DIM / maxSide);
+    const w = Math.max(1, Math.round(bmp.width * scale));
+    const h = Math.max(1, Math.round(bmp.height * scale));
+    const canvas = document.createElement('canvas');
+    canvas.width = w; canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(bmp, 0, 0, w, h);
+    if (bmp.close) bmp.close();
+    const out = await new Promise(res => canvas.toBlob(res, 'image/jpeg', AVATAR_UPLOAD_QUALITY));
+    if (out && out.size > 0 && out.size < blob.size) {
+      console.log('[Avatar] compress ' + blob.size + 'B -> ' + out.size + 'B (' + w + 'x' + h + ' jpeg q' + AVATAR_UPLOAD_QUALITY + ')');
+      return out;
+    }
+    console.log('[Avatar] compress skipped (no size win: ' + blob.size + 'B -> ' + (out ? out.size : 'null') + 'B)');
+    return blob;
+  } catch (e) {
+    console.warn('[Avatar] compress failed, using original blob', e);
+    return blob;
+  }
+}
+
 // uploadAvatarBlob — uploads a blob to Storage, returns download URL.
 // Path: families/{familyId}/avatars/{memberId}-{timestamp}.jpg
 // Uses DataAdapter.isFamily() as gate (same as tasks/members write paths).
 //
-// Diagnostic mode: uses uploadTask.on('state_changed', …) so we get
-// progress events. Races against a 15s timeout so a stuck Promise becomes
-// a clear error instead of silently hanging forever.
+// Resilient mode: downscales the blob, then uploads with an IDLE timeout
+// (aborts only when no bytes move for 30s, not on a fixed wall-clock) plus
+// one automatic retry. A slow-but-progressing cellular upload now succeeds.
 async function _uploadAvatarBlob(blob, memberId) {
   const tStart = performance.now();
   if (!_storage) throw new Error('Storage not initialized');
@@ -13608,6 +13665,10 @@ async function _uploadAvatarBlob(blob, memberId) {
   }
   const familyId = DataAdapter.familyId;
   if (!memberId) throw new Error('No memberId — cannot upload');
+  // Downscale + recompress before upload. AI output is ~1MB webp; on cellular
+  // that's the difference between a 4s upload and a 60s one. _compressAvatarBlob
+  // is best-effort — on any failure it returns the original blob untouched.
+  blob = await _compressAvatarBlob(blob);
   const ts       = Date.now();
   // Random suffix so parallel uploads (e.g. saving all 4 AI options at once)
   // can't collide on the same Date.now() path and overwrite each other.
@@ -13621,56 +13682,88 @@ async function _uploadAvatarBlob(blob, memberId) {
     + ' bucket=' + bucket + ' app=' + appName
     + ' bytes=' + blob.size + ' contentType=' + meta.contentType);
 
-  const uploadTask = ref.put(blob, meta);
-  let lastSnap = null;
-  let stateEvents = 0;
+  // Idle-timeout, not absolute-timeout. A slow-but-progressing cellular upload
+  // is healthy — we only abort when NO bytes move for IDLE_MS. The timer is
+  // re-armed on every state_changed event. On timeout we actively cancel the
+  // task so it doesn't keep running zombie in the background.
+  const IDLE_MS    = 30000;
+  const MAX_TRIES  = 2;
 
-  const uploadPromise = new Promise((resolve, reject) => {
-    uploadTask.on(
-      'state_changed',
-      (snap) => {
-        lastSnap = snap;
-        stateEvents++;
-        const pct = snap.totalBytes ? Math.round((snap.bytesTransferred / snap.totalBytes) * 100) : 0;
-        console.log('[Avatar] upload progress state=' + snap.state
-          + ' ' + snap.bytesTransferred + '/' + snap.totalBytes + ' (' + pct + '%)');
-      },
-      (err) => {
-        console.error('[Avatar] upload error from state_changed', err);
-        reject(err);
-      },
-      async () => {
-        try {
-          const url = await uploadTask.snapshot.ref.getDownloadURL();
-          console.log('[Avatar] upload complete +' + Math.round(performance.now() - tStart) + 'ms url=' + url.slice(0, 80));
-          resolve(url);
-        } catch (e) {
-          console.error('[Avatar] getDownloadURL failed', e);
-          reject(e);
+  function uploadOnce(attempt) {
+    return new Promise((resolve, reject) => {
+      const uploadTask = ref.put(blob, meta);
+      let lastSnap = null;
+      let stateEvents = 0;
+      let settled = false;
+      let idleTimer = null;
+
+      const finish = (fn, arg) => { if (settled) return; settled = true; clearTimeout(idleTimer); fn(arg); };
+
+      const armIdle = () => {
+        clearTimeout(idleTimer);
+        idleTimer = setTimeout(() => {
+          if (settled) return;
+          try { uploadTask.cancel(); } catch (_) {}
+          const stateInfo = lastSnap
+            ? ('last state=' + lastSnap.state
+               + ' transferred=' + lastSnap.bytesTransferred + '/' + lastSnap.totalBytes
+               + ' events=' + stateEvents)
+            : ('no state_changed events fired at all (events=' + stateEvents + ')');
+          const msg = 'Storage upload IDLE-TIMEOUT (no progress ' + (IDLE_MS / 1000) + 's, attempt ' + attempt + ')\n'
+            + 'path: ' + path + '\n'
+            + 'bucket: ' + bucket + '\n'
+            + 'blob: ' + blob.size + 'B (' + meta.contentType + ')\n'
+            + stateInfo;
+          const e = new Error(msg); e._retryable = true;
+          finish(reject, e);
+        }, IDLE_MS);
+      };
+
+      armIdle();
+      uploadTask.on(
+        'state_changed',
+        (snap) => {
+          lastSnap = snap;
+          stateEvents++;
+          armIdle(); // bytes moved → reset the idle clock
+          const pct = snap.totalBytes ? Math.round((snap.bytesTransferred / snap.totalBytes) * 100) : 0;
+          console.log('[Avatar] upload progress state=' + snap.state
+            + ' ' + snap.bytesTransferred + '/' + snap.totalBytes + ' (' + pct + '%) attempt=' + attempt);
+        },
+        (err) => {
+          // Cancel triggered by our idle-timeout lands here too; settled guards it.
+          if (err && err.code === 'storage/retry-limit-exceeded') err._retryable = true;
+          if (err && err.code === 'storage/canceled') return; // our own cancel — already rejected
+          console.error('[Avatar] upload error from state_changed', err);
+          finish(reject, err);
+        },
+        async () => {
+          try {
+            const url = await uploadTask.snapshot.ref.getDownloadURL();
+            console.log('[Avatar] upload complete +' + Math.round(performance.now() - tStart) + 'ms url=' + url.slice(0, 80));
+            finish(resolve, url);
+          } catch (e) {
+            console.error('[Avatar] getDownloadURL failed', e);
+            finish(reject, e);
+          }
         }
-      }
-    );
-  });
+      );
+    });
+  }
 
-  const timeoutPromise = new Promise((_, reject) => {
-    setTimeout(() => {
-      const stateInfo = lastSnap
-        ? ('last state=' + lastSnap.state
-           + ' transferred=' + lastSnap.bytesTransferred + '/' + lastSnap.totalBytes
-           + ' events=' + stateEvents)
-        : ('no state_changed events fired at all (events=' + stateEvents + ')');
-      const msg = 'Storage upload TIMEOUT (15s)\n'
-        + 'path: ' + path + '\n'
-        + 'fullPath: ' + ref.fullPath + '\n'
-        + 'bucket: ' + bucket + '\n'
-        + 'app: ' + appName + '\n'
-        + 'blob: ' + blob.size + 'B (' + meta.contentType + ')\n'
-        + stateInfo;
-      reject(new Error(msg));
-    }, 15000);
-  });
-
-  return Promise.race([uploadPromise, timeoutPromise]);
+  let lastErr = null;
+  for (let attempt = 1; attempt <= MAX_TRIES; attempt++) {
+    try {
+      return await uploadOnce(attempt);
+    } catch (e) {
+      lastErr = e;
+      const retryable = e && (e._retryable || /timeout|network|retry/i.test(e.code || e.message || ''));
+      console.warn('[Avatar] upload attempt ' + attempt + '/' + MAX_TRIES + ' failed (retryable=' + !!retryable + ')', e);
+      if (attempt < MAX_TRIES && retryable) continue;
+      throw e;
+    }
+  }
+  throw lastErr;
 }
 
 // Save avatar to member doc in Firestore.
@@ -14145,11 +14238,15 @@ const AvatarFlow = {
       // are saved as switchable options. Order follows _STYLE_ORDER.
       const results = this._genResults || {};
       const styles  = this._STYLE_ORDER.filter(s => results[s]);
-      const options = await Promise.all(styles.map(async s => {
+      // Upload SEQUENTIALLY, not in parallel. On cellular, N parallel ~1MB
+      // uploads split the same pipe and each one slows ~N×, so they all blow
+      // past the idle timeout. One-at-a-time keeps each upload at full speed.
+      const options = [];
+      for (const s of styles) {
         const b   = await (await fetch('data:image/webp;base64,' + results[s])).blob();
         const url = await _uploadAvatarBlob(b, this.memberId);
-        return { url, style: s };
-      }));
+        options.push({ url, style: s });
+      }
       const active = options.find(o => o.style === this._selectedStyle) || options[0];
       const avatar = { type: 'ai-photo', url: active.url, style: active.style };
       await _saveMemberAvatar(this.memberId, avatar, options);
