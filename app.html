@@ -53,7 +53,13 @@
   --sal:env(safe-area-inset-left,0px);
   --sar:env(safe-area-inset-right,0px);
 }
-body.ios-browser{
+body.ios-safe{
+  /* Apply the safe-area floor on ALL iOS contexts — standalone home-screen PWA
+     *and* plain Safari. iOS sometimes reports env(safe-area-inset-top)=0 (notably
+     a standalone launch with status-bar-style:default), which let headers/hero
+     slide under the status bar / Dynamic Island — the bug testers still saw after
+     the browser-only fix. max() keeps the real inset when the device reports it
+     (e.g. ~47–59px on notch / Dynamic Island), else clamps a sensible floor. */
   --sat:max(env(safe-area-inset-top,0px),50px);
   --sab:max(env(safe-area-inset-bottom,0px),8px);
 }
@@ -1250,11 +1256,17 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
   width:64px;height:64px;
   border-radius:50%;
   overflow:hidden;
+  /* Personal-color ring (#4): the member's chosen colour as a 2px ring just outside
+     the existing white ring. --mem-color is set per-avatar by _mpApplyStripe and
+     falls back to transparent (no ring) for members without a colour. */
   box-shadow:
     0 4px 16px -4px rgba(140,70,20,.18),
     0 1px 4px rgba(140,70,20,.1),
-    0 0 0 3px rgba(255,255,255,.9);
+    0 0 0 3px rgba(255,255,255,.9),
+    0 0 0 5px var(--mem-color,transparent);
 }
+/* On Today the ring replaces the corner stripe so the avatar stays clean. */
+#s-today .t-av .mem-stripe{display:none;}
 #s-today .t-av svg{display:block;width:100%;height:100%;}
 #s-today .av-mom,
 #s-today .av-dad,
@@ -4007,14 +4019,8 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
 
 <!-- ════ SCREEN: INVITE FAMILY MEMBER ════ -->
 <div class="app-screen" id="s-invite-member">
-  <div class="status">
-    <span class="time">10:30</span>
-    <span class="icons" aria-hidden="true">
-      <svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="0.8"/><rect x="4.5" y="5" width="3" height="6" rx="0.8"/><rect x="9" y="2.5" width="3" height="8.5" rx="0.8"/><rect x="13.5" y="0" width="3" height="11" rx="0.8"/></svg>
-      <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor"><path d="M8 12a1.4 1.4 0 1 0 0-2.8A1.4 1.4 0 0 0 8 12Zm-4-3.4a4.6 4.6 0 0 1 8 0l1.2-1.2a6.4 6.4 0 0 0-10.4 0Zm-2.4-2.4a8.4 8.4 0 0 1 12 0l1.2-1.2a10.2 10.2 0 0 0-14.4 0Z"/></svg>
-      <svg width="26" height="12" viewBox="0 0 26 12" fill="none"><rect x="0.5" y="0.5" width="22" height="11" rx="2.6" stroke="currentColor" opacity=".5"/><rect x="2" y="2" width="19" height="8" rx="1.6" fill="currentColor"/><rect x="23.5" y="4" width="2" height="4" rx="0.8" fill="currentColor" opacity=".5"/></svg>
-    </span>
-  </div>
+  <!-- Fake status bar (static 10:30 + battery/signal mock) removed — it duplicated the real OS status bar and ate safe-area space (same fix as s-sync). -->
+
 
   <div class="app-header">
     <button class="back-btn" type="button" aria-label="חזרה" onclick="inviteGoBack()">
@@ -4147,14 +4153,8 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
 
 <!-- ════ SCREEN: MEMBER PROFILE ════ -->
 <div class="app-screen" id="s-member-profile">
-  <div class="mp-status">
-    <span class="time">10:30</span>
-    <span class="icons" aria-hidden="true">
-      <svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="0.8"/><rect x="4.5" y="5" width="3" height="6" rx="0.8"/><rect x="9" y="2.5" width="3" height="8.5" rx="0.8"/><rect x="13.5" y="0" width="3" height="11" rx="0.8"/></svg>
-      <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor"><path d="M8 12a1.4 1.4 0 1 0 0-2.8A1.4 1.4 0 0 0 8 12Zm-4-3.4a4.6 4.6 0 0 1 8 0l1.2-1.2a6.4 6.4 0 0 0-10.4 0Zm-2.4-2.4a8.4 8.4 0 0 1 12 0l1.2-1.2a10.2 10.2 0 0 0-14.4 0Z"/></svg>
-      <svg width="26" height="12" viewBox="0 0 26 12" fill="none"><rect x="0.5" y="0.5" width="22" height="11" rx="2.6" stroke="currentColor" opacity=".5"/><rect x="2" y="2" width="19" height="8" rx="1.6" fill="currentColor"/><rect x="23.5" y="4" width="2" height="4" rx="0.8" fill="currentColor" opacity=".5"/></svg>
-    </span>
-  </div>
+  <!-- Fake status bar (static 10:30 + battery/signal mock) removed — it duplicated the real OS status bar and confused testers (same fix as s-sync). #2A -->
+
   <div class="mp-scroll">
     <div class="mp-header">
       <button class="mp-icon-btn" id="mpBackBtn" aria-label="חזרה">
@@ -4165,10 +4165,8 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
 
     <!-- Profile hero -->
     <div class="mp-profile">
-      <span class="mp-c1">💗</span>
-      <span class="mp-c2">⭐</span>
-      <span class="mp-cb1"></span>
-      <span class="mp-cb2"></span>
+      <!-- Decorative confetti (💗/⭐ + dashes) removed — UI noise crowding the avatar's top-right. The edit pencil (mp-pencil) stays. #2B -->
+
       <div class="mp-avatar-wrap">
         <div class="mp-avatar" id="mpAvatarCircle"></div>
         <button class="mp-pencil" id="mpPencilBtn" style="display:none" aria-label="עריכת תמונה">
@@ -5229,14 +5227,8 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
      Source: Time & Date.html
 ════════════════════════════════════════════════════════════════════════ -->
 <div class="app-screen" id="s-time-date">
-  <div class="td-status">
-    <span class="time">10:30</span>
-    <span class="icons" aria-hidden="true">
-      <svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="0.8"/><rect x="4.5" y="5" width="3" height="6" rx="0.8"/><rect x="9" y="2.5" width="3" height="8.5" rx="0.8"/><rect x="13.5" y="0" width="3" height="11" rx="0.8"/></svg>
-      <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor"><path d="M8 12a1.4 1.4 0 1 0 0-2.8A1.4 1.4 0 0 0 8 12Zm3.6-3.4-.06.06.06-.06Zm-7.2 0a4.6 4.6 0 0 1 7.2 0l1.2-1.2a6.4 6.4 0 0 0-9.6 0l1.2 1.2Zm-2.4-2.4a8.4 8.4 0 0 1 12 0l1.2-1.2a10.2 10.2 0 0 0-14.4 0l1.2 1.2Z"/></svg>
-      <svg width="26" height="12" viewBox="0 0 26 12" fill="none"><rect x="0.5" y="0.5" width="22" height="11" rx="2.6" stroke="currentColor" opacity=".5"/><rect x="2" y="2" width="19" height="8" rx="1.6" fill="currentColor"/><rect x="23.5" y="4" width="2" height="4" rx="0.8" fill="currentColor" opacity=".5"/></svg>
-    </span>
-  </div>
+  <!-- Fake status bar (static 10:30 + battery/signal mock) removed — it duplicated the real OS status bar and ate safe-area space (same fix as s-sync). -->
+
 
   <div class="td-scroll">
 
@@ -5424,14 +5416,8 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
      Source: Split Task.html
 ════════════════════════════════════════════════════════════════════════ -->
 <div class="app-screen" id="s-split">
-  <div class="spl-status">
-    <span class="time">10:30</span>
-    <span class="icons" aria-hidden="true">
-      <svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="0.8"/><rect x="4.5" y="5" width="3" height="6" rx="0.8"/><rect x="9" y="2.5" width="3" height="8.5" rx="0.8"/><rect x="13.5" y="0" width="3" height="11" rx="0.8"/></svg>
-      <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor"><path d="M8 12a1.4 1.4 0 1 0 0-2.8A1.4 1.4 0 0 0 8 12Zm3.6-3.4-.06.06.06-.06Zm-7.2 0a4.6 4.6 0 0 1 7.2 0l1.2-1.2a6.4 6.4 0 0 0-9.6 0l1.2 1.2Zm-2.4-2.4a8.4 8.4 0 0 1 12 0l1.2-1.2a10.2 10.2 0 0 0-14.4 0l1.2 1.2Z"/></svg>
-      <svg width="26" height="12" viewBox="0 0 26 12" fill="none"><rect x="0.5" y="0.5" width="22" height="11" rx="2.6" stroke="currentColor" opacity=".5"/><rect x="2" y="2" width="19" height="8" rx="1.6" fill="currentColor"/><rect x="23.5" y="4" width="2" height="4" rx="0.8" fill="currentColor" opacity=".5"/></svg>
-    </span>
-  </div>
+  <!-- Fake status bar (static 10:30 + battery/signal mock) removed — it duplicated the real OS status bar and ate safe-area space (same fix as s-sync). -->
+
 
   <div class="spl-scroll">
 
@@ -12231,7 +12217,7 @@ const _isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
   var ua = navigator.userAgent || '';
   var isIOS = /iP(hone|ad|od)/.test(ua) ||
               (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-  if (isIOS && !_isStandalone) document.body.classList.add('ios-browser');
+  if (isIOS) document.body.classList.add('ios-safe');
 })();
 
 function _showInstallBanner(mode) {
@@ -17939,8 +17925,26 @@ function _renderMemberProfile() {
   }
   document.getElementById('mpName').textContent = _mpName;
 
-  // Subtitle
-  document.getElementById('mpSubtitleText').textContent = m.subtitle || (isParent ? 'הורה' : 'ילד/ה');
+  // Subtitle — prefer the description the user set, else the role label they typed
+  // at setup ("אבא"/"אמא"/"סבתא"…). The old code guessed 'הורה'/'ילד/ה' from the
+  // *structural* role, but real family roles are 'owner'/'member' — so every real
+  // member was mislabelled "ילד/ה". Never invent a relationship label here. (#3)
+  const _mpRoleLabel = (isSelf && DataAdapter.roleLabel)
+    ? DataAdapter.roleLabel
+    : ((m.roleLabel || '').trim());
+  const _mpSub  = (m.subtitle && m.subtitle.trim()) || _mpRoleLabel;
+  const _subRow = document.getElementById('mpSubtitle');
+  const _subEl  = document.getElementById('mpSubtitleText');
+  if (_mpSub) {
+    _subEl.textContent = _mpSub;
+    if (_subRow) _subRow.style.display = '';
+  } else if (isSelf) {
+    _subEl.textContent = 'לחץ להוספת תיאור';
+    if (_subRow) _subRow.style.display = '';
+  } else {
+    _subEl.textContent = '';            // someone else, no label — show nothing, not a guess
+    if (_subRow) _subRow.style.display = 'none';
+  }
 
   // Avatar
   const avCircle = document.getElementById('mpAvatarCircle');
@@ -18231,6 +18235,8 @@ const _MP_DEFAULT_COLORS = {
 // ── Apply diagonal stripe to home-screen avatar ──────────────────
 function _mpApplyStripe(memberId, color) {
   document.querySelectorAll(`[data-avatar-for="${memberId}"]`).forEach(el => {
+    // Personal-color ring on the Today avatars (#4); CSS scopes the ring to #s-today .t-av.
+    el.style.setProperty('--mem-color', color);
     let s = el.querySelector('.mem-stripe');
     if (!s) { s = document.createElement('div'); s.className = 'mem-stripe'; el.appendChild(s); }
     s.style.background = color;
