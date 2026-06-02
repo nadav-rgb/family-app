@@ -55,9 +55,9 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
      The Today list (#s-today .t-scroll) is an independent overflow:auto
      container, so it keeps scrolling normally. */
   html,body{overflow:hidden;overscroll-behavior:none;}
-  body{padding:0;align-items:stretch;min-height:100vh;min-height:100dvh;
+  body{padding:0;align-items:stretch;min-height:100vh;min-height:100svh;min-height:100dvh;
        background:linear-gradient(175deg,#fffaf5 0%,#fff4e8 55%,#fdebd8 100%);}
-  .phone{width:100%;height:100vh;height:100dvh;border-radius:0;box-shadow:none;border:none;}
+  .phone{width:100%;height:100vh;height:100svh;height:100dvh;border-radius:0;box-shadow:none;border:none;}
 }
 /* Inner scrollers: stop at their own edges without a rubber-band bounce. */
 #s-today .t-scroll,#s-dp .dp-list{overscroll-behavior:contain;}
@@ -830,7 +830,7 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 .title-tip.structured .shop-item.checked .shop-item-name{text-decoration:line-through;opacity:.5;}
 /* Weekly view */
 #s-week{background:radial-gradient(circle at top right,rgba(255,244,232,0.9),transparent 35%),linear-gradient(180deg,#FBF8F5 0%,#F7F2ED 45%,#F4EEE8 100%);}
-#s-week .wk-scroll{height:100%;overflow-y:auto;padding:max(18px,env(safe-area-inset-top)) 16px calc(96px + env(safe-area-inset-bottom));scrollbar-width:none;}
+#s-week .wk-scroll{height:100%;overflow-y:auto;padding:18px 16px 96px;scrollbar-width:none;}
 #s-week .wk-scroll::-webkit-scrollbar{display:none;}
 #s-week .wk-header{display:flex;align-items:center;gap:12px;margin:6px 2px 16px;}
 #s-week .wk-back{width:42px;height:42px;border-radius:50%;background:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(110,84,60,.10);color:#5a3e2b;flex:0 0 auto;}
@@ -3706,8 +3706,8 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
       </button>
       <div class="wk-htext">
-        <div class="wk-title">השבוע</div>
-        <div class="wk-sub">7 הימים הקרובים</div>
+        <div class="wk-title">השבוע שלי</div>
+        <div class="wk-sub">ציר הזמן · עבר ועתיד</div>
       </div>
     </div>
     <div class="wk-toggle">
@@ -6142,7 +6142,7 @@ const I18N = {
     repeat_none:'None', repeat_daily:'Daily', repeat_weekly:'Weekly',
     user_switch:'Switch user',
     family_mom:'Member 2', family_dad:'Member 1', family_dudi:'Member 3', family_yonatan:'Member 4',
-    date_today:'Today', date_tomorrow:'Tomorrow',
+    date_today:'Today', date_tomorrow:'Tomorrow', date_yesterday:'Yesterday',
     months:['January','February','March','April','May','June','July','August','September','October','November','December'],
     months_short:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
     days:['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'],
@@ -6221,7 +6221,7 @@ const I18N = {
     repeat_none:'ללא', repeat_daily:'יומי', repeat_weekly:'שבועי',
     user_switch:'החלף משתמש',
     family_mom:'חבר 2', family_dad:'חבר 1', family_dudi:'חבר 3', family_yonatan:'חבר 4',
-    date_today:'היום', date_tomorrow:'מחר',
+    date_today:'היום', date_tomorrow:'מחר', date_yesterday:'אתמול',
     months:['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'],
     months_short:['ינו','פבר','מרץ','אפר','מאי','יוני','יולי','אוג','ספט','אוק','נוב','דצמ'],
     days:['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'],
@@ -6266,8 +6266,11 @@ function dateLabelFor(dateStr) {
   const td = todayDate();
   const d  = new Date(new Date().setDate(new Date().getDate() + 1));
   const tm = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  const yd = new Date(new Date().setDate(new Date().getDate() - 1));
+  const ys = `${yd.getFullYear()}-${String(yd.getMonth()+1).padStart(2,'0')}-${String(yd.getDate()).padStart(2,'0')}`;
   if (dateStr === td) return t('date_today');
   if (dateStr === tm) return t('date_tomorrow');
+  if (dateStr === ys) return t('date_yesterday');
   const dt = new Date(dateStr + 'T00:00:00');
   const lng = (I18N[AppState.lang] || I18N.en);
   return `${lng.days_short[dt.getDay()]} ${lng.months_short[dt.getMonth()]} ${dt.getDate()}`;
@@ -10249,7 +10252,9 @@ function updateOtherDayBanner() {
 // re-renders (data sync, undo, completion, date change) set this false first
 // so the list never re-animates / "jumps".
 let _todayAnimateEntry = true;
-// ── Weekly view — next 7 days grouped by day (read overview; tap to open) ──
+// ── Weekly view — fixed timeline window: 14 days past → today → 13 future ──
+// (28 days total, no infinite scroll). Both display modes share this range.
+const WK_PAST = 14, WK_FUTURE = 13;
 function _ymdPlus(days) {
   const d = new Date(todayDate() + 'T00:00:00');
   d.setDate(d.getDate() + days);
@@ -10322,11 +10327,13 @@ function renderWeek() {
   if (_weekViewMode === 'cols') {
     const cols = document.createElement('div');
     cols.className = 'wk-cols';
-    for (let i = 0; i < 7; i++) {
+    let todayCol = null;
+    for (let i = -WK_PAST; i <= WK_FUTURE; i++) {
       const ds    = _ymdPlus(i);
       const tasks = _weekSortTasks(activeTasks(ds));
       const col   = document.createElement('div');
       col.className = 'wk-col' + (ds === today ? ' is-today' : '');
+      if (ds === today) todayCol = col;
 
       const head = document.createElement('div');
       head.className = 'wk-col-head';
@@ -10349,15 +10356,24 @@ function renderWeek() {
       cols.appendChild(col);
     }
     list.appendChild(cols);
+    // Land on Today (not the oldest past day). scroll-snap resets scrollLeft
+    // on DOM injection, so position after layout. inline:'center' is RTL-safe.
+    if (todayCol) {
+      requestAnimationFrame(() => {
+        try { todayCol.scrollIntoView({ inline: 'center', block: 'nearest' }); } catch (_) {}
+      });
+    }
     return;
   }
 
-  // 'list' mode — vertical day-by-day
-  for (let i = 0; i < 7; i++) {
+  // 'list' mode — vertical day-by-day, same 28-day window as cols
+  let todayDay = null;
+  for (let i = -WK_PAST; i <= WK_FUTURE; i++) {
     const ds    = _ymdPlus(i);
     const tasks = _weekSortTasks(activeTasks(ds));
     const day   = document.createElement('div');
     day.className = 'wk-day';
+    if (ds === today) todayDay = day;
 
     const head = document.createElement('div');
     head.className = 'wk-day-head';
@@ -10386,6 +10402,12 @@ function renderWeek() {
     }
     day.appendChild(card);
     list.appendChild(day);
+  }
+  // Land on Today rather than the oldest past day at the top of the list.
+  if (todayDay) {
+    requestAnimationFrame(() => {
+      try { todayDay.scrollIntoView({ block: 'start', behavior: 'auto' }); } catch (_) {}
+    });
   }
 }
 
