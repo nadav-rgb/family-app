@@ -5,3 +5,11 @@ node_modules/
 .env.*.local
 .DS_Store
 .vercel
+
+# Firebase admin service-account keys — NEVER commit these
+serviceAccount.json
+*service-account*.json
+*serviceaccount*.json
+firebase-adminsdk*.json
+# Admin backfill run manifests (rollback records)
+backfill-run-*.json

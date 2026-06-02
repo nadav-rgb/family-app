@@ -1,0 +1,74 @@
+rules_version = '2';
+
+// ============================================================================
+// Family App — Firestore Security Rules
+// Step C of the security migration. Closes the proven hole where any anonymous
+// user could enumerate (list) all families and read/write every family's data.
+//
+// Membership is established by the uid-keyed marker  families/{fid}/memberUids/
+// {authUid}  (written by _fbLinkAuthToMember on app open + create/join, and
+// backfilled for existing active members). Rules can only exists()/get() a path
+// derived from request.auth.uid — they cannot query the authUid field — which
+// is why this marker collection exists.
+//
+// Bootstrap carve-outs (so create/join keep working under the CURRENT code order,
+// which writes the member doc before the marker):
+//   • families.update: members only, EXCEPT an authed user may increment the
+//     memberCount counter during join.
+//   • members.create: any authed user (the create/join member-doc write).
+//   • members.update: members only, EXCEPT the auth-link merge fields written by
+//     _fbLinkAuthToMember (authUid / legacyUserId / lastSeenAt / authLinkedAt).
+//   • memberUids: a user may create/update ONLY their own marker (uid==auth.uid).
+//
+// NOTE: the "know the 6-char family code = can join" model is preserved by
+// design; tightening code length / server-side join approval is a separate task.
+// ============================================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function authed() { return request.auth != null; }
+
+    function belongs(fid) {
+      return authed() &&
+        exists(/databases/$(database)/documents/families/$(fid)/memberUids/$(request.auth.uid));
+    }
+
+    match /families/{familyId} {
+      allow get:    if authed();          // existence check needed to join
+      allow list:   if false;             // block enumeration of all families
+      allow create: if authed();          // create family
+      allow update: if belongs(familyId)
+                    || (authed()
+                        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['memberCount'])
+                        && request.resource.data.memberCount == resource.data.memberCount + 1);
+      allow delete: if false;
+
+      match /memberUids/{uid} {
+        allow read:   if belongs(familyId);
+        allow create: if authed() && uid == request.auth.uid;
+        allow update: if authed() && uid == request.auth.uid;
+        allow delete: if belongs(familyId);
+      }
+
+      match /members/{memberId} {
+        // get (single doc) is needed by the join transaction (tx.get on the
+        // member doc) and by _fbLinkAuthToMember (ref.get) BEFORE the caller's
+        // marker exists — so it must be allowed for any authed user. list (the
+        // collection query in _loadFamilyMembersCache) stays members-only.
+        allow get:    if authed();
+        allow list:   if belongs(familyId);
+        allow create: if authed();
+        allow update: if belongs(familyId)
+                      || (authed() &&
+                          request.resource.data.diff(resource.data).affectedKeys()
+                            .hasOnly(['authUid','legacyUserId','lastSeenAt','authLinkedAt']));
+        allow delete: if belongs(familyId);
+      }
+
+      match /tasks/{taskId} {
+        allow read, write: if belongs(familyId);
+      }
+    }
+  }
+}
