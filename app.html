@@ -41,6 +41,22 @@
 <style>
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
 *:focus{outline:none;}
+/* ── iOS safe-area infrastructure ──
+   --sat/--sab expose the device safe-area insets. In real standalone PWAs iOS
+   reports them via env(); but in plain iPhone Safari iOS does NOT expose them
+   (env() resolves to 0) even though content still slides under the status bar /
+   Dynamic Island. So when running as iOS-in-browser we clamp a robust minimum.
+   Android / desktop / standalone keep the raw env() values (0 where N/A). */
+:root{
+  --sat:env(safe-area-inset-top,0px);
+  --sab:env(safe-area-inset-bottom,0px);
+  --sal:env(safe-area-inset-left,0px);
+  --sar:env(safe-area-inset-right,0px);
+}
+body.ios-browser{
+  --sat:max(env(safe-area-inset-top,0px),50px);
+  --sab:max(env(safe-area-inset-bottom,0px),8px);
+}
 body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:100vh;display:flex;justify-content:center;align-items:center;font-family:'Rubik',sans-serif;padding:32px 16px;}
 
 /* ── Phone ── */
@@ -63,7 +79,7 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 #s-today .t-scroll,#s-dp .dp-list{overscroll-behavior:contain;}
 
 /* ── Screen layer system ── */
-.app-screen{position:absolute;top:env(safe-area-inset-top,0px);bottom:env(safe-area-inset-bottom,0px);left:env(safe-area-inset-left,0px);right:env(safe-area-inset-right,0px);display:flex;flex-direction:column;opacity:0;pointer-events:none;overflow:hidden;background:linear-gradient(175deg,#fffaf5 0%,#fff4e8 55%,#fdebd8 100%);}
+.app-screen{position:absolute;top:var(--sat);bottom:var(--sab);left:var(--sal);right:var(--sar);display:flex;flex-direction:column;opacity:0;pointer-events:none;overflow:hidden;background:linear-gradient(175deg,#fffaf5 0%,#fff4e8 55%,#fdebd8 100%);}
 .app-screen.active{opacity:1;pointer-events:auto;}
 /* Inactive screens are visually hidden (opacity:0) but their descendants
    can still steal clicks if they declare pointer-events:auto explicitly
@@ -12202,6 +12218,16 @@ const INSTALL_DISMISSED_KEY = 'family-app-install-dismissed';
 let _deferredInstallPrompt = null;
 const _isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
                      window.navigator.standalone === true;
+/* iOS-in-browser safe-area guard: plain iPhone Safari does not expose
+   env(safe-area-inset-top), so content slides under the status bar / Dynamic
+   Island. Tag the body so CSS clamps a robust minimum (--sat/--sab). iPadOS 13+
+   reports platform 'MacIntel' with touch, so detect that too. */
+(function(){
+  var ua = navigator.userAgent || '';
+  var isIOS = /iP(hone|ad|od)/.test(ua) ||
+              (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  if (isIOS && !_isStandalone) document.body.classList.add('ios-browser');
+})();
 
 function _showInstallBanner(mode) {
   const banner = document.getElementById('installBanner');
