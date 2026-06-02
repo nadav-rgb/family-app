@@ -1267,6 +1267,15 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 }
 /* On Today the ring replaces the corner stripe so the avatar stays clean. */
 #s-today .t-av .mem-stripe{display:none;}
+/* Profile-completion nudge card (#5) */
+#s-today .pcc-card{display:flex;align-items:center;gap:10px;margin:6px 16px 2px;padding:12px 14px;border-radius:18px;background:linear-gradient(135deg,#fff0e0,#ffe6cf);box-shadow:0 6px 18px rgba(255,140,60,.12),inset 0 1px 0 rgba(255,255,255,.8);position:relative;animation:fadeUp .4s ease both;}
+#s-today .pcc-card .pcc-emoji{font-size:24px;flex:0 0 auto;}
+#s-today .pcc-card .pcc-text{flex:1 1 auto;min-width:0;}
+#s-today .pcc-card .pcc-title{font-size:14px;font-weight:800;color:#7c3a1c;}
+#s-today .pcc-card .pcc-sub{font-size:12px;font-weight:600;color:#b6764a;margin-top:1px;}
+#s-today .pcc-card .pcc-cta{flex:0 0 auto;background:linear-gradient(135deg,#ff8e53,#ff6b35);color:#fff;border:none;border-radius:12px;padding:9px 16px;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer;transition:transform .15s;}
+#s-today .pcc-card .pcc-cta:active{transform:scale(.96);}
+#s-today .pcc-card .pcc-x{position:absolute;top:5px;left:7px;width:20px;height:20px;border:none;background:transparent;color:#c79a7a;font-size:13px;cursor:pointer;line-height:1;padding:0;}
 #s-today .t-av svg{display:block;width:100%;height:100%;}
 #s-today .av-mom,
 #s-today .av-dad,
@@ -1977,6 +1986,8 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 #s-member-profile .mp-task-day{font-size:12px;font-weight:700;color:var(--mp-purple);line-height:1.1}
 #s-member-profile .mp-task-time{margin-top:2px;font-size:13px;font-weight:700;color:var(--mp-ink);direction:ltr}
 #s-member-profile .mp-tasks-empty{text-align:center;padding:14px;color:var(--mp-muted);font-size:13px}
+#s-member-profile .mp-tasks-addbtn{display:block;width:100%;margin-top:8px;padding:11px;border:1px dashed var(--mp-purple,#8B6FBF);background:transparent;color:var(--mp-purple,#8B6FBF);border-radius:13px;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer;transition:background .15s}
+#s-member-profile .mp-tasks-addbtn:active{background:rgba(139,111,191,.08)}
 /* Stats */
 #s-member-profile .mp-stats-row{margin-top:12px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
 #s-member-profile .mp-stat{background:#fff;border-radius:18px;padding:12px 8px;box-shadow:var(--mp-shadow);border:1px solid rgba(255,255,255,0.8);display:flex;align-items:center;gap:6px;justify-content:center;}
@@ -3568,6 +3579,17 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
           <span class="hm-bell-dot" id="bellDot"></span>
         </button>
       </div>
+    </div>
+
+    <!-- Profile-completion nudge (#5): dismissible, family-mode only, shown until dismissed -->
+    <div class="pcc-card" id="profileCompleteCard" style="display:none">
+      <button class="pcc-x" type="button" aria-label="סגור" onclick="_dismissProfileNudge()">✕</button>
+      <span class="pcc-emoji">👋</span>
+      <div class="pcc-text">
+        <div class="pcc-title">משלימים את הפרופיל?</div>
+        <div class="pcc-sub">תמונה, יום הולדת ועוד פרטים אישיים</div>
+      </div>
+      <button class="pcc-cta" type="button" onclick="_openMyProfileForCompletion()">לפרופיל</button>
     </div>
 
     <!-- Header (old — hidden via CSS, kept for JS hooks) -->
@@ -10363,6 +10385,7 @@ function renderToday() {
   const _animEntryThisRender = _todayAnimateEntry;
   _todayAnimateEntry = false;
   if (typeof _mpApplyAllStripes === 'function') _mpApplyAllStripes();
+  if (typeof _maybeShowProfileCompletion === 'function') _maybeShowProfileCompletion();
   updateTodayTitle();
   updateDateBadge();
   updateOtherDayBanner();
@@ -17824,6 +17847,34 @@ function openMemberProfile(memberId, fromScreen) {
   goto('s-member-profile', 'txLeaveFade', 'txEnterFade');
 }
 
+// ── Profile-completion nudge (#5) ────────────────────────────────────
+// A gentle, dismissible card on Today inviting the user to flesh out their profile
+// (photo, birthday, anniversary…) after joining a family. Non-blocking: family mode
+// only, shown until the user dismisses it (X). The CTA opens the user's own profile
+// via DataAdapter.userId — the same path the Today strip uses (openMemberProfile).
+// Auto-hide-on-complete is a future enhancement (needs the userId↔memberId mapping).
+const _PROFILE_NUDGE_DISMISSED_KEY = 'family-app-profile-nudge-dismissed';
+function _maybeShowProfileCompletion() {
+  const card = document.getElementById('profileCompleteCard');
+  if (!card) return;
+  let show = false;
+  try {
+    show = DataAdapter.isFamily()
+        && !!DataAdapter.userId
+        && localStorage.getItem(_PROFILE_NUDGE_DISMISSED_KEY) !== '1';
+  } catch (_) { show = false; }
+  card.style.display = show ? '' : 'none';
+}
+function _dismissProfileNudge() {
+  try { localStorage.setItem(_PROFILE_NUDGE_DISMISSED_KEY, '1'); } catch (_) {}
+  const card = document.getElementById('profileCompleteCard');
+  if (card) card.style.display = 'none';
+}
+function _openMyProfileForCompletion() {
+  const id = DataAdapter.userId || DataAdapter.myMemberId;
+  if (id && typeof openMemberProfile === 'function') openMemberProfile(id, 's-today');
+}
+
 // Apply all members' personal colors as diagonal stripes on home screen load
 function _mpApplyAllStripes() {
   (_FAMILY_MEMBERS_SEED || []).forEach(seed => {
@@ -17993,7 +18044,7 @@ function _renderMemberProfile() {
   // Info row: birthday always + anniversary for parents only
   const infoRow = document.getElementById('mpInfoRow');
   const bdayAge = _mpCalcAge(m.birthday);
-  const canEditDates = _mpIsFamilyHead();
+  const canEditDates = isSelf || _mpIsFamilyHead();  // self can complete their own dates (#5/#6)
   const bdayClick = canEditDates ? `onclick="mpEditField('birthday')"` : '';
   const bdayEmpty = m.birthday ? '' : (canEditDates ? ' empty' : ' empty');
   const bdayVal   = m.birthday || (canEditDates ? 'לחץ להוספה' : '—');
@@ -18004,7 +18055,11 @@ function _renderMemberProfile() {
       <div class="mp-info-sub">${bdayAge != null ? `<span>${bdayAge} שנים</span>` : '<span>—</span>'}</div>
     </div>`;
   let anniHtml = '';
-  if (isParent) {
+  // Wedding anniversary is optional: show it when a date is set, or on your own
+  // profile so anyone who has one can add it. The old gate (role==='parent') was
+  // unreachable for real families (roles are owner/member) so it never appeared. (#6)
+  const showAnni = !!m.anniversary || isSelf;
+  if (showAnni) {
     const anniAge = _mpCalcAge(m.anniversary);
     const anniClick = canEditDates ? `onclick="mpEditField('anniversary')"` : '';
     const anniVal   = m.anniversary || (canEditDates ? 'לחץ להוספה' : '—');
@@ -18015,8 +18070,8 @@ function _renderMemberProfile() {
         <div class="mp-info-sub">${anniAge != null ? `<span>${anniAge} שנים</span><span class="pp">💜</span>` : '<span>—</span>'}</div>
       </div>`;
   }
-  infoRow.className = 'mp-info-row ' + (isParent ? 'two-col' : 'one-col');
-  infoRow.innerHTML = (isParent ? anniHtml : '') + bdayHtml;
+  infoRow.className = 'mp-info-row ' + (showAnni ? 'two-col' : 'one-col');
+  infoRow.innerHTML = (showAnni ? anniHtml : '') + bdayHtml;
 
   // Color card — self only
   const colorCard = document.getElementById('mpColorCard');
@@ -18065,6 +18120,13 @@ function _renderMemberProfile() {
     }).join('');
   } else {
     tasksList.innerHTML = `<div class="mp-tasks-empty">אין משימות קבועות עדיין</div>`;
+  }
+  // Entry point (#7): on your own profile, add a recurring task through the normal
+  // add-task flow (recurrence is picked in the date/time step). Minimal + safe — no
+  // new recurring engine, no pre-assignment yet (documented as a future enhancement).
+  if (isSelf) {
+    tasksList.insertAdjacentHTML('beforeend',
+      '<button type="button" class="mp-tasks-addbtn" onclick="openAddSheet({autoRecord:false})">＋ הוסף משימה קבועה</button>');
   }
 
   // Stats
