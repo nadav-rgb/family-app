@@ -8892,7 +8892,7 @@ function renderConfirmationTasks() {
       '<button class="menu" aria-label="אפשרויות" onclick="_visBackScreen=\'s-confirmation\';AppState._editingTask=(AppState.previewTasks||[]).find(function(t){return String(t.id)===\'' + task.id + '\';})||AppState._editingTask;if(typeof renderVisibility===\'function\')renderVisibility();goto(\'s-visibility\',\'txLeaveBloom\',\'txEnterFocus\')">' + MENU_SVG + '</button>' +
       '<button class="col-left" type="button" aria-label="ערוך שעה">' + timeHTML + '</button>' +
       '<div class="col-mid"><div class="t-title"><span contenteditable="plaintext-only" role="textbox" aria-label="כותרת משימה">' + esc(task.title) + '</span></div>' +
-        (sanitizeSegments(mockSplit(task.subItems ? task.subItems.mainTitle || task.title : task.title)).length >= 2 ?
+        (offerableSplit(task.subItems ? task.subItems.mainTitle || task.title : task.title).length >= 2 ?
           '<button class="conf-split-btn" data-splitid="' + task.id + '">' +
           '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5"/><path d="M8 3H3v5"/><path d="M12 22v-8.3a4 4 0 0 0-1.172-2.872L3 3"/><path d="m15 9 6-6"/></svg>' +
           ' פצל' +
@@ -9384,11 +9384,11 @@ function mockSplit(title) {
     .split(/ (?=ו?ל.{2,})/)
     .map(s => s.trim().replace(/^ו(?=ל)/, ''))
     .filter(Boolean);
-  if (parts.length >= 2) return parts;
-  const words = title.split(' ');
-  if (words.length < 3) return [];
-  const mid = Math.ceil(words.length / 2);
-  return [words.slice(0, mid).join(' '), words.slice(mid).join(' ')];
+  // #3 fix: only split on real ל-verb boundaries. Previously, a title with no
+  // boundary fell through to a blind half-split (words sliced down the middle),
+  // which produced meaningless, context-losing suggestions (e.g. splitting a
+  // single sentence about one errand into two halves). Never fabricate a split.
+  return parts.length >= 2 ? parts : [];
 }
 
 // Recognized Hebrew task infinitives — segments whose first word is NOT here
@@ -9479,6 +9479,14 @@ function filterMovementCompound(segs, originalTitle) {
   // Movement verb leading → treat as movement+purpose compound → suppress auto-split
   if (MOVEMENT_VERBS.has(v1)) return [];
   return segs;
+}
+
+// #3 fix: conservative gate for AUTO-OFFERED splits (button/affordance
+// visibility). Only offer a split when a structurally valid split survives the
+// movement+purpose-compound filter. Manual long-press keeps using the raw
+// sanitizeSegments(mockSplit(...)) as an escape hatch for explicit user intent.
+function offerableSplit(title) {
+  return filterMovementCompound(sanitizeSegments(mockSplit(title)), title);
 }
 
 function openSplitSheet(task, cardEl, onConfirm) {
@@ -10448,7 +10456,7 @@ function renderToday() {
     if (t.reminderOffsetMinutes === undefined) t.reminderOffsetMinutes = 10;
     const realTForEdit = t.isRecurring ? (AppState.tasks.find(rt => rt.id === t.recurrenceId) || t) : t;
     const canEditCommitted = _canEditCommittedTask(realTForEdit);
-    const tCanSplit = sanitizeSegments(mockSplit(t.subItems?.mainTitle || t.title)).length >= 2;
+    const tCanSplit = offerableSplit(t.subItems?.mainTitle || t.title).length >= 2;
     el.innerHTML = `
       <div class="t-swipe-bg"><svg class="swipe-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></div>
       <div class="t-swipe-track">
