@@ -90,9 +90,13 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
      The Today list (#s-today .t-scroll) is an independent overflow:auto
      container, so it keeps scrolling normally. */
   html,body{overflow:hidden;overscroll-behavior:none;}
-  body{padding:0;align-items:stretch;min-height:100vh;min-height:100svh;min-height:100dvh;
+  body{padding:0;align-items:stretch;min-height:100vh;min-height:100svh;
        background:linear-gradient(175deg,#fffaf5 0%,#fff4e8 55%,#fdebd8 100%);}
-  .phone{width:100%;height:100vh;height:100svh;height:100dvh;border-radius:0;box-shadow:none;border:none;}
+  /* Anchor the shell to the STABLE small viewport (svh), not the dynamic dvh.
+     dvh chased iOS Safari's toolbar, reflowing the absolute screens and letting
+     content slide under the status bar with no scroll escape (overflow:hidden).
+     svh never overshoots the visible area, so the safe-area inset lands reliably. */
+  .phone{width:100%;height:100vh;height:100svh;border-radius:0;box-shadow:none;border:none;}
 }
 /* Inner scrollers: stop at their own edges without a rubber-band bounce. */
 #s-today .t-scroll,#s-dp .dp-list{overscroll-behavior:contain;}
@@ -15666,7 +15670,7 @@ document.getElementById('btnAddMore').addEventListener('click', () => {
     if (!mq.matches) return;
     var ph = document.querySelectorAll('.phone');
     // Only shrink the phone when the keyboard is actually open. At rest, clear
-    // the inline height so .phone uses the CSS 100dvh — the original height that
+    // the inline height so .phone uses the CSS 100svh — the original height that
     // let the Today list scroll correctly. (Forcing visualViewport.height at
     // rest could make .phone taller/shorter than the real area and break scroll.)
     var keyboardOpen = (window.innerHeight - vv.height) > 120;
