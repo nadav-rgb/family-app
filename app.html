@@ -14177,39 +14177,80 @@ const AvatarFlow = {
     const cta = document.getElementById('ailCta');
     const lbl = document.getElementById('ailCtaLabel');
     if (cta) cta.disabled = true;
-    if (lbl) lbl.textContent = 'שומר…';
+    if (lbl) lbl.textContent = 'שומר תמונה נבחרת…';
+
+    // Capture everything the background pass needs BEFORE closeAILanding() nulls
+    // this.* state. The background uploads run after the landing has closed.
+    const memberId      = this.memberId;
+    const results       = Object.assign({}, this._genResults || {});
+    const selectedStyle = this._selectedStyle;
+    const selectedB64   = this._selectedB64;
+
     try {
-      // Upload every produced image (not just the selected one) so all of them
-      // are saved as switchable options. Order follows _STYLE_ORDER.
-      const results = this._genResults || {};
-      const styles  = this._STYLE_ORDER.filter(s => results[s]);
-      // Upload SEQUENTIALLY, not in parallel. On cellular, N parallel ~1MB
-      // uploads split the same pipe and each one slows ~N×, so they all blow
-      // past the idle timeout. One-at-a-time keeps each upload at full speed.
-      const options = [];
-      for (const s of styles) {
-        const b   = await (await fetch('data:image/webp;base64,' + results[s])).blob();
-        const url = await _uploadAvatarBlob(b, this.memberId);
-        options.push({ url, style: s });
-      }
-      const active = options.find(o => o.style === this._selectedStyle) || options[0];
-      const avatar = { type: 'ai-photo', url: active.url, style: active.style };
-      await _saveMemberAvatar(this.memberId, avatar, options);
-      const nodeCount = _refreshAvatarUI(this.memberId, avatar);
+      // ── Foreground: upload ONLY the selected image, save it, and get the user
+      // out of the waiting screen immediately. The other options upload in the
+      // background below — the user never waits for them.
+      const selBlob     = await (await fetch('data:image/webp;base64,' + selectedB64)).blob();
+      const selUrl      = await _uploadAvatarBlob(selBlob, memberId);
+      const activeStyle = selectedStyle || this._STYLE_ORDER.find(s => results[s]);
+      const avatar      = { type: 'ai-photo', url: selUrl, style: activeStyle };
+      // Save with just the selected option for now; the background pass merges
+      // the rest in. The selected avatar is durably saved regardless of what
+      // happens to the background uploads.
+      await _saveMemberAvatar(memberId, avatar, [{ url: selUrl, style: activeStyle }]);
+      const nodeCount = _refreshAvatarUI(memberId, avatar);
       // The home hero portrait and the member-profile avatar circle render via
       // separate paths not covered by _refreshAvatarUI — refresh them too so
       // they don't keep showing the old image until the next navigation.
       if (typeof updateHmPortrait === 'function') updateHmPortrait();
-      if (typeof _renderMemberProfile === 'function' && typeof _mpCurrentId !== 'undefined' && _mpCurrentId === this.memberId) {
+      if (typeof _renderMemberProfile === 'function' && typeof _mpCurrentId !== 'undefined' && _mpCurrentId === memberId) {
         _renderMemberProfile();
       }
-      console.log('[Avatar] AI avatar saved active=' + avatar.style + ' options=' + options.length + ' nodes=' + nodeCount);
+      console.log('[Avatar] AI avatar saved (selected first) active=' + avatar.style + ' nodes=' + nodeCount);
       this.closeAILanding();
+
+      // ── Background: upload the remaining options (fire-and-forget). Any
+      // failure here is logged to console only and never touches the saved
+      // selected avatar.
+      this._uploadRemainingOptions(memberId, results, activeStyle, selUrl);
     } catch (e) {
       console.error('[Avatar] AI save failed', e);
       alert('שמירה נכשלה:\n' + (e.code ? '[' + e.code + '] ' : '') + (e.message || e));
       if (lbl) lbl.textContent = 'שמור תמונה';
       if (cta) cta.disabled = false;
+    }
+  },
+  // Background pass: upload the non-selected AI options one at a time and merge
+  // them into avatarOptions ("הגרסאות שלי"). Runs AFTER the landing has closed,
+  // so the user is never blocked on it. Uploads stay SEQUENTIAL (not parallel)
+  // for the same cellular reason as before. Any failure is logged to console
+  // only — the already-saved selected avatar is never affected.
+  async _uploadRemainingOptions(memberId, results, activeStyle, selUrl) {
+    const others = this._STYLE_ORDER.filter(s => results[s] && s !== activeStyle);
+    if (!others.length) return;
+    const options = [{ url: selUrl, style: activeStyle }];
+    for (const s of others) {
+      try {
+        const b   = await (await fetch('data:image/webp;base64,' + results[s])).blob();
+        const url = await _uploadAvatarBlob(b, memberId);
+        options.push({ url, style: s });
+      } catch (e) {
+        console.warn('[Avatar] background option upload failed style=' + s + ' (selected avatar unaffected)', e);
+      }
+    }
+    if (options.length <= 1) return; // nothing extra uploaded — keep the single saved option
+    try {
+      // Re-read the current avatar from cache so a user who switched variants in
+      // the meantime isn't overwritten; only avatarOptions is being extended.
+      const cached = (typeof _familyMembersCache !== 'undefined' ? _familyMembersCache : []).find(m => m.memberId === memberId);
+      const avatar = (cached && cached.avatar) ? cached.avatar : { type: 'ai-photo', url: selUrl, style: activeStyle };
+      await _saveMemberAvatar(memberId, avatar, options);
+      if (typeof _renderMemberProfile === 'function' && typeof _mpCurrentId !== 'undefined' && _mpCurrentId === memberId) {
+        _renderMemberProfile();
+      }
+      console.log('[Avatar] background options merged count=' + options.length);
+    } catch (e) {
+      console.warn('[Avatar] background avatarOptions update failed (selected avatar unaffected)', e);
     }
   },
   // Render the saved AI options gallery ("הגרסאות שלי") in the avatar card.
