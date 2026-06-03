@@ -13,6 +13,7 @@
 //   { error: string }                           — server-side problem
 
 const OpenAI = require('openai');
+const { guard } = require('./_lib/guard');
 
 const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -44,12 +45,8 @@ Input: "זום עם הפעילים שלי לדבר על אחדות, נעים ל�
 Output: {"mainTitle":"זום עם הפעילים","items":["לדבר על אחדות","הכרות הדדית","לאסוף קורות חיים","להכין דוחות לקוחות"]}`;
 
 module.exports = async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-  if (req.method === 'OPTIONS') return res.status(200).end();
-  if (req.method !== 'POST')    return res.status(405).json({ error: 'Method not allowed' });
+  // CORS + per-IP rate limit + optional friction (handles OPTIONS/method).
+  if (!(await guard(req, res, 'summarize-task'))) return;
 
   const { title } = req.body || {};
   if (!title || typeof title !== 'string' || !title.trim()) {

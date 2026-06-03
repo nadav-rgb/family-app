@@ -1,5 +1,6 @@
 const { parseWithClaude } = require('./_providers/claude');
 const { parseWithOpenAI } = require('./_providers/openai');
+const { guard } = require('./_lib/guard');
 
 const PROVIDER = process.env.AI_PROVIDER || 'claude';
 const CONFIDENCE_THRESHOLD = 0.7;
@@ -107,12 +108,8 @@ function extractPreambleAssignee(transcript) {
 // ─── Handler ──────────────────────────────────────────────────────────────────
 
 module.exports = async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-  if (req.method === 'OPTIONS') return res.status(200).end();
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  // CORS + per-IP rate limit + optional friction (handles OPTIONS/method).
+  if (!(await guard(req, res, 'parse-tasks'))) return;
 
   const _serverT0 = Date.now();
   const _cold     = _invocations === 0; // first request on this container
