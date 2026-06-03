@@ -2494,6 +2494,8 @@ body.text-large .phone{font-size:17px}
 .bottom-nav .nav-item .underline{display:none!important;}
 .bottom-nav .nav-item.active{color:#e07c3a!important;}
 .bottom-nav .nav-item svg{width:22px!important;height:22px!important;}
+/* "בקרוב" pill — honest disabled state for not-yet-implemented settings rows/tiles */
+.soon-pill{display:inline-block;font-size:12px;font-weight:700;color:#9E8878;background:#F3ECE4;border:1px solid rgba(160,90,30,.14);border-radius:999px;padding:4px 11px;white-space:nowrap;}
 /* 2. PIN keypad must read left-to-right (1 2 3 / 4 5 6 …) even in RTL */
 .pin-keypad{direction:ltr;}
 /* 5. PIN/Bio sheets must stack ABOVE the delete-data modal */
@@ -4335,8 +4337,8 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
 
 <!-- ════ SCREEN: SYNC & BACKUP (Claude Design merge, step 4) ════
      Access for testing: app.html#s-sync
-     Back → s-settings. All action buttons carry data-todo markers.
-     The spinning animation on "בדוק סנכרון" is visual-only. -->
+     Back → s-settings. Sync is automatic via Firestore listener — no manual
+     buttons, no fake "last synced" time, no E2E-encryption claims. -->
 <div class="app-screen" id="s-sync">
   <!-- Fake status bar (static clock/battery/signal mock) removed — confused testers; real device status bar is shown by the OS. -->
 
@@ -4439,52 +4441,18 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
 
     </div>
 
-    <!-- Cloud backup -->
+    <!-- Cloud backup — honest: Firestore auto-saves & syncs; no E2E-encryption claim. -->
     <div class="card">
       <div class="cloud-head">
         <div class="cloud-text">
-          <div class="status-title">גיבוי בענן</div>
+          <div class="status-title">שמירה בענן</div>
           <div class="cloud-state"><span class="dot"></span><span>פעיל</span></div>
-          <div class="status-desc">המידע שלכם מגובה בצורה מאובטחת בענן</div>
+          <div class="status-desc">המשימות נשמרות אוטומטית בענן ומסונכרנות בזמן אמת בין בני המשפחה</div>
         </div>
         <div class="cloud-icon" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18a5 5 0 0 1-1-9.9A6 6 0 0 1 17.5 9 4.5 4.5 0 0 1 17 18"/><path d="M12 17V6"/><path d="m9 9 3-3 3 3"/></svg>
         </div>
       </div>
-      <div class="secure-row">
-        <div class="sbody">
-          <div class="st">הגיבוי מאובטח</div>
-          <div class="ss">המידע מוצפן ואישי שלכם נשמר בסודיות</div>
-        </div>
-        <div class="shield" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><rect x="10" y="11" width="4" height="5" rx="1"/><path d="M11 11V9.5a1 1 0 1 1 2 0V11"/></svg>
-        </div>
-      </div>
-    </div>
-
-    <!-- Last sync -->
-    <div class="card lastsync">
-      <div class="ls-text">
-        <div class="status-title">סנכרון אחרון</div>
-        <div class="ls-state"><span class="dot"></span><span>לפני דקה</span></div>
-        <div class="ls-when">היום, 10:29</div>
-      </div>
-      <div class="ls-icon" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
-      </div>
-    </div>
-
-    <!-- Two actions -->
-    <div class="actions">
-      <button class="act" type="button" data-todo="sync-check-now" onclick="(function(b){var s=b.querySelector('svg');s.style.transition='transform 0.8s ease';s.style.transform='rotate(360deg)';setTimeout(function(){s.style.transition='none';s.style.transform='rotate(0deg)';},900);})(this)">
-        <div class="ic green" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4v16"/><path d="m4 8 4-4 4 4"/><path d="M16 4v16"/><path d="m12 16 4 4 4-4"/></svg>
-        </div>
-        <div class="abody">
-          <div class="at green">בדוק סנכרון עכשיו</div>
-          <div class="as">עדכן מיד את כל השינויים בין המכשירים</div>
-        </div>
-      </button>
     </div>
 
     <!-- Privacy banner -->
@@ -4572,8 +4540,9 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
 
 <!-- ════ SCREEN: PRIVACY & SECURITY (Claude Design merge, step 3) ════
      Access for testing: app.html#s-privacy
-     Toggles (נעילת אפליקציה, גישה מהירה) are visual-only.
-     All other rows carry data-todo markers until sub-screens are built.
+     App-lock / PIN / biometric are NOT enforced on app start, so they are
+     shown as a single non-interactive "בקרוב" row (no fake security).
+     Delete-data wording is honest: clears THIS device, cloud copy remains.
      Back button → s-settings. -->
 <div class="app-screen" id="s-privacy">
   <!-- Fake status bar (static clock/battery/signal mock) removed — confused testers; real device status bar is shown by the OS. -->
@@ -4601,7 +4570,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
         <div class="hero-desc">כל המשימות, ההקלטות וההעדפות נשמרות אצלכם ומוצגות רק לבני המשפחה שלכם.</div>
         <div class="green-pill">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg>
-          <span>לא משתפים מידע עם גורמים חיצוניים</span>
+          <span>המידע גלוי רק לבני המשפחה שלכם</span>
         </div>
       </div>
       <div class="hero-illu" aria-hidden="true">
@@ -4648,43 +4617,17 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
     <!-- Rows -->
     <div class="rows">
 
-      <!-- נעילת אפליקציה (toggle — visual only) -->
-      <div class="row">
+      <!-- נעילת אפליקציה (קוד / ביומטרי) — לא ממומש עדיין. מוצג כ"בקרוב"
+           ולא אינטראקטיבי, כדי לא להציג אבטחה מזויפת לבודקים. -->
+      <div class="row" style="opacity:.62;cursor:default;" aria-disabled="true">
         <div class="icn" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
         </div>
         <div class="body">
           <div class="t">נעילת אפליקציה</div>
-          <div class="s">דרוש קוד גישה כדי לפתוח את האפליקציה</div>
+          <div class="s">קוד גישה וכניסה ביומטרית (טביעת אצבע / זיהוי פנים)</div>
         </div>
-        <label class="ptoggle"><input type="checkbox" checked/><span class="slider"></span></label>
-      </div>
-
-      <!-- קוד גישה -->
-      <div class="row" onclick="openPinSetup()">
-        <div class="icn" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="12" rx="2"/><circle cx="8" cy="13" r="1.4" fill="currentColor"/><circle cx="12" cy="13" r="1.4" fill="currentColor"/><circle cx="16" cy="13" r="1.4" fill="currentColor"/></svg>
-        </div>
-        <div class="body">
-          <div class="t">קוד גישה</div>
-          <div class="s">קוד בן 4 ספרות</div>
-        </div>
-        <span class="link-text">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-          <span>שנה קוד</span>
-        </span>
-      </div>
-
-      <!-- גישה מהירה (toggle — visual only) -->
-      <div class="row" onclick="openBiometricSetup()">
-        <div class="icn" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 11a7 7 0 0 1 14 0"/><path d="M5 14a7 7 0 0 0 4 6.3"/><path d="M9 11a3 3 0 0 1 6 0v3"/><path d="M9 14a3 3 0 0 0 1 2.2"/><path d="M12 11v6"/><path d="M14 19v-3"/></svg>
-        </div>
-        <div class="body">
-          <div class="t">גישה מהירה</div>
-          <div class="s">פתח באמצעות טביעת אצבע או זיהוי פנים</div>
-        </div>
-        <label class="ptoggle"><input type="checkbox" checked/><span class="slider"></span></label>
+        <span class="soon-pill">בקרוב</span>
       </div>
 
 
@@ -4696,7 +4639,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
         </div>
         <div class="body">
           <div class="t">מחיקת נתוני האפליקציה</div>
-          <div class="s">מחק את כל הנתונים וההגדרות מהאפליקציה</div>
+          <div class="s">מחק נתונים מהמכשיר הזה ונתק אותו מהמשפחה</div>
         </div>
         <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></span>
       </div>
@@ -4710,7 +4653,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
       </div>
       <div class="body">
         <div class="t">הפרטיות שלכם חשובה לנו</div>
-        <div class="s">אנחנו לא שומרים, לא מוכרים ולא מעבירים מידע שלכם לאף גורם מחוץ למשפחה שלכם.</div>
+        <div class="s">איננו מוכרים את המידע שלכם, והוא גלוי רק לבני המשפחה. לזיהוי הדיבור והטקסט אנו נעזרים בספק עיבוד מאובטח.</div>
       </div>
     </div>
 
@@ -4765,10 +4708,11 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
           <span class="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg></span>
           <span class="tile-label">בהיר</span>
         </button>
-        <button class="tile" data-theme="dark" role="radio" aria-checked="false">
+        <!-- "כהה" אינו מצב כהה אמיתי (רק רקע מאחורי המסגרת) — מושבת עד מימוש מלא. -->
+        <button class="tile" data-theme="dark" data-disabled="1" role="radio" aria-checked="false" aria-disabled="true" style="opacity:.55;cursor:default;">
           <div class="theme-art theme-dark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 14.5A8 8 0 1 1 9.5 3a6.5 6.5 0 0 0 11.5 11.5Z" fill="currentColor" stroke="none"/><path d="M17 4l.6 1.6L19 6l-1.4.6L17 8l-.7-1.4L15 6l1.4-.6Z" fill="currentColor" stroke="none"/></svg></div>
-          <span class="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg></span>
           <span class="tile-label">כהה</span>
+          <span class="soon-pill" style="font-size:10px;padding:2px 7px;margin-top:3px;">בקרוב</span>
         </button>
         <button class="tile" data-theme="calm" role="radio" aria-checked="false">
           <div class="theme-art theme-calm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21c0-5 3-9 8-10-1 6-4 9-8 10Z" fill="currentColor" stroke="currentColor" opacity="0.85"/><path d="M12 21c0-5-3-9-8-10 1 6 4 9 8 10Z" fill="currentColor" stroke="currentColor" opacity="0.65"/><path d="M12 21v-9" stroke-width="1.8"/></svg></div>
@@ -5205,8 +5149,8 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
     <div class="psh-pill"></div>
     <div class="psh-title" style="color:#C0392B" id="delTitle">מחיקת נתוני אפליקציה</div>
     <div class="del-warning">
-      <div class="del-w-title" id="delWarnTitle">⚠️ פעולה בלתי הפיכה</div>
-      <div class="del-w-body" id="delWarnBody">המשך כדי לאמת את זהותך לפני מחיקת כל הנתונים.</div>
+      <div class="del-w-title" id="delWarnTitle">⚠️ איפוס המכשיר הזה</div>
+      <div class="del-w-body" id="delWarnBody">המשך כדי לאמת את זהותך לפני איפוס הנתונים במכשיר זה.</div>
     </div>
     <div class="del-steps">
       <div class="del-step"><div class="del-step-num" id="delStep1Num">1</div><div class="del-step-txt">אימות קוד גישה</div></div>
@@ -5997,7 +5941,7 @@ function loadAppearance() {
   try {
     const s = JSON.parse(localStorage.getItem(APPEARANCE_KEY) || 'null');
     if (!s) return;
-    if (s.theme)       AppState.theme       = s.theme;
+    if (s.theme)       AppState.theme       = (s.theme === 'dark' ? 'bright' : s.theme); // "כהה" disabled — never restore broken dark mode
     if (s.accentColor) { AppState.accentColor = s.accentColor; AppState.accentDeep = s.accentDeep; AppState.accentSoft = s.accentSoft; }
     if (s.textSize)    AppState.textSize    = s.textSize;
     if (s.voiceStyle)  AppState.voiceStyle  = s.voiceStyle;
@@ -6062,6 +6006,7 @@ function renderAppearance() {
 // Event handlers for #s-appearance controls
 document.querySelectorAll('#appr-themes .tile').forEach(function(t) {
   t.addEventListener('click', function() {
+    if (t.dataset.disabled === '1') return;   // "כהה" — coming soon, not selectable
     AppState.theme = t.dataset.theme;
     saveAppearance(); applyAppearance(); renderAppearance();
   });
@@ -6089,12 +6034,6 @@ document.querySelectorAll('#appr-voices .tile').forEach(function(t) {
       localStorage.setItem(MIC_STYLE_KEY, mode);
     }
     saveAppearance(); renderAppearance();
-  });
-});
-document.querySelectorAll('#appr-avatars .av-row').forEach(function(r) {
-  r.addEventListener('click', function() {
-    AppState.avatarMode = r.dataset.av;
-    saveAppearance();
   });
 });
 
@@ -17095,16 +17034,7 @@ function splitSave() {
 
   // ── (removed: התראות row now uses inline onclick via HTML) ──
 
-  // ── #s-sync: "בדוק סנכרון עכשיו" → saveState + visual (animation already in onclick) ──
-  var syncCheckAct = document.querySelector('#s-sync .act .at.green');
-  if (syncCheckAct) {
-    var syncActBtn = syncCheckAct.closest('.act');
-    if (syncActBtn) {
-      syncActBtn.addEventListener('click', function() {
-        if (typeof saveState === 'function') saveState();
-      });
-    }
-  }
+  // ── #s-sync: manual "check sync" button removed — sync is automatic (Firestore listener). ──
 
   // ── #s-visibility: visSaveCta → save visibility to current previewTask then go home ──
   var visCta2 = document.getElementById('visSaveCta');
@@ -17733,17 +17663,17 @@ function _setDeleteCta() {
   if (!cta) return;
   if (_deleteStep === 0) {
     cta.textContent = 'המשך לאימות קוד גישה'; cta.style.background = '';
-    if (wt)   wt.textContent = '⚠️ פעולה בלתי הפיכה';
-    if (warn) warn.textContent = 'המשך כדי לאמת את זהותך לפני מחיקת כל הנתונים.';
+    if (wt)   wt.textContent = '⚠️ איפוס המכשיר הזה';
+    if (warn) warn.textContent = 'המשך כדי לאמת את זהותך לפני איפוס הנתונים במכשיר זה.';
   } else if (_deleteStep === 1) {
     cta.textContent = 'המשך לאימות ביומטרי'; cta.style.background = '';
     if (wt)   wt.textContent = '✓ הקוד אומת';
     if (warn) warn.textContent = 'כעת נדרש אימות ביומטרי אמיתי — טביעת אצבע או זיהוי פנים של המכשיר.';
   } else if (_deleteStep === 2) {
-    cta.textContent = 'מחיקת נתונים';
+    cta.textContent = 'מחק ואפס מכשיר';
     cta.style.background = 'linear-gradient(135deg,#ff3b30,#c0392b)';
-    if (wt)   wt.textContent = 'האם אתה בטוח שברצונך למחוק נתוני אפליקציה?';
-    if (warn) warn.textContent = 'פעולה זו תמחק לצמיתות את כל המשימות, ההגדרות, החיבור למשפחה וקוד המשפחה, ותאפס את האפליקציה למצב התחלתי. ניתן לשחזר את הנתונים מהענן עד 72 שעות מרגע המחיקה.';
+    if (wt)   wt.textContent = 'לאפס את האפליקציה במכשיר הזה?';
+    if (warn) warn.textContent = 'פעולה זו תמחק את כל הנתונים וההגדרות מהמכשיר הזה ותנתק אותו מהמשפחה ומקוד המשפחה. המשימות עצמן נשמרות בענן ואצל שאר בני המשפחה — ותוכלו להתחבר מחדש במכשיר זה תוך 72 שעות.';
   }
 }
 function openDeleteDataFlow() {
