@@ -7540,31 +7540,56 @@ document.getElementById('vTypeToggle').addEventListener('click', () => {
 
 // ── Contenteditable helpers ───────────────────────────────────────
 function _getCaretPos(el) {
+  // Caret offset measured in the SAME logical model as _getInpText: each
+  // character counts 1 and each <br> counts 1 (a newline). Returns null when
+  // there is no caret inside el, so the caller can fall back safely. RTL-safe:
+  // these are logical offsets, independent of visual text direction.
   const sel = window.getSelection();
-  if (!sel || !sel.rangeCount) return 0;
-  const r = sel.getRangeAt(0).cloneRange();
-  r.selectNodeContents(el);
-  r.setEnd(sel.anchorNode, sel.anchorOffset);
-  return r.toString().length;
+  if (!sel || !sel.rangeCount) return null;
+  const range = sel.getRangeAt(0);
+  if (!el.contains(range.endContainer)) return null;
+  const pre = range.cloneRange();
+  pre.selectNodeContents(el);
+  pre.setEnd(range.endContainer, range.endOffset);
+  let len = 0;
+  (function count(node) {
+    node.childNodes.forEach(n => {
+      if (n.nodeType === Node.TEXT_NODE) len += n.textContent.length;
+      else if (n.nodeName === 'BR')      len += 1;
+      else                               count(n);
+    });
+  })(pre.cloneContents());
+  return len;
 }
 function _setCaretPos(el, pos) {
-  const walk = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
-  let node, acc = 0;
-  while ((node = walk.nextNode())) {
-    if (acc + node.length >= pos) {
-      const r = document.createRange();
-      r.setStart(node, pos - acc);
-      r.collapse(true);
-      const sel = window.getSelection();
-      sel.removeAllRanges(); sel.addRange(r); return;
-    }
-    acc += node.length;
+  // Restore the caret to logical offset `pos` over el's flat span/<br> content
+  // (each <br> counts as one newline, matching _getCaretPos / _getInpText).
+  const sel = window.getSelection();
+  const range = document.createRange();
+  if (pos == null) { // caret could not be read → logical end (old safe default)
+    range.selectNodeContents(el); range.collapse(false);
+    sel.removeAllRanges(); sel.addRange(range); return;
   }
-  // Fallback: move to end
-  const r = document.createRange();
-  r.selectNodeContents(el); r.collapse(false);
-  window.getSelection().removeAllRanges();
-  window.getSelection().addRange(r);
+  let acc = 0, placed = false;
+  (function walk(parent) {
+    const kids = parent.childNodes;
+    for (let i = 0; i < kids.length && !placed; i++) {
+      const n = kids[i];
+      if (n.nodeType === Node.TEXT_NODE) {
+        const len = n.textContent.length;
+        if (acc + len >= pos) { range.setStart(n, pos - acc); placed = true; return; }
+        acc += len;
+      } else if (n.nodeName === 'BR') {
+        if (acc + 1 > pos) { range.setStartBefore(n); placed = true; return; }
+        acc += 1;
+      } else {
+        walk(n);
+      }
+    }
+  })(el);
+  if (placed) range.collapse(true);
+  else { range.selectNodeContents(el); range.collapse(false); }
+  sel.removeAllRanges(); sel.addRange(range);
 }
 
 let _typeTracked = '';
@@ -7623,17 +7648,20 @@ vTypeInpEl.addEventListener('input', function() {
   let ci = 0;
   while (ci < _typeTracked.length && ci < current.length && _typeTracked[ci] === current[ci]) ci++;
 
+  // Capture the caret's logical offset BEFORE the rebuild. The browser has
+  // already applied this keystroke at the correct spot; rebuilding the DOM
+  // below would otherwise lose it (the old bug forced the caret to the end).
+  const caret = _getCaretPos(this);
+
   // Rebuild: old part plain, new part animated — both preserve line breaks
   this.innerHTML = '';
   if (ci > 0) _appendNodes(this, current.slice(0, ci), false);
   _appendNodes(this, current.slice(ci), true);
   _typeTracked = current;
 
-  // Place caret at logical end (works for both RTL and LTR)
-  const r = document.createRange();
-  r.selectNodeContents(this); r.collapse(false);
-  const sel = window.getSelection();
-  sel.removeAllRanges(); sel.addRange(r);
+  // Restore the caret to the SAME logical offset (RTL- and multiline/<br>-aware)
+  // so mid-text edits stay exactly where the user placed them.
+  _setCaretPos(this, caret);
   // Scroll to bottom only when typing at the end (not editing mid-text)
   // This lets user scroll up to edit earlier lines without being pulled back down
   if (ci >= prevLen) {
