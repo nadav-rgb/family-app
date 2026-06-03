@@ -63,6 +63,19 @@ body.ios-safe{
   --sat:max(env(safe-area-inset-top,0px),50px);
   --sab:max(env(safe-area-inset-bottom,0px),8px);
 }
+/* JS-INDEPENDENT fallback. The body.ios-safe class above only applies if the
+   detection IIFE (deep in the page) actually runs; a device-only early JS error
+   or slow boot leaves it off, so --sat falls back to env()=0 and Safari lets the
+   profile hero / avatar slide under the status bar (the bug testers still see).
+   `@supports (-webkit-touch-callout: none)` is true ONLY on iOS Safari / iOS
+   WebViews and false on Android + desktop, so this clamps the same safe-area
+   floor purely in CSS — no JS required — without touching Android/desktop. */
+@supports (-webkit-touch-callout: none) {
+  :root{
+    --sat:max(env(safe-area-inset-top,0px),50px);
+    --sab:max(env(safe-area-inset-bottom,0px),8px);
+  }
+}
 body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:100vh;display:flex;justify-content:center;align-items:center;font-family:'Rubik',sans-serif;padding:32px 16px;}
 
 /* ── Phone ── */
