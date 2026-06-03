@@ -4783,7 +4783,8 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
           <span class="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg></span>
           <span class="tile-label">בלוב</span>
         </button>
-        <button class="tile" data-voice="star" role="radio" aria-checked="false">
+        <!-- "הדמות" (star) hidden — it mapped to the same mic mode as "לב" (heart), so it was a duplicate/fake choice. -->
+        <button class="tile" data-voice="star" role="radio" aria-checked="false" style="display:none" aria-hidden="true">
           <div class="voice-art"><div class="vbtn v-star"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div></div>
           <span class="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg></span>
           <span class="tile-label">הדמות</span>
@@ -5467,7 +5468,8 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
         <span>שמור לבחירה שלי</span>
         <span class="spl-ck-pill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg></span>
       </button>
-      <button class="spl-ghost-btn" type="button" data-todo="edit-manual" id="splEditBtn">
+      <!-- "ערוך ידנית" hidden — dead button (data-todo="edit-manual", no handler yet). -->
+      <button class="spl-ghost-btn" type="button" data-todo="edit-manual" id="splEditBtn" style="display:none" aria-hidden="true">
         <span>ערוך ידנית</span>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4Z"/></svg>
       </button>
