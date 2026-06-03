@@ -13728,6 +13728,11 @@ async function _saveMemberAvatar(memberId, avatar, options) {
   // Refresh in-memory cache so render uses new avatar immediately.
   const cached = _familyMembersCache.find(m => m.memberId === memberId);
   if (cached) { cached.avatar = avatar; if (options !== undefined) cached.avatarOptions = options; }
+  else { _familyMembersCache.push(options !== undefined ? { memberId, avatar, avatarOptions: options } : { memberId, avatar }); }
+  // #7 fix: persist the cache to localStorage NOW (not only on the ~2s Firestore
+  // listener roundtrip), so any screen re-rendered before the listener fires reads
+  // the NEW avatar from cache instead of flashing the previous one.
+  try { localStorage.setItem(_MEMBER_CACHE_LS_KEY, JSON.stringify(_familyMembersCache)); } catch (e) {}
 }
 
 // Crop output sent to the avatar pipeline (and saved). A/B input-quality test:
@@ -14414,6 +14419,12 @@ const AvatarFlow = {
       const avatar = { type: 'photo', url };
       await _saveMemberAvatar(this.memberId, avatar);
       const nodeCount = _refreshAvatarUI(this.memberId, avatar);
+      // #7 fix: the home hero portrait and the open member-profile render via
+      // separate paths NOT covered by data-avatar-for, so refresh them too —
+      // otherwise they keep the old image until the next navigation. (Mirrors
+      // what the AI-photo path already does.)
+      if (typeof updateHmPortrait === 'function') updateHmPortrait();
+      if (typeof _renderMemberProfile === 'function' && typeof _mpCurrentId !== 'undefined' && _mpCurrentId === this.memberId) _renderMemberProfile();
       console.log('[Avatar] saved + rendered for ' + this.memberId + ' nodes=' + nodeCount);
     } catch (e) {
       console.error('[Avatar] save failed', e);
@@ -14432,6 +14443,9 @@ const AvatarFlow = {
     try {
       await _saveMemberAvatar(this.memberId, def);
       _refreshAvatarUI(this.memberId, def);
+      // #7 fix: same separate render paths as the photo save path.
+      if (typeof updateHmPortrait === 'function') updateHmPortrait();
+      if (typeof _renderMemberProfile === 'function' && typeof _mpCurrentId !== 'undefined' && _mpCurrentId === this.memberId) _renderMemberProfile();
       console.log('[Avatar] removed → reverted to default emoji for ' + this.memberId);
     } catch (e) {
       console.error('[Avatar] remove failed', e);
@@ -14450,11 +14464,27 @@ const AvatarFlow = {
 function _refreshAvatarUI(memberId, avatar) {
   const tStart = performance.now();
   const nodes  = document.querySelectorAll('[data-avatar-for="' + memberId + '"]');
-  nodes.forEach(node => {
-    const size = parseInt(node.dataset.avatarSize, 10) || 64;
-    const slot = node.querySelector('[data-avatar-slot]') || node;
-    slot.innerHTML = renderAvatarHTML(avatar, size);
-  });
+  const paint = () => {
+    nodes.forEach(node => {
+      const size = parseInt(node.dataset.avatarSize, 10) || 64;
+      const slot = node.querySelector('[data-avatar-slot]') || node;
+      slot.innerHTML = renderAvatarHTML(avatar, size);
+    });
+  };
+  // #7 fix: for photo avatars, preload the (possibly brand-new Storage) URL and
+  // only swap the DOM once the image is decoded. This keeps the OLD avatar on
+  // screen until the new one is ready, eliminating the white-flash. On a cached
+  // URL onload fires immediately, so there is no perceptible delay. Emoji/seed
+  // avatars paint synchronously as before.
+  const isPhoto = avatar && (avatar.type === 'photo' || avatar.type === 'ai-photo') && avatar.url;
+  if (isPhoto && nodes.length) {
+    const pre = new Image();
+    pre.onload = paint;
+    pre.onerror = paint; // fall through to the <img> (which shows alt) on failure
+    pre.src = avatar.url;
+  } else {
+    paint();
+  }
   console.log('[Avatar] render +' + Math.round(performance.now() - tStart)
     + 'ms memberId=' + memberId + ' nodes=' + nodes.length + ' type=' + avatar.type);
   return nodes.length;
@@ -16217,6 +16247,9 @@ function _visSetFilter(section, val) {
     }
   });
 
+  // #6 fix: any see-section filter ('all'/'performer'/'custom') must not strip the
+  // creator — re-assert their locked selection before syncing notify/hero.
+  if (section === 'see' && typeof _visLockCreatorChip === 'function') _visLockCreatorChip();
   if (section === 'see') _visSyncNotifyToSee();
   _visUpdateTip();
   _visUpdateHero();
@@ -16392,23 +16425,74 @@ function _visApplyRealMembers() {
     });
   });
 
-  // Hero "performer" name + avatar — use real member when assignedTo/createdBy is a userId.
+  // Hero "performer" name + avatar. #5 fix: resolve the owner (assignee, else
+  // creator, else this device) to a REAL participant + displayName so the hero
+  // never shows the seed placeholder "חבר 1" when a real identity is available.
+  // The seed text set earlier by _visUpdateHero is only overridden when we have
+  // a real name — so a genuinely unknown member still falls back to placeholder.
   var task = AppState._editingTask || (AppState.previewTasks && AppState.previewTasks[0]);
   if (task) {
-    var aid = task.assignedToMemberId || task.createdBy;
-    var cached = aid && (_familyMembersCache || []).find(function (m) { return m.userId === aid || m.memberId === aid; });
-    if (cached) {
-      var nm = cached.name || 'חבר';
-      var perfName = document.getElementById('visHeroPerfName');
-      if (perfName) perfName.textContent = nm;
-      var bigAva = document.getElementById('visHeroBigAva');
-      if (bigAva && typeof _participantInner === 'function') {
-        bigAva.innerHTML  = _participantInner(cached, nm, 0, 56);
-        bigAva.className  = 'vis-hero-big-ava';
-        bigAva.removeAttribute('data-avatar-for');
-      }
+    var ownerId = task.assignedToMemberId || task.createdByMemberId || task.createdBy || myId;
+    var owner = ownerId && (_familyMembersCache || []).find(function (m) { return m.userId === ownerId || m.memberId === ownerId; });
+    // Name priority: identity-aware task resolver (self→displayName, placeholder→'')
+    // → owner participant displayName → this device's own displayName.
+    var nm = (typeof _taskDisplayName === 'function' ? (_taskDisplayName(task) || '') : '')
+          || (owner && typeof _participantDisplayName === 'function' ? _participantDisplayName(owner, myId) : '')
+          || (DataAdapter.displayName || '');
+    var perfName = document.getElementById('visHeroPerfName');
+    if (perfName && nm) perfName.textContent = nm;
+    var bigAva = document.getElementById('visHeroBigAva');
+    if (bigAva && owner && typeof _participantInner === 'function') {
+      bigAva.innerHTML  = _participantInner(owner, nm || '👤', 0, 56);
+      bigAva.className  = 'vis-hero-big-ava';
+      bigAva.removeAttribute('data-avatar-for');
     }
   }
+
+  // #6 fix: the task creator must always see the task and must not be removable.
+  // Lock the creator's chip in the SEE row (selected + click-ignored).
+  if (typeof _visLockCreatorChip === 'function') _visLockCreatorChip();
+}
+
+// #6: returns true when a SEE-row chip represents the task creator / this device.
+// Robust across both the real-userId scheme (post _visApplyRealMembers) and the
+// static seed vis-id scheme (cold cache / non-family).
+function _visCreatorIdSet() {
+  var ids = {};
+  var add = function (v) { if (v) ids[String(v)] = true; };
+  add(DataAdapter.userId); add(DataAdapter.myMemberId);
+  if (DataAdapter.myMemberId) {
+    add(_MEMBER_TO_VIS[DataAdapter.myMemberId]);
+    var leg = (typeof _legacyIdForMemberId === 'function') ? _legacyIdForMemberId(DataAdapter.myMemberId) : null;
+    if (leg) { add(leg); add(_LEGACY_TO_VIS[leg]); }
+  }
+  var task = AppState._editingTask || (AppState.previewTasks && AppState.previewTasks[0]);
+  if (task) {
+    add(task.createdBy); add(task.createdByMemberId);
+    var cmid = (typeof _taskCreatorMemberId === 'function') ? _taskCreatorMemberId(task) : null;
+    if (cmid) {
+      add(cmid); add(_MEMBER_TO_VIS[cmid]);
+      var cleg = (typeof _legacyIdForMemberId === 'function') ? _legacyIdForMemberId(cmid) : null;
+      if (cleg) { add(cleg); add(_LEGACY_TO_VIS[cleg]); }
+    }
+  }
+  return ids;
+}
+function _visIsCreatorChip(b) {
+  if (!b) return false;
+  var set = _visCreatorIdSet();
+  if (set[String(b.dataset.id)]) return true;
+  var aliases = (typeof _visIdAliases === 'function') ? _visIdAliases(b.dataset.id) : [String(b.dataset.id)];
+  return aliases.some(function (a) { return set[String(a)]; });
+}
+function _visLockCreatorChip() {
+  document.querySelectorAll('#visSeeRow .vis-ava-frame').forEach(function (b) {
+    if (b.style.display === 'none') return;
+    if (!_visIsCreatorChip(b)) return;
+    b.classList.add('active', 'vis-creator-locked');
+    var badge = b.querySelector('.vis-badge');
+    if (badge) { badge.className = 'vis-badge orange'; badge.innerHTML = _visSVGCheck; }
+  });
 }
 
 function renderVisibility() {
@@ -16983,6 +17067,8 @@ function splitSave() {
       var filter = _visSeeFilter;
       if (filter === 'performer') return;
       if (b.dataset.id === _visPerformer) return; // performer always fixed in see
+      // #6 fix: the creator can never be unchecked — they must always see their own task.
+      if (typeof _visIsCreatorChip === 'function' && _visIsCreatorChip(b)) return;
       if (filter === 'all') _visSetFilter('see', 'custom'); // auto-switch to custom
       var badge = b.querySelector('.vis-badge');
       var isOn  = b.classList.contains('active');
@@ -17090,6 +17176,11 @@ function splitSave() {
       document.querySelectorAll('#visNotifyRow .vis-ava-frame.active').forEach(function(b) { notifyIdsRaw.push(b.dataset.id); });
       var seeIds    = seeIdsRaw.map(toLegacy);
       var notifyIds = notifyIdsRaw.map(toLegacy);
+
+      // #6 fix: persisted visibleTo must ALWAYS include the creator, regardless of
+      // what the chips ended up as (defensive — the chip is also locked in the UI).
+      var _creatorPersistId = DataAdapter.userId || DataAdapter.myMemberId;
+      if (_creatorPersistId && seeIds.indexOf(_creatorPersistId) === -1) seeIds.push(_creatorPersistId);
 
       var editing = AppState._editingTask;
       if (editing) {
