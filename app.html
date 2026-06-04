@@ -5927,7 +5927,7 @@ const _urlDbg  = new URLSearchParams(window.location.search).get('debug') === '1
 // ── Runtime build marker (visible in Settings + Sync Diagnostics) ──
 // Bump this string on every web build so we can confirm — from the device —
 // exactly which code is actually running, independent of Android versionCode.
-const APP_BUILD = '1.4-build8-idguard-2026-06-03';
+const APP_BUILD = '1.4.2-build9-idfix-bday-2026-06-04';
 window.APP_BUILD = APP_BUILD;
 try { const _bv = document.getElementById('settingsBuildVal'); if (_bv) _bv.textContent = APP_BUILD; } catch (e) {}
 const _urlDiag = new URLSearchParams(window.location.search).get('diag') === '1';
@@ -8914,11 +8914,19 @@ function renderConfirmationTasks() {
       : (t('family_' + task.assignedTo) || task.person || task.assignedTo || '');
     // ─ 1B: resolve member's current avatar (cache → seed) and inject into the
     // empty .avatar circle so a photo shows here too, not just the gradient.
-    const _confMemberId = (typeof LEGACY_ID_TO_MEMBER_ID === 'object' && LEGACY_ID_TO_MEMBER_ID[task.assignedTo]) || null;
-    const _confMember   = _confMemberId
-      ? ((_familyMembersCache && _familyMembersCache.find(m => m.memberId === _confMemberId))
-         || _FAMILY_MEMBERS_SEED.find(m => m.memberId === _confMemberId))
-      : null;
+    // Unified resolver: prefer the REAL member doc (by assignedToMemberId/userId
+    // via resolveMember) so a real participant shows their real avatar here — not
+    // only when assignedTo is a legacy seed id. Falls back to the legacy seed map.
+    const _confRM = (typeof resolveMember === 'function' && DataAdapter.isFamily()) ? resolveMember(task) : null;
+    const _confMemberId = (_confRM && _confRM.memberId)
+      || task.assignedToMemberId
+      || ((typeof LEGACY_ID_TO_MEMBER_ID === 'object' && LEGACY_ID_TO_MEMBER_ID[task.assignedTo]) || null);
+    const _confMember   = (_confRM && _confRM.avatar)
+      ? _confRM
+      : (_confMemberId
+          ? ((_familyMembersCache && _familyMembersCache.find(m => m.memberId === _confMemberId || m.userId === _confMemberId))
+             || _FAMILY_MEMBERS_SEED.find(m => m.memberId === _confMemberId))
+          : null);
     const _confAvHTML = (_confMember && _confMember.avatar && typeof renderAvatarHTML === 'function')
       ? renderAvatarHTML(_confMember.avatar, 40)
       : '';
@@ -13207,7 +13215,11 @@ function _daStartListener() {
       console.log('[RT] added/modified merged count=' + mergedCount);
       if (removedIgnored > 0) console.log('[RT] removed ignored count=' + removedIgnored);
 
-      if (mergedCount > 0) {
+      // Run the countdown-dedup cleanup on the INITIAL snapshot too (not only
+      // when new cloud docs merged): a returning device already has every task
+      // in localStorage, so mergedCount is 0, yet its cloud may still hold the
+      // duplicate birthday docs that must be collapsed + deleted on this boot.
+      if (mergedCount > 0 || isInitial) {
         try { _migrateCountdownVisibility(); } catch (_) {}
         saveState();
         renderToday();
@@ -13730,6 +13742,28 @@ function _daHealSelfDisplayName() {
   } catch (e) {}
 }
 
+// Identity-loss heal (UI/localStorage-only — never writes Firestore): a device
+// that joined as a REAL userId-keyed member never goes through the seed-based
+// device-setup, so myMemberId can stay null → createdByMemberId null, performer/
+// creator resolution + default "performer-only" visibility break, and the seed
+// placeholder can leak. Link THIS device to its own real member doc, matched
+// STRICTLY by userId (so it can never pick up another member). Idempotent; never
+// overrides an existing myMemberId; only links a unique real (non-seed) doc.
+function _daHealMyMemberId() {
+  try {
+    if (!DataAdapter.isFamily()) return;
+    if (DataAdapter.myMemberId) return;               // already linked — never override
+    const myId = DataAdapter.userId;
+    if (!myId) return;
+    const mine = (_familyMembersCache || []).find(m =>
+      m && m.userId === myId && !IDENTITY_MEMBER_IDS.includes(m.memberId));
+    if (!mine) return;
+    const mid = mine.memberId || myId;
+    localStorage.setItem('family-app-my-member-id', mid);
+    console.log('[IdentityGuard] myMemberId healed from cache →', mid);
+  } catch (e) {}
+}
+
 async function _loadFamilyMembersCache() {
   if (!_db || !DataAdapter.isFamily()) return;
   try {
@@ -13759,6 +13793,7 @@ async function _loadFamilyMembersCache() {
     console.log('[DA] members cache loaded:', _familyMembersCache.length);
     try { localStorage.setItem(_MEMBER_CACHE_LS_KEY, JSON.stringify(_familyMembersCache)); } catch(e) {}
     _daHealSelfDisplayName();   // partial-identity-loss heal: refill self displayName from cache
+    _daHealMyMemberId();        // link this device to its real member doc when myMemberId is null
     if (typeof _renderAllAvatars === 'function') _renderAllAvatars();
     if (typeof _mpApplyAllStripes === 'function') _mpApplyAllStripes();
     // Re-render the member surfaces now that real participants are loaded, so
@@ -18960,35 +18995,53 @@ function _parentVisibleIds() {
 function _migrateCountdownVisibility() {
   if (!Array.isArray(AppState.tasks)) return;
   let changed = false;
-  const parents = _parentVisibleIds();
-  const seen = new Set();
+  // Collapse countdown reminders by TYPE + normalized celebrant TITLE + DATE —
+  // memberId-INDEPENDENT. Duplicate/seed member docs that each spawned a copy of
+  // the same reminder (the "massively duplicated birthday" bug) now merge into a
+  // single task. The survivor inherits the UNION of every duplicate's visibleTo /
+  // notifyTo, so collapsing can never hide the reminder from anyone who saw it.
+  const _normT = s => String(s == null ? '' : s).replace(/\s+/g, ' ').trim();
+  const _union = (a, b) => Array.from(new Set([].concat(
+    Array.isArray(a) ? a : [], Array.isArray(b) ? b : []).filter(Boolean)));
+  const seen = new Map();
   const kept = [];
+  const dropped = [];                 // duplicate countdown docs to delete from cloud
+  const touched = new Set();          // survivors whose audience grew → re-persist
   for (const t of AppState.tasks) {
     if (!_isCountdownTask(t)) { kept.push(t); continue; }
-    const anniv    = _isAnnivCountdown(t);
-    const ownerKey = anniv ? 'anniv' : (t.assignedToMemberId || t.assignedTo || '?');
-    const key      = `${t.title}|${t.date}|${ownerKey}`;
-    if (seen.has(key)) { changed = true; continue; }   // drop duplicate copy
-    seen.add(key);
-    const cur = Array.isArray(t.visibleTo) ? t.visibleTo.slice() : [];
-    if (anniv) {
-      const want = parents.slice();
-      if (cur.slice().sort().join(',') !== want.slice().sort().join(',')) {
-        t.visibleTo = want; t.viewOnly = true; t.noNotification = true; changed = true;
-      }
-    } else {
-      const owner    = t.assignedToMemberId;
-      const ownerLeg = t.assignedTo || _legacyIdForMemberId(owner);
-      if (owner || ownerLeg) {
-        const want = [ownerLeg, owner].filter(Boolean);
-        if (cur.length !== want.length || cur.slice().sort().join(',') !== want.slice().sort().join(',')) {
-          t.visibleTo = want; t.viewOnly = true; t.noNotification = true; changed = true;
-        }
-      }
+    const anniv = _isAnnivCountdown(t);
+    const key   = `${anniv ? 'anniv' : 'bday'}|${_normT(t.title)}|${t.date}`;
+    const prev  = seen.get(key);
+    if (prev) {
+      const bV = (prev.visibleTo || []).length, bN = (prev.notifyTo || []).length;
+      prev.visibleTo = _union(prev.visibleTo, t.visibleTo);
+      prev.notifyTo  = _union(prev.notifyTo,  t.notifyTo);
+      if (prev.visibleTo.length !== bV || prev.notifyTo.length !== bN) touched.add(prev);
+      dropped.push(t);
+      changed = true;
+      continue;   // drop duplicate copy, audience merged into the survivor
     }
+    seen.set(key, t);
     kept.push(t);
   }
-  if (changed) { AppState.tasks = kept; try { saveState(); } catch (_) {} }
+  if (changed) {
+    AppState.tasks = kept;
+    try { saveState(); } catch (_) {}
+    // Persisted cleanup (saveState is LOCAL-only): delete the dropped duplicate
+    // task docs from Firestore so the onSnapshot listener can't resurrect them
+    // (it ignores 'removed' and re-adds any cloud doc missing locally), and
+    // re-persist any survivor whose audience grew so no recipient loses the
+    // reminder. Guarded + best-effort; only fires when duplicates were found.
+    if (_db && DataAdapter.isFamily()) {
+      try {
+        const _col = _db.collection('families').doc(DataAdapter.familyId).collection('tasks');
+        dropped.forEach(d => { try { _col.doc(String(d.id)).delete().catch(() => {}); } catch (_) {} });
+        if (typeof _daWriteTask === 'function') {
+          touched.forEach(s => { try { _daWriteTask(s, false).catch(() => {}); } catch (_) {} });
+        }
+      } catch (_) {}
+    }
+  }
 }
 
 // ── Countdown tasks for birthday / anniversary ───────────────────
@@ -19075,6 +19128,9 @@ function _mpCreateCountdownTasks(memberId, field, dateStr, calTypeOverride) {
     }
   }
   saveState();
+  // Immediately collapse any duplicate copies just generated (seed-driven
+  // fan-out) so duplicate birthday/anniversary reminders never persist.
+  try { _migrateCountdownVisibility(); } catch (_) {}
 }
 
 // ── Save to Firestore + local cache ───────────────────────────────

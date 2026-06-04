@@ -63,6 +63,19 @@ body.ios-safe{
   --sat:max(env(safe-area-inset-top,0px),50px);
   --sab:max(env(safe-area-inset-bottom,0px),8px);
 }
+/* JS-INDEPENDENT fallback. The body.ios-safe class above only applies if the
+   detection IIFE (deep in the page) actually runs; a device-only early JS error
+   or slow boot leaves it off, so --sat falls back to env()=0 and Safari lets the
+   profile hero / avatar slide under the status bar (the bug testers still see).
+   `@supports (-webkit-touch-callout: none)` is true ONLY on iOS Safari / iOS
+   WebViews and false on Android + desktop, so this clamps the same safe-area
+   floor purely in CSS — no JS required — without touching Android/desktop. */
+@supports (-webkit-touch-callout: none) {
+  :root{
+    --sat:max(env(safe-area-inset-top,0px),50px);
+    --sab:max(env(safe-area-inset-bottom,0px),8px);
+  }
+}
 body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:100vh;display:flex;justify-content:center;align-items:center;font-family:'Rubik',sans-serif;padding:32px 16px;}
 
 /* ── Phone ── */
@@ -77,9 +90,13 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
      The Today list (#s-today .t-scroll) is an independent overflow:auto
      container, so it keeps scrolling normally. */
   html,body{overflow:hidden;overscroll-behavior:none;}
-  body{padding:0;align-items:stretch;min-height:100vh;min-height:100svh;min-height:100dvh;
+  body{padding:0;align-items:stretch;min-height:100vh;min-height:100svh;
        background:linear-gradient(175deg,#fffaf5 0%,#fff4e8 55%,#fdebd8 100%);}
-  .phone{width:100%;height:100vh;height:100svh;height:100dvh;border-radius:0;box-shadow:none;border:none;}
+  /* Anchor the shell to the STABLE small viewport (svh), not the dynamic dvh.
+     dvh chased iOS Safari's toolbar, reflowing the absolute screens and letting
+     content slide under the status bar with no scroll escape (overflow:hidden).
+     svh never overshoots the visible area, so the safe-area inset lands reliably. */
+  .phone{width:100%;height:100vh;height:100svh;border-radius:0;box-shadow:none;border:none;}
 }
 /* Inner scrollers: stop at their own edges without a rubber-band bounce. */
 #s-today .t-scroll,#s-dp .dp-list{overscroll-behavior:contain;}
@@ -2509,7 +2526,11 @@ body.text-large .phone{font-size:17px}
 .back-btn svg,.td-back svg,.back svg{width:18px!important;height:18px!important;}
 .back-btn span{display:none!important;}
 /* Recovery banner after factory reset — overlays any screen */
-.recovery-banner{position:absolute;left:12px;right:12px;top:54px;z-index:500;background:linear-gradient(135deg,#fff3e9,#ffe6d3);border:1px solid rgba(224,124,58,.35);border-radius:18px;padding:13px 15px;display:flex;flex-direction:column;gap:9px;box-shadow:0 10px 26px rgba(160,90,30,.18);}
+/* top: this banner is attached to .phone (a sibling of .app-screen), so it does
+   NOT inherit the --sat safe-area inset. The hardcoded 54px let it slide under
+   the iPhone status bar / Dynamic Island. max(54px, var(--sat)+12px) keeps the
+   original 54px on Android/desktop (--sat:0) and clears the inset on iOS. */
+.recovery-banner{position:absolute;left:12px;right:12px;top:max(54px, calc(var(--sat) + 12px));z-index:500;background:linear-gradient(135deg,#fff3e9,#ffe6d3);border:1px solid rgba(224,124,58,.35);border-radius:18px;padding:13px 15px;display:flex;flex-direction:column;gap:9px;box-shadow:0 10px 26px rgba(160,90,30,.18);}
 .recovery-banner .rb-txt{font-size:12.5px;font-weight:700;color:#9e5a2a;line-height:1.4;text-align:center;}
 .recovery-banner .rb-btn{border:none;border-radius:12px;padding:11px;background:linear-gradient(135deg,#ff8a4c,#e07c3a);color:#fff;font-family:'Nunito',sans-serif;font-weight:900;font-size:14px;cursor:pointer;box-shadow:0 5px 14px rgba(224,124,58,.32);}
 .recovery-banner .rb-btn:active{transform:scale(.98);}
@@ -5906,7 +5927,7 @@ const _urlDbg  = new URLSearchParams(window.location.search).get('debug') === '1
 // ── Runtime build marker (visible in Settings + Sync Diagnostics) ──
 // Bump this string on every web build so we can confirm — from the device —
 // exactly which code is actually running, independent of Android versionCode.
-const APP_BUILD = '1.4-build8-idguard-2026-06-03';
+const APP_BUILD = '1.4.2-build9-idfix-bday-2026-06-04';
 window.APP_BUILD = APP_BUILD;
 try { const _bv = document.getElementById('settingsBuildVal'); if (_bv) _bv.textContent = APP_BUILD; } catch (e) {}
 const _urlDiag = new URLSearchParams(window.location.search).get('diag') === '1';
@@ -8893,11 +8914,19 @@ function renderConfirmationTasks() {
       : (t('family_' + task.assignedTo) || task.person || task.assignedTo || '');
     // ─ 1B: resolve member's current avatar (cache → seed) and inject into the
     // empty .avatar circle so a photo shows here too, not just the gradient.
-    const _confMemberId = (typeof LEGACY_ID_TO_MEMBER_ID === 'object' && LEGACY_ID_TO_MEMBER_ID[task.assignedTo]) || null;
-    const _confMember   = _confMemberId
-      ? ((_familyMembersCache && _familyMembersCache.find(m => m.memberId === _confMemberId))
-         || _FAMILY_MEMBERS_SEED.find(m => m.memberId === _confMemberId))
-      : null;
+    // Unified resolver: prefer the REAL member doc (by assignedToMemberId/userId
+    // via resolveMember) so a real participant shows their real avatar here — not
+    // only when assignedTo is a legacy seed id. Falls back to the legacy seed map.
+    const _confRM = (typeof resolveMember === 'function' && DataAdapter.isFamily()) ? resolveMember(task) : null;
+    const _confMemberId = (_confRM && _confRM.memberId)
+      || task.assignedToMemberId
+      || ((typeof LEGACY_ID_TO_MEMBER_ID === 'object' && LEGACY_ID_TO_MEMBER_ID[task.assignedTo]) || null);
+    const _confMember   = (_confRM && _confRM.avatar)
+      ? _confRM
+      : (_confMemberId
+          ? ((_familyMembersCache && _familyMembersCache.find(m => m.memberId === _confMemberId || m.userId === _confMemberId))
+             || _FAMILY_MEMBERS_SEED.find(m => m.memberId === _confMemberId))
+          : null);
     const _confAvHTML = (_confMember && _confMember.avatar && typeof renderAvatarHTML === 'function')
       ? renderAvatarHTML(_confMember.avatar, 40)
       : '';
@@ -10496,6 +10525,64 @@ function renderToday() {
     const realTForEdit = t.isRecurring ? (AppState.tasks.find(rt => rt.id === t.recurrenceId) || t) : t;
     const canEditCommitted = _canEditCommittedTask(realTForEdit);
     const tCanSplit = offerableSplit(t.subItems?.mainTitle || t.title).length >= 2;
+    // Build the "shared with" row ONCE so we can hide it for effectively-solo
+    // tasks. With a single member it rendered an empty-looking second section
+    // that visually echoed the main row's bell/checkbox (the "broken card" /
+    // duplicate-bell/duplicate-circle report). Avatar logic is unchanged —
+    // only lifted out of the template so we can gate on the member count.
+    const _shareInfo = (() => {
+      const ownerId    = _taskLegacyAssigneeId(t);
+      const creatorLeg = _taskCreatorLegacyId(t);
+      const emphId     = creatorLeg || ownerId;   // emphasize the CREATOR
+      const visIds  = Array.isArray(t.visibleTo) ? t.visibleTo.slice() : [];
+      const notifyIds = new Set((Array.isArray(t.notifyTo) ? t.notifyTo : []).map(String));
+      const notifyOn = t.notify !== false;
+      const seen = new Set();
+      const ordered = [];
+      if (emphId)  { ordered.push(emphId);  seen.add(String(emphId)); }
+      if (ownerId && !seen.has(String(ownerId))) { ordered.push(ownerId); seen.add(String(ownerId)); }
+      visIds.forEach(id => {
+        if (id == null) return;
+        const legacy = _legacyIdForMemberId(id) || String(id);
+        if (seen.has(String(legacy))) return;
+        ordered.push(legacy); seen.add(String(legacy));
+      });
+      const idAliases = id => {
+        const out = new Set();
+        if (id == null) return out;
+        out.add(String(id));
+        const mem = _memberIdForLegacyId(id); if (mem) out.add(String(mem));
+        const leg = _legacyIdForMemberId(id); if (leg) out.add(String(leg));
+        return out;
+      };
+      const html = ordered.map(id => {
+        const isOwner = String(id) === String(emphId);   // emphasized = creator
+        let hasBell = false;
+        if (notifyOn) {
+          for (const a of idAliases(id)) { if (notifyIds.has(a)) { hasBell = true; break; } }
+        }
+        // Resolve legacy id → memberId so renderAvatarHTML can paint photos.
+        const memId  = _memberIdForLegacyId(id) || (String(id).startsWith('member_') ? id : null);
+        const size   = isOwner ? 36 : 22;
+        const avAttr = memId
+          ? ` data-avatar-for="${memId}" data-avatar-size="${size}"`
+          : '';
+        const slot   = memId
+          ? '<div data-avatar-slot style="position:absolute;inset:0;border-radius:inherit;"></div>'
+          : '';
+        return `<div class="t-share-av${isOwner?' owner':''}" data-id="${id}">
+                <div class="t-share-circle"${avAttr} style="position:relative;overflow:hidden;">${slot}</div>
+                ${hasBell?'<span class="t-share-bell">🔔</span>':''}
+              </div>`;
+      }).join('');
+      return { html, count: ordered.length };
+    })();
+    // Gate: only show the share row for genuinely shared tasks (≥2 people).
+    // Solo tasks drop it entirely — OptionsSheet stays reachable via a tap on
+    // the card body (handler added below).
+    const _shareRow = _shareInfo.count >= 2
+      ? `<div class="t-share"><div class="t-share-avs">${_shareInfo.html}</div><span class="t-share-arrow">›</span></div>`
+      : '';
     el.innerHTML = `
       <div class="t-swipe-bg"><svg class="swipe-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></div>
       <div class="t-swipe-track">
@@ -10507,55 +10594,7 @@ function renderToday() {
           <div class="t-miniav" style="background:${p.bg}">${taskAvImg(t)}</div>
           <div class="t-bell${_taskShowsActiveBell(t)?'':' off'}">${_taskShowsActiveBell(t)?'🔔':'🔕'}</div>
         </div>
-        <div class="t-share">
-          <div class="t-share-avs">${(() => {
-            const ownerId    = _taskLegacyAssigneeId(t);
-            const creatorLeg = _taskCreatorLegacyId(t);
-            const emphId     = creatorLeg || ownerId;   // emphasize the CREATOR
-            const visIds  = Array.isArray(t.visibleTo) ? t.visibleTo.slice() : [];
-            const notifyIds = new Set((Array.isArray(t.notifyTo) ? t.notifyTo : []).map(String));
-            const notifyOn = t.notify !== false;
-            const seen = new Set();
-            const ordered = [];
-            if (emphId)  { ordered.push(emphId);  seen.add(String(emphId)); }
-            if (ownerId && !seen.has(String(ownerId))) { ordered.push(ownerId); seen.add(String(ownerId)); }
-            visIds.forEach(id => {
-              if (id == null) return;
-              const legacy = _legacyIdForMemberId(id) || String(id);
-              if (seen.has(String(legacy))) return;
-              ordered.push(legacy); seen.add(String(legacy));
-            });
-            const idAliases = id => {
-              const out = new Set();
-              if (id == null) return out;
-              out.add(String(id));
-              const mem = _memberIdForLegacyId(id); if (mem) out.add(String(mem));
-              const leg = _legacyIdForMemberId(id); if (leg) out.add(String(leg));
-              return out;
-            };
-            return ordered.map(id => {
-              const isOwner = String(id) === String(emphId);   // emphasized = creator
-              let hasBell = false;
-              if (notifyOn) {
-                for (const a of idAliases(id)) { if (notifyIds.has(a)) { hasBell = true; break; } }
-              }
-              // Resolve legacy id → memberId so renderAvatarHTML can paint photos.
-              const memId  = _memberIdForLegacyId(id) || (String(id).startsWith('member_') ? id : null);
-              const size   = isOwner ? 36 : 22;
-              const avAttr = memId
-                ? ` data-avatar-for="${memId}" data-avatar-size="${size}"`
-                : '';
-              const slot   = memId
-                ? '<div data-avatar-slot style="position:absolute;inset:0;border-radius:inherit;"></div>'
-                : '';
-              return `<div class="t-share-av${isOwner?' owner':''}" data-id="${id}">
-                <div class="t-share-circle"${avAttr} style="position:relative;overflow:hidden;">${slot}</div>
-                ${hasBell?'<span class="t-share-bell">🔔</span>':''}
-              </div>`;
-            }).join('');
-          })()}</div>
-          <span class="t-share-arrow">›</span>
-        </div>
+        ${_shareRow}
       </div>`;
     // Show the "···" expander when title is long OR when an agenda
     // summary exists (subItems carries the structured breakdown).
@@ -10618,10 +10657,22 @@ function renderToday() {
         }
       });
     }
-    el.querySelector('.t-share').addEventListener('click', e => {
-      e.stopPropagation();
-      openOptionsSheet(realTForEdit, () => { renderToday(); });
-    });
+    const _shareEl = el.querySelector('.t-share');
+    if (_shareEl) {
+      _shareEl.addEventListener('click', e => {
+        e.stopPropagation();
+        openOptionsSheet(realTForEdit, () => { renderToday(); });
+      });
+    } else {
+      // Solo task: no share row — keep OptionsSheet reachable via a tap on the
+      // card body, but ignore taps on the interactive controls (checkbox is a
+      // delegated handler on #tTasks; time/title/bell/split have their own).
+      const _mainEl = el.querySelector('.t-task-main');
+      if (_mainEl) _mainEl.addEventListener('click', e => {
+        if (e.target.closest('.t-ck,.t-tcol,.t-ttitle,.t-bell,.t-split-btn,.title-exp,.shop-spinner,.shop-btn,.t-shop-btn')) return;
+        openOptionsSheet(realTForEdit, () => { renderToday(); });
+      });
+    }
     el.querySelector('.t-split-btn')?.addEventListener('click', e => { e.stopPropagation(); openSplitSheet(t, el); });
 
     // ── Edit-in-place: title (contenteditable) + time (tap-to-keypad) ──
@@ -13164,7 +13215,11 @@ function _daStartListener() {
       console.log('[RT] added/modified merged count=' + mergedCount);
       if (removedIgnored > 0) console.log('[RT] removed ignored count=' + removedIgnored);
 
-      if (mergedCount > 0) {
+      // Run the countdown-dedup cleanup on the INITIAL snapshot too (not only
+      // when new cloud docs merged): a returning device already has every task
+      // in localStorage, so mergedCount is 0, yet its cloud may still hold the
+      // duplicate birthday docs that must be collapsed + deleted on this boot.
+      if (mergedCount > 0 || isInitial) {
         try { _migrateCountdownVisibility(); } catch (_) {}
         saveState();
         renderToday();
@@ -13666,6 +13721,49 @@ const IDENTITY_MEMBER_IDS = ['member_dad', 'member_mom', 'member_laali', 'member
 
 let _familyMembersCache = [];
 
+// Partial-identity-loss heal (UI-only, localStorage-only — never writes Firestore).
+// When userId/familyId survived but _DA_NAME_KEY was lost, every "self" name path
+// (_participantDisplayName / resolveMember / the visibility hero) returns '' and the
+// seed placeholder "חבר 1" shows. Refill DataAdapter.displayName from THIS device's
+// own member doc in the authoritative cache. Idempotent; never overwrites a real
+// local name; matches strictly on userId so it can't pick up another member.
+function _daHealSelfDisplayName() {
+  try {
+    if (!DataAdapter.isFamily()) return;
+    if (_realName(DataAdapter.displayName)) return;     // already have a real local name
+    const myId = DataAdapter.userId;
+    if (!myId) return;
+    const mine = (_familyMembersCache || []).find(m => m && m.userId === myId);
+    const real = mine && _realName(mine.displayName || mine.name);
+    if (real) {
+      DataAdapter.setDisplayName(real);
+      console.log('[IdentityGuard] self displayName healed from cache →', real);
+    }
+  } catch (e) {}
+}
+
+// Identity-loss heal (UI/localStorage-only — never writes Firestore): a device
+// that joined as a REAL userId-keyed member never goes through the seed-based
+// device-setup, so myMemberId can stay null → createdByMemberId null, performer/
+// creator resolution + default "performer-only" visibility break, and the seed
+// placeholder can leak. Link THIS device to its own real member doc, matched
+// STRICTLY by userId (so it can never pick up another member). Idempotent; never
+// overrides an existing myMemberId; only links a unique real (non-seed) doc.
+function _daHealMyMemberId() {
+  try {
+    if (!DataAdapter.isFamily()) return;
+    if (DataAdapter.myMemberId) return;               // already linked — never override
+    const myId = DataAdapter.userId;
+    if (!myId) return;
+    const mine = (_familyMembersCache || []).find(m =>
+      m && m.userId === myId && !IDENTITY_MEMBER_IDS.includes(m.memberId));
+    if (!mine) return;
+    const mid = mine.memberId || myId;
+    localStorage.setItem('family-app-my-member-id', mid);
+    console.log('[IdentityGuard] myMemberId healed from cache →', mid);
+  } catch (e) {}
+}
+
 async function _loadFamilyMembersCache() {
   if (!_db || !DataAdapter.isFamily()) return;
   try {
@@ -13694,6 +13792,8 @@ async function _loadFamilyMembersCache() {
       });
     console.log('[DA] members cache loaded:', _familyMembersCache.length);
     try { localStorage.setItem(_MEMBER_CACHE_LS_KEY, JSON.stringify(_familyMembersCache)); } catch(e) {}
+    _daHealSelfDisplayName();   // partial-identity-loss heal: refill self displayName from cache
+    _daHealMyMemberId();        // link this device to its real member doc when myMemberId is null
     if (typeof _renderAllAvatars === 'function') _renderAllAvatars();
     if (typeof _mpApplyAllStripes === 'function') _mpApplyAllStripes();
     // Re-render the member surfaces now that real participants are loaded, so
@@ -14739,6 +14839,7 @@ function _initAvatarSystem() {
       if (Array.isArray(parsed) && parsed.length) _familyMembersCache = parsed;
     }
   } catch(e) {}
+  try { _daHealSelfDisplayName(); } catch(e) {}   // heal self name from the restored cache too (offline boot)
   _renderAllAvatars();
   // Defer stripe application until all script blocks are loaded
   setTimeout(() => { if (typeof _mpApplyAllStripes === 'function') _mpApplyAllStripes(); }, 0);
@@ -15870,7 +15971,7 @@ document.getElementById('btnAddMore').addEventListener('click', () => {
     if (!mq.matches) return;
     var ph = document.querySelectorAll('.phone');
     // Only shrink the phone when the keyboard is actually open. At rest, clear
-    // the inline height so .phone uses the CSS 100dvh — the original height that
+    // the inline height so .phone uses the CSS 100svh — the original height that
     // let the Today list scroll correctly. (Forcing visualViewport.height at
     // rest could make .phone taller/shorter than the real area and break scroll.)
     var keyboardOpen = (window.innerHeight - vv.height) > 120;
@@ -17696,9 +17797,46 @@ const _MEMBER_GRADS = [
   'linear-gradient(160deg,#d6cfe0,#998fb3)', 'linear-gradient(160deg,#ddd6c0,#a39c80)',
 ];
 function _isRealMember(m) { return !!(m && m.userId && !IDENTITY_MEMBER_IDS.includes(m.memberId)); }
+
+// Score a member doc for de-duplication — higher wins. Self always wins its name
+// group (so the radio selection stays on the device's own canonical doc), then a
+// real photo avatar, then a linked authUid, then recency (lastSeen / joined).
+function _participantScore(p, myId) {
+  const _ms = t => !t ? 0 : (typeof t.toMillis === 'function' ? t.toMillis()
+            : (typeof t.seconds === 'number' ? t.seconds * 1000 : (typeof t === 'number' ? t : 0)));
+  let s = 0;
+  if (myId && p.userId === myId) s += 1e15;
+  if (p.avatar && (p.avatar.type === 'photo' || p.avatar.type === 'ai-photo')) s += 1e12;
+  if (p.authUid) s += 1e9;
+  s += Math.max(_ms(p.lastSeenAt), _ms(p.joinedAt)) / 1000;
+  return s;
+}
+// Collapse docs that represent the SAME person. After a local-identity loss a device
+// re-joins with a NEW userId (and authUid), leaving the old doc orphaned — so the same
+// displayName appears twice (verified in prod: one rich doc + one thin orphan). Merge
+// ONLY by a real, non-empty displayName and keep the richest doc; docs with no name
+// pass through untouched (e.g. an owner + a member who never named themselves are
+// distinct people and must NOT be merged). Display-only — touches no stored data.
+function _dedupeParticipants(list, myId) {
+  const byName = new Map();
+  const out = [];
+  (list || []).forEach(p => {
+    const key = String((p && (p.displayName || p.name)) || '').trim().toLowerCase();
+    if (!key) { out.push(p); return; }
+    const prev = byName.get(key);
+    if (!prev) { byName.set(key, p); out.push(p); return; }
+    if (_participantScore(p, myId) > _participantScore(prev, myId)) {
+      byName.set(key, p);
+      const idx = out.indexOf(prev);
+      if (idx !== -1) out[idx] = p;
+    }
+  });
+  return out;
+}
 function _loadRealParticipants() {
   const myId = DataAdapter.userId;
   let list = (_familyMembersCache || []).filter(_isRealMember);
+  list = _dedupeParticipants(list, myId);   // collapse re-join duplicates (UI-only)
   // Safety fallback: cache not loaded yet (offline / preview / fresh) — show
   // self only so the user never sees 4 phantom members.
   if (!list.length && myId) {
@@ -18857,35 +18995,53 @@ function _parentVisibleIds() {
 function _migrateCountdownVisibility() {
   if (!Array.isArray(AppState.tasks)) return;
   let changed = false;
-  const parents = _parentVisibleIds();
-  const seen = new Set();
+  // Collapse countdown reminders by TYPE + normalized celebrant TITLE + DATE —
+  // memberId-INDEPENDENT. Duplicate/seed member docs that each spawned a copy of
+  // the same reminder (the "massively duplicated birthday" bug) now merge into a
+  // single task. The survivor inherits the UNION of every duplicate's visibleTo /
+  // notifyTo, so collapsing can never hide the reminder from anyone who saw it.
+  const _normT = s => String(s == null ? '' : s).replace(/\s+/g, ' ').trim();
+  const _union = (a, b) => Array.from(new Set([].concat(
+    Array.isArray(a) ? a : [], Array.isArray(b) ? b : []).filter(Boolean)));
+  const seen = new Map();
   const kept = [];
+  const dropped = [];                 // duplicate countdown docs to delete from cloud
+  const touched = new Set();          // survivors whose audience grew → re-persist
   for (const t of AppState.tasks) {
     if (!_isCountdownTask(t)) { kept.push(t); continue; }
-    const anniv    = _isAnnivCountdown(t);
-    const ownerKey = anniv ? 'anniv' : (t.assignedToMemberId || t.assignedTo || '?');
-    const key      = `${t.title}|${t.date}|${ownerKey}`;
-    if (seen.has(key)) { changed = true; continue; }   // drop duplicate copy
-    seen.add(key);
-    const cur = Array.isArray(t.visibleTo) ? t.visibleTo.slice() : [];
-    if (anniv) {
-      const want = parents.slice();
-      if (cur.slice().sort().join(',') !== want.slice().sort().join(',')) {
-        t.visibleTo = want; t.viewOnly = true; t.noNotification = true; changed = true;
-      }
-    } else {
-      const owner    = t.assignedToMemberId;
-      const ownerLeg = t.assignedTo || _legacyIdForMemberId(owner);
-      if (owner || ownerLeg) {
-        const want = [ownerLeg, owner].filter(Boolean);
-        if (cur.length !== want.length || cur.slice().sort().join(',') !== want.slice().sort().join(',')) {
-          t.visibleTo = want; t.viewOnly = true; t.noNotification = true; changed = true;
-        }
-      }
+    const anniv = _isAnnivCountdown(t);
+    const key   = `${anniv ? 'anniv' : 'bday'}|${_normT(t.title)}|${t.date}`;
+    const prev  = seen.get(key);
+    if (prev) {
+      const bV = (prev.visibleTo || []).length, bN = (prev.notifyTo || []).length;
+      prev.visibleTo = _union(prev.visibleTo, t.visibleTo);
+      prev.notifyTo  = _union(prev.notifyTo,  t.notifyTo);
+      if (prev.visibleTo.length !== bV || prev.notifyTo.length !== bN) touched.add(prev);
+      dropped.push(t);
+      changed = true;
+      continue;   // drop duplicate copy, audience merged into the survivor
     }
+    seen.set(key, t);
     kept.push(t);
   }
-  if (changed) { AppState.tasks = kept; try { saveState(); } catch (_) {} }
+  if (changed) {
+    AppState.tasks = kept;
+    try { saveState(); } catch (_) {}
+    // Persisted cleanup (saveState is LOCAL-only): delete the dropped duplicate
+    // task docs from Firestore so the onSnapshot listener can't resurrect them
+    // (it ignores 'removed' and re-adds any cloud doc missing locally), and
+    // re-persist any survivor whose audience grew so no recipient loses the
+    // reminder. Guarded + best-effort; only fires when duplicates were found.
+    if (_db && DataAdapter.isFamily()) {
+      try {
+        const _col = _db.collection('families').doc(DataAdapter.familyId).collection('tasks');
+        dropped.forEach(d => { try { _col.doc(String(d.id)).delete().catch(() => {}); } catch (_) {} });
+        if (typeof _daWriteTask === 'function') {
+          touched.forEach(s => { try { _daWriteTask(s, false).catch(() => {}); } catch (_) {} });
+        }
+      } catch (_) {}
+    }
+  }
 }
 
 // ── Countdown tasks for birthday / anniversary ───────────────────
@@ -18972,6 +19128,9 @@ function _mpCreateCountdownTasks(memberId, field, dateStr, calTypeOverride) {
     }
   }
   saveState();
+  // Immediately collapse any duplicate copies just generated (seed-driven
+  // fan-out) so duplicate birthday/anniversary reminders never persist.
+  try { _migrateCountdownVisibility(); } catch (_) {}
 }
 
 // ── Save to Firestore + local cache ───────────────────────────────
