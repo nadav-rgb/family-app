@@ -10474,6 +10474,64 @@ function renderToday() {
     const realTForEdit = t.isRecurring ? (AppState.tasks.find(rt => rt.id === t.recurrenceId) || t) : t;
     const canEditCommitted = _canEditCommittedTask(realTForEdit);
     const tCanSplit = offerableSplit(t.subItems?.mainTitle || t.title).length >= 2;
+    // Build the "shared with" row ONCE so we can hide it for effectively-solo
+    // tasks. With a single member it rendered an empty-looking second section
+    // that visually echoed the main row's bell/checkbox (the "broken card" /
+    // duplicate-bell/duplicate-circle report). Avatar logic is unchanged —
+    // only lifted out of the template so we can gate on the member count.
+    const _shareInfo = (() => {
+      const ownerId    = _taskLegacyAssigneeId(t);
+      const creatorLeg = _taskCreatorLegacyId(t);
+      const emphId     = creatorLeg || ownerId;   // emphasize the CREATOR
+      const visIds  = Array.isArray(t.visibleTo) ? t.visibleTo.slice() : [];
+      const notifyIds = new Set((Array.isArray(t.notifyTo) ? t.notifyTo : []).map(String));
+      const notifyOn = t.notify !== false;
+      const seen = new Set();
+      const ordered = [];
+      if (emphId)  { ordered.push(emphId);  seen.add(String(emphId)); }
+      if (ownerId && !seen.has(String(ownerId))) { ordered.push(ownerId); seen.add(String(ownerId)); }
+      visIds.forEach(id => {
+        if (id == null) return;
+        const legacy = _legacyIdForMemberId(id) || String(id);
+        if (seen.has(String(legacy))) return;
+        ordered.push(legacy); seen.add(String(legacy));
+      });
+      const idAliases = id => {
+        const out = new Set();
+        if (id == null) return out;
+        out.add(String(id));
+        const mem = _memberIdForLegacyId(id); if (mem) out.add(String(mem));
+        const leg = _legacyIdForMemberId(id); if (leg) out.add(String(leg));
+        return out;
+      };
+      const html = ordered.map(id => {
+        const isOwner = String(id) === String(emphId);   // emphasized = creator
+        let hasBell = false;
+        if (notifyOn) {
+          for (const a of idAliases(id)) { if (notifyIds.has(a)) { hasBell = true; break; } }
+        }
+        // Resolve legacy id → memberId so renderAvatarHTML can paint photos.
+        const memId  = _memberIdForLegacyId(id) || (String(id).startsWith('member_') ? id : null);
+        const size   = isOwner ? 36 : 22;
+        const avAttr = memId
+          ? ` data-avatar-for="${memId}" data-avatar-size="${size}"`
+          : '';
+        const slot   = memId
+          ? '<div data-avatar-slot style="position:absolute;inset:0;border-radius:inherit;"></div>'
+          : '';
+        return `<div class="t-share-av${isOwner?' owner':''}" data-id="${id}">
+                <div class="t-share-circle"${avAttr} style="position:relative;overflow:hidden;">${slot}</div>
+                ${hasBell?'<span class="t-share-bell">🔔</span>':''}
+              </div>`;
+      }).join('');
+      return { html, count: ordered.length };
+    })();
+    // Gate: only show the share row for genuinely shared tasks (≥2 people).
+    // Solo tasks drop it entirely — OptionsSheet stays reachable via a tap on
+    // the card body (handler added below).
+    const _shareRow = _shareInfo.count >= 2
+      ? `<div class="t-share"><div class="t-share-avs">${_shareInfo.html}</div><span class="t-share-arrow">›</span></div>`
+      : '';
     el.innerHTML = `
       <div class="t-swipe-bg"><svg class="swipe-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></div>
       <div class="t-swipe-track">
@@ -10485,55 +10543,7 @@ function renderToday() {
           <div class="t-miniav" style="background:${p.bg}">${taskAvImg(t)}</div>
           <div class="t-bell${_taskShowsActiveBell(t)?'':' off'}">${_taskShowsActiveBell(t)?'🔔':'🔕'}</div>
         </div>
-        <div class="t-share">
-          <div class="t-share-avs">${(() => {
-            const ownerId    = _taskLegacyAssigneeId(t);
-            const creatorLeg = _taskCreatorLegacyId(t);
-            const emphId     = creatorLeg || ownerId;   // emphasize the CREATOR
-            const visIds  = Array.isArray(t.visibleTo) ? t.visibleTo.slice() : [];
-            const notifyIds = new Set((Array.isArray(t.notifyTo) ? t.notifyTo : []).map(String));
-            const notifyOn = t.notify !== false;
-            const seen = new Set();
-            const ordered = [];
-            if (emphId)  { ordered.push(emphId);  seen.add(String(emphId)); }
-            if (ownerId && !seen.has(String(ownerId))) { ordered.push(ownerId); seen.add(String(ownerId)); }
-            visIds.forEach(id => {
-              if (id == null) return;
-              const legacy = _legacyIdForMemberId(id) || String(id);
-              if (seen.has(String(legacy))) return;
-              ordered.push(legacy); seen.add(String(legacy));
-            });
-            const idAliases = id => {
-              const out = new Set();
-              if (id == null) return out;
-              out.add(String(id));
-              const mem = _memberIdForLegacyId(id); if (mem) out.add(String(mem));
-              const leg = _legacyIdForMemberId(id); if (leg) out.add(String(leg));
-              return out;
-            };
-            return ordered.map(id => {
-              const isOwner = String(id) === String(emphId);   // emphasized = creator
-              let hasBell = false;
-              if (notifyOn) {
-                for (const a of idAliases(id)) { if (notifyIds.has(a)) { hasBell = true; break; } }
-              }
-              // Resolve legacy id → memberId so renderAvatarHTML can paint photos.
-              const memId  = _memberIdForLegacyId(id) || (String(id).startsWith('member_') ? id : null);
-              const size   = isOwner ? 36 : 22;
-              const avAttr = memId
-                ? ` data-avatar-for="${memId}" data-avatar-size="${size}"`
-                : '';
-              const slot   = memId
-                ? '<div data-avatar-slot style="position:absolute;inset:0;border-radius:inherit;"></div>'
-                : '';
-              return `<div class="t-share-av${isOwner?' owner':''}" data-id="${id}">
-                <div class="t-share-circle"${avAttr} style="position:relative;overflow:hidden;">${slot}</div>
-                ${hasBell?'<span class="t-share-bell">🔔</span>':''}
-              </div>`;
-            }).join('');
-          })()}</div>
-          <span class="t-share-arrow">›</span>
-        </div>
+        ${_shareRow}
       </div>`;
     // Show the "···" expander when title is long OR when an agenda
     // summary exists (subItems carries the structured breakdown).
@@ -10596,10 +10606,22 @@ function renderToday() {
         }
       });
     }
-    el.querySelector('.t-share').addEventListener('click', e => {
-      e.stopPropagation();
-      openOptionsSheet(realTForEdit, () => { renderToday(); });
-    });
+    const _shareEl = el.querySelector('.t-share');
+    if (_shareEl) {
+      _shareEl.addEventListener('click', e => {
+        e.stopPropagation();
+        openOptionsSheet(realTForEdit, () => { renderToday(); });
+      });
+    } else {
+      // Solo task: no share row — keep OptionsSheet reachable via a tap on the
+      // card body, but ignore taps on the interactive controls (checkbox is a
+      // delegated handler on #tTasks; time/title/bell/split have their own).
+      const _mainEl = el.querySelector('.t-task-main');
+      if (_mainEl) _mainEl.addEventListener('click', e => {
+        if (e.target.closest('.t-ck,.t-tcol,.t-ttitle,.t-bell,.t-split-btn,.title-exp,.shop-spinner,.shop-btn,.t-shop-btn')) return;
+        openOptionsSheet(realTForEdit, () => { renderToday(); });
+      });
+    }
     el.querySelector('.t-split-btn')?.addEventListener('click', e => { e.stopPropagation(); openSplitSheet(t, el); });
 
     // ── Edit-in-place: title (contenteditable) + time (tap-to-keypad) ──
