@@ -2526,7 +2526,11 @@ body.text-large .phone{font-size:17px}
 .back-btn svg,.td-back svg,.back svg{width:18px!important;height:18px!important;}
 .back-btn span{display:none!important;}
 /* Recovery banner after factory reset — overlays any screen */
-.recovery-banner{position:absolute;left:12px;right:12px;top:54px;z-index:500;background:linear-gradient(135deg,#fff3e9,#ffe6d3);border:1px solid rgba(224,124,58,.35);border-radius:18px;padding:13px 15px;display:flex;flex-direction:column;gap:9px;box-shadow:0 10px 26px rgba(160,90,30,.18);}
+/* top: this banner is attached to .phone (a sibling of .app-screen), so it does
+   NOT inherit the --sat safe-area inset. The hardcoded 54px let it slide under
+   the iPhone status bar / Dynamic Island. max(54px, var(--sat)+12px) keeps the
+   original 54px on Android/desktop (--sat:0) and clears the inset on iOS. */
+.recovery-banner{position:absolute;left:12px;right:12px;top:max(54px, calc(var(--sat) + 12px));z-index:500;background:linear-gradient(135deg,#fff3e9,#ffe6d3);border:1px solid rgba(224,124,58,.35);border-radius:18px;padding:13px 15px;display:flex;flex-direction:column;gap:9px;box-shadow:0 10px 26px rgba(160,90,30,.18);}
 .recovery-banner .rb-txt{font-size:12.5px;font-weight:700;color:#9e5a2a;line-height:1.4;text-align:center;}
 .recovery-banner .rb-btn{border:none;border-radius:12px;padding:11px;background:linear-gradient(135deg,#ff8a4c,#e07c3a);color:#fff;font-family:'Nunito',sans-serif;font-weight:900;font-size:14px;cursor:pointer;box-shadow:0 5px 14px rgba(224,124,58,.32);}
 .recovery-banner .rb-btn:active{transform:scale(.98);}
