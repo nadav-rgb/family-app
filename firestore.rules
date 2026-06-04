@@ -70,5 +70,14 @@ service cloud.firestore {
         allow read, write: if belongs(familyId);
       }
     }
+
+    // Top-level authUid → identity index (identity-guard-2026-06-03).
+    // Lets a returning device recover its previous family + member identity
+    // from its (persisted) anonymous authUid after local state is lost — so a
+    // tester is silently reconnected instead of dropping to demo mode. A user
+    // may read/write ONLY their own index doc (docId == their auth uid).
+    match /authIndex/{uid} {
+      allow read, write: if authed() && uid == request.auth.uid;
+    }
   }
 }

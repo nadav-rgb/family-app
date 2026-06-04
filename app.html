@@ -1531,6 +1531,10 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 #firstRunScreen .fr-sep{font-size:13px;color:#a07050;font-weight:700;margin:4px 0;}
 #firstRunScreen .fr-join-inp{width:100%;box-sizing:border-box;text-align:center;font-family:'Rubik',sans-serif;font-size:18px;font-weight:700;letter-spacing:.12em;color:#1c110a;background:#fff8f2;border:2px solid rgba(224,180,140,.4);border-radius:14px;padding:12px 14px;}
 #firstRunScreen .fr-err{color:#c03020;font-size:13px;font-weight:700;min-height:16px;}
+#firstRunScreen .fr-reconnect{background:#fff2ea;border:1.5px solid rgba(224,120,60,.35);border-radius:16px;padding:14px 16px;margin:0 0 14px;text-align:center;}
+#firstRunScreen .fr-reconnect.hidden{display:none;}
+#firstRunScreen .fr-reconnect-title{font-size:16px;font-weight:800;color:#b4471d;margin-bottom:4px;}
+#firstRunScreen .fr-reconnect-sub{font-size:12.5px;font-weight:500;color:#7a5a48;line-height:1.5;}
 .device-setup-card{background:#fff;border-radius:24px;padding:32px 28px;max-width:320px;width:90%;box-shadow:0 8px 40px rgba(100,60,20,.18);text-align:center;}
 .device-setup-title{font-family:'Nunito',sans-serif;font-size:22px;font-weight:900;color:#1c110a;margin-bottom:6px;}
 .device-setup-sub{font-size:13px;color:#a07050;margin-bottom:24px;}
@@ -4674,6 +4678,15 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
       </div>
     </div>
 
+    <!-- Runtime status (for us) — build id + family/member connection state.
+         Tap to open Sync Diagnostics. -->
+    <div id="settingsDevStatus" onclick="try{_showSyncDiag()}catch(e){}"
+         style="text-align:center;font:11px/1.7 monospace;color:#b8a99a;padding:10px 0 6px;opacity:.9;">
+      <div style="direction:ltr">build <span id="settingsBuildVal">…</span></div>
+      <div id="settingsFamStatus" style="direction:rtl">משפחה: …</div>
+      <div id="settingsMemStatus" style="direction:rtl">חבר: …</div>
+    </div>
+
   </div>
 
   <!-- Bottom nav -->
@@ -5516,6 +5529,10 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
 
     <!-- ── STATE: welcome ── -->
     <div class="fr-state" data-fr-state="welcome">
+      <div class="fr-reconnect hidden" data-fr-reconnect>
+        <div class="fr-reconnect-title">צריך להצטרף למשפחה מחדש</div>
+        <div class="fr-reconnect-sub">המכשיר התנתק מהמשפחה. הזינו את קוד ההצטרפות כדי להתחבר שוב — הנתונים שלכם נשמרים בענן.</div>
+      </div>
       <div class="fr-hero fr-hero-welcome" role="img" aria-label="Family — היום של כולם, מסודר במקום אחד"></div>
       <div class="fr-card">
         <button type="button" class="fr-choice fr-choice-join" onclick="_frGoto('join')">
@@ -5903,6 +5920,12 @@ const AppState = { tasks: [], previewTasks: [], recurringCompletions: {}, recurr
 
 // ─── Debug logger (?debug=1 in URL  OR  window.APP_DEBUG = true) ─
 const _urlDbg  = new URLSearchParams(window.location.search).get('debug') === '1';
+// ── Runtime build marker (visible in Settings + Sync Diagnostics) ──
+// Bump this string on every web build so we can confirm — from the device —
+// exactly which code is actually running, independent of Android versionCode.
+const APP_BUILD = '1.4-build8-idguard-2026-06-03';
+window.APP_BUILD = APP_BUILD;
+try { const _bv = document.getElementById('settingsBuildVal'); if (_bv) _bv.textContent = APP_BUILD; } catch (e) {}
 const _urlDiag = new URLSearchParams(window.location.search).get('diag') === '1';
 const _ts     = () => new Date().toISOString().slice(11, 23);
 const _dbg    = () => _urlDbg || !!(typeof window !== 'undefined' && window.APP_DEBUG);
@@ -9301,7 +9324,23 @@ function _doCommitPreview() {
   if (_appendToToday) {
     AppState.tasks = [...AppState.tasks, ...newTasks];
   } else {
-    const kept = AppState.tasks.filter(t => (t.date || todayDate()) !== activeDate);
+    const kept    = AppState.tasks.filter(t => (t.date || todayDate()) !== activeDate);
+    const dropped = AppState.tasks.filter(t => (t.date || todayDate()) === activeDate);
+    // #1 fix: replace mode removes same-date tasks from LOCAL state, but
+    // previously left their cloud docs untouched — so the onSnapshot listener
+    // would later resurrect them (e.g. a previously-committed long "blob" task
+    // reappearing alongside its splits and hijacking the Today hero). Tombstone
+    // the dropped cloud docs here, scoped to this device's OWN tasks, and never
+    // a task that is being re-committed (id present in newTasks). Reuses the
+    // existing soft-delete mechanism; the listener already ignores deleted docs.
+    dropped.forEach(t => {
+      const mine = (DataAdapter.userId && t.createdBy === DataAdapter.userId)
+                || (DataAdapter.myMemberId && t.createdByMemberId === DataAdapter.myMemberId);
+      if (mine && !newTasks.some(n => String(n.id) === String(t.id))) {
+        t.deleted = true; t.deletedAt = Date.now();
+        try { _daWriteTask(t, false).catch(() => {}); } catch (_) {}
+      }
+    });
     AppState.tasks = [...kept, ...newTasks];
   }
   _appendToToday = false;
@@ -11556,6 +11595,21 @@ function updateTodayTitle() {
 
 document.getElementById('calBtn').addEventListener('click', openCalDrawer);
 document.getElementById('tTitle').addEventListener('click', () => { if (!_devUiEnabled()) return; _diagTapCount++; clearTimeout(_diagTapTimer); _diagTapTimer = setTimeout(() => { _diagTapCount = 0; }, 2000); if (_diagTapCount >= 3) { _diagTapCount = 0; _showSyncDiag(); } });
+// Temporary tester diagnostic (diag-2026-06-03): long-press the title ~1s opens
+// Sync Diagnostics on ANY build, no dev mode needed — so a tester can screenshot
+// their identity state. Safe/read-only. Remove once the local-mode bug is fixed.
+(function _wireDiagLongPress(){
+  const t = document.getElementById('tTitle'); if (!t) return;
+  let _lpTimer = null;
+  const start = () => { _lpTimer = setTimeout(() => { try { _showSyncDiag(); } catch(e){} }, 900); };
+  const cancel = () => { if (_lpTimer) { clearTimeout(_lpTimer); _lpTimer = null; } };
+  t.addEventListener('touchstart', start, { passive: true });
+  t.addEventListener('touchend', cancel);
+  t.addEventListener('touchmove', cancel, { passive: true });
+  t.addEventListener('mousedown', start);
+  t.addEventListener('mouseup', cancel);
+  t.addEventListener('mouseleave', cancel);
+})();
 if (_urlDiag) _showSyncDiag();
 setTimeout(updateHeroPortrait, 0);
 document.getElementById('uswBg').addEventListener('click', e => { if (e.target === document.getElementById('uswBg')) closeUserSwitcher(); });
@@ -13278,6 +13332,14 @@ function _showSyncDiag() {
     ['da-family-id (LS)', localStorage.getItem('family-app-da-family-id') || '(null)'],
     ['da-user-id (LS)',   localStorage.getItem('family-app-da-user-id')   || '(null)'],
     ['app-user (LS)',     localStorage.getItem('family-app-user')         || '(null)'],
+    ['—',               ''],
+    ['my-member-id (LS)', localStorage.getItem('family-app-my-member-id') || '(null)'],
+    ['myMemberId (DA)',   DataAdapter.myMemberId || '(none)'],
+    ['authUid',           DataAdapter.authUid   || '(none)'],
+    ['profileMemberId',   (typeof _mpCurrentId !== 'undefined' && _mpCurrentId) ? _mpCurrentId : '(none)'],
+    ['displayName (DA)',  DataAdapter.displayName || '(empty)'],
+    ['—',               ''],
+    ['BUILD',             (typeof APP_BUILD !== 'undefined' ? APP_BUILD : '(unset)')],
   ];
   const html = rows.map(([k,v]) => {
     if (k === '—') return '<hr style="border:none;border-top:1px solid #2a2a2a;margin:6px 0">';
@@ -13334,6 +13396,20 @@ async function _fbLinkAuthToMember(authUid) {
              .set({ userId: DataAdapter.userId, role: role, linkedAt: ts }, { merge: true });
     console.log('[Auth] memberUids marker written for', authUid);
   } catch (e) { console.warn('[Auth] memberUids write failed (non-fatal)', e.message || e); }
+
+  // identity-guard-2026-06-03: top-level authUid → identity breadcrumb so a
+  // returning device whose anonymous credential persisted (e.g. clear-cache or
+  // reinstall, but NOT a full data wipe that mints a new uid) can recover its
+  // family + member identity instead of dropping to demo mode. Additive.
+  try {
+    const role2 = (snap.exists && snap.data().role) || 'member';
+    const mid2  = (snap.exists && snap.data().memberId) || DataAdapter.myMemberId || null;
+    await _db.collection('authIndex').doc(authUid).set({
+      familyId: DataAdapter.familyId, userId: DataAdapter.userId,
+      role: role2, memberId: mid2, linkedAt: ts,
+    }, { merge: true });
+    console.log('[Auth] authIndex breadcrumb written for', authUid);
+  } catch (e) { console.warn('[Auth] authIndex write failed (non-fatal)', e.message || e); }
 }
 
 (function _fbInit() {
@@ -13384,6 +13460,9 @@ async function _fbLinkAuthToMember(authUid) {
             // establishes. Re-start it here now that auth is ready and the member
             // doc is linked, so tasks load without a manual kick.
             if (DataAdapter.isFamily()) _daStartListener();
+            // identity-guard: now that authUid is known, enforce the invariant —
+            // attempt silent recovery, else keep the reconnect screen up.
+            try { _identityGuard('post-auth'); } catch (e) {}
           });
       })
       .catch(e => {
@@ -13398,6 +13477,141 @@ async function _fbLinkAuthToMember(authUid) {
       });
   } catch (e) { console.warn('[FB] init failed:', e.message || e); }
 }());
+
+// ════════════════════════════════════════════════════════════════════
+// Identity guard (identity-guard-2026-06-03)
+// Enforces ONE invariant: the device is EITHER fully in family mode with a
+// resolvable self-identity, OR the blocking reconnect screen is shown. The
+// old/demo "חבר 1" static UI is never presented as a real user. Runs
+// independently of the main boot IIFE (see window 'load' hook below) so an
+// earlier uncaught error can't strand a tester in the raw demo HTML.
+// ════════════════════════════════════════════════════════════════════
+let _identityRepairTried = false;
+
+function _identitySnapshot() {
+  let selfResolved = null;   // null = unknown (family cache not loaded yet)
+  let fromDemo = false;
+  try {
+    const cache = (typeof _familyMembersCache !== 'undefined' && _familyMembersCache) || [];
+    if (DataAdapter.isFamily()) {
+      if (cache.length) {
+        const uid = DataAdapter.userId, mid = DataAdapter.myMemberId;
+        selfResolved = cache.some(m => (uid && m.userId === uid) || (mid && (m.memberId === mid || m.userId === mid)));
+      }
+    } else {
+      selfResolved = false;
+    }
+    const t = document.querySelector('#s-today .t-avname');
+    if (t && /^חבר\s*[1-4]$/.test((t.textContent || '').trim())) fromDemo = true;
+  } catch (e) {}
+  return {
+    isFamily:        DataAdapter.isFamily(),
+    mode:            localStorage.getItem('family-app-da-mode') || null,
+    familyId:        DataAdapter.familyId || null,
+    userId:          DataAdapter.userId || null,
+    myMemberId:      DataAdapter.myMemberId || null,
+    authUid:         DataAdapter.authUid || null,
+    profileMemberId: (typeof _mpCurrentId !== 'undefined' && _mpCurrentId) || null,
+    selfResolved, fromDemo,
+    build: (typeof APP_BUILD !== 'undefined' ? APP_BUILD : null),
+  };
+}
+
+// Always-on logging (NOT gated by _dbg) so the state is visible over CDP, and a
+// breadcrumb is persisted so we can read the last incident from Settings.
+function _logIdentityState(ctx) {
+  const s = _identitySnapshot();
+  try { console.log('[IdentityGuard] ' + (ctx || '') + ' ' + JSON.stringify(s)); } catch (e) {}
+  try {
+    if (!s.isFamily || s.selfResolved === false || s.fromDemo) {
+      localStorage.setItem('family-app-identity-incident', JSON.stringify(Object.assign({ ctx: ctx || '', at: new Date().toISOString() }, s)));
+    }
+  } catch (e) {}
+  try { _updateSettingsStatus(s); } catch (e) {}
+  return s;
+}
+
+// Best-effort silent recovery: anonymous authUid → previous member identity.
+// Succeeds only when the Firebase anonymous credential persisted across the
+// data loss. After a FULL data wipe the uid is new and no breadcrumb exists →
+// returns false → caller forces a proper rejoin instead.
+async function _tryRecoverIdentityByAuthUid() {
+  try {
+    if (DataAdapter.isFamily()) return false;
+    if (!_db || !DataAdapter.authUid) return false;
+    const snap = await _db.collection('authIndex').doc(DataAdapter.authUid).get();
+    if (!snap.exists) return false;
+    const d = snap.data() || {};
+    if (!d.familyId || !d.userId) return false;
+    const mem = await _db.collection('families').doc(d.familyId)
+                         .collection('members').doc(d.userId).get();
+    if (!mem.exists) return false;                       // member was removed — don't resurrect
+    DataAdapter.setFamily(d.familyId, d.userId);
+    const md = mem.data() || {};
+    const mid = d.memberId || md.memberId;
+    if (mid) { try { localStorage.setItem('family-app-my-member-id', mid); } catch (e) {} }
+    if (md.displayName) { try { DataAdapter.setDisplayName(md.displayName); } catch (e) {} }
+    console.log('[IdentityGuard] recovered identity via authUid →', d.familyId, d.userId);
+    return true;
+  } catch (e) { console.warn('[IdentityGuard] recovery failed', e && (e.message || e)); return false; }
+}
+
+// The invariant enforcer. Idempotent; safe to call from several hooks.
+async function _identityGuard(ctx) {
+  const s = _logIdentityState(ctx || 'guard');
+  if (s.isFamily) return;                                // connected — never block
+
+  // Degraded: cover the demo UI immediately (overlay is fixed, z-index 9999),
+  // so "חבר 1" is never shown as a real user — even if main boot aborted early.
+  try { _showFirstRunScreen(); } catch (e) {}
+  try { _setReconnectNotice(true); } catch (e) {}
+
+  // Try silent recovery once auth is available; the post-auth hook retries
+  // this after the anonymous credential resolves.
+  if (DataAdapter.authUid && !_identityRepairTried) {
+    _identityRepairTried = true;
+    const ok = await _tryRecoverIdentityByAuthUid();
+    if (ok) {
+      try { _setReconnectNotice(false); } catch (e) {}
+      try { if (typeof _finishFirstRun === 'function') _finishFirstRun(); } catch (e) {}
+      _logIdentityState('post-recovery');
+    } else {
+      _identityRepairTried = false;                      // permit a later retry if authUid changes
+    }
+  }
+}
+
+// Toggle the "צריך להצטרף למשפחה מחדש" notice on the reconnect screen.
+function _setReconnectNotice(on) {
+  try {
+    const el = document.querySelector('[data-fr-reconnect]');
+    if (el) el.classList.toggle('hidden', !on);
+    if (on && typeof _frGoto === 'function') _frGoto('welcome');
+  } catch (e) {}
+}
+
+// Settings status line (for us): build id + family/member connection state.
+function _updateSettingsStatus(snap) {
+  const s = snap || _identitySnapshot();
+  const bv = document.getElementById('settingsBuildVal');
+  if (bv && typeof APP_BUILD !== 'undefined') bv.textContent = APP_BUILD;
+  const fam = document.getElementById('settingsFamStatus');
+  if (fam) {
+    fam.textContent = 'משפחה: ' + (s.isFamily ? ('מחוברת (' + s.familyId + ')') : 'לא מחוברת');
+    fam.style.color = s.isFamily ? '#3a8a4a' : '#c0502a';
+  }
+  const mem = document.getElementById('settingsMemStatus');
+  if (mem) {
+    const ok = s.isFamily && s.selfResolved !== false;
+    mem.textContent = 'חבר: ' + (ok ? 'מזוהה' : (s.isFamily ? 'לא מזוהה' : '—'));
+    mem.style.color = ok ? '#3a8a4a' : '#c0502a';
+  }
+}
+
+// Independent late hook — fires regardless of whether the main boot IIFE
+// completed, guaranteeing the invariant is enforced even after an early error.
+window.addEventListener('load', () => { try { _identityGuard('window-load'); } catch (e) {} });
+if (document.readyState === 'complete') { try { _identityGuard('already-loaded'); } catch (e) {} }
 
 // ─── Firestore task write helpers (Phase 4-1A) ───────────────────
 // Write-through: localStorage is always updated first. These functions
@@ -13491,6 +13705,27 @@ const IDENTITY_MEMBER_IDS = ['member_dad', 'member_mom', 'member_laali', 'member
 
 let _familyMembersCache = [];
 
+// Partial-identity-loss heal (UI-only, localStorage-only — never writes Firestore).
+// When userId/familyId survived but _DA_NAME_KEY was lost, every "self" name path
+// (_participantDisplayName / resolveMember / the visibility hero) returns '' and the
+// seed placeholder "חבר 1" shows. Refill DataAdapter.displayName from THIS device's
+// own member doc in the authoritative cache. Idempotent; never overwrites a real
+// local name; matches strictly on userId so it can't pick up another member.
+function _daHealSelfDisplayName() {
+  try {
+    if (!DataAdapter.isFamily()) return;
+    if (_realName(DataAdapter.displayName)) return;     // already have a real local name
+    const myId = DataAdapter.userId;
+    if (!myId) return;
+    const mine = (_familyMembersCache || []).find(m => m && m.userId === myId);
+    const real = mine && _realName(mine.displayName || mine.name);
+    if (real) {
+      DataAdapter.setDisplayName(real);
+      console.log('[IdentityGuard] self displayName healed from cache →', real);
+    }
+  } catch (e) {}
+}
+
 async function _loadFamilyMembersCache() {
   if (!_db || !DataAdapter.isFamily()) return;
   try {
@@ -13519,6 +13754,7 @@ async function _loadFamilyMembersCache() {
       });
     console.log('[DA] members cache loaded:', _familyMembersCache.length);
     try { localStorage.setItem(_MEMBER_CACHE_LS_KEY, JSON.stringify(_familyMembersCache)); } catch(e) {}
+    _daHealSelfDisplayName();   // partial-identity-loss heal: refill self displayName from cache
     if (typeof _renderAllAvatars === 'function') _renderAllAvatars();
     if (typeof _mpApplyAllStripes === 'function') _mpApplyAllStripes();
     // Re-render the member surfaces now that real participants are loaded, so
@@ -14564,6 +14800,7 @@ function _initAvatarSystem() {
       if (Array.isArray(parsed) && parsed.length) _familyMembersCache = parsed;
     }
   } catch(e) {}
+  try { _daHealSelfDisplayName(); } catch(e) {}   // heal self name from the restored cache too (offline boot)
   _renderAllAvatars();
   // Defer stripe application until all script blocks are loaded
   setTimeout(() => { if (typeof _mpApplyAllStripes === 'function') _mpApplyAllStripes(); }, 0);
@@ -15398,9 +15635,12 @@ if (/[?&]previewFirstRun=1/.test(location.search)) {
   try { if (typeof _renderSettingsMembers === 'function') _renderSettingsMembers(); } catch (e) {}
   try { if (typeof _renderFamilyMembersScreen === 'function') _renderFamilyMembersScreen(); } catch (e) {}
 } else {
-  // Fresh install / no family identity — force the onboarding gate so the app
-  // never auto-enters a seeded/default family.
+  // Fresh install OR lost local identity — never auto-enter a seeded/default
+  // family. The identity guard shows the blocking reconnect screen and attempts
+  // silent authUid recovery (when the credential persisted). _showFirstRunScreen
+  // is called synchronously first so nothing flashes before auth resolves.
   _showFirstRunScreen();
+  try { _identityGuard('boot-gate'); } catch (e) {}
 }
 try { _updateRecoveryBanner(); } catch (e) { console.warn('recovery banner failed', e); }
 try { _syncSettingsDeviceMember(); } catch (e) { console.warn('settings device member sync failed', e); }
@@ -17518,9 +17758,46 @@ const _MEMBER_GRADS = [
   'linear-gradient(160deg,#d6cfe0,#998fb3)', 'linear-gradient(160deg,#ddd6c0,#a39c80)',
 ];
 function _isRealMember(m) { return !!(m && m.userId && !IDENTITY_MEMBER_IDS.includes(m.memberId)); }
+
+// Score a member doc for de-duplication — higher wins. Self always wins its name
+// group (so the radio selection stays on the device's own canonical doc), then a
+// real photo avatar, then a linked authUid, then recency (lastSeen / joined).
+function _participantScore(p, myId) {
+  const _ms = t => !t ? 0 : (typeof t.toMillis === 'function' ? t.toMillis()
+            : (typeof t.seconds === 'number' ? t.seconds * 1000 : (typeof t === 'number' ? t : 0)));
+  let s = 0;
+  if (myId && p.userId === myId) s += 1e15;
+  if (p.avatar && (p.avatar.type === 'photo' || p.avatar.type === 'ai-photo')) s += 1e12;
+  if (p.authUid) s += 1e9;
+  s += Math.max(_ms(p.lastSeenAt), _ms(p.joinedAt)) / 1000;
+  return s;
+}
+// Collapse docs that represent the SAME person. After a local-identity loss a device
+// re-joins with a NEW userId (and authUid), leaving the old doc orphaned — so the same
+// displayName appears twice (verified in prod: one rich doc + one thin orphan). Merge
+// ONLY by a real, non-empty displayName and keep the richest doc; docs with no name
+// pass through untouched (e.g. an owner + a member who never named themselves are
+// distinct people and must NOT be merged). Display-only — touches no stored data.
+function _dedupeParticipants(list, myId) {
+  const byName = new Map();
+  const out = [];
+  (list || []).forEach(p => {
+    const key = String((p && (p.displayName || p.name)) || '').trim().toLowerCase();
+    if (!key) { out.push(p); return; }
+    const prev = byName.get(key);
+    if (!prev) { byName.set(key, p); out.push(p); return; }
+    if (_participantScore(p, myId) > _participantScore(prev, myId)) {
+      byName.set(key, p);
+      const idx = out.indexOf(prev);
+      if (idx !== -1) out[idx] = p;
+    }
+  });
+  return out;
+}
 function _loadRealParticipants() {
   const myId = DataAdapter.userId;
   let list = (_familyMembersCache || []).filter(_isRealMember);
+  list = _dedupeParticipants(list, myId);   // collapse re-join duplicates (UI-only)
   // Safety fallback: cache not loaded yet (offline / preview / fresh) — show
   // self only so the user never sees 4 phantom members.
   if (!list.length && myId) {

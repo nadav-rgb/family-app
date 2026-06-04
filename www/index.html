@@ -41,6 +41,28 @@
 <style>
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
 *:focus{outline:none;}
+/* ── iOS safe-area infrastructure ──
+   --sat/--sab expose the device safe-area insets. In real standalone PWAs iOS
+   reports them via env(); but in plain iPhone Safari iOS does NOT expose them
+   (env() resolves to 0) even though content still slides under the status bar /
+   Dynamic Island. So when running as iOS-in-browser we clamp a robust minimum.
+   Android / desktop / standalone keep the raw env() values (0 where N/A). */
+:root{
+  --sat:env(safe-area-inset-top,0px);
+  --sab:env(safe-area-inset-bottom,0px);
+  --sal:env(safe-area-inset-left,0px);
+  --sar:env(safe-area-inset-right,0px);
+}
+body.ios-safe{
+  /* Apply the safe-area floor on ALL iOS contexts — standalone home-screen PWA
+     *and* plain Safari. iOS sometimes reports env(safe-area-inset-top)=0 (notably
+     a standalone launch with status-bar-style:default), which let headers/hero
+     slide under the status bar / Dynamic Island — the bug testers still saw after
+     the browser-only fix. max() keeps the real inset when the device reports it
+     (e.g. ~47–59px on notch / Dynamic Island), else clamps a sensible floor. */
+  --sat:max(env(safe-area-inset-top,0px),50px);
+  --sab:max(env(safe-area-inset-bottom,0px),8px);
+}
 body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:100vh;display:flex;justify-content:center;align-items:center;font-family:'Rubik',sans-serif;padding:32px 16px;}
 
 /* ── Phone ── */
@@ -63,7 +85,7 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 #s-today .t-scroll,#s-dp .dp-list{overscroll-behavior:contain;}
 
 /* ── Screen layer system ── */
-.app-screen{position:absolute;top:env(safe-area-inset-top,0px);bottom:env(safe-area-inset-bottom,0px);left:env(safe-area-inset-left,0px);right:env(safe-area-inset-right,0px);display:flex;flex-direction:column;opacity:0;pointer-events:none;overflow:hidden;background:linear-gradient(175deg,#fffaf5 0%,#fff4e8 55%,#fdebd8 100%);}
+.app-screen{position:absolute;top:var(--sat);bottom:var(--sab);left:var(--sal);right:var(--sar);display:flex;flex-direction:column;opacity:0;pointer-events:none;overflow:hidden;background:linear-gradient(175deg,#fffaf5 0%,#fff4e8 55%,#fdebd8 100%);}
 .app-screen.active{opacity:1;pointer-events:auto;}
 /* Inactive screens are visually hidden (opacity:0) but their descendants
    can still steal clicks if they declare pointer-events:auto explicitly
@@ -1234,11 +1256,26 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
   width:64px;height:64px;
   border-radius:50%;
   overflow:hidden;
+  /* Personal-color ring (#4): the member's chosen colour as a 2px ring just outside
+     the existing white ring. --mem-color is set per-avatar by _mpApplyStripe and
+     falls back to transparent (no ring) for members without a colour. */
   box-shadow:
     0 4px 16px -4px rgba(140,70,20,.18),
     0 1px 4px rgba(140,70,20,.1),
-    0 0 0 3px rgba(255,255,255,.9);
+    0 0 0 3px rgba(255,255,255,.9),
+    0 0 0 5px var(--mem-color,transparent);
 }
+/* On Today the ring replaces the corner stripe so the avatar stays clean. */
+#s-today .t-av .mem-stripe{display:none;}
+/* Profile-completion nudge card (#5) */
+#s-today .pcc-card{display:flex;align-items:center;gap:10px;margin:6px 16px 2px;padding:12px 14px;border-radius:18px;background:linear-gradient(135deg,#fff0e0,#ffe6cf);box-shadow:0 6px 18px rgba(255,140,60,.12),inset 0 1px 0 rgba(255,255,255,.8);position:relative;animation:fadeUp .4s ease both;}
+#s-today .pcc-card .pcc-emoji{font-size:24px;flex:0 0 auto;}
+#s-today .pcc-card .pcc-text{flex:1 1 auto;min-width:0;}
+#s-today .pcc-card .pcc-title{font-size:14px;font-weight:800;color:#7c3a1c;}
+#s-today .pcc-card .pcc-sub{font-size:12px;font-weight:600;color:#b6764a;margin-top:1px;}
+#s-today .pcc-card .pcc-cta{flex:0 0 auto;background:linear-gradient(135deg,#ff8e53,#ff6b35);color:#fff;border:none;border-radius:12px;padding:9px 16px;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer;transition:transform .15s;}
+#s-today .pcc-card .pcc-cta:active{transform:scale(.96);}
+#s-today .pcc-card .pcc-x{position:absolute;top:5px;left:7px;width:20px;height:20px;border:none;background:transparent;color:#c79a7a;font-size:13px;cursor:pointer;line-height:1;padding:0;}
 #s-today .t-av svg{display:block;width:100%;height:100%;}
 #s-today .av-mom,
 #s-today .av-dad,
@@ -1477,6 +1514,10 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 #firstRunScreen .fr-sep{font-size:13px;color:#a07050;font-weight:700;margin:4px 0;}
 #firstRunScreen .fr-join-inp{width:100%;box-sizing:border-box;text-align:center;font-family:'Rubik',sans-serif;font-size:18px;font-weight:700;letter-spacing:.12em;color:#1c110a;background:#fff8f2;border:2px solid rgba(224,180,140,.4);border-radius:14px;padding:12px 14px;}
 #firstRunScreen .fr-err{color:#c03020;font-size:13px;font-weight:700;min-height:16px;}
+#firstRunScreen .fr-reconnect{background:#fff2ea;border:1.5px solid rgba(224,120,60,.35);border-radius:16px;padding:14px 16px;margin:0 0 14px;text-align:center;}
+#firstRunScreen .fr-reconnect.hidden{display:none;}
+#firstRunScreen .fr-reconnect-title{font-size:16px;font-weight:800;color:#b4471d;margin-bottom:4px;}
+#firstRunScreen .fr-reconnect-sub{font-size:12.5px;font-weight:500;color:#7a5a48;line-height:1.5;}
 .device-setup-card{background:#fff;border-radius:24px;padding:32px 28px;max-width:320px;width:90%;box-shadow:0 8px 40px rgba(100,60,20,.18);text-align:center;}
 .device-setup-title{font-family:'Nunito',sans-serif;font-size:22px;font-weight:900;color:#1c110a;margin-bottom:6px;}
 .device-setup-sub{font-size:13px;color:#a07050;margin-bottom:24px;}
@@ -1691,7 +1732,9 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 #s-settings .av-ima{background:radial-gradient(120% 120% at 30% 25%,#ffffff 0%,#FFF4F0 55%,#FCE5DC 100%);}
 #s-settings .av-leali{background:radial-gradient(120% 120% at 30% 25%,#ffffff 0%,#FBF1FA 55%,#F2E1F2 100%);}
 #s-settings .av-uri{background:radial-gradient(120% 120% at 30% 25%,#ffffff 0%,#F1FAF3 55%,#DDF1E3 100%);}
-#s-settings .badge{position:absolute;top:-2px;right:-2px;width:20px;height:20px;border-radius:50%;background:linear-gradient(135deg,var(--orange-light),var(--orange));color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 5px rgba(229,98,26,0.4),0 0 0 2px #fff;opacity:0;transform:scale(0.7);transition:opacity .2s ease,transform .2s ease;}
+/* Avatar ✓ badge removed per request — the active member is still indicated
+   by the orange ring on .ava-circle below. */
+#s-settings .badge{display:none !important;}
 #s-settings .badge svg{width:11px;height:11px;}
 #s-settings .member.active .badge{opacity:1;transform:scale(1);}
 #s-settings .member.active .ava-circle{box-shadow:0 0 0 2px var(--orange),0 5px 11px rgba(229,98,26,0.20),inset 0 1px 2px rgba(255,255,255,0.9);}
@@ -1947,6 +1990,8 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 #s-member-profile .mp-task-day{font-size:12px;font-weight:700;color:var(--mp-purple);line-height:1.1}
 #s-member-profile .mp-task-time{margin-top:2px;font-size:13px;font-weight:700;color:var(--mp-ink);direction:ltr}
 #s-member-profile .mp-tasks-empty{text-align:center;padding:14px;color:var(--mp-muted);font-size:13px}
+#s-member-profile .mp-tasks-addbtn{display:block;width:100%;margin-top:8px;padding:11px;border:1px dashed var(--mp-purple,#8B6FBF);background:transparent;color:var(--mp-purple,#8B6FBF);border-radius:13px;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer;transition:background .15s}
+#s-member-profile .mp-tasks-addbtn:active{background:rgba(139,111,191,.08)}
 /* Stats */
 #s-member-profile .mp-stats-row{margin-top:12px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
 #s-member-profile .mp-stat{background:#fff;border-radius:18px;padding:12px 8px;box-shadow:var(--mp-shadow);border:1px solid rgba(255,255,255,0.8);display:flex;align-items:center;gap:6px;justify-content:center;}
@@ -2453,6 +2498,8 @@ body.text-large .phone{font-size:17px}
 .bottom-nav .nav-item .underline{display:none!important;}
 .bottom-nav .nav-item.active{color:#e07c3a!important;}
 .bottom-nav .nav-item svg{width:22px!important;height:22px!important;}
+/* "בקרוב" pill — honest disabled state for not-yet-implemented settings rows/tiles */
+.soon-pill{display:inline-block;font-size:12px;font-weight:700;color:#9E8878;background:#F3ECE4;border:1px solid rgba(160,90,30,.14);border-radius:999px;padding:4px 11px;white-space:nowrap;}
 /* 2. PIN keypad must read left-to-right (1 2 3 / 4 5 6 …) even in RTL */
 .pin-keypad{direction:ltr;}
 /* 5. PIN/Bio sheets must stack ABOVE the delete-data modal */
@@ -3540,6 +3587,17 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
       </div>
     </div>
 
+    <!-- Profile-completion nudge (#5): dismissible, family-mode only, shown until dismissed -->
+    <div class="pcc-card" id="profileCompleteCard" style="display:none">
+      <button class="pcc-x" type="button" aria-label="סגור" onclick="_dismissProfileNudge()">✕</button>
+      <span class="pcc-emoji">👋</span>
+      <div class="pcc-text">
+        <div class="pcc-title">משלימים את הפרופיל?</div>
+        <div class="pcc-sub">תמונה, יום הולדת ועוד פרטים אישיים</div>
+      </div>
+      <button class="pcc-cta" type="button" onclick="_openMyProfileForCompletion()">לפרופיל</button>
+    </div>
+
     <!-- Header (old — hidden via CSS, kept for JS hooks) -->
     <div class="t-header">
       <div class="t-header-top">
@@ -3989,14 +4047,8 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
 
 <!-- ════ SCREEN: INVITE FAMILY MEMBER ════ -->
 <div class="app-screen" id="s-invite-member">
-  <div class="status">
-    <span class="time">10:30</span>
-    <span class="icons" aria-hidden="true">
-      <svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="0.8"/><rect x="4.5" y="5" width="3" height="6" rx="0.8"/><rect x="9" y="2.5" width="3" height="8.5" rx="0.8"/><rect x="13.5" y="0" width="3" height="11" rx="0.8"/></svg>
-      <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor"><path d="M8 12a1.4 1.4 0 1 0 0-2.8A1.4 1.4 0 0 0 8 12Zm-4-3.4a4.6 4.6 0 0 1 8 0l1.2-1.2a6.4 6.4 0 0 0-10.4 0Zm-2.4-2.4a8.4 8.4 0 0 1 12 0l1.2-1.2a10.2 10.2 0 0 0-14.4 0Z"/></svg>
-      <svg width="26" height="12" viewBox="0 0 26 12" fill="none"><rect x="0.5" y="0.5" width="22" height="11" rx="2.6" stroke="currentColor" opacity=".5"/><rect x="2" y="2" width="19" height="8" rx="1.6" fill="currentColor"/><rect x="23.5" y="4" width="2" height="4" rx="0.8" fill="currentColor" opacity=".5"/></svg>
-    </span>
-  </div>
+  <!-- Fake status bar (static 10:30 + battery/signal mock) removed — it duplicated the real OS status bar and ate safe-area space (same fix as s-sync). -->
+
 
   <div class="app-header">
     <button class="back-btn" type="button" aria-label="חזרה" onclick="inviteGoBack()">
@@ -4129,14 +4181,8 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
 
 <!-- ════ SCREEN: MEMBER PROFILE ════ -->
 <div class="app-screen" id="s-member-profile">
-  <div class="mp-status">
-    <span class="time">10:30</span>
-    <span class="icons" aria-hidden="true">
-      <svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="0.8"/><rect x="4.5" y="5" width="3" height="6" rx="0.8"/><rect x="9" y="2.5" width="3" height="8.5" rx="0.8"/><rect x="13.5" y="0" width="3" height="11" rx="0.8"/></svg>
-      <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor"><path d="M8 12a1.4 1.4 0 1 0 0-2.8A1.4 1.4 0 0 0 8 12Zm-4-3.4a4.6 4.6 0 0 1 8 0l1.2-1.2a6.4 6.4 0 0 0-10.4 0Zm-2.4-2.4a8.4 8.4 0 0 1 12 0l1.2-1.2a10.2 10.2 0 0 0-14.4 0Z"/></svg>
-      <svg width="26" height="12" viewBox="0 0 26 12" fill="none"><rect x="0.5" y="0.5" width="22" height="11" rx="2.6" stroke="currentColor" opacity=".5"/><rect x="2" y="2" width="19" height="8" rx="1.6" fill="currentColor"/><rect x="23.5" y="4" width="2" height="4" rx="0.8" fill="currentColor" opacity=".5"/></svg>
-    </span>
-  </div>
+  <!-- Fake status bar (static 10:30 + battery/signal mock) removed — it duplicated the real OS status bar and confused testers (same fix as s-sync). #2A -->
+
   <div class="mp-scroll">
     <div class="mp-header">
       <button class="mp-icon-btn" id="mpBackBtn" aria-label="חזרה">
@@ -4147,10 +4193,8 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
 
     <!-- Profile hero -->
     <div class="mp-profile">
-      <span class="mp-c1">💗</span>
-      <span class="mp-c2">⭐</span>
-      <span class="mp-cb1"></span>
-      <span class="mp-cb2"></span>
+      <!-- Decorative confetti (💗/⭐ + dashes) removed — UI noise crowding the avatar's top-right. The edit pencil (mp-pencil) stays. #2B -->
+
       <div class="mp-avatar-wrap">
         <div class="mp-avatar" id="mpAvatarCircle"></div>
         <button class="mp-pencil" id="mpPencilBtn" style="display:none" aria-label="עריכת תמונה">
@@ -4297,8 +4341,8 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
 
 <!-- ════ SCREEN: SYNC & BACKUP (Claude Design merge, step 4) ════
      Access for testing: app.html#s-sync
-     Back → s-settings. All action buttons carry data-todo markers.
-     The spinning animation on "בדוק סנכרון" is visual-only. -->
+     Back → s-settings. Sync is automatic via Firestore listener — no manual
+     buttons, no fake "last synced" time, no E2E-encryption claims. -->
 <div class="app-screen" id="s-sync">
   <!-- Fake status bar (static clock/battery/signal mock) removed — confused testers; real device status bar is shown by the OS. -->
 
@@ -4401,52 +4445,18 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
 
     </div>
 
-    <!-- Cloud backup -->
+    <!-- Cloud backup — honest: Firestore auto-saves & syncs; no E2E-encryption claim. -->
     <div class="card">
       <div class="cloud-head">
         <div class="cloud-text">
-          <div class="status-title">גיבוי בענן</div>
+          <div class="status-title">שמירה בענן</div>
           <div class="cloud-state"><span class="dot"></span><span>פעיל</span></div>
-          <div class="status-desc">המידע שלכם מגובה בצורה מאובטחת בענן</div>
+          <div class="status-desc">המשימות נשמרות אוטומטית בענן ומסונכרנות בזמן אמת בין בני המשפחה</div>
         </div>
         <div class="cloud-icon" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18a5 5 0 0 1-1-9.9A6 6 0 0 1 17.5 9 4.5 4.5 0 0 1 17 18"/><path d="M12 17V6"/><path d="m9 9 3-3 3 3"/></svg>
         </div>
       </div>
-      <div class="secure-row">
-        <div class="sbody">
-          <div class="st">הגיבוי מאובטח</div>
-          <div class="ss">המידע מוצפן ואישי שלכם נשמר בסודיות</div>
-        </div>
-        <div class="shield" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><rect x="10" y="11" width="4" height="5" rx="1"/><path d="M11 11V9.5a1 1 0 1 1 2 0V11"/></svg>
-        </div>
-      </div>
-    </div>
-
-    <!-- Last sync -->
-    <div class="card lastsync">
-      <div class="ls-text">
-        <div class="status-title">סנכרון אחרון</div>
-        <div class="ls-state"><span class="dot"></span><span>לפני דקה</span></div>
-        <div class="ls-when">היום, 10:29</div>
-      </div>
-      <div class="ls-icon" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
-      </div>
-    </div>
-
-    <!-- Two actions -->
-    <div class="actions">
-      <button class="act" type="button" data-todo="sync-check-now" onclick="(function(b){var s=b.querySelector('svg');s.style.transition='transform 0.8s ease';s.style.transform='rotate(360deg)';setTimeout(function(){s.style.transition='none';s.style.transform='rotate(0deg)';},900);})(this)">
-        <div class="ic green" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4v16"/><path d="m4 8 4-4 4 4"/><path d="M16 4v16"/><path d="m12 16 4 4 4-4"/></svg>
-        </div>
-        <div class="abody">
-          <div class="at green">בדוק סנכרון עכשיו</div>
-          <div class="as">עדכן מיד את כל השינויים בין המכשירים</div>
-        </div>
-      </button>
     </div>
 
     <!-- Privacy banner -->
@@ -4534,8 +4544,9 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
 
 <!-- ════ SCREEN: PRIVACY & SECURITY (Claude Design merge, step 3) ════
      Access for testing: app.html#s-privacy
-     Toggles (נעילת אפליקציה, גישה מהירה) are visual-only.
-     All other rows carry data-todo markers until sub-screens are built.
+     App-lock / PIN / biometric are NOT enforced on app start, so they are
+     shown as a single non-interactive "בקרוב" row (no fake security).
+     Delete-data wording is honest: clears THIS device, cloud copy remains.
      Back button → s-settings. -->
 <div class="app-screen" id="s-privacy">
   <!-- Fake status bar (static clock/battery/signal mock) removed — confused testers; real device status bar is shown by the OS. -->
@@ -4563,7 +4574,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
         <div class="hero-desc">כל המשימות, ההקלטות וההעדפות נשמרות אצלכם ומוצגות רק לבני המשפחה שלכם.</div>
         <div class="green-pill">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg>
-          <span>לא משתפים מידע עם גורמים חיצוניים</span>
+          <span>המידע גלוי רק לבני המשפחה שלכם</span>
         </div>
       </div>
       <div class="hero-illu" aria-hidden="true">
@@ -4610,43 +4621,17 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
     <!-- Rows -->
     <div class="rows">
 
-      <!-- נעילת אפליקציה (toggle — visual only) -->
-      <div class="row">
+      <!-- נעילת אפליקציה (קוד / ביומטרי) — לא ממומש עדיין. מוצג כ"בקרוב"
+           ולא אינטראקטיבי, כדי לא להציג אבטחה מזויפת לבודקים. -->
+      <div class="row" style="opacity:.62;cursor:default;" aria-disabled="true">
         <div class="icn" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
         </div>
         <div class="body">
           <div class="t">נעילת אפליקציה</div>
-          <div class="s">דרוש קוד גישה כדי לפתוח את האפליקציה</div>
+          <div class="s">קוד גישה וכניסה ביומטרית (טביעת אצבע / זיהוי פנים)</div>
         </div>
-        <label class="ptoggle"><input type="checkbox" checked/><span class="slider"></span></label>
-      </div>
-
-      <!-- קוד גישה -->
-      <div class="row" onclick="openPinSetup()">
-        <div class="icn" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="12" rx="2"/><circle cx="8" cy="13" r="1.4" fill="currentColor"/><circle cx="12" cy="13" r="1.4" fill="currentColor"/><circle cx="16" cy="13" r="1.4" fill="currentColor"/></svg>
-        </div>
-        <div class="body">
-          <div class="t">קוד גישה</div>
-          <div class="s">קוד בן 4 ספרות</div>
-        </div>
-        <span class="link-text">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-          <span>שנה קוד</span>
-        </span>
-      </div>
-
-      <!-- גישה מהירה (toggle — visual only) -->
-      <div class="row" onclick="openBiometricSetup()">
-        <div class="icn" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 11a7 7 0 0 1 14 0"/><path d="M5 14a7 7 0 0 0 4 6.3"/><path d="M9 11a3 3 0 0 1 6 0v3"/><path d="M9 14a3 3 0 0 0 1 2.2"/><path d="M12 11v6"/><path d="M14 19v-3"/></svg>
-        </div>
-        <div class="body">
-          <div class="t">גישה מהירה</div>
-          <div class="s">פתח באמצעות טביעת אצבע או זיהוי פנים</div>
-        </div>
-        <label class="ptoggle"><input type="checkbox" checked/><span class="slider"></span></label>
+        <span class="soon-pill">בקרוב</span>
       </div>
 
 
@@ -4658,7 +4643,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
         </div>
         <div class="body">
           <div class="t">מחיקת נתוני האפליקציה</div>
-          <div class="s">מחק את כל הנתונים וההגדרות מהאפליקציה</div>
+          <div class="s">מחק נתונים מהמכשיר הזה ונתק אותו מהמשפחה</div>
         </div>
         <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></span>
       </div>
@@ -4672,8 +4657,17 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
       </div>
       <div class="body">
         <div class="t">הפרטיות שלכם חשובה לנו</div>
-        <div class="s">אנחנו לא שומרים, לא מוכרים ולא מעבירים מידע שלכם לאף גורם מחוץ למשפחה שלכם.</div>
+        <div class="s">איננו מוכרים את המידע שלכם, והוא גלוי רק לבני המשפחה. לזיהוי הדיבור והטקסט אנו נעזרים בספק עיבוד מאובטח.</div>
       </div>
+    </div>
+
+    <!-- Runtime status (for us) — build id + family/member connection state.
+         Tap to open Sync Diagnostics. -->
+    <div id="settingsDevStatus" onclick="try{_showSyncDiag()}catch(e){}"
+         style="text-align:center;font:11px/1.7 monospace;color:#b8a99a;padding:10px 0 6px;opacity:.9;">
+      <div style="direction:ltr">build <span id="settingsBuildVal">…</span></div>
+      <div id="settingsFamStatus" style="direction:rtl">משפחה: …</div>
+      <div id="settingsMemStatus" style="direction:rtl">חבר: …</div>
     </div>
 
   </div>
@@ -4727,10 +4721,11 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
           <span class="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg></span>
           <span class="tile-label">בהיר</span>
         </button>
-        <button class="tile" data-theme="dark" role="radio" aria-checked="false">
+        <!-- "כהה" אינו מצב כהה אמיתי (רק רקע מאחורי המסגרת) — מושבת עד מימוש מלא. -->
+        <button class="tile" data-theme="dark" data-disabled="1" role="radio" aria-checked="false" aria-disabled="true" style="opacity:.55;cursor:default;">
           <div class="theme-art theme-dark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 14.5A8 8 0 1 1 9.5 3a6.5 6.5 0 0 0 11.5 11.5Z" fill="currentColor" stroke="none"/><path d="M17 4l.6 1.6L19 6l-1.4.6L17 8l-.7-1.4L15 6l1.4-.6Z" fill="currentColor" stroke="none"/></svg></div>
-          <span class="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg></span>
           <span class="tile-label">כהה</span>
+          <span class="soon-pill" style="font-size:10px;padding:2px 7px;margin-top:3px;">בקרוב</span>
         </button>
         <button class="tile" data-theme="calm" role="radio" aria-checked="false">
           <div class="theme-art theme-calm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21c0-5 3-9 8-10-1 6-4 9-8 10Z" fill="currentColor" stroke="currentColor" opacity="0.85"/><path d="M12 21c0-5-3-9-8-10 1 6 4 9 8 10Z" fill="currentColor" stroke="currentColor" opacity="0.65"/><path d="M12 21v-9" stroke-width="1.8"/></svg></div>
@@ -4801,7 +4796,8 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
           <span class="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg></span>
           <span class="tile-label">בלוב</span>
         </button>
-        <button class="tile" data-voice="star" role="radio" aria-checked="false">
+        <!-- "הדמות" (star) hidden — it mapped to the same mic mode as "לב" (heart), so it was a duplicate/fake choice. -->
+        <button class="tile" data-voice="star" role="radio" aria-checked="false" style="display:none" aria-hidden="true">
           <div class="voice-art"><div class="vbtn v-star"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div></div>
           <span class="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg></span>
           <span class="tile-label">הדמות</span>
@@ -5167,8 +5163,8 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
     <div class="psh-pill"></div>
     <div class="psh-title" style="color:#C0392B" id="delTitle">מחיקת נתוני אפליקציה</div>
     <div class="del-warning">
-      <div class="del-w-title" id="delWarnTitle">⚠️ פעולה בלתי הפיכה</div>
-      <div class="del-w-body" id="delWarnBody">המשך כדי לאמת את זהותך לפני מחיקת כל הנתונים.</div>
+      <div class="del-w-title" id="delWarnTitle">⚠️ איפוס המכשיר הזה</div>
+      <div class="del-w-body" id="delWarnBody">המשך כדי לאמת את זהותך לפני איפוס הנתונים במכשיר זה.</div>
     </div>
     <div class="del-steps">
       <div class="del-step"><div class="del-step-num" id="delStep1Num">1</div><div class="del-step-txt">אימות קוד גישה</div></div>
@@ -5211,14 +5207,8 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
      Source: Time & Date.html
 ════════════════════════════════════════════════════════════════════════ -->
 <div class="app-screen" id="s-time-date">
-  <div class="td-status">
-    <span class="time">10:30</span>
-    <span class="icons" aria-hidden="true">
-      <svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="0.8"/><rect x="4.5" y="5" width="3" height="6" rx="0.8"/><rect x="9" y="2.5" width="3" height="8.5" rx="0.8"/><rect x="13.5" y="0" width="3" height="11" rx="0.8"/></svg>
-      <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor"><path d="M8 12a1.4 1.4 0 1 0 0-2.8A1.4 1.4 0 0 0 8 12Zm3.6-3.4-.06.06.06-.06Zm-7.2 0a4.6 4.6 0 0 1 7.2 0l1.2-1.2a6.4 6.4 0 0 0-9.6 0l1.2 1.2Zm-2.4-2.4a8.4 8.4 0 0 1 12 0l1.2-1.2a10.2 10.2 0 0 0-14.4 0l1.2 1.2Z"/></svg>
-      <svg width="26" height="12" viewBox="0 0 26 12" fill="none"><rect x="0.5" y="0.5" width="22" height="11" rx="2.6" stroke="currentColor" opacity=".5"/><rect x="2" y="2" width="19" height="8" rx="1.6" fill="currentColor"/><rect x="23.5" y="4" width="2" height="4" rx="0.8" fill="currentColor" opacity=".5"/></svg>
-    </span>
-  </div>
+  <!-- Fake status bar (static 10:30 + battery/signal mock) removed — it duplicated the real OS status bar and ate safe-area space (same fix as s-sync). -->
+
 
   <div class="td-scroll">
 
@@ -5406,14 +5396,8 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
      Source: Split Task.html
 ════════════════════════════════════════════════════════════════════════ -->
 <div class="app-screen" id="s-split">
-  <div class="spl-status">
-    <span class="time">10:30</span>
-    <span class="icons" aria-hidden="true">
-      <svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="0.8"/><rect x="4.5" y="5" width="3" height="6" rx="0.8"/><rect x="9" y="2.5" width="3" height="8.5" rx="0.8"/><rect x="13.5" y="0" width="3" height="11" rx="0.8"/></svg>
-      <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor"><path d="M8 12a1.4 1.4 0 1 0 0-2.8A1.4 1.4 0 0 0 8 12Zm3.6-3.4-.06.06.06-.06Zm-7.2 0a4.6 4.6 0 0 1 7.2 0l1.2-1.2a6.4 6.4 0 0 0-9.6 0l1.2 1.2Zm-2.4-2.4a8.4 8.4 0 0 1 12 0l1.2-1.2a10.2 10.2 0 0 0-14.4 0l1.2 1.2Z"/></svg>
-      <svg width="26" height="12" viewBox="0 0 26 12" fill="none"><rect x="0.5" y="0.5" width="22" height="11" rx="2.6" stroke="currentColor" opacity=".5"/><rect x="2" y="2" width="19" height="8" rx="1.6" fill="currentColor"/><rect x="23.5" y="4" width="2" height="4" rx="0.8" fill="currentColor" opacity=".5"/></svg>
-    </span>
-  </div>
+  <!-- Fake status bar (static 10:30 + battery/signal mock) removed — it duplicated the real OS status bar and ate safe-area space (same fix as s-sync). -->
+
 
   <div class="spl-scroll">
 
@@ -5497,7 +5481,8 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
         <span>שמור לבחירה שלי</span>
         <span class="spl-ck-pill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg></span>
       </button>
-      <button class="spl-ghost-btn" type="button" data-todo="edit-manual" id="splEditBtn">
+      <!-- "ערוך ידנית" hidden — dead button (data-todo="edit-manual", no handler yet). -->
+      <button class="spl-ghost-btn" type="button" data-todo="edit-manual" id="splEditBtn" style="display:none" aria-hidden="true">
         <span>ערוך ידנית</span>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4Z"/></svg>
       </button>
@@ -5527,6 +5512,10 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
 
     <!-- ── STATE: welcome ── -->
     <div class="fr-state" data-fr-state="welcome">
+      <div class="fr-reconnect hidden" data-fr-reconnect>
+        <div class="fr-reconnect-title">צריך להצטרף למשפחה מחדש</div>
+        <div class="fr-reconnect-sub">המכשיר התנתק מהמשפחה. הזינו את קוד ההצטרפות כדי להתחבר שוב — הנתונים שלכם נשמרים בענן.</div>
+      </div>
       <div class="fr-hero fr-hero-welcome" role="img" aria-label="Family — היום של כולם, מסודר במקום אחד"></div>
       <div class="fr-card">
         <button type="button" class="fr-choice fr-choice-join" onclick="_frGoto('join')">
@@ -5914,6 +5903,12 @@ const AppState = { tasks: [], previewTasks: [], recurringCompletions: {}, recurr
 
 // ─── Debug logger (?debug=1 in URL  OR  window.APP_DEBUG = true) ─
 const _urlDbg  = new URLSearchParams(window.location.search).get('debug') === '1';
+// ── Runtime build marker (visible in Settings + Sync Diagnostics) ──
+// Bump this string on every web build so we can confirm — from the device —
+// exactly which code is actually running, independent of Android versionCode.
+const APP_BUILD = '1.4-build8-idguard-2026-06-03';
+window.APP_BUILD = APP_BUILD;
+try { const _bv = document.getElementById('settingsBuildVal'); if (_bv) _bv.textContent = APP_BUILD; } catch (e) {}
 const _urlDiag = new URLSearchParams(window.location.search).get('diag') === '1';
 const _ts     = () => new Date().toISOString().slice(11, 23);
 const _dbg    = () => _urlDbg || !!(typeof window !== 'undefined' && window.APP_DEBUG);
@@ -5971,7 +5966,7 @@ function loadAppearance() {
   try {
     const s = JSON.parse(localStorage.getItem(APPEARANCE_KEY) || 'null');
     if (!s) return;
-    if (s.theme)       AppState.theme       = s.theme;
+    if (s.theme)       AppState.theme       = (s.theme === 'dark' ? 'bright' : s.theme); // "כהה" disabled — never restore broken dark mode
     if (s.accentColor) { AppState.accentColor = s.accentColor; AppState.accentDeep = s.accentDeep; AppState.accentSoft = s.accentSoft; }
     if (s.textSize)    AppState.textSize    = s.textSize;
     if (s.voiceStyle)  AppState.voiceStyle  = s.voiceStyle;
@@ -6036,6 +6031,7 @@ function renderAppearance() {
 // Event handlers for #s-appearance controls
 document.querySelectorAll('#appr-themes .tile').forEach(function(t) {
   t.addEventListener('click', function() {
+    if (t.dataset.disabled === '1') return;   // "כהה" — coming soon, not selectable
     AppState.theme = t.dataset.theme;
     saveAppearance(); applyAppearance(); renderAppearance();
   });
@@ -6063,12 +6059,6 @@ document.querySelectorAll('#appr-voices .tile').forEach(function(t) {
       localStorage.setItem(MIC_STYLE_KEY, mode);
     }
     saveAppearance(); renderAppearance();
-  });
-});
-document.querySelectorAll('#appr-avatars .av-row').forEach(function(r) {
-  r.addEventListener('click', function() {
-    AppState.avatarMode = r.dataset.av;
-    saveAppearance();
   });
 });
 
@@ -7514,31 +7504,56 @@ document.getElementById('vTypeToggle').addEventListener('click', () => {
 
 // ── Contenteditable helpers ───────────────────────────────────────
 function _getCaretPos(el) {
+  // Caret offset measured in the SAME logical model as _getInpText: each
+  // character counts 1 and each <br> counts 1 (a newline). Returns null when
+  // there is no caret inside el, so the caller can fall back safely. RTL-safe:
+  // these are logical offsets, independent of visual text direction.
   const sel = window.getSelection();
-  if (!sel || !sel.rangeCount) return 0;
-  const r = sel.getRangeAt(0).cloneRange();
-  r.selectNodeContents(el);
-  r.setEnd(sel.anchorNode, sel.anchorOffset);
-  return r.toString().length;
+  if (!sel || !sel.rangeCount) return null;
+  const range = sel.getRangeAt(0);
+  if (!el.contains(range.endContainer)) return null;
+  const pre = range.cloneRange();
+  pre.selectNodeContents(el);
+  pre.setEnd(range.endContainer, range.endOffset);
+  let len = 0;
+  (function count(node) {
+    node.childNodes.forEach(n => {
+      if (n.nodeType === Node.TEXT_NODE) len += n.textContent.length;
+      else if (n.nodeName === 'BR')      len += 1;
+      else                               count(n);
+    });
+  })(pre.cloneContents());
+  return len;
 }
 function _setCaretPos(el, pos) {
-  const walk = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
-  let node, acc = 0;
-  while ((node = walk.nextNode())) {
-    if (acc + node.length >= pos) {
-      const r = document.createRange();
-      r.setStart(node, pos - acc);
-      r.collapse(true);
-      const sel = window.getSelection();
-      sel.removeAllRanges(); sel.addRange(r); return;
-    }
-    acc += node.length;
+  // Restore the caret to logical offset `pos` over el's flat span/<br> content
+  // (each <br> counts as one newline, matching _getCaretPos / _getInpText).
+  const sel = window.getSelection();
+  const range = document.createRange();
+  if (pos == null) { // caret could not be read → logical end (old safe default)
+    range.selectNodeContents(el); range.collapse(false);
+    sel.removeAllRanges(); sel.addRange(range); return;
   }
-  // Fallback: move to end
-  const r = document.createRange();
-  r.selectNodeContents(el); r.collapse(false);
-  window.getSelection().removeAllRanges();
-  window.getSelection().addRange(r);
+  let acc = 0, placed = false;
+  (function walk(parent) {
+    const kids = parent.childNodes;
+    for (let i = 0; i < kids.length && !placed; i++) {
+      const n = kids[i];
+      if (n.nodeType === Node.TEXT_NODE) {
+        const len = n.textContent.length;
+        if (acc + len >= pos) { range.setStart(n, pos - acc); placed = true; return; }
+        acc += len;
+      } else if (n.nodeName === 'BR') {
+        if (acc + 1 > pos) { range.setStartBefore(n); placed = true; return; }
+        acc += 1;
+      } else {
+        walk(n);
+      }
+    }
+  })(el);
+  if (placed) range.collapse(true);
+  else { range.selectNodeContents(el); range.collapse(false); }
+  sel.removeAllRanges(); sel.addRange(range);
 }
 
 let _typeTracked = '';
@@ -7597,17 +7612,20 @@ vTypeInpEl.addEventListener('input', function() {
   let ci = 0;
   while (ci < _typeTracked.length && ci < current.length && _typeTracked[ci] === current[ci]) ci++;
 
+  // Capture the caret's logical offset BEFORE the rebuild. The browser has
+  // already applied this keystroke at the correct spot; rebuilding the DOM
+  // below would otherwise lose it (the old bug forced the caret to the end).
+  const caret = _getCaretPos(this);
+
   // Rebuild: old part plain, new part animated — both preserve line breaks
   this.innerHTML = '';
   if (ci > 0) _appendNodes(this, current.slice(0, ci), false);
   _appendNodes(this, current.slice(ci), true);
   _typeTracked = current;
 
-  // Place caret at logical end (works for both RTL and LTR)
-  const r = document.createRange();
-  r.selectNodeContents(this); r.collapse(false);
-  const sel = window.getSelection();
-  sel.removeAllRanges(); sel.addRange(r);
+  // Restore the caret to the SAME logical offset (RTL- and multiline/<br>-aware)
+  // so mid-text edits stay exactly where the user placed them.
+  _setCaretPos(this, caret);
   // Scroll to bottom only when typing at the end (not editing mid-text)
   // This lets user scroll up to edit earlier lines without being pulled back down
   if (ci >= prevLen) {
@@ -8897,7 +8915,7 @@ function renderConfirmationTasks() {
       '<button class="menu" aria-label="אפשרויות" onclick="_visBackScreen=\'s-confirmation\';AppState._editingTask=(AppState.previewTasks||[]).find(function(t){return String(t.id)===\'' + task.id + '\';})||AppState._editingTask;if(typeof renderVisibility===\'function\')renderVisibility();goto(\'s-visibility\',\'txLeaveBloom\',\'txEnterFocus\')">' + MENU_SVG + '</button>' +
       '<button class="col-left" type="button" aria-label="ערוך שעה">' + timeHTML + '</button>' +
       '<div class="col-mid"><div class="t-title"><span contenteditable="plaintext-only" role="textbox" aria-label="כותרת משימה">' + esc(task.title) + '</span></div>' +
-        (sanitizeSegments(mockSplit(task.subItems ? task.subItems.mainTitle || task.title : task.title)).length >= 2 ?
+        (offerableSplit(task.subItems ? task.subItems.mainTitle || task.title : task.title).length >= 2 ?
           '<button class="conf-split-btn" data-splitid="' + task.id + '">' +
           '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5"/><path d="M8 3H3v5"/><path d="M12 22v-8.3a4 4 0 0 0-1.172-2.872L3 3"/><path d="m15 9 6-6"/></svg>' +
           ' פצל' +
@@ -9289,7 +9307,23 @@ function _doCommitPreview() {
   if (_appendToToday) {
     AppState.tasks = [...AppState.tasks, ...newTasks];
   } else {
-    const kept = AppState.tasks.filter(t => (t.date || todayDate()) !== activeDate);
+    const kept    = AppState.tasks.filter(t => (t.date || todayDate()) !== activeDate);
+    const dropped = AppState.tasks.filter(t => (t.date || todayDate()) === activeDate);
+    // #1 fix: replace mode removes same-date tasks from LOCAL state, but
+    // previously left their cloud docs untouched — so the onSnapshot listener
+    // would later resurrect them (e.g. a previously-committed long "blob" task
+    // reappearing alongside its splits and hijacking the Today hero). Tombstone
+    // the dropped cloud docs here, scoped to this device's OWN tasks, and never
+    // a task that is being re-committed (id present in newTasks). Reuses the
+    // existing soft-delete mechanism; the listener already ignores deleted docs.
+    dropped.forEach(t => {
+      const mine = (DataAdapter.userId && t.createdBy === DataAdapter.userId)
+                || (DataAdapter.myMemberId && t.createdByMemberId === DataAdapter.myMemberId);
+      if (mine && !newTasks.some(n => String(n.id) === String(t.id))) {
+        t.deleted = true; t.deletedAt = Date.now();
+        try { _daWriteTask(t, false).catch(() => {}); } catch (_) {}
+      }
+    });
     AppState.tasks = [...kept, ...newTasks];
   }
   _appendToToday = false;
@@ -9389,11 +9423,11 @@ function mockSplit(title) {
     .split(/ (?=ו?ל.{2,})/)
     .map(s => s.trim().replace(/^ו(?=ל)/, ''))
     .filter(Boolean);
-  if (parts.length >= 2) return parts;
-  const words = title.split(' ');
-  if (words.length < 3) return [];
-  const mid = Math.ceil(words.length / 2);
-  return [words.slice(0, mid).join(' '), words.slice(mid).join(' ')];
+  // #3 fix: only split on real ל-verb boundaries. Previously, a title with no
+  // boundary fell through to a blind half-split (words sliced down the middle),
+  // which produced meaningless, context-losing suggestions (e.g. splitting a
+  // single sentence about one errand into two halves). Never fabricate a split.
+  return parts.length >= 2 ? parts : [];
 }
 
 // Recognized Hebrew task infinitives — segments whose first word is NOT here
@@ -9484,6 +9518,14 @@ function filterMovementCompound(segs, originalTitle) {
   // Movement verb leading → treat as movement+purpose compound → suppress auto-split
   if (MOVEMENT_VERBS.has(v1)) return [];
   return segs;
+}
+
+// #3 fix: conservative gate for AUTO-OFFERED splits (button/affordance
+// visibility). Only offer a split when a structurally valid split survives the
+// movement+purpose-compound filter. Manual long-press keeps using the raw
+// sanitizeSegments(mockSplit(...)) as an escape hatch for explicit user intent.
+function offerableSplit(title) {
+  return filterMovementCompound(sanitizeSegments(mockSplit(title)), title);
 }
 
 function openSplitSheet(task, cardEl, onConfirm) {
@@ -9642,10 +9684,10 @@ function _buildCardEl(task) {
     <div class="card-swipe-bg"><svg class="swipe-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></div>
     <div class="card-swipe-track">
       <div class="card-inner">
-        <div class="card-accent" style="background:${p.color}"></div>
+        <div class="card-accent" style="background:${_taskCreatorColor(task) || p.color}"></div>
         <div class="card-time-col"><span class="card-time${task.mins==null?' empty':''}">${m2t(task.mins) || '__:__'}</span><span class="card-ampm">${ampm(task.mins)}</span><span class="card-ts ${task.timeSource}">${task.mins==null?'':tsLabel[task.timeSource]}</span></div>
         <div class="card-vline"></div>
-        <div class="card-body"><div class="card-title">${task.subItems?.mainTitle || task.title}</div><div class="card-chip"><span class="chip-dot" style="background:${p.color}"></span>${_taskDisplayName(task)}</div>${canSplit?'<button class="t-split-btn">פצל</button>':''}</div>
+        <div class="card-body"><div class="card-title">${task.subItems?.mainTitle || task.title}</div><div class="card-chip"><span class="chip-dot" style="background:${_taskCreatorColor(task) || p.color}"></span>${_taskDisplayName(task)}</div>${canSplit?'<button class="t-split-btn">פצל</button>':''}</div>
         <div class="card-av" style="background:${p.bg}">${taskAvImg(task)}</div>
         <div class="card-bell${_taskShowsActiveBell(task)?'':' off'}">${_taskShowsActiveBell(task)?'🔔':'🔕'}</div>
       </div>
@@ -10102,8 +10144,11 @@ document.getElementById('btnOk').addEventListener('click', function() {
   setTimeout(_doCommitPreview, 720);
 });
 
-// Phase 2 reconcile-chip choices
-document.getElementById('confAiUpdate').addEventListener('click', () => {
+// Phase 2 reconcile-chip choices (decision dialog). Guard against missing
+// markup so a conditional render can't throw at load — mirrors the chip helpers.
+const _confAiUpdateBtn = document.getElementById('confAiUpdate');
+const _confAiKeepBtn   = document.getElementById('confAiKeep');
+if (_confAiUpdateBtn) _confAiUpdateBtn.addEventListener('click', () => {
   const mode = _aiChipMode;
   if (AppState.previewAiResult) {
     AppState.previewTasks      = AppState.previewAiResult;
@@ -10115,7 +10160,7 @@ document.getElementById('confAiUpdate').addEventListener('click', () => {
   _hideAiChip();
   if (mode === 'pending') { _restoreOkBtn(); _doCommitPreview(); }
 });
-document.getElementById('confAiKeep').addEventListener('click', () => {
+if (_confAiKeepBtn) _confAiKeepBtn.addEventListener('click', () => {
   const mode = _aiChipMode;
   AppState.previewAiResult = null;
   _hideAiChip();
@@ -10356,6 +10401,7 @@ function renderToday() {
   const _animEntryThisRender = _todayAnimateEntry;
   _todayAnimateEntry = false;
   if (typeof _mpApplyAllStripes === 'function') _mpApplyAllStripes();
+  if (typeof _maybeShowProfileCompletion === 'function') _maybeShowProfileCompletion();
   updateTodayTitle();
   updateDateBadge();
   updateOtherDayBanner();
@@ -10449,7 +10495,7 @@ function renderToday() {
     if (t.reminderOffsetMinutes === undefined) t.reminderOffsetMinutes = 10;
     const realTForEdit = t.isRecurring ? (AppState.tasks.find(rt => rt.id === t.recurrenceId) || t) : t;
     const canEditCommitted = _canEditCommittedTask(realTForEdit);
-    const tCanSplit = sanitizeSegments(mockSplit(t.subItems?.mainTitle || t.title)).length >= 2;
+    const tCanSplit = offerableSplit(t.subItems?.mainTitle || t.title).length >= 2;
     el.innerHTML = `
       <div class="t-swipe-bg"><svg class="swipe-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></div>
       <div class="t-swipe-track">
@@ -11510,6 +11556,21 @@ function updateTodayTitle() {
 
 document.getElementById('calBtn').addEventListener('click', openCalDrawer);
 document.getElementById('tTitle').addEventListener('click', () => { if (!_devUiEnabled()) return; _diagTapCount++; clearTimeout(_diagTapTimer); _diagTapTimer = setTimeout(() => { _diagTapCount = 0; }, 2000); if (_diagTapCount >= 3) { _diagTapCount = 0; _showSyncDiag(); } });
+// Temporary tester diagnostic (diag-2026-06-03): long-press the title ~1s opens
+// Sync Diagnostics on ANY build, no dev mode needed — so a tester can screenshot
+// their identity state. Safe/read-only. Remove once the local-mode bug is fixed.
+(function _wireDiagLongPress(){
+  const t = document.getElementById('tTitle'); if (!t) return;
+  let _lpTimer = null;
+  const start = () => { _lpTimer = setTimeout(() => { try { _showSyncDiag(); } catch(e){} }, 900); };
+  const cancel = () => { if (_lpTimer) { clearTimeout(_lpTimer); _lpTimer = null; } };
+  t.addEventListener('touchstart', start, { passive: true });
+  t.addEventListener('touchend', cancel);
+  t.addEventListener('touchmove', cancel, { passive: true });
+  t.addEventListener('mousedown', start);
+  t.addEventListener('mouseup', cancel);
+  t.addEventListener('mouseleave', cancel);
+})();
 if (_urlDiag) _showSyncDiag();
 setTimeout(updateHeroPortrait, 0);
 document.getElementById('uswBg').addEventListener('click', e => { if (e.target === document.getElementById('uswBg')) closeUserSwitcher(); });
@@ -12202,6 +12263,16 @@ const INSTALL_DISMISSED_KEY = 'family-app-install-dismissed';
 let _deferredInstallPrompt = null;
 const _isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
                      window.navigator.standalone === true;
+/* iOS-in-browser safe-area guard: plain iPhone Safari does not expose
+   env(safe-area-inset-top), so content slides under the status bar / Dynamic
+   Island. Tag the body so CSS clamps a robust minimum (--sat/--sab). iPadOS 13+
+   reports platform 'MacIntel' with touch, so detect that too. */
+(function(){
+  var ua = navigator.userAgent || '';
+  var isIOS = /iP(hone|ad|od)/.test(ua) ||
+              (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  if (isIOS) document.body.classList.add('ios-safe');
+})();
 
 function _showInstallBanner(mode) {
   const banner = document.getElementById('installBanner');
@@ -13154,6 +13225,10 @@ const DataAdapter = {
     this.mode     = 'local';
     localStorage.removeItem(_DA_MODE_KEY);
     localStorage.removeItem(_DA_FAMILY_KEY);
+    // Clear any stale device→member mapping. A leftover seed memberId (from the
+    // old device-setup screen or a cloud-recovery restore) would otherwise leak
+    // a wrong identity (e.g. "אמא") into the NEXT family on re-join.
+    localStorage.removeItem('family-app-my-member-id');
     // userId and displayName stay so same device keeps its identity on re-join
   },
 
@@ -13218,6 +13293,14 @@ function _showSyncDiag() {
     ['da-family-id (LS)', localStorage.getItem('family-app-da-family-id') || '(null)'],
     ['da-user-id (LS)',   localStorage.getItem('family-app-da-user-id')   || '(null)'],
     ['app-user (LS)',     localStorage.getItem('family-app-user')         || '(null)'],
+    ['—',               ''],
+    ['my-member-id (LS)', localStorage.getItem('family-app-my-member-id') || '(null)'],
+    ['myMemberId (DA)',   DataAdapter.myMemberId || '(none)'],
+    ['authUid',           DataAdapter.authUid   || '(none)'],
+    ['profileMemberId',   (typeof _mpCurrentId !== 'undefined' && _mpCurrentId) ? _mpCurrentId : '(none)'],
+    ['displayName (DA)',  DataAdapter.displayName || '(empty)'],
+    ['—',               ''],
+    ['BUILD',             (typeof APP_BUILD !== 'undefined' ? APP_BUILD : '(unset)')],
   ];
   const html = rows.map(([k,v]) => {
     if (k === '—') return '<hr style="border:none;border-top:1px solid #2a2a2a;margin:6px 0">';
@@ -13274,6 +13357,20 @@ async function _fbLinkAuthToMember(authUid) {
              .set({ userId: DataAdapter.userId, role: role, linkedAt: ts }, { merge: true });
     console.log('[Auth] memberUids marker written for', authUid);
   } catch (e) { console.warn('[Auth] memberUids write failed (non-fatal)', e.message || e); }
+
+  // identity-guard-2026-06-03: top-level authUid → identity breadcrumb so a
+  // returning device whose anonymous credential persisted (e.g. clear-cache or
+  // reinstall, but NOT a full data wipe that mints a new uid) can recover its
+  // family + member identity instead of dropping to demo mode. Additive.
+  try {
+    const role2 = (snap.exists && snap.data().role) || 'member';
+    const mid2  = (snap.exists && snap.data().memberId) || DataAdapter.myMemberId || null;
+    await _db.collection('authIndex').doc(authUid).set({
+      familyId: DataAdapter.familyId, userId: DataAdapter.userId,
+      role: role2, memberId: mid2, linkedAt: ts,
+    }, { merge: true });
+    console.log('[Auth] authIndex breadcrumb written for', authUid);
+  } catch (e) { console.warn('[Auth] authIndex write failed (non-fatal)', e.message || e); }
 }
 
 (function _fbInit() {
@@ -13324,6 +13421,9 @@ async function _fbLinkAuthToMember(authUid) {
             // establishes. Re-start it here now that auth is ready and the member
             // doc is linked, so tasks load without a manual kick.
             if (DataAdapter.isFamily()) _daStartListener();
+            // identity-guard: now that authUid is known, enforce the invariant —
+            // attempt silent recovery, else keep the reconnect screen up.
+            try { _identityGuard('post-auth'); } catch (e) {}
           });
       })
       .catch(e => {
@@ -13338,6 +13438,141 @@ async function _fbLinkAuthToMember(authUid) {
       });
   } catch (e) { console.warn('[FB] init failed:', e.message || e); }
 }());
+
+// ════════════════════════════════════════════════════════════════════
+// Identity guard (identity-guard-2026-06-03)
+// Enforces ONE invariant: the device is EITHER fully in family mode with a
+// resolvable self-identity, OR the blocking reconnect screen is shown. The
+// old/demo "חבר 1" static UI is never presented as a real user. Runs
+// independently of the main boot IIFE (see window 'load' hook below) so an
+// earlier uncaught error can't strand a tester in the raw demo HTML.
+// ════════════════════════════════════════════════════════════════════
+let _identityRepairTried = false;
+
+function _identitySnapshot() {
+  let selfResolved = null;   // null = unknown (family cache not loaded yet)
+  let fromDemo = false;
+  try {
+    const cache = (typeof _familyMembersCache !== 'undefined' && _familyMembersCache) || [];
+    if (DataAdapter.isFamily()) {
+      if (cache.length) {
+        const uid = DataAdapter.userId, mid = DataAdapter.myMemberId;
+        selfResolved = cache.some(m => (uid && m.userId === uid) || (mid && (m.memberId === mid || m.userId === mid)));
+      }
+    } else {
+      selfResolved = false;
+    }
+    const t = document.querySelector('#s-today .t-avname');
+    if (t && /^חבר\s*[1-4]$/.test((t.textContent || '').trim())) fromDemo = true;
+  } catch (e) {}
+  return {
+    isFamily:        DataAdapter.isFamily(),
+    mode:            localStorage.getItem('family-app-da-mode') || null,
+    familyId:        DataAdapter.familyId || null,
+    userId:          DataAdapter.userId || null,
+    myMemberId:      DataAdapter.myMemberId || null,
+    authUid:         DataAdapter.authUid || null,
+    profileMemberId: (typeof _mpCurrentId !== 'undefined' && _mpCurrentId) || null,
+    selfResolved, fromDemo,
+    build: (typeof APP_BUILD !== 'undefined' ? APP_BUILD : null),
+  };
+}
+
+// Always-on logging (NOT gated by _dbg) so the state is visible over CDP, and a
+// breadcrumb is persisted so we can read the last incident from Settings.
+function _logIdentityState(ctx) {
+  const s = _identitySnapshot();
+  try { console.log('[IdentityGuard] ' + (ctx || '') + ' ' + JSON.stringify(s)); } catch (e) {}
+  try {
+    if (!s.isFamily || s.selfResolved === false || s.fromDemo) {
+      localStorage.setItem('family-app-identity-incident', JSON.stringify(Object.assign({ ctx: ctx || '', at: new Date().toISOString() }, s)));
+    }
+  } catch (e) {}
+  try { _updateSettingsStatus(s); } catch (e) {}
+  return s;
+}
+
+// Best-effort silent recovery: anonymous authUid → previous member identity.
+// Succeeds only when the Firebase anonymous credential persisted across the
+// data loss. After a FULL data wipe the uid is new and no breadcrumb exists →
+// returns false → caller forces a proper rejoin instead.
+async function _tryRecoverIdentityByAuthUid() {
+  try {
+    if (DataAdapter.isFamily()) return false;
+    if (!_db || !DataAdapter.authUid) return false;
+    const snap = await _db.collection('authIndex').doc(DataAdapter.authUid).get();
+    if (!snap.exists) return false;
+    const d = snap.data() || {};
+    if (!d.familyId || !d.userId) return false;
+    const mem = await _db.collection('families').doc(d.familyId)
+                         .collection('members').doc(d.userId).get();
+    if (!mem.exists) return false;                       // member was removed — don't resurrect
+    DataAdapter.setFamily(d.familyId, d.userId);
+    const md = mem.data() || {};
+    const mid = d.memberId || md.memberId;
+    if (mid) { try { localStorage.setItem('family-app-my-member-id', mid); } catch (e) {} }
+    if (md.displayName) { try { DataAdapter.setDisplayName(md.displayName); } catch (e) {} }
+    console.log('[IdentityGuard] recovered identity via authUid →', d.familyId, d.userId);
+    return true;
+  } catch (e) { console.warn('[IdentityGuard] recovery failed', e && (e.message || e)); return false; }
+}
+
+// The invariant enforcer. Idempotent; safe to call from several hooks.
+async function _identityGuard(ctx) {
+  const s = _logIdentityState(ctx || 'guard');
+  if (s.isFamily) return;                                // connected — never block
+
+  // Degraded: cover the demo UI immediately (overlay is fixed, z-index 9999),
+  // so "חבר 1" is never shown as a real user — even if main boot aborted early.
+  try { _showFirstRunScreen(); } catch (e) {}
+  try { _setReconnectNotice(true); } catch (e) {}
+
+  // Try silent recovery once auth is available; the post-auth hook retries
+  // this after the anonymous credential resolves.
+  if (DataAdapter.authUid && !_identityRepairTried) {
+    _identityRepairTried = true;
+    const ok = await _tryRecoverIdentityByAuthUid();
+    if (ok) {
+      try { _setReconnectNotice(false); } catch (e) {}
+      try { if (typeof _finishFirstRun === 'function') _finishFirstRun(); } catch (e) {}
+      _logIdentityState('post-recovery');
+    } else {
+      _identityRepairTried = false;                      // permit a later retry if authUid changes
+    }
+  }
+}
+
+// Toggle the "צריך להצטרף למשפחה מחדש" notice on the reconnect screen.
+function _setReconnectNotice(on) {
+  try {
+    const el = document.querySelector('[data-fr-reconnect]');
+    if (el) el.classList.toggle('hidden', !on);
+    if (on && typeof _frGoto === 'function') _frGoto('welcome');
+  } catch (e) {}
+}
+
+// Settings status line (for us): build id + family/member connection state.
+function _updateSettingsStatus(snap) {
+  const s = snap || _identitySnapshot();
+  const bv = document.getElementById('settingsBuildVal');
+  if (bv && typeof APP_BUILD !== 'undefined') bv.textContent = APP_BUILD;
+  const fam = document.getElementById('settingsFamStatus');
+  if (fam) {
+    fam.textContent = 'משפחה: ' + (s.isFamily ? ('מחוברת (' + s.familyId + ')') : 'לא מחוברת');
+    fam.style.color = s.isFamily ? '#3a8a4a' : '#c0502a';
+  }
+  const mem = document.getElementById('settingsMemStatus');
+  if (mem) {
+    const ok = s.isFamily && s.selfResolved !== false;
+    mem.textContent = 'חבר: ' + (ok ? 'מזוהה' : (s.isFamily ? 'לא מזוהה' : '—'));
+    mem.style.color = ok ? '#3a8a4a' : '#c0502a';
+  }
+}
+
+// Independent late hook — fires regardless of whether the main boot IIFE
+// completed, guaranteeing the invariant is enforced even after an early error.
+window.addEventListener('load', () => { try { _identityGuard('window-load'); } catch (e) {} });
+if (document.readyState === 'complete') { try { _identityGuard('already-loaded'); } catch (e) {} }
 
 // ─── Firestore task write helpers (Phase 4-1A) ───────────────────
 // Write-through: localStorage is always updated first. These functions
@@ -13715,6 +13950,11 @@ async function _saveMemberAvatar(memberId, avatar, options) {
   // Refresh in-memory cache so render uses new avatar immediately.
   const cached = _familyMembersCache.find(m => m.memberId === memberId);
   if (cached) { cached.avatar = avatar; if (options !== undefined) cached.avatarOptions = options; }
+  else { _familyMembersCache.push(options !== undefined ? { memberId, avatar, avatarOptions: options } : { memberId, avatar }); }
+  // #7 fix: persist the cache to localStorage NOW (not only on the ~2s Firestore
+  // listener roundtrip), so any screen re-rendered before the listener fires reads
+  // the NEW avatar from cache instead of flashing the previous one.
+  try { localStorage.setItem(_MEMBER_CACHE_LS_KEY, JSON.stringify(_familyMembersCache)); } catch (e) {}
 }
 
 // Crop output sent to the avatar pipeline (and saved). A/B input-quality test:
@@ -14164,39 +14404,80 @@ const AvatarFlow = {
     const cta = document.getElementById('ailCta');
     const lbl = document.getElementById('ailCtaLabel');
     if (cta) cta.disabled = true;
-    if (lbl) lbl.textContent = 'שומר…';
+    if (lbl) lbl.textContent = 'שומר תמונה נבחרת…';
+
+    // Capture everything the background pass needs BEFORE closeAILanding() nulls
+    // this.* state. The background uploads run after the landing has closed.
+    const memberId      = this.memberId;
+    const results       = Object.assign({}, this._genResults || {});
+    const selectedStyle = this._selectedStyle;
+    const selectedB64   = this._selectedB64;
+
     try {
-      // Upload every produced image (not just the selected one) so all of them
-      // are saved as switchable options. Order follows _STYLE_ORDER.
-      const results = this._genResults || {};
-      const styles  = this._STYLE_ORDER.filter(s => results[s]);
-      // Upload SEQUENTIALLY, not in parallel. On cellular, N parallel ~1MB
-      // uploads split the same pipe and each one slows ~N×, so they all blow
-      // past the idle timeout. One-at-a-time keeps each upload at full speed.
-      const options = [];
-      for (const s of styles) {
-        const b   = await (await fetch('data:image/webp;base64,' + results[s])).blob();
-        const url = await _uploadAvatarBlob(b, this.memberId);
-        options.push({ url, style: s });
-      }
-      const active = options.find(o => o.style === this._selectedStyle) || options[0];
-      const avatar = { type: 'ai-photo', url: active.url, style: active.style };
-      await _saveMemberAvatar(this.memberId, avatar, options);
-      const nodeCount = _refreshAvatarUI(this.memberId, avatar);
+      // ── Foreground: upload ONLY the selected image, save it, and get the user
+      // out of the waiting screen immediately. The other options upload in the
+      // background below — the user never waits for them.
+      const selBlob     = await (await fetch('data:image/webp;base64,' + selectedB64)).blob();
+      const selUrl      = await _uploadAvatarBlob(selBlob, memberId);
+      const activeStyle = selectedStyle || this._STYLE_ORDER.find(s => results[s]);
+      const avatar      = { type: 'ai-photo', url: selUrl, style: activeStyle };
+      // Save with just the selected option for now; the background pass merges
+      // the rest in. The selected avatar is durably saved regardless of what
+      // happens to the background uploads.
+      await _saveMemberAvatar(memberId, avatar, [{ url: selUrl, style: activeStyle }]);
+      const nodeCount = _refreshAvatarUI(memberId, avatar);
       // The home hero portrait and the member-profile avatar circle render via
       // separate paths not covered by _refreshAvatarUI — refresh them too so
       // they don't keep showing the old image until the next navigation.
       if (typeof updateHmPortrait === 'function') updateHmPortrait();
-      if (typeof _renderMemberProfile === 'function' && typeof _mpCurrentId !== 'undefined' && _mpCurrentId === this.memberId) {
+      if (typeof _renderMemberProfile === 'function' && typeof _mpCurrentId !== 'undefined' && _mpCurrentId === memberId) {
         _renderMemberProfile();
       }
-      console.log('[Avatar] AI avatar saved active=' + avatar.style + ' options=' + options.length + ' nodes=' + nodeCount);
+      console.log('[Avatar] AI avatar saved (selected first) active=' + avatar.style + ' nodes=' + nodeCount);
       this.closeAILanding();
+
+      // ── Background: upload the remaining options (fire-and-forget). Any
+      // failure here is logged to console only and never touches the saved
+      // selected avatar.
+      this._uploadRemainingOptions(memberId, results, activeStyle, selUrl);
     } catch (e) {
       console.error('[Avatar] AI save failed', e);
       alert('שמירה נכשלה:\n' + (e.code ? '[' + e.code + '] ' : '') + (e.message || e));
       if (lbl) lbl.textContent = 'שמור תמונה';
       if (cta) cta.disabled = false;
+    }
+  },
+  // Background pass: upload the non-selected AI options one at a time and merge
+  // them into avatarOptions ("הגרסאות שלי"). Runs AFTER the landing has closed,
+  // so the user is never blocked on it. Uploads stay SEQUENTIAL (not parallel)
+  // for the same cellular reason as before. Any failure is logged to console
+  // only — the already-saved selected avatar is never affected.
+  async _uploadRemainingOptions(memberId, results, activeStyle, selUrl) {
+    const others = this._STYLE_ORDER.filter(s => results[s] && s !== activeStyle);
+    if (!others.length) return;
+    const options = [{ url: selUrl, style: activeStyle }];
+    for (const s of others) {
+      try {
+        const b   = await (await fetch('data:image/webp;base64,' + results[s])).blob();
+        const url = await _uploadAvatarBlob(b, memberId);
+        options.push({ url, style: s });
+      } catch (e) {
+        console.warn('[Avatar] background option upload failed style=' + s + ' (selected avatar unaffected)', e);
+      }
+    }
+    if (options.length <= 1) return; // nothing extra uploaded — keep the single saved option
+    try {
+      // Re-read the current avatar from cache so a user who switched variants in
+      // the meantime isn't overwritten; only avatarOptions is being extended.
+      const cached = (typeof _familyMembersCache !== 'undefined' ? _familyMembersCache : []).find(m => m.memberId === memberId);
+      const avatar = (cached && cached.avatar) ? cached.avatar : { type: 'ai-photo', url: selUrl, style: activeStyle };
+      await _saveMemberAvatar(memberId, avatar, options);
+      if (typeof _renderMemberProfile === 'function' && typeof _mpCurrentId !== 'undefined' && _mpCurrentId === memberId) {
+        _renderMemberProfile();
+      }
+      console.log('[Avatar] background options merged count=' + options.length);
+    } catch (e) {
+      console.warn('[Avatar] background avatarOptions update failed (selected avatar unaffected)', e);
     }
   },
   // Render the saved AI options gallery ("הגרסאות שלי") in the avatar card.
@@ -14360,6 +14641,12 @@ const AvatarFlow = {
       const avatar = { type: 'photo', url };
       await _saveMemberAvatar(this.memberId, avatar);
       const nodeCount = _refreshAvatarUI(this.memberId, avatar);
+      // #7 fix: the home hero portrait and the open member-profile render via
+      // separate paths NOT covered by data-avatar-for, so refresh them too —
+      // otherwise they keep the old image until the next navigation. (Mirrors
+      // what the AI-photo path already does.)
+      if (typeof updateHmPortrait === 'function') updateHmPortrait();
+      if (typeof _renderMemberProfile === 'function' && typeof _mpCurrentId !== 'undefined' && _mpCurrentId === this.memberId) _renderMemberProfile();
       console.log('[Avatar] saved + rendered for ' + this.memberId + ' nodes=' + nodeCount);
     } catch (e) {
       console.error('[Avatar] save failed', e);
@@ -14378,6 +14665,9 @@ const AvatarFlow = {
     try {
       await _saveMemberAvatar(this.memberId, def);
       _refreshAvatarUI(this.memberId, def);
+      // #7 fix: same separate render paths as the photo save path.
+      if (typeof updateHmPortrait === 'function') updateHmPortrait();
+      if (typeof _renderMemberProfile === 'function' && typeof _mpCurrentId !== 'undefined' && _mpCurrentId === this.memberId) _renderMemberProfile();
       console.log('[Avatar] removed → reverted to default emoji for ' + this.memberId);
     } catch (e) {
       console.error('[Avatar] remove failed', e);
@@ -14396,11 +14686,27 @@ const AvatarFlow = {
 function _refreshAvatarUI(memberId, avatar) {
   const tStart = performance.now();
   const nodes  = document.querySelectorAll('[data-avatar-for="' + memberId + '"]');
-  nodes.forEach(node => {
-    const size = parseInt(node.dataset.avatarSize, 10) || 64;
-    const slot = node.querySelector('[data-avatar-slot]') || node;
-    slot.innerHTML = renderAvatarHTML(avatar, size);
-  });
+  const paint = () => {
+    nodes.forEach(node => {
+      const size = parseInt(node.dataset.avatarSize, 10) || 64;
+      const slot = node.querySelector('[data-avatar-slot]') || node;
+      slot.innerHTML = renderAvatarHTML(avatar, size);
+    });
+  };
+  // #7 fix: for photo avatars, preload the (possibly brand-new Storage) URL and
+  // only swap the DOM once the image is decoded. This keeps the OLD avatar on
+  // screen until the new one is ready, eliminating the white-flash. On a cached
+  // URL onload fires immediately, so there is no perceptible delay. Emoji/seed
+  // avatars paint synchronously as before.
+  const isPhoto = avatar && (avatar.type === 'photo' || avatar.type === 'ai-photo') && avatar.url;
+  if (isPhoto && nodes.length) {
+    const pre = new Image();
+    pre.onload = paint;
+    pre.onerror = paint; // fall through to the <img> (which shows alt) on failure
+    pre.src = avatar.url;
+  } else {
+    paint();
+  }
   console.log('[Avatar] render +' + Math.round(performance.now() - tStart)
     + 'ms memberId=' + memberId + ' nodes=' + nodes.length + ' type=' + avatar.type);
   return nodes.length;
@@ -15090,7 +15396,17 @@ async function _firstRunJoin() {
   try { DataAdapter.setDisplayName(joinName); } catch (e) {}
   const ok = await _daJoinFamily(code);
   if (ok === 'full') { _frGoto('full'); return; }
-  if (ok && DataAdapter.isFamily()) _finishFirstRun();
+  if (ok && DataAdapter.isFamily()) {
+    _finishFirstRun();
+    // Let the joiner complete their profile (avatar/color/birthday) right away,
+    // mirroring how the creator lands on the invite screen. Fully guarded: any
+    // failure leaves them on the home screen — the prior behaviour.
+    try {
+      if (typeof openMemberProfile === 'function' && DataAdapter.userId) {
+        openMemberProfile(DataAdapter.userId, 's-today');
+      }
+    } catch (e) {}
+  }
   else if (errEl && !errEl.textContent) errEl.textContent = 'לא נמצאה קבוצה עם הקוד הזה';
 }
 
@@ -15257,9 +15573,12 @@ if (/[?&]previewFirstRun=1/.test(location.search)) {
   try { if (typeof _renderSettingsMembers === 'function') _renderSettingsMembers(); } catch (e) {}
   try { if (typeof _renderFamilyMembersScreen === 'function') _renderFamilyMembersScreen(); } catch (e) {}
 } else {
-  // Fresh install / no family identity — force the onboarding gate so the app
-  // never auto-enters a seeded/default family.
+  // Fresh install OR lost local identity — never auto-enter a seeded/default
+  // family. The identity guard shows the blocking reconnect screen and attempts
+  // silent authUid recovery (when the credential persisted). _showFirstRunScreen
+  // is called synchronously first so nothing flashes before auth resolves.
   _showFirstRunScreen();
+  try { _identityGuard('boot-gate'); } catch (e) {}
 }
 try { _updateRecoveryBanner(); } catch (e) { console.warn('recovery banner failed', e); }
 try { _syncSettingsDeviceMember(); } catch (e) { console.warn('settings device member sync failed', e); }
@@ -16153,6 +16472,9 @@ function _visSetFilter(section, val) {
     }
   });
 
+  // #6 fix: any see-section filter ('all'/'performer'/'custom') must not strip the
+  // creator — re-assert their locked selection before syncing notify/hero.
+  if (section === 'see' && typeof _visLockCreatorChip === 'function') _visLockCreatorChip();
   if (section === 'see') _visSyncNotifyToSee();
   _visUpdateTip();
   _visUpdateHero();
@@ -16328,23 +16650,74 @@ function _visApplyRealMembers() {
     });
   });
 
-  // Hero "performer" name + avatar — use real member when assignedTo/createdBy is a userId.
+  // Hero "performer" name + avatar. #5 fix: resolve the owner (assignee, else
+  // creator, else this device) to a REAL participant + displayName so the hero
+  // never shows the seed placeholder "חבר 1" when a real identity is available.
+  // The seed text set earlier by _visUpdateHero is only overridden when we have
+  // a real name — so a genuinely unknown member still falls back to placeholder.
   var task = AppState._editingTask || (AppState.previewTasks && AppState.previewTasks[0]);
   if (task) {
-    var aid = task.assignedToMemberId || task.createdBy;
-    var cached = aid && (_familyMembersCache || []).find(function (m) { return m.userId === aid || m.memberId === aid; });
-    if (cached) {
-      var nm = cached.name || 'חבר';
-      var perfName = document.getElementById('visHeroPerfName');
-      if (perfName) perfName.textContent = nm;
-      var bigAva = document.getElementById('visHeroBigAva');
-      if (bigAva && typeof _participantInner === 'function') {
-        bigAva.innerHTML  = _participantInner(cached, nm, 0, 56);
-        bigAva.className  = 'vis-hero-big-ava';
-        bigAva.removeAttribute('data-avatar-for');
-      }
+    var ownerId = task.assignedToMemberId || task.createdByMemberId || task.createdBy || myId;
+    var owner = ownerId && (_familyMembersCache || []).find(function (m) { return m.userId === ownerId || m.memberId === ownerId; });
+    // Name priority: identity-aware task resolver (self→displayName, placeholder→'')
+    // → owner participant displayName → this device's own displayName.
+    var nm = (typeof _taskDisplayName === 'function' ? (_taskDisplayName(task) || '') : '')
+          || (owner && typeof _participantDisplayName === 'function' ? _participantDisplayName(owner, myId) : '')
+          || (DataAdapter.displayName || '');
+    var perfName = document.getElementById('visHeroPerfName');
+    if (perfName && nm) perfName.textContent = nm;
+    var bigAva = document.getElementById('visHeroBigAva');
+    if (bigAva && owner && typeof _participantInner === 'function') {
+      bigAva.innerHTML  = _participantInner(owner, nm || '👤', 0, 56);
+      bigAva.className  = 'vis-hero-big-ava';
+      bigAva.removeAttribute('data-avatar-for');
     }
   }
+
+  // #6 fix: the task creator must always see the task and must not be removable.
+  // Lock the creator's chip in the SEE row (selected + click-ignored).
+  if (typeof _visLockCreatorChip === 'function') _visLockCreatorChip();
+}
+
+// #6: returns true when a SEE-row chip represents the task creator / this device.
+// Robust across both the real-userId scheme (post _visApplyRealMembers) and the
+// static seed vis-id scheme (cold cache / non-family).
+function _visCreatorIdSet() {
+  var ids = {};
+  var add = function (v) { if (v) ids[String(v)] = true; };
+  add(DataAdapter.userId); add(DataAdapter.myMemberId);
+  if (DataAdapter.myMemberId) {
+    add(_MEMBER_TO_VIS[DataAdapter.myMemberId]);
+    var leg = (typeof _legacyIdForMemberId === 'function') ? _legacyIdForMemberId(DataAdapter.myMemberId) : null;
+    if (leg) { add(leg); add(_LEGACY_TO_VIS[leg]); }
+  }
+  var task = AppState._editingTask || (AppState.previewTasks && AppState.previewTasks[0]);
+  if (task) {
+    add(task.createdBy); add(task.createdByMemberId);
+    var cmid = (typeof _taskCreatorMemberId === 'function') ? _taskCreatorMemberId(task) : null;
+    if (cmid) {
+      add(cmid); add(_MEMBER_TO_VIS[cmid]);
+      var cleg = (typeof _legacyIdForMemberId === 'function') ? _legacyIdForMemberId(cmid) : null;
+      if (cleg) { add(cleg); add(_LEGACY_TO_VIS[cleg]); }
+    }
+  }
+  return ids;
+}
+function _visIsCreatorChip(b) {
+  if (!b) return false;
+  var set = _visCreatorIdSet();
+  if (set[String(b.dataset.id)]) return true;
+  var aliases = (typeof _visIdAliases === 'function') ? _visIdAliases(b.dataset.id) : [String(b.dataset.id)];
+  return aliases.some(function (a) { return set[String(a)]; });
+}
+function _visLockCreatorChip() {
+  document.querySelectorAll('#visSeeRow .vis-ava-frame').forEach(function (b) {
+    if (b.style.display === 'none') return;
+    if (!_visIsCreatorChip(b)) return;
+    b.classList.add('active', 'vis-creator-locked');
+    var badge = b.querySelector('.vis-badge');
+    if (badge) { badge.className = 'vis-badge orange'; badge.innerHTML = _visSVGCheck; }
+  });
 }
 
 function renderVisibility() {
@@ -16919,6 +17292,8 @@ function splitSave() {
       var filter = _visSeeFilter;
       if (filter === 'performer') return;
       if (b.dataset.id === _visPerformer) return; // performer always fixed in see
+      // #6 fix: the creator can never be unchecked — they must always see their own task.
+      if (typeof _visIsCreatorChip === 'function' && _visIsCreatorChip(b)) return;
       if (filter === 'all') _visSetFilter('see', 'custom'); // auto-switch to custom
       var badge = b.querySelector('.vis-badge');
       var isOn  = b.classList.contains('active');
@@ -17013,16 +17388,7 @@ function splitSave() {
 
   // ── (removed: התראות row now uses inline onclick via HTML) ──
 
-  // ── #s-sync: "בדוק סנכרון עכשיו" → saveState + visual (animation already in onclick) ──
-  var syncCheckAct = document.querySelector('#s-sync .act .at.green');
-  if (syncCheckAct) {
-    var syncActBtn = syncCheckAct.closest('.act');
-    if (syncActBtn) {
-      syncActBtn.addEventListener('click', function() {
-        if (typeof saveState === 'function') saveState();
-      });
-    }
-  }
+  // ── #s-sync: manual "check sync" button removed — sync is automatic (Firestore listener). ──
 
   // ── #s-visibility: visSaveCta → save visibility to current previewTask then go home ──
   var visCta2 = document.getElementById('visSaveCta');
@@ -17035,6 +17401,11 @@ function splitSave() {
       document.querySelectorAll('#visNotifyRow .vis-ava-frame.active').forEach(function(b) { notifyIdsRaw.push(b.dataset.id); });
       var seeIds    = seeIdsRaw.map(toLegacy);
       var notifyIds = notifyIdsRaw.map(toLegacy);
+
+      // #6 fix: persisted visibleTo must ALWAYS include the creator, regardless of
+      // what the chips ended up as (defensive — the chip is also locked in the UI).
+      var _creatorPersistId = DataAdapter.userId || DataAdapter.myMemberId;
+      if (_creatorPersistId && seeIds.indexOf(_creatorPersistId) === -1) seeIds.push(_creatorPersistId);
 
       var editing = AppState._editingTask;
       if (editing) {
@@ -17438,6 +17809,11 @@ function _renderFamilyMembersScreen() {
     if (typeof DataAdapter === 'undefined' || !DataAdapter.isFamily || !DataAdapter.isFamily()) return;
     const s = document.getElementById('settingsMembers'); if (s) s.innerHTML = '';
     const f = document.getElementById('famMembersCards'); if (f) f.innerHTML = '';
+    // Today avatar strip: the static Mom/Dad/Laali/Aharon placeholders carry
+    // onclick="openMemberProfile('member_mom',…)" — tapping one before
+    // _renderTodayMembers() repaints would flash English labels and save edits
+    // to a phantom seed doc. Clear it in family mode; the real renderer refills.
+    const t = document.querySelector('.t-avatars'); if (t) t.innerHTML = '';
   } catch (e) {}
 })();
 
@@ -17646,17 +18022,17 @@ function _setDeleteCta() {
   if (!cta) return;
   if (_deleteStep === 0) {
     cta.textContent = 'המשך לאימות קוד גישה'; cta.style.background = '';
-    if (wt)   wt.textContent = '⚠️ פעולה בלתי הפיכה';
-    if (warn) warn.textContent = 'המשך כדי לאמת את זהותך לפני מחיקת כל הנתונים.';
+    if (wt)   wt.textContent = '⚠️ איפוס המכשיר הזה';
+    if (warn) warn.textContent = 'המשך כדי לאמת את זהותך לפני איפוס הנתונים במכשיר זה.';
   } else if (_deleteStep === 1) {
     cta.textContent = 'המשך לאימות ביומטרי'; cta.style.background = '';
     if (wt)   wt.textContent = '✓ הקוד אומת';
     if (warn) warn.textContent = 'כעת נדרש אימות ביומטרי אמיתי — טביעת אצבע או זיהוי פנים של המכשיר.';
   } else if (_deleteStep === 2) {
-    cta.textContent = 'מחיקת נתונים';
+    cta.textContent = 'מחק ואפס מכשיר';
     cta.style.background = 'linear-gradient(135deg,#ff3b30,#c0392b)';
-    if (wt)   wt.textContent = 'האם אתה בטוח שברצונך למחוק נתוני אפליקציה?';
-    if (warn) warn.textContent = 'פעולה זו תמחק לצמיתות את כל המשימות, ההגדרות, החיבור למשפחה וקוד המשפחה, ותאפס את האפליקציה למצב התחלתי. ניתן לשחזר את הנתונים מהענן עד 72 שעות מרגע המחיקה.';
+    if (wt)   wt.textContent = 'לאפס את האפליקציה במכשיר הזה?';
+    if (warn) warn.textContent = 'פעולה זו תמחק את כל הנתונים וההגדרות מהמכשיר הזה ותנתק אותו מהמשפחה ומקוד המשפחה. המשימות עצמן נשמרות בענן ואצל שאר בני המשפחה — ותוכלו להתחבר מחדש במכשיר זה תוך 72 שעות.';
   }
 }
 function openDeleteDataFlow() {
@@ -17788,6 +18164,34 @@ function openMemberProfile(memberId, fromScreen) {
   goto('s-member-profile', 'txLeaveFade', 'txEnterFade');
 }
 
+// ── Profile-completion nudge (#5) ────────────────────────────────────
+// A gentle, dismissible card on Today inviting the user to flesh out their profile
+// (photo, birthday, anniversary…) after joining a family. Non-blocking: family mode
+// only, shown until the user dismisses it (X). The CTA opens the user's own profile
+// via DataAdapter.userId — the same path the Today strip uses (openMemberProfile).
+// Auto-hide-on-complete is a future enhancement (needs the userId↔memberId mapping).
+const _PROFILE_NUDGE_DISMISSED_KEY = 'family-app-profile-nudge-dismissed';
+function _maybeShowProfileCompletion() {
+  const card = document.getElementById('profileCompleteCard');
+  if (!card) return;
+  let show = false;
+  try {
+    show = DataAdapter.isFamily()
+        && !!DataAdapter.userId
+        && localStorage.getItem(_PROFILE_NUDGE_DISMISSED_KEY) !== '1';
+  } catch (_) { show = false; }
+  card.style.display = show ? '' : 'none';
+}
+function _dismissProfileNudge() {
+  try { localStorage.setItem(_PROFILE_NUDGE_DISMISSED_KEY, '1'); } catch (_) {}
+  const card = document.getElementById('profileCompleteCard');
+  if (card) card.style.display = 'none';
+}
+function _openMyProfileForCompletion() {
+  const id = DataAdapter.userId || DataAdapter.myMemberId;
+  if (id && typeof openMemberProfile === 'function') openMemberProfile(id, 's-today');
+}
+
 // Apply all members' personal colors as diagonal stripes on home screen load
 function _mpApplyAllStripes() {
   (_FAMILY_MEMBERS_SEED || []).forEach(seed => {
@@ -17889,8 +18293,26 @@ function _renderMemberProfile() {
   }
   document.getElementById('mpName').textContent = _mpName;
 
-  // Subtitle
-  document.getElementById('mpSubtitleText').textContent = m.subtitle || (isParent ? 'הורה' : 'ילד/ה');
+  // Subtitle — prefer the description the user set, else the role label they typed
+  // at setup ("אבא"/"אמא"/"סבתא"…). The old code guessed 'הורה'/'ילד/ה' from the
+  // *structural* role, but real family roles are 'owner'/'member' — so every real
+  // member was mislabelled "ילד/ה". Never invent a relationship label here. (#3)
+  const _mpRoleLabel = (isSelf && DataAdapter.roleLabel)
+    ? DataAdapter.roleLabel
+    : ((m.roleLabel || '').trim());
+  const _mpSub  = (m.subtitle && m.subtitle.trim()) || _mpRoleLabel;
+  const _subRow = document.getElementById('mpSubtitle');
+  const _subEl  = document.getElementById('mpSubtitleText');
+  if (_mpSub) {
+    _subEl.textContent = _mpSub;
+    if (_subRow) _subRow.style.display = '';
+  } else if (isSelf) {
+    _subEl.textContent = 'לחץ להוספת תיאור';
+    if (_subRow) _subRow.style.display = '';
+  } else {
+    _subEl.textContent = '';            // someone else, no label — show nothing, not a guess
+    if (_subRow) _subRow.style.display = 'none';
+  }
 
   // Avatar
   const avCircle = document.getElementById('mpAvatarCircle');
@@ -17939,7 +18361,7 @@ function _renderMemberProfile() {
   // Info row: birthday always + anniversary for parents only
   const infoRow = document.getElementById('mpInfoRow');
   const bdayAge = _mpCalcAge(m.birthday);
-  const canEditDates = _mpIsFamilyHead();
+  const canEditDates = isSelf || _mpIsFamilyHead();  // self can complete their own dates (#5/#6)
   const bdayClick = canEditDates ? `onclick="mpEditField('birthday')"` : '';
   const bdayEmpty = m.birthday ? '' : (canEditDates ? ' empty' : ' empty');
   const bdayVal   = m.birthday || (canEditDates ? 'לחץ להוספה' : '—');
@@ -17950,7 +18372,11 @@ function _renderMemberProfile() {
       <div class="mp-info-sub">${bdayAge != null ? `<span>${bdayAge} שנים</span>` : '<span>—</span>'}</div>
     </div>`;
   let anniHtml = '';
-  if (isParent) {
+  // Wedding anniversary is optional: show it when a date is set, or on your own
+  // profile so anyone who has one can add it. The old gate (role==='parent') was
+  // unreachable for real families (roles are owner/member) so it never appeared. (#6)
+  const showAnni = !!m.anniversary || isSelf;
+  if (showAnni) {
     const anniAge = _mpCalcAge(m.anniversary);
     const anniClick = canEditDates ? `onclick="mpEditField('anniversary')"` : '';
     const anniVal   = m.anniversary || (canEditDates ? 'לחץ להוספה' : '—');
@@ -17961,8 +18387,8 @@ function _renderMemberProfile() {
         <div class="mp-info-sub">${anniAge != null ? `<span>${anniAge} שנים</span><span class="pp">💜</span>` : '<span>—</span>'}</div>
       </div>`;
   }
-  infoRow.className = 'mp-info-row ' + (isParent ? 'two-col' : 'one-col');
-  infoRow.innerHTML = (isParent ? anniHtml : '') + bdayHtml;
+  infoRow.className = 'mp-info-row ' + (showAnni ? 'two-col' : 'one-col');
+  infoRow.innerHTML = (showAnni ? anniHtml : '') + bdayHtml;
 
   // Color card — self only
   const colorCard = document.getElementById('mpColorCard');
@@ -18011,6 +18437,13 @@ function _renderMemberProfile() {
     }).join('');
   } else {
     tasksList.innerHTML = `<div class="mp-tasks-empty">אין משימות קבועות עדיין</div>`;
+  }
+  // Entry point (#7): on your own profile, add a recurring task through the normal
+  // add-task flow (recurrence is picked in the date/time step). Minimal + safe — no
+  // new recurring engine, no pre-assignment yet (documented as a future enhancement).
+  if (isSelf) {
+    tasksList.insertAdjacentHTML('beforeend',
+      '<button type="button" class="mp-tasks-addbtn" onclick="openAddSheet({autoRecord:false})">＋ הוסף משימה קבועה</button>');
   }
 
   // Stats
@@ -18181,6 +18614,8 @@ const _MP_DEFAULT_COLORS = {
 // ── Apply diagonal stripe to home-screen avatar ──────────────────
 function _mpApplyStripe(memberId, color) {
   document.querySelectorAll(`[data-avatar-for="${memberId}"]`).forEach(el => {
+    // Personal-color ring on the Today avatars (#4); CSS scopes the ring to #s-today .t-av.
+    el.style.setProperty('--mem-color', color);
     let s = el.querySelector('.mem-stripe');
     if (!s) { s = document.createElement('div'); s.className = 'mem-stripe'; el.appendChild(s); }
     s.style.background = color;
