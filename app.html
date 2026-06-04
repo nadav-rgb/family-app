@@ -3585,9 +3585,11 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
 </div>
 
 <!-- ════ SCREEN 3: TODAY ════ -->
-<div class="app-screen active" id="s-today">
-  <div class="t-scroll">
 
+<div class="app-screen active" id="s-today">
+  <!-- NEW HOME: user's design (Today v4) rendered verbatim, isolated from app CSS. -->
+  <iframe id="v4Home" src="today-v4-preview.html?v=3" title="Today" style="position:absolute;inset:0;width:100%;height:100%;border:0;z-index:60;background:#FBF6EE;display:block;"></iframe>
+  <div class="t-scroll">
     <!-- ═══ NEW HOME HEADER (Home.html redesign) ═══ -->
     <div class="hm-header">
       <div>
@@ -3701,7 +3703,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
       <div class="t-hero-grain"></div>
       <!-- Portrait (right side) -->
       <div class="t-hero-portrait">
-        <img id="heroPortraitImg" src="" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top center;display:block;">
+        <img id="heroPortraitImg" src="" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 34%;display:block;">
       </div>
       <!-- Text content (left side, JS-driven) -->
       <div class="t-hero-right">
@@ -5512,6 +5514,440 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
   </div>
 </div>
 
+<!-- ════ SCREEN: SHARE SHEET (Concept B) — "עם מי משתפים?" ════
+     Fully isolated: every class is ss-* prefixed and scoped under #s-share-sheet,
+     every id is ss*-prefixed, and all JS lives in an IIFE. Nothing leaks into the
+     existing app. Background photo = assets/table-bg.png (synced to www + APK). -->
+<style>
+  #s-share-sheet{
+    --ss-gold:#cda35a; --ss-gold-deep:#b8884a; --ss-gold-soft:#e7c886;
+    --ss-ink:#4f3f2c; --ss-ink-soft:#7c6a54;
+    padding:0; /* override app-screen padding; ss-stage fills */
+  }
+  /* ===== STAGE — approved photo as background ===== */
+  #s-share-sheet .ss-stage{
+    position:absolute; inset:0;
+    overflow:hidden; isolation:isolate;
+    font-family:'Heebo', system-ui, sans-serif; color:var(--ss-ink);
+    background-color:#e7d3b3; /* warm fallback instead of black, in case photo is slow */
+    background-image:url("assets/table-bg.png");
+    background-size:cover; background-position:50% 38%; background-repeat:no-repeat;
+  }
+  #s-share-sheet .ss-stage::before{
+    content:""; position:absolute; inset:0; pointer-events:none; z-index:2;
+    background:
+      radial-gradient(120% 46% at 50% 5%, rgba(255,248,233,.42), rgba(255,248,233,0) 60%),
+      linear-gradient(to top, rgba(46,30,15,.20) 0%, rgba(46,30,15,.05) 20%, rgba(46,30,15,0) 36%);
+  }
+  #s-share-sheet .ss-stage::after{
+    content:""; position:absolute; inset:0; pointer-events:none; z-index:2;
+    background:radial-gradient(125% 92% at 50% 40%, rgba(50,32,16,0) 56%, rgba(50,32,16,.26) 100%);
+  }
+  #s-share-sheet .ss-app{
+    position:absolute; inset:0; z-index:10;
+    display:flex; flex-direction:column;
+    padding:12px 22px calc(env(safe-area-inset-bottom) + 16px);
+  }
+  #s-share-sheet .ss-handle{ width:46px; height:5px; border-radius:99px; margin:6px auto 0;
+    background:linear-gradient(rgba(255,250,240,.9),rgba(214,190,150,.85));
+    box-shadow:0 1px 2px rgba(40,26,12,.35), inset 0 1px 1px rgba(255,255,255,.5); }
+  #s-share-sheet .ss-header{ text-align:center; margin-top:4px; }
+  #s-share-sheet .ss-header h1{
+    margin:0; font-size:24px; font-weight:800; letter-spacing:-.5px; color:#3c2e1c;
+    text-shadow:0 1px 0 rgba(255,250,238,.6), 0 2px 14px rgba(255,244,224,.5); }
+  #s-share-sheet .ss-header p{ margin:5px 0 0; font-size:15px; font-weight:600; color:#6a563d;
+    text-shadow:0 1px 0 rgba(255,250,238,.5); }
+  /* the task this sharing decision is about */
+  #s-share-sheet .ss-task{
+    margin:9px auto 0; max-width:88%;
+    display:inline-flex; align-items:center; gap:7px;
+    padding:7px 14px; border-radius:99px;
+    background:linear-gradient(165deg, rgba(255,255,255,.6), rgba(252,247,238,.4));
+    -webkit-backdrop-filter:blur(16px); backdrop-filter:blur(16px);
+    border:1px solid rgba(255,255,255,.78);
+    box-shadow:0 1px 0 rgba(255,255,255,.9) inset, 0 8px 18px rgba(40,26,12,.12);
+    font-size:14px; font-weight:700; color:#5a4628; letter-spacing:-.2px;
+    max-width:88%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  #s-share-sheet .ss-task .ss-task-ic{ flex:0 0 auto; width:15px; height:15px; color:var(--ss-gold-deep); }
+  #s-share-sheet .ss-grid{
+    flex:1 1 auto; min-height:0; display:grid; grid-template-columns:1fr 1fr;
+    align-content:center; gap:2px 2px; padding:2px 2px 0; perspective:1200px; }
+  #s-share-sheet .ss-polaroid{
+    --rot:0deg; --lift:0px; --shift:0px;
+    position:relative; width:100%; max-width:178px; margin:0 auto; padding:11px 11px 0;
+    background:linear-gradient(166deg, #ffffff 0%, #fdf7ec 100%); border-radius:10px;
+    transform:rotate(var(--rot)) translate(var(--shift), var(--lift));
+    box-shadow:0 1px 0 rgba(255,255,255,.98) inset,0 3px 4px rgba(58,38,16,.22),
+      0 11px 13px -7px rgba(40,26,12,.50),0 22px 38px rgba(42,26,12,.38),0 40px 64px rgba(42,26,12,.22);
+    cursor:pointer; transition:transform .35s cubic-bezier(.22,1,.36,1), box-shadow .35s; will-change:transform; }
+  #s-share-sheet .ss-polaroid:active{ transform:rotate(var(--rot)) translate(var(--shift), calc(var(--lift) - 3px)) scale(.99); }
+  #s-share-sheet .ss-c-noa{ --rot:3.6deg;  --lift:20px; --shift:5px;  z-index:2; max-width:155px; order:1; }
+  #s-share-sheet .ss-c-mom{ --rot:-4.4deg; --lift:1px;  --shift:-3px; z-index:4; max-width:167px; order:2; }
+  #s-share-sheet .ss-c-yon{ --rot:-2.4deg; --lift:14px; --shift:-6px; z-index:2; max-width:158px; order:3; }
+  #s-share-sheet .ss-c-dad{ --rot:2.8deg;  --lift:-5px; --shift:4px;  z-index:4; max-width:164px; order:4; }
+  #s-share-sheet .ss-polaroid.ss-selected{ z-index:6; }
+  #s-share-sheet .ss-photo-area{
+    position:relative; width:100%; aspect-ratio:1 / 1; border-radius:4px; overflow:hidden; background:#d9c9b3;
+    box-shadow:inset 0 0 0 1px rgba(120,90,55,.10), inset 0 2px 10px rgba(60,40,20,.18); }
+  #s-share-sheet .ss-photo-area img{ width:100%; height:100%; object-fit:cover; display:block; }
+  #s-share-sheet .ss-ph{ position:absolute; inset:0;
+    background:radial-gradient(125% 88% at 50% -6%, rgba(255,252,244,.95), rgba(255,248,236,0) 56%),
+      linear-gradient(168deg, var(--ph-a,#f4e8d3) 0%, var(--ph-b,#e6d2b0) 58%, #dcc6a1 100%); }
+  #s-share-sheet .ss-ph::before{ content:""; position:absolute; inset:0;
+    background:radial-gradient(70% 52% at 26% 14%, rgba(255,255,255,.5), rgba(255,255,255,0) 62%); mix-blend-mode:soft-light; }
+  #s-share-sheet .ss-ph::after{ content:""; position:absolute; left:50%; bottom:-20%; width:66%; height:60%;
+    transform:translateX(-50%); border-radius:50%;
+    background:linear-gradient(165deg, rgba(202,167,113,.5), rgba(174,138,89,.4)); filter:blur(3px); }
+  #s-share-sheet .ss-ph .ss-head{ position:absolute; left:50%; top:19%; transform:translateX(-50%);
+    width:31%; aspect-ratio:1; border-radius:50%;
+    background:radial-gradient(circle at 42% 36%, rgba(208,172,116,.6), rgba(176,140,90,.46)); filter:blur(2.5px); }
+  #s-share-sheet .ss-cap{ position:relative; display:flex; align-items:center; justify-content:center; height:39px; padding:0 6px; }
+  #s-share-sheet .ss-name{ font-size:18px; font-weight:700; color:#6b573e; letter-spacing:-.2px; }
+  #s-share-sheet .ss-heart{ position:absolute; bottom:8px; left:11px; width:25px; height:25px; display:grid; place-items:center; }
+  #s-share-sheet .ss-heart svg{ width:23px; height:23px; display:block; transition:.3s; }
+  #s-share-sheet .ss-heart .ss-h-fill{ fill:var(--ss-gold); opacity:0; transform:scale(.6); transform-origin:center;
+    transition:opacity .3s, transform .35s cubic-bezier(.34,1.56,.64,1);
+    filter:drop-shadow(0 0 5px rgba(205,163,90,.9)) drop-shadow(0 0 12px rgba(205,163,90,.6)); }
+  #s-share-sheet .ss-heart .ss-h-line{ fill:none; stroke:rgba(150,124,86,.7); stroke-width:1.7; transition:.3s; }
+  #s-share-sheet .ss-selected .ss-heart .ss-h-fill{ opacity:1; transform:scale(1); }
+  #s-share-sheet .ss-selected .ss-heart .ss-h-line{ stroke:rgba(205,163,90,.0); }
+  #s-share-sheet .ss-heart::before{ content:""; position:absolute; inset:-8px; border-radius:50%;
+    background:radial-gradient(circle, rgba(231,200,134,.6), rgba(231,200,134,0) 70%); opacity:0; transition:.35s; }
+  #s-share-sheet .ss-selected .ss-heart::before{ opacity:1; }
+  #s-share-sheet .ss-polaroid.ss-selected{
+    box-shadow:0 0 0 1px rgba(205,163,90,.42) inset,0 3px 4px rgba(58,38,16,.22),
+      0 11px 13px -7px rgba(40,26,12,.50),0 22px 38px rgba(42,26,12,.40),0 40px 64px rgba(150,110,50,.24); }
+  #s-share-sheet .ss-summary{
+    position:relative; margin:4px 4px 10px; border-radius:24px; padding:10px 18px 12px;
+    background:linear-gradient(165deg, rgba(255,255,255,.54), rgba(255,253,248,.34));
+    -webkit-backdrop-filter:blur(26px) saturate(1.08); backdrop-filter:blur(26px) saturate(1.08);
+    border:1px solid rgba(255,255,255,.82);
+    box-shadow:0 1px 0 rgba(255,255,255,.95) inset,0 -1px 0 rgba(190,160,120,.10) inset,0 12px 26px rgba(40,26,12,.12); }
+  #s-share-sheet .ss-summary-top{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  #s-share-sheet .ss-avatars{ display:flex; flex-direction:row-reverse; align-items:center; }
+  #s-share-sheet .ss-avatars .ss-av{
+    position:relative; width:42px; height:42px; border-radius:50%;
+    border:2.5px solid #fffdf8; overflow:hidden; box-shadow:0 4px 11px rgba(52,32,14,.24);
+    margin-inline-start:-13px; background:radial-gradient(120% 95% at 50% 0%, #fcf3e0 0%, #e9d4ad 100%); }
+  #s-share-sheet .ss-avatars .ss-av:first-child{ margin-inline-start:0; }
+  #s-share-sheet .ss-avatars .ss-av .ss-avp::before{ content:""; position:absolute; left:50%; top:20%; transform:translateX(-50%);
+    width:38%; aspect-ratio:1; border-radius:50%; background:#b6915f; }
+  #s-share-sheet .ss-avatars .ss-av .ss-avp::after{ content:""; position:absolute; left:50%; bottom:-22%; transform:translateX(-50%);
+    width:74%; height:62%; border-radius:50%; background:#b6915f; }
+  #s-share-sheet .ss-add{
+    width:44px; height:44px; border-radius:50%; flex:0 0 auto; border:1.5px dashed rgba(180,150,108,.7);
+    background:rgba(255,252,245,.5); color:var(--ss-gold-deep); font-size:26px; font-weight:300; line-height:1;
+    display:grid; place-items:center; cursor:pointer; transition:.2s; }
+  #s-share-sheet .ss-add:active{ transform:scale(.94); background:rgba(255,252,245,.85); }
+  #s-share-sheet .ss-sum-main{ text-align:center; font-size:20px; font-weight:700; color:#6b573e; margin:4px 0 0; min-height:24px; }
+  #s-share-sheet .ss-sum-div{ height:1px; margin:7px 6px 0; background:linear-gradient(90deg, transparent, rgba(180,150,110,.4), transparent); }
+  #s-share-sheet .ss-sum-sub{ display:flex; align-items:center; justify-content:center; gap:8px; margin-top:6px; font-size:16px; font-weight:600; color:var(--ss-ink-soft); }
+  #s-share-sheet .ss-sum-sub svg{ width:22px; height:22px; }
+  #s-share-sheet .ss-notify-row{
+    display:flex; align-items:center; justify-content:center; gap:6px; width:100%;
+    margin-top:9px; padding:9px 6px 1px; background:none; border:none; border-top:1px solid rgba(180,150,110,.16);
+    font-family:inherit; font-size:13px; font-weight:600; color:#9a8568; letter-spacing:-.2px; white-space:nowrap; cursor:default; }
+  #s-share-sheet .ss-notify-row.ss-active{ color:var(--ss-gold-deep); }
+  #s-share-sheet .ss-notify-row .ss-nr-bell{ width:15px; height:15px; flex:0 0 auto; filter:drop-shadow(0 0 3px rgba(205,163,90,.5)); }
+  #s-share-sheet .ss-bell-badge{
+    position:absolute; top:9px; left:9px; z-index:8; width:26px; height:26px; border-radius:50%;
+    display:grid; place-items:center; border:2px solid rgba(255,253,248,.92); cursor:pointer; padding:0;
+    background:rgba(150,134,104,.5); box-shadow:0 3px 9px rgba(60,42,20,.26);
+    transition:background .25s, opacity .25s, transform .15s; animation:ssBadgePop .4s cubic-bezier(.34,1.56,.64,1) both; }
+  #s-share-sheet .ss-bell-badge:active{ transform:scale(.88); }
+  #s-share-sheet .ss-bell-badge svg{ width:13px; height:13px; }
+  #s-share-sheet .ss-bell-badge .ss-b-fill{ fill:none; stroke:#fffdf8; }
+  #s-share-sheet .ss-bell-badge .ss-b-clap{ stroke:#fffdf8; }
+  #s-share-sheet .ss-bell-badge .ss-b-slash{ display:none; }
+  #s-share-sheet .ss-bell-badge.ss-on{
+    background:linear-gradient(168deg, rgba(226,191,131,.95), rgba(184,146,86,.95));
+    box-shadow:0 4px 11px rgba(150,110,50,.32), 0 0 0 4px rgba(231,200,134,.16); }
+  #s-share-sheet .ss-bell-badge.ss-on .ss-b-fill{ fill:#fffdf8; stroke:#fffdf8; }
+  #s-share-sheet .ss-bell-badge.ss-muted .ss-b-slash{ display:block; stroke:#fffdf8; stroke-width:2; stroke-linecap:round; }
+  #s-share-sheet .ss-bell-badge.ss-off{ opacity:.5; cursor:default; pointer-events:none; box-shadow:0 2px 6px rgba(60,42,20,.2); }
+  @keyframes ssBadgePop{ from{transform:scale(.4);} to{transform:scale(1);} }
+  #s-share-sheet .ss-actions{ display:flex; align-items:center; gap:13px; padding:0 2px; margin-top:2px; }
+  #s-share-sheet .ss-back{
+    width:48px; height:48px; flex:0 0 auto; border-radius:50%; border:1px solid rgba(255,255,255,.55);
+    background:linear-gradient(165deg, rgba(255,251,243,.85), rgba(240,228,208,.68));
+    -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px); display:grid; place-items:center; cursor:pointer;
+    box-shadow:0 8px 18px rgba(40,26,12,.28), 0 1px 0 rgba(255,255,255,.7) inset; transition:.2s; }
+  #s-share-sheet .ss-back:active{ transform:scale(.93); }
+  #s-share-sheet .ss-back svg{ width:22px; height:22px; stroke:#7a6447; }
+  #s-share-sheet .ss-cta{
+    flex:1 1 auto; height:58px; border:none; border-radius:30px; cursor:pointer;
+    font-family:inherit; font-size:21px; font-weight:700; color:#5a4220; letter-spacing:-.2px;
+    background:linear-gradient(168deg, #f7e4b9 0%, #eccd8c 40%, #d6ab62 100%);
+    box-shadow:0 1px 0 rgba(255,255,255,.75) inset,0 -3px 9px rgba(150,110,50,.20) inset,
+      0 16px 30px rgba(170,126,56,.40),0 5px 12px rgba(120,86,40,.26); transition:.18s; }
+  #s-share-sheet .ss-cta:active{ transform:translateY(2px); box-shadow:0 1px 0 rgba(255,255,255,.6) inset, 0 -3px 8px rgba(150,110,50,.25) inset, 0 8px 16px rgba(168,124,54,.4); }
+</style>
+<div class="app-screen" id="s-share-sheet" data-screen-label="Share sheet (concept B)">
+  <div class="ss-stage">
+    <div class="ss-app">
+      <div class="ss-handle"></div>
+      <div class="ss-header">
+        <h1>עם מי משתפים?</h1>
+        <p>בחרו את בני המשפחה</p>
+        <div class="ss-task" id="ssTaskTitle" style="display:none">
+          <svg class="ss-task-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg>
+          <span id="ssTaskTitleTxt"></span>
+        </div>
+      </div>
+
+      <div class="ss-grid" id="ssGrid">
+        <div class="ss-polaroid ss-c-mom ss-selected" data-name="אמא" data-rel="mom">
+          <div class="ss-photo-area"><div class="ss-ph" style="--ph-a:#ead9c0;--ph-b:#c9b393"><span class="ss-head"></span></div></div>
+          <div class="ss-cap"><span class="ss-name">אמא</span>
+            <span class="ss-heart" aria-hidden="true"><svg viewBox="0 0 24 24">
+              <path class="ss-h-line" d="M12 20.5C12 20.5 3.5 15 3.5 8.9 3.5 6.1 5.7 4 8.4 4c1.7 0 3.1.85 3.6 2.1C12.5 4.85 13.9 4 15.6 4 18.3 4 20.5 6.1 20.5 8.9 20.5 15 12 20.5 12 20.5Z"/>
+              <path class="ss-h-fill" d="M12 20.5C12 20.5 3.5 15 3.5 8.9 3.5 6.1 5.7 4 8.4 4c1.7 0 3.1.85 3.6 2.1C12.5 4.85 13.9 4 15.6 4 18.3 4 20.5 6.1 20.5 8.9 20.5 15 12 20.5 12 20.5Z"/>
+            </svg></span>
+          </div>
+        </div>
+        <div class="ss-polaroid ss-c-noa" data-name="נועה" data-rel="kid">
+          <div class="ss-photo-area"><div class="ss-ph" style="--ph-a:#efe1cb;--ph-b:#d2bd9d"><span class="ss-head"></span></div></div>
+          <div class="ss-cap"><span class="ss-name">נועה</span>
+            <span class="ss-heart" aria-hidden="true"><svg viewBox="0 0 24 24">
+              <path class="ss-h-line" d="M12 20.5C12 20.5 3.5 15 3.5 8.9 3.5 6.1 5.7 4 8.4 4c1.7 0 3.1.85 3.6 2.1C12.5 4.85 13.9 4 15.6 4 18.3 4 20.5 6.1 20.5 8.9 20.5 15 12 20.5 12 20.5Z"/>
+              <path class="ss-h-fill" d="M12 20.5C12 20.5 3.5 15 3.5 8.9 3.5 6.1 5.7 4 8.4 4c1.7 0 3.1.85 3.6 2.1C12.5 4.85 13.9 4 15.6 4 18.3 4 20.5 6.1 20.5 8.9 20.5 15 12 20.5 12 20.5Z"/>
+            </svg></span>
+          </div>
+        </div>
+        <div class="ss-polaroid ss-c-dad ss-selected" data-name="אבא" data-rel="dad">
+          <div class="ss-photo-area"><div class="ss-ph" style="--ph-a:#e6d4b9;--ph-b:#c4ad8c"><span class="ss-head"></span></div></div>
+          <div class="ss-cap"><span class="ss-name">אבא</span>
+            <span class="ss-heart" aria-hidden="true"><svg viewBox="0 0 24 24">
+              <path class="ss-h-line" d="M12 20.5C12 20.5 3.5 15 3.5 8.9 3.5 6.1 5.7 4 8.4 4c1.7 0 3.1.85 3.6 2.1C12.5 4.85 13.9 4 15.6 4 18.3 4 20.5 6.1 20.5 8.9 20.5 15 12 20.5 12 20.5Z"/>
+              <path class="ss-h-fill" d="M12 20.5C12 20.5 3.5 15 3.5 8.9 3.5 6.1 5.7 4 8.4 4c1.7 0 3.1.85 3.6 2.1C12.5 4.85 13.9 4 15.6 4 18.3 4 20.5 6.1 20.5 8.9 20.5 15 12 20.5 12 20.5Z"/>
+            </svg></span>
+          </div>
+        </div>
+        <div class="ss-polaroid ss-c-yon" data-name="יונתן" data-rel="kid">
+          <div class="ss-photo-area"><div class="ss-ph" style="--ph-a:#ecdcc4;--ph-b:#cdb691"><span class="ss-head"></span></div></div>
+          <div class="ss-cap"><span class="ss-name">יונתן</span>
+            <span class="ss-heart" aria-hidden="true"><svg viewBox="0 0 24 24">
+              <path class="ss-h-line" d="M12 20.5C12 20.5 3.5 15 3.5 8.9 3.5 6.1 5.7 4 8.4 4c1.7 0 3.1.85 3.6 2.1C12.5 4.85 13.9 4 15.6 4 18.3 4 20.5 6.1 20.5 8.9 20.5 15 12 20.5 12 20.5Z"/>
+              <path class="ss-h-fill" d="M12 20.5C12 20.5 3.5 15 3.5 8.9 3.5 6.1 5.7 4 8.4 4c1.7 0 3.1.85 3.6 2.1C12.5 4.85 13.9 4 15.6 4 18.3 4 20.5 6.1 20.5 8.9 20.5 15 12 20.5 12 20.5Z"/>
+            </svg></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="ss-summary">
+        <div class="ss-summary-top">
+          <div class="ss-avatars" id="ssAvatars"></div>
+          <button class="ss-add" id="ssAddBtn" aria-label="הוסיפו עוד">+</button>
+        </div>
+        <div class="ss-sum-main" id="ssSumMain">אבא + אמא</div>
+        <div class="ss-sum-div"></div>
+        <div class="ss-sum-sub">
+          <svg viewBox="0 0 24 24" fill="none" id="ssRelIcon">
+            <circle cx="8" cy="6.5" r="2.6" fill="#cda35a"/>
+            <circle cx="16" cy="6.5" r="2.6" fill="#cda35a"/>
+            <path d="M3.5 18.5c0-2.8 2-4.7 4.5-4.7s4.5 1.9 4.5 4.7" stroke="#cda35a" stroke-width="1.9" stroke-linecap="round"/>
+            <path d="M11.5 18.5c0-2.8 2-4.7 4.5-4.7s4.5 1.9 4.5 4.7" stroke="#cda35a" stroke-width="1.9" stroke-linecap="round"/>
+          </svg>
+          <span id="ssSumSub">הורים</span>
+        </div>
+        <div class="ss-notify-row" id="ssNotifyRow">
+          <svg class="ss-nr-bell" viewBox="0 0 24 24" fill="none">
+            <path d="M12 3.3c.66 0 1.2.54 1.2 1.2v.42c2.32.55 3.95 2.62 3.95 5.03 0 2.7.58 3.96 1.24 4.9.46.66-.02 1.55-.82 1.55H6.43c-.8 0-1.28-.89-.82-1.55.66-.94 1.24-2.2 1.24-4.9 0-2.41 1.63-4.48 3.95-5.03V4.5c0-.66.54-1.2 1.2-1.2Z" fill="#cda35a" stroke="#cda35a" stroke-width="1.25" stroke-linejoin="round"/>
+            <path d="M9.85 18.5a2.15 2.15 0 0 0 4.3 0" stroke="#cda35a" stroke-width="1.35" stroke-linecap="round"/>
+          </svg>
+          <span id="ssNotifyText">כולם יקבלו התראה</span>
+        </div>
+      </div>
+
+      <div class="ss-actions">
+        <button class="ss-cta" id="ssCta">המשך</button>
+        <button class="ss-back" aria-label="חזרה">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+  var root = document.getElementById('s-share-sheet');
+  if(!root) return;
+  var grid = root.querySelector('#ssGrid');
+  var avatars = root.querySelector('#ssAvatars');
+  var sumMain = root.querySelector('#ssSumMain');
+  var sumSub  = root.querySelector('#ssSumSub');
+  var relIcon = root.querySelector('#ssRelIcon');
+  var notifyRow  = root.querySelector('#ssNotifyRow');
+  var notifyText = root.querySelector('#ssNotifyText');
+  var notify = {};   // per-card ring intent (bell): key = card uid
+  // Tilt presets cycled across however many real members exist.
+  var TILTS = ['ss-c-mom','ss-c-noa','ss-c-dad','ss-c-yon'];
+
+  function getCards(){ return Array.prototype.slice.call(grid.querySelectorAll('.ss-polaroid')); }
+  function keyOf(c){ return c.dataset.uid || c.dataset.name || ''; }
+  function escHtml(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  function bellSVG(){
+    return '<svg viewBox="0 0 24 24" fill="none">'
+      + '<path class="ss-b-fill" d="M12 3.3c.66 0 1.2.54 1.2 1.2v.42c2.32.55 3.95 2.62 3.95 5.03 0 2.7.58 3.96 1.24 4.9.46.66-.02 1.55-.82 1.55H6.43c-.8 0-1.28-.89-.82-1.55.66-.94 1.24-2.2 1.24-4.9 0-2.41 1.63-4.48 3.95-5.03V4.5c0-.66.54-1.2 1.2-1.2Z" stroke-width="1.25" stroke-linejoin="round"/>'
+      + '<path class="ss-b-clap" d="M9.85 18.5a2.15 2.15 0 0 0 4.3 0" stroke-width="1.35" stroke-linecap="round"/>'
+      + '<line class="ss-b-slash" x1="5.4" y1="5.5" x2="18.6" y2="18.9"/></svg>';
+  }
+  function heartHTML(){
+    return '<span class="ss-heart" aria-hidden="true"><svg viewBox="0 0 24 24">'
+      + '<path class="ss-h-line" d="M12 20.5C12 20.5 3.5 15 3.5 8.9 3.5 6.1 5.7 4 8.4 4c1.7 0 3.1.85 3.6 2.1C12.5 4.85 13.9 4 15.6 4 18.3 4 20.5 6.1 20.5 8.9 20.5 15 12 20.5 12 20.5Z"/>'
+      + '<path class="ss-h-fill" d="M12 20.5C12 20.5 3.5 15 3.5 8.9 3.5 6.1 5.7 4 8.4 4c1.7 0 3.1.85 3.6 2.1C12.5 4.85 13.9 4 15.6 4 18.3 4 20.5 6.1 20.5 8.9 20.5 15 12 20.5 12 20.5Z"/>'
+      + '</svg></span>';
+  }
+
+  function curTask(){
+    if (typeof AppState === 'undefined') return null;
+    return AppState._editingTask || (AppState.previewTasks && AppState.previewTasks[0]) || null;
+  }
+  function aliasesFor(uid){
+    return (typeof _visIdAliases === 'function') ? _visIdAliases(uid).map(String) : [String(uid)];
+  }
+
+  // Rebuild the polaroids from the REAL family members (family mode only) and
+  // reflect the CURRENT task's visibleTo / notifyTo onto heart + bell — read via
+  // the SAME alias matcher the s-visibility screen uses, so the mixed id space
+  // (userId / memberId / legacy) is honoured. In demo/local mode the static
+  // placeholder cards in the HTML are kept as-is. Reading only — no writes here.
+  function syncMembers(){
+    try{
+      // Always reflect the current task's title (if any), both modes.
+      var task = curTask();
+      var titleWrap = root.querySelector('#ssTaskTitle');
+      var titleTxt  = root.querySelector('#ssTaskTitleTxt');
+      if (titleWrap && titleTxt) {
+        if (task && task.title) { titleTxt.textContent = task.title; titleWrap.style.display = ''; }
+        else { titleWrap.style.display = 'none'; }
+      }
+      if (typeof DataAdapter === 'undefined' || !DataAdapter.isFamily || !DataAdapter.isFamily()) return;
+      if (typeof _loadRealParticipants !== 'function' || typeof _participantInner !== 'function') return;
+      var myId = DataAdapter.userId;
+      var list = _loadRealParticipants();
+      if (!list || !list.length) return;
+      notify = {};
+      grid.innerHTML = list.map(function(p, i){
+        var nm = (typeof _participantDisplayName === 'function') ? _participantDisplayName(p, myId) : (p.displayName || p.name || '');
+        var inner = _participantInner(p, nm, i, 160);     // real photo, or generated avatar
+        var tilt = TILTS[i % TILTS.length];
+        var uid = (typeof _escAttr === 'function') ? _escAttr(p.userId || p.memberId || ('m'+i)) : (p.userId || p.memberId || ('m'+i));
+        return '<div class="ss-polaroid ' + tilt + '" data-uid="' + uid + '" data-name="' + escHtml(nm) + '">'
+             +   '<div class="ss-photo-area">' + inner + '</div>'
+             +   '<div class="ss-cap"><span class="ss-name">' + escHtml(nm) + '</span>' + heartHTML() + '</div>'
+             + '</div>';
+      }).join('');
+
+      // Derive selection (heart=visibleTo) + ring (bell=notifyTo) from the task.
+      var visArr = (task && Array.isArray(task.visibleTo)) ? task.visibleTo.map(String) : [];
+      var notArr = (task && Array.isArray(task.notifyTo))  ? task.notifyTo.map(String)  : [];
+      if (!visArr.length && myId) visArr = [String(myId)];     // creator always sees
+      var notifyEmpty = !notArr.length;
+      getCards().forEach(function(c){
+        var al = aliasesFor(c.dataset.uid);
+        var seen = al.some(function(a){ return visArr.indexOf(a) !== -1; });
+        c.classList.toggle('ss-selected', seen);
+        if (seen) {
+          var rings = al.some(function(a){ return notArr.indexOf(a) !== -1; });
+          // Per request: creator rings by default on a fresh task (no notify set yet).
+          if (rings || (notifyEmpty && String(c.dataset.uid) === String(myId))) notify[keyOf(c)] = 1;
+        }
+      });
+      render();
+    }catch(e){ if(window.console) console.warn('[share-sheet] syncMembers failed', e); }
+  }
+
+  function renderBadges(){
+    var myId = (typeof DataAdapter !== 'undefined') ? DataAdapter.userId : null;
+    getCards().forEach(function(c){
+      var pa = c.querySelector('.ss-photo-area');
+      var badge = pa.querySelector('.ss-bell-badge');
+      var k = keyOf(c);
+      var name = c.dataset.name;
+      if(!badge){
+        badge = document.createElement('button');
+        badge.className = 'ss-bell-badge';
+        badge.innerHTML = bellSVG();
+        badge.addEventListener('click', function(e){
+          e.stopPropagation();
+          if(!c.classList.contains('ss-selected')) return;   // ring only if they see it
+          if(notify[k]) delete notify[k]; else notify[k]=1;
+          renderBadges(); updateNotifyText();
+        });
+        pa.appendChild(badge);
+      }
+      var sel = c.classList.contains('ss-selected');
+      badge.classList.remove('ss-on','ss-muted','ss-off');
+      if(!sel){ badge.classList.add('ss-off'); badge.setAttribute('aria-label','לא משותף · '+name); }
+      else if(notify[k]){ badge.classList.add('ss-on'); badge.setAttribute('aria-label','מצלצל אצל '+name+' · הקש להשתקה'); }
+      else { badge.classList.add('ss-muted'); badge.setAttribute('aria-label',name+' רואה בלי צלצול · הקש לצלצול'); }
+    });
+  }
+
+  function updateNotifyText(){
+    var sel = getCards().filter(function(c){ return c.classList.contains('ss-selected'); });
+    var selKeys = {}; sel.forEach(function(c){ selKeys[keyOf(c)]=1; });
+    Object.keys(notify).forEach(function(k){ if(!selKeys[k]) delete notify[k]; });
+    if(sel.length===0){ notifyRow.style.display='none'; return; }
+    notifyRow.style.display='flex';
+    var ringing = sel.filter(function(c){ return notify[keyOf(c)]; }).map(function(c){ return c.dataset.name; });
+    if(ringing.length===0)            notifyText.textContent='ללא צלצול לאף אחד';
+    else if(ringing.length===sel.length) notifyText.textContent='כולם יקבלו התראה';
+    else                              notifyText.textContent= ringing.join(' + ') + ' יקבלו התראה';
+  }
+
+  function render(){
+    var sel = getCards().filter(function(c){ return c.classList.contains('ss-selected'); });
+    avatars.innerHTML='';
+    sel.slice(0,3).forEach(function(){
+      var av=document.createElement('div'); av.className='ss-av';
+      av.innerHTML='<span class="ss-avp"></span>';
+      avatars.appendChild(av);
+    });
+    var names = sel.map(function(c){ return c.dataset.name; });
+    sumMain.textContent = names.length ? names.join(' + ') : 'אף אחד עדיין';
+    var rels = sel.map(function(c){ return c.dataset.rel; });
+    var isParents = sel.length===2 && rels.indexOf('mom')>-1 && rels.indexOf('dad')>-1;
+    if(isParents){ sumSub.textContent='הורים'; relIcon.style.display=''; }
+    else if(names.length===0){ sumSub.textContent='בחרו לפחות אחד'; relIcon.style.display='none'; }
+    else { sumSub.textContent = names.length + ' בני משפחה'; relIcon.style.display=''; }
+    updateNotifyText();
+    renderBadges();
+  }
+
+  // Delegated selection toggle — works for static AND dynamically-built cards.
+  grid.addEventListener('click', function(e){
+    if (e.target.closest('.ss-bell-badge')) return; // the bell handles itself
+    var card = e.target.closest('.ss-polaroid');
+    if(!card || !grid.contains(card)) return;
+    var nowSel = !card.classList.contains('ss-selected');
+    card.classList.toggle('ss-selected', nowSel);
+    var k = keyOf(card);
+    var myId = (typeof DataAdapter !== 'undefined') ? DataAdapter.userId : null;
+    if (nowSel) {
+      // Newly seeing: creator rings by default; others ring only if you tap the bell.
+      if (myId && String(card.dataset.uid) === String(myId)) notify[k] = 1;
+    } else {
+      delete notify[k]; // no longer sees → cannot ring
+    }
+    render();
+  });
+  root.querySelector('#ssAddBtn').addEventListener('click', function(e){ e.stopPropagation(); });
+  root.querySelector('#ssCta').addEventListener('click', function(){
+    var cta=root.querySelector('#ssCta');
+    cta.style.transform='translateY(2px) scale(.99)';
+    setTimeout(function(){ cta.style.transform=''; },160);
+  });
+
+  // Exposed so the entry points refresh real members each time the screen opens
+  // (e.g. after a new family member joins).
+  window._ssSyncMembers = syncMembers;
+  render(); // initial paint of the static demo cards
+})();
+</script>
+
 <!-- QA Panel (temp diagnostic) -->
 <button id="qaBtn" onclick="_qaShow()">🔍 QA</button>
 <div id="qaPanel">
@@ -6385,6 +6821,7 @@ function updateHeroPortrait(id) {
     const direct = _familyMembersCache.find(m => m.userId === id || m.memberId === id);
     if (direct && direct.avatar && (direct.avatar.type === 'photo' || direct.avatar.type === 'ai-photo') && direct.avatar.url) {
       img.src = direct.avatar.url;
+      applyFocal(img, direct.avatar.url);
       return;
     }
     if (direct) { img.src = ''; return; } // real member without photo — keep portrait blank
@@ -6400,19 +6837,21 @@ function updateHeroPortrait(id) {
     const av     = (cached && cached.avatar) || (seed && seed.avatar);
     if (av && (av.type === 'photo' || av.type === 'ai-photo') && av.url) {
       img.src = av.url;
+      applyFocal(img, av.url);
       return;
     }
   }
   // Fallback: legacy lookup from today-strip <img> src (still works for
   // sessions where the strip rendered first).
   img.src = avSrc(legacyId);
+  if (img.src) applyFocal(img, img.src);
 }
 function taskAvImg(task) {
   const m = resolveMember(task);
   if (m.avatar) {
     // New schema: photo/ai-photo uses avatar.url (Firebase Storage download URL)
     if ((m.avatar.type === 'photo' || m.avatar.type === 'ai-photo') && m.avatar.url) {
-      return `<img src="${m.avatar.url}" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:inherit;" alt="">`;
+      return `<img src="${m.avatar.url}" data-focal-url="${_escAttr(m.avatar.url)}" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:inherit;object-position:${_focalCache[m.avatar.url] || _FOCAL_FALLBACK};" alt="">`;
     }
     // Legacy schema: type='image' stored the URL in .value
     if (m.avatar.type === 'image' && m.avatar.value) {
@@ -10429,6 +10868,7 @@ document.getElementById('wkBackBtn').addEventListener('click', () => goto('s-tod
 function renderToday() {
   const _animEntryThisRender = _todayAnimateEntry;
   _todayAnimateEntry = false;
+  try { if (typeof _v4Push === 'function') _v4Push(); } catch (e) {}
   if (typeof _mpApplyAllStripes === 'function') _mpApplyAllStripes();
   if (typeof _maybeShowProfileCompletion === 'function') _maybeShowProfileCompletion();
   updateTodayTitle();
@@ -13864,8 +14304,9 @@ function renderAvatarHTML(avatar, sizePx) {
   const a    = avatar || { type: 'emoji', value: '👤' };
   if (a.type === 'photo' || a.type === 'ai-photo') {
     if (a.url) {
-      return '<img src="' + _escAttr(a.url) + '" alt="" '
-        + 'style="width:100%;height:100%;border-radius:inherit;object-fit:cover;display:block;" '
+      return '<img src="' + _escAttr(a.url) + '" alt="" data-focal-url="' + _escAttr(a.url) + '" '
+        + 'style="width:100%;height:100%;border-radius:inherit;object-fit:cover;display:block;'
+        + 'object-position:' + (_focalCache[a.url] || _FOCAL_FALLBACK) + ';" '
         + 'loading="lazy" decoding="async" />';
     }
   }
@@ -13880,6 +14321,113 @@ function _escAttr(s) {
     { '&':'&amp;', '"':'&quot;', '<':'&lt;', '>':'&gt;' }[c]
   ));
 }
+
+/* ───────── Face-aware focal point (option B) ─────────────────────────
+   Detect each avatar's face ONCE (the built-in FaceDetector, when the
+   device exposes it — Android WebView usually does), cache the focal
+   point per image URL (memory + localStorage), and apply it as
+   object-position everywhere the photo is cropped — most visibly the
+   wide "next task" hero strip, where a fixed top-crop chopped the face.
+   Devices without FaceDetector get a smart upper-centre fallback.
+   One uploaded photo, no extra capture, no Firestore change.            */
+const _FOCAL_LS_KEY  = 'fam_avatar_focal_v1';
+const _FOCAL_FALLBACK = '50% 34%';      // faces sit in the top third of a portrait
+let _focalCache = {};
+try { _focalCache = JSON.parse(localStorage.getItem(_FOCAL_LS_KEY) || '{}') || {}; } catch (e) { _focalCache = {}; }
+function _focalSave() { try { localStorage.setItem(_FOCAL_LS_KEY, JSON.stringify(_focalCache)); } catch (e) {} }
+
+// Re-apply a known focal point to every <img> on the page showing this URL.
+function _focalApplyToDom(url, pos) {
+  document.querySelectorAll('img[data-focal-url]').forEach(img => {
+    if (img.getAttribute('data-focal-url') === url) img.style.objectPosition = pos;
+  });
+}
+// Detect once for a loaded image; cache + apply on success, keep fallback otherwise.
+async function _focalDetect(img, url) {
+  if (!url || _focalCache[url] || !('FaceDetector' in window) || !img.naturalWidth) return;
+  try {
+    const faces = await new FaceDetector({ maxDetectedFaces: 1, fastMode: true }).detect(img);
+    if (faces && faces[0] && faces[0].boundingBox) {
+      const b = faces[0].boundingBox;
+      const x = Math.min(100, Math.max(0, (b.x + b.width  / 2) / img.naturalWidth  * 100));
+      const y = Math.min(100, Math.max(0, (b.y + b.height / 2) / img.naturalHeight * 100));
+      const pos = x.toFixed(1) + '% ' + y.toFixed(1) + '%';
+      _focalCache[url] = pos; _focalSave();
+      _focalApplyToDom(url, pos);
+    }
+  } catch (e) { /* keep fallback */ }
+}
+// Apply focal to one <img>: cached point if known, else fallback + kick off detection.
+function applyFocal(img, url) {
+  if (!img) return;
+  url = url || img.getAttribute('data-focal-url') || img.currentSrc || img.src || '';
+  if (!url) return;
+  img.setAttribute('data-focal-url', url);
+  img.style.objectPosition = _focalCache[url] || _FOCAL_FALLBACK;
+  if (!_focalCache[url] && ('FaceDetector' in window)) {
+    if (img.complete && img.naturalWidth) _focalDetect(img, url);
+    else img.addEventListener('load', () => _focalDetect(img, url), { once: true });
+  }
+}
+window.applyFocal = applyFocal;
+
+/* ───────── Bridge to the new Today (v4) home iframe ──────────────────
+   The design renders verbatim inside #v4Home (isolated from app CSS).
+   We push real family data in via postMessage and handle actions back. */
+function _v4PhotoUrl(m){
+  return (m && m.avatar && (m.avatar.type === 'photo' || m.avatar.type === 'ai-photo') && m.avatar.url) ? m.avatar.url : '';
+}
+function _v4Push(){
+  const fr = document.getElementById('v4Home');
+  if (!fr || !fr.contentWindow) return;
+  try {
+    const cache = (typeof _familyMembersCache !== 'undefined' && _familyMembersCache) || [];
+    const members = cache.map(m => ({ memberId: m.memberId, name: m.name || '', photoUrl: _v4PhotoUrl(m) }));
+    const tasks = (typeof activeTasks === 'function') ? activeTasks() : [];
+    const tlist = tasks.map(t => {
+      let url = '';
+      try { url = _v4PhotoUrl(typeof resolveMember === 'function' ? resolveMember(t) : null); } catch (e) {}
+      return { id: t.id, time: (t.mins != null ? m2t(t.mins) : ''), title: t.title || '', meta: t.location || '', done: !!t.completed, photoUrl: url };
+    });
+    const next = tasks.find(t => !t.completed && t.mins != null) || tasks.find(t => !t.completed);
+    let hero;
+    if (next) {
+      let hurl = '';
+      try { hurl = _v4PhotoUrl(typeof resolveMember === 'function' ? resolveMember(next) : null); } catch (e) {}
+      hero = { title: next.title || '', meta: next.location || '', time: (next.mins != null ? m2t(next.mins) : ''), photoUrl: hurl, hidden: false };
+    } else { hero = { hidden: true }; }
+    const n = tasks.length;
+    const payload = {
+      dateText:   new Date().toLocaleDateString('he-IL', { weekday:'long', day:'numeric', month:'long' }),
+      familyName: 'המשפחה',
+      members:    members,
+      hero:       hero,
+      stats:      { eventsHtml: n + ' <small>' + (n === 1 ? 'אירוע' : 'אירועים') + '</small>', together: members.length + '/' + members.length },
+      tasks:      tlist
+    };
+    fr.contentWindow.postMessage({ type: 'familyData', payload: payload }, '*');
+  } catch (e) { console.warn('[v4] push failed', e); }
+}
+window._v4Push = _v4Push;
+
+// Receive actions from the new home and route them to the real app behaviour.
+window.addEventListener('message', function(e){
+  const d = e.data;
+  if (!d || d.source !== 'v4home') return;
+  if (d.type === 'ready') { _v4Push(); return; }
+  if (d.type !== 'action') return;
+  if (d.name === 'calendar' && typeof openCalDrawer === 'function') openCalDrawer();
+  else if (d.name === 'notifications') { const b = document.getElementById('hmBellBtn'); if (b) b.click(); }
+  else if (d.name === 'task' && d.id) {
+    const el = document.querySelector('.t-task[data-id="' + d.id + '"]');
+    if (el) el.click();
+  }
+  else if (d.name === 'nav') {
+    if (d.which === 'calendar' && typeof openCalDrawer === 'function') openCalDrawer();
+    else if (d.which === 'tasks' && typeof goto === 'function') goto('s-week','txLeaveFade','txEnterFade');
+    else if (d.which === 'home' && typeof goto === 'function') goto('s-settings','txLeaveFade','txEnterFade');
+  }
+});
 
 // Max dimension + JPEG quality for the blob we actually upload. AI output is a
 // ~1MB webp at full res; downscaling to 768px JPEG q0.85 typically yields
@@ -14791,6 +15339,8 @@ function _refreshAvatarUI(memberId, avatar) {
       const size = parseInt(node.dataset.avatarSize, 10) || 64;
       const slot = node.querySelector('[data-avatar-slot]') || node;
       slot.innerHTML = renderAvatarHTML(avatar, size);
+      const im = slot.querySelector('img[data-focal-url]');
+      if (im) applyFocal(im, im.getAttribute('data-focal-url'));
     });
   };
   // #7 fix: for photo avatars, preload the (possibly brand-new Storage) URL and
@@ -16763,18 +17313,34 @@ function _visApplyRealMembers() {
   var task = AppState._editingTask || (AppState.previewTasks && AppState.previewTasks[0]);
   if (task) {
     var ownerId = task.assignedToMemberId || task.createdByMemberId || task.createdBy || myId;
-    var owner = ownerId && (_familyMembersCache || []).find(function (m) { return m.userId === ownerId || m.memberId === ownerId; });
-    // Name priority: identity-aware task resolver (self→displayName, placeholder→'')
-    // → owner participant displayName → this device's own displayName.
-    var nm = (typeof _taskDisplayName === 'function' ? (_taskDisplayName(task) || '') : '')
-          || (owner && typeof _participantDisplayName === 'function' ? _participantDisplayName(owner, myId) : '')
-          || (DataAdapter.displayName || '');
+    // Resolve the performer to a REAL member only. A seed/legacy performer id
+    // (e.g. member_dad) must NEVER render as the seed placeholder "חבר 1" nor as
+    // a seed avatar. Match strictly against a real (userId-keyed, non-seed) doc.
+    var owner = ownerId && (_familyMembersCache || []).find(function (m) {
+      return (m.userId === ownerId || m.memberId === ownerId)
+          && (typeof _isRealMember !== 'function' || _isRealMember(m));
+    });
+    if (!owner) {
+      // Performer is a seed/legacy/unknown id → no real match. If there is exactly
+      // ONE real member, that is the clear owner; otherwise stay neutral.
+      var _real = (typeof _loadRealParticipants === 'function') ? _loadRealParticipants() : [];
+      if (_real.length === 1) owner = _real[0];
+    }
+    var nm = owner
+      ? ((typeof _participantDisplayName === 'function' ? _participantDisplayName(owner, myId) : (owner.displayName || owner.name)) || '')
+      : '';
+    if (!nm) nm = '—';   // neutral fallback — never "חבר 1", never device name standing in for a seed
     var perfName = document.getElementById('visHeroPerfName');
-    if (perfName && nm) perfName.textContent = nm;
+    if (perfName) perfName.textContent = nm;   // always set, so the seed text from _visUpdateHero can't survive
     var bigAva = document.getElementById('visHeroBigAva');
-    if (bigAva && owner && typeof _participantInner === 'function') {
-      bigAva.innerHTML  = _participantInner(owner, nm || '👤', 0, 56);
-      bigAva.className  = 'vis-hero-big-ava';
+    if (bigAva) {
+      if (owner && typeof _participantInner === 'function') {
+        bigAva.innerHTML = _participantInner(owner, nm, 0, 56);   // real member → real avatar
+      } else {
+        // No real owner → neutral silhouette; never present a seed avatar as real.
+        bigAva.innerHTML = '<span style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:30px;">👤</span>';
+      }
+      bigAva.className = 'vis-hero-big-ava';
       bigAva.removeAttribute('data-avatar-for');
     }
   }
@@ -19161,6 +19727,136 @@ async function _mpSaveField(memberId, updates) {
     }
   }
 }
+</script>
+
+<!-- ════ DEV-ONLY: ?screen=<id> direct preview ════
+     Visual-review hatch. Active ONLY when the query param is present, so it can
+     never affect real users. Runs LAST (after all boot logic) and force-shows
+     the requested .app-screen. Pure UI: touches no data, no listeners, no family
+     state, and does NOT call goto() or any sharing logic. Mirrors the existing
+     ?previewFirstRun=1 convention. -->
+<script>
+(function(){
+  try{
+    var id = new URLSearchParams(location.search).get('screen');
+    if(!id) return;
+    var target = document.getElementById(id);
+    if(!target || !target.classList.contains('app-screen')) return;
+    // Persistent CSS flag: async auth/identity-guard re-shows #firstRunScreen
+    // after this runs, so a one-shot class toggle isn't enough. This !important
+    // rule keeps the overlays down for the whole preview session.
+    var st = document.createElement('style');
+    st.textContent = 'html.dev-preview-screen #firstRunScreen,html.dev-preview-screen #deviceSetupScreen{display:none!important}';
+    document.head.appendChild(st);
+    document.documentElement.classList.add('dev-preview-screen');
+    document.querySelectorAll('.app-screen.active').forEach(function(s){ s.classList.remove('active'); });
+    target.classList.add('active');
+    if (id === 's-share-sheet') { try { if (typeof window._ssSyncMembers === 'function') window._ssSyncMembers(); } catch(_){} }
+    var SS = window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.SplashScreen;
+    if (SS && SS.hide) { try{ SS.hide(); }catch(e){} }
+  }catch(e){ console.warn('[dev preview screen] failed', e); }
+})();
+</script>
+
+<!-- ════ DEV/TEMP — local-only wiring of s-share-sheet (REMOVE to disable) ════
+     Routes the two "מי רואה ומי מקבל התראה" entry points to the new s-share-sheet
+     screen for on-device review. ADDITIVE ONLY:
+       • A capture-phase listener on `document` runs BEFORE the existing handlers
+         and blocks them (stopImmediatePropagation) — no existing handler, goto(),
+         Firebase call, or visibleTo/notifyTo logic is modified.
+       • Back + "המשך" on s-share-sheet return to the screen you came from.
+     To remove this temporary wiring: delete this entire <script> block. -->
+<script>
+(function(){
+  var _ssReturnTo = 's-today';
+
+  function openShareSheet(origin){
+    _ssReturnTo = origin || (document.querySelector('.app-screen.active') || {}).id || 's-today';
+    try { if (typeof window._ssSyncMembers === 'function') window._ssSyncMembers(); } catch(_){}
+    if (typeof goto === 'function') goto('s-share-sheet', 'txLeaveFade', 'txEnterFade');
+  }
+
+  // Persist the selection onto the current task using the SAME mechanism as the
+  // existing s-visibility "save" (visSaveCta, app.html ~L17893): heart→visibleTo,
+  // bell→notifyTo, creator always kept in visibleTo (#6 fix). Existing task →
+  // _daWriteTask + reschedule + renderToday; preview/creation task → write onto
+  // previewTasks (finalised later by "שמור הכל"). No new persistence is invented.
+  function commitAndReturn(){
+    try{
+      var root = document.getElementById('s-share-sheet');
+      var toLegacy = function(id){ return (typeof _VIS_TO_LEGACY !== 'undefined' && _VIS_TO_LEGACY[id]) ? _VIS_TO_LEGACY[id] : id; };
+      var seeIds = [], notifyIds = [];
+      Array.prototype.forEach.call(root.querySelectorAll('.ss-polaroid.ss-selected'), function(c){
+        var id = toLegacy(c.dataset.uid);
+        if (seeIds.indexOf(id) === -1) seeIds.push(id);
+        if (c.querySelector('.ss-bell-badge.ss-on') && notifyIds.indexOf(id) === -1) notifyIds.push(id);
+      });
+      var creatorId = (typeof DataAdapter !== 'undefined') ? (DataAdapter.userId || DataAdapter.myMemberId) : null;
+      if (creatorId && seeIds.indexOf(creatorId) === -1) seeIds.push(creatorId);
+
+      var editing = (typeof AppState !== 'undefined') ? AppState._editingTask : null;
+      if (editing) {
+        editing.visibleTo = seeIds.length ? seeIds : editing.visibleTo;
+        editing.notifyTo  = notifyIds;             // bell is the explicit ring state
+        editing.updatedAt = Date.now();
+        if (typeof saveState === 'function') { try { saveState(); } catch(_){} }
+        if (typeof _daWriteTask === 'function') _daWriteTask(editing, false).catch(function(){});
+        if (typeof _capRescheduleAll === 'function') _capRescheduleAll().catch(function(){});
+        if (typeof renderToday === 'function') { try { renderToday(); } catch(_){} }
+        AppState._editingTask = null;
+      } else if (typeof AppState !== 'undefined') {
+        (AppState.previewTasks || []).forEach(function(t){
+          if (seeIds.length) t.visibleTo = seeIds.slice();
+          t.notifyTo = notifyIds.slice();
+        });
+        if (typeof renderConfirmationTasks === 'function') { try { renderConfirmationTasks(); } catch(_){} }
+      }
+    } catch(e){ if(window.console) console.warn('[share-sheet] commit failed', e); }
+    if (typeof goto === 'function') goto(_ssReturnTo, 'txLeaveFade', 'txEnterFade');
+  }
+
+  // Capture-phase delegation: fires before any target/bubble handler, so it
+  // reliably intercepts regardless of listener registration order. Each entry
+  // sets AppState._editingTask (the original blocked handlers did this) so the
+  // share-sheet reads/writes the right task.
+  document.addEventListener('click', function(e){
+    var t = e.target;
+    if (!t || !t.closest) return;
+    // Entry 1 — "הנה מה שהבנתי" (s-confirmation): the per-task ⋮ menu button,
+    // whose inline onclick currently opens s-visibility (app.html ~L9272).
+    var menu = t.closest('#s-confirmation .task .menu');
+    if (menu) {
+      e.preventDefault(); e.stopImmediatePropagation();
+      try{
+        var row = menu.closest('.task[data-taskid]');
+        var tid = row && row.dataset.taskid;
+        if (typeof AppState !== 'undefined') {
+          AppState._editingTask = (AppState.previewTasks || []).find(function(t2){ return String(t2.id) === String(tid); }) || AppState._editingTask;
+        }
+      }catch(_){}
+      openShareSheet('s-confirmation');
+      return;
+    }
+    // Entry 2 — "משימות היום" task options sheet: "מי רואה ומי מקבל התראה"
+    if (t.closest('#optsShareVis')) {
+      e.preventDefault(); e.stopImmediatePropagation();
+      try{ if (typeof AppState !== 'undefined' && typeof _optsTask !== 'undefined' && _optsTask) AppState._editingTask = _optsTask; }catch(_){}
+      if (typeof closeOptionsSheet === 'function') { try { closeOptionsSheet(); } catch(_){} }
+      openShareSheet('s-today');
+      return;
+    }
+  }, true);
+
+  // "המשך" saves + returns; the back arrow returns WITHOUT saving (cancel) —
+  // same semantics as the s-visibility save-CTA vs back-button.
+  var root = document.getElementById('s-share-sheet');
+  if (root) {
+    var back = root.querySelector('.ss-back');
+    if (back) back.addEventListener('click', function(){ if (typeof goto === 'function') goto(_ssReturnTo, 'txLeaveFade', 'txEnterFade'); });
+    var cta  = root.querySelector('#ssCta');
+    if (cta)  cta.addEventListener('click', commitAndReturn);
+  }
+})();
 </script>
 </body>
 </html>
