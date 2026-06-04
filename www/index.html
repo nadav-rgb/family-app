@@ -5927,7 +5927,7 @@ const _urlDbg  = new URLSearchParams(window.location.search).get('debug') === '1
 // ── Runtime build marker (visible in Settings + Sync Diagnostics) ──
 // Bump this string on every web build so we can confirm — from the device —
 // exactly which code is actually running, independent of Android versionCode.
-const APP_BUILD = '1.4.2-build9-idfix-bday-2026-06-04';
+const APP_BUILD = '1.4.3-build10-herofix-2026-06-04';
 window.APP_BUILD = APP_BUILD;
 try { const _bv = document.getElementById('settingsBuildVal'); if (_bv) _bv.textContent = APP_BUILD; } catch (e) {}
 const _urlDiag = new URLSearchParams(window.location.search).get('diag') === '1';
@@ -16579,6 +16579,10 @@ function _visSetFilter(section, val) {
   if (section === 'see') _visSyncNotifyToSee();
   _visUpdateTip();
   _visUpdateHero();
+  // Re-apply real members after a filter tap so the performer hero keeps the
+  // real name/avatar instead of reverting to the static seed label ("חבר 1");
+  // _visUpdateHero rebuilds the hero from the seed-keyed _visMemberNames map.
+  try { _visApplyRealMembers(); } catch (_) {}
 }
 
 function _visSyncNotifyToSee() {
