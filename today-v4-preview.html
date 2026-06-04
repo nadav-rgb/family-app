@@ -427,6 +427,11 @@
   @media (prefers-reduced-motion: no-preference){
     .stage{animation:none}
   }
+  /* Data-driven done state: a completed task shows the design's green "done"
+     circle + check regardless of row position; a pending row #1 keeps a ring
+     instead of the sample's permanent green fill. Uses the design's own tokens. */
+  .task.done .status-circle{border:none;background:linear-gradient(140deg,var(--done-fill),var(--done-fill2));box-shadow:0 6px 14px rgba(120,150,90,.35)}
+  .task:not(.done).t1 .status-circle{border:2.5px solid var(--ring-orange);background:transparent;box-shadow:none}
 </style>
 </head>
 <body>
@@ -450,7 +455,7 @@
         </div>
         <div class="actions">
           <!-- Calendar: opens the existing app Hebrew+holidays drawer (openCalDrawer) when integrated -->
-          <button class="circ-btn" aria-label="לוח שנה" onclick="(window.openCalDrawer||function(){alert('לוח השנה העברי+חגים ייפתח כאן (openCalDrawer)')})()">
+          <button class="circ-btn" aria-label="לוח שנה">
             <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="17" rx="3"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg>
           </button>
           <button class="circ-btn" aria-label="התראות">
@@ -682,8 +687,8 @@
       ports.forEach(function(p,i){
         var m = d.members[i];
         var img = p.querySelector('.frame img');
-        if(m){ p.style.display=''; if(img && m.photoUrl) img.src = m.photoUrl; }
-        else { p.style.display='none'; }
+        if(m){ p.style.display=''; p.dataset.memberId = m.memberId || ''; if(img && m.photoUrl){ img.src = m.photoUrl; focusFace(img); } }
+        else { p.style.display='none'; p.dataset.memberId=''; }
       });
     }
 
@@ -728,6 +733,8 @@
             '<div class="body"><div class="nm">'+titleHtml+'</div>'+(t.meta?'<div class="meta">'+metaHtml+'</div>':'')+'</div>'+
             status;
           row.addEventListener('click', function(){ _post({type:'action',name:'task',id:t.id}); });
+          var _sc = row.querySelector('.status-circle');
+          if(_sc) _sc.addEventListener('click', function(ev){ ev.stopPropagation(); _post({type:'action',name:'toggleDone',id:t.id}); });
           list.appendChild(row);
         });
         document.querySelectorAll('.tlist .av .slot-img').forEach(focusFace);
@@ -739,9 +746,19 @@
   (function(){
     var cal = _q('.actions .circ-btn[aria-label="לוח שנה"]'); if(cal) cal.onclick=function(){ _post({type:'action',name:'calendar'}); };
     var bell= _q('.actions .circ-btn[aria-label="התראות"]'); if(bell) bell.onclick=function(){ _post({type:'action',name:'notifications'}); };
+    // hamburger (תפריט) is the add-task entry on the new home — the design has no + control
+    var menu= _q('.actions .circ-btn[aria-label="תפריט"]'); if(menu) menu.onclick=function(){ _post({type:'action',name:'add'}); };
     var sa  = _q('.show-all'); if(sa) sa.onclick=function(){ _post({type:'action',name:'showAll'}); };
+    // hero "next task" card → open the next task's detail (openHeroCard)
+    var hero= _q('.next-task'); if(hero) hero.onclick=function(){ _post({type:'action',name:'hero'}); };
+    // family arch portraits → open that member's profile (memberId set in applyFamilyData)
+    var parch=_q('.portraits'); if(parch) parch.addEventListener('click', function(e){
+      var pp=e.target.closest('.portrait'); if(!pp) return;
+      var mid=pp.dataset.memberId; if(mid) _post({type:'action',name:'member',id:mid});
+    });
     var navMap=['family','tasks','today','calendar','home'];
-    document.querySelectorAll('.nav .nav-item').forEach(function(it,i){ it.onclick=function(){ _post({type:'action',name:'nav',which:navMap[i]||''}); }; });
+    var vp=_q('.viewport');
+    document.querySelectorAll('.nav .nav-item').forEach(function(it,i){ it.onclick=function(){ var w=navMap[i]||''; if(w==='today'&&vp){ try{vp.scrollTo({top:0,behavior:'smooth'});}catch(_){vp.scrollTop=0;} } _post({type:'action',name:'nav',which:w}); }; });
   })();
 
   window.addEventListener('message', function(e){

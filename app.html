@@ -3588,7 +3588,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
 
 <div class="app-screen active" id="s-today">
   <!-- NEW HOME: user's design (Today v4) rendered verbatim, isolated from app CSS. -->
-  <iframe id="v4Home" src="today-v4-preview.html?v=3" title="Today" style="position:absolute;inset:0;width:100%;height:100%;border:0;z-index:60;background:#FBF6EE;display:block;"></iframe>
+  <iframe id="v4Home" src="today-v4-preview.html?v=4" title="Today" style="position:absolute;inset:0;width:100%;height:100%;border:0;z-index:60;background:#FBF6EE;display:block;"></iframe>
   <div class="t-scroll">
     <!-- ═══ NEW HOME HEADER (Home.html redesign) ═══ -->
     <div class="hm-header">
@@ -6340,6 +6340,14 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
       </div>
       <svg class="opts-row-chev" width="10" height="16" viewBox="0 0 10 16" fill="none"><path d="M7 1L1 8l6 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </button>
+    <button class="opts-row" id="optsDelete" type="button">
+      <div class="opts-row-icon" style="background:rgba(214,69,60,.12)">🗑️</div>
+      <div class="opts-row-body">
+        <span class="opts-row-title" style="color:#d6453c">מחק משימה</span>
+        <span class="opts-row-sub">הסרה מהיום · ניתן לבטל</span>
+      </div>
+      <svg class="opts-row-chev" width="10" height="16" viewBox="0 0 10 16" fill="none"><path d="M7 1L1 8l6 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
   </div>
 </div>
 
@@ -8770,6 +8778,16 @@ function closeOptionsSheet() {
     AppState._editingTask = task;
     if (typeof renderVisibility === 'function') renderVisibility();
     if (typeof goto === 'function') goto('s-visibility', 'txLeaveFade', 'txEnterFade');
+  });
+  document.getElementById('optsDelete').addEventListener('click', function() {
+    var task = _optsTask;
+    closeOptionsSheet();
+    if (!task) return;
+    // Reuse the app's real delete path (soft-delete + Firestore + cancel
+    // notifications + undo toast). renderToday() then rebuilds the hidden list
+    // and re-pushes to the v4 home so the task disappears there too.
+    if (typeof doDelete === 'function') doDelete(task, 's-today');
+    if (typeof renderToday === 'function') renderToday();
   });
 })();
 
@@ -14377,23 +14395,43 @@ window.applyFocal = applyFocal;
 function _v4PhotoUrl(m){
   return (m && m.avatar && (m.avatar.type === 'photo' || m.avatar.type === 'ai-photo') && m.avatar.url) ? m.avatar.url : '';
 }
+function _v4Esc(s){ return String(s==null?'':s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+function _v4Initials(name){
+  var s = String(name==null?'':name).trim(); if(!s) return '·';
+  var parts = s.split(/\s+/);
+  return ((parts[0]||'').charAt(0) + (parts.length>1 ? (parts[1]||'').charAt(0) : '')) || '·';
+}
+// Real photo when available; otherwise an on-brand initials avatar (cream->tan,
+// gold text — matches the design's frames) so photoless members never show the
+// stock stranger placeholder (photo.jpeg) in portraits / hero / task rows.
+function _v4AvatarSrc(m){
+  var url = _v4PhotoUrl(m); if (url) return url;
+  var ini = _v4Esc(_v4Initials(m && m.name).toUpperCase());
+  var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200">'
+    + '<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1">'
+    + '<stop offset="0" stop-color="#F6EAD8"/><stop offset="1" stop-color="#E7D6BD"/></linearGradient></defs>'
+    + '<rect width="200" height="200" fill="url(#g)"/>'
+    + '<text x="50%" y="50%" text-anchor="middle" dominant-baseline="central" '
+    + 'font-family="Heebo,Arial,sans-serif" font-size="92" font-weight="700" fill="#B68C42">' + ini + '</text></svg>';
+  return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+}
 function _v4Push(){
   const fr = document.getElementById('v4Home');
   if (!fr || !fr.contentWindow) return;
   try {
     const cache = (typeof _familyMembersCache !== 'undefined' && _familyMembersCache) || [];
-    const members = cache.map(m => ({ memberId: m.memberId, name: m.name || '', photoUrl: _v4PhotoUrl(m) }));
+    const members = cache.map(m => ({ memberId: m.memberId, name: m.name || '', photoUrl: _v4AvatarSrc(m) }));
     const tasks = (typeof activeTasks === 'function') ? activeTasks() : [];
     const tlist = tasks.map(t => {
       let url = '';
-      try { url = _v4PhotoUrl(typeof resolveMember === 'function' ? resolveMember(t) : null); } catch (e) {}
+      try { url = _v4AvatarSrc(typeof resolveMember === 'function' ? resolveMember(t) : null); } catch (e) {}
       return { id: t.id, time: (t.mins != null ? m2t(t.mins) : ''), title: t.title || '', meta: t.location || '', done: !!t.completed, photoUrl: url };
     });
     const next = tasks.find(t => !t.completed && t.mins != null) || tasks.find(t => !t.completed);
     let hero;
     if (next) {
       let hurl = '';
-      try { hurl = _v4PhotoUrl(typeof resolveMember === 'function' ? resolveMember(next) : null); } catch (e) {}
+      try { hurl = _v4AvatarSrc(typeof resolveMember === 'function' ? resolveMember(next) : null); } catch (e) {}
       hero = { title: next.title || '', meta: next.location || '', time: (next.mins != null ? m2t(next.mins) : ''), photoUrl: hurl, hidden: false };
     } else { hero = { hidden: true }; }
     const n = tasks.length;
@@ -14416,18 +14454,57 @@ window.addEventListener('message', function(e){
   if (!d || d.source !== 'v4home') return;
   if (d.type === 'ready') { _v4Push(); return; }
   if (d.type !== 'action') return;
-  if (d.name === 'calendar' && typeof openCalDrawer === 'function') openCalDrawer();
-  else if (d.name === 'notifications') { const b = document.getElementById('hmBellBtn'); if (b) b.click(); }
-  else if (d.name === 'task' && d.id) {
-    const el = document.querySelector('.t-task[data-id="' + d.id + '"]');
-    if (el) el.click();
-  }
-  else if (d.name === 'nav') {
-    if (d.which === 'calendar' && typeof openCalDrawer === 'function') openCalDrawer();
-    else if (d.which === 'tasks' && typeof goto === 'function') goto('s-week','txLeaveFade','txEnterFade');
-    else if (d.which === 'home' && typeof goto === 'function') goto('s-settings','txLeaveFade','txEnterFade');
-  }
+  try { _v4HandleAction(d); } catch (err) { console.warn('[v4] action failed:', d && d.name, err); }
 });
+
+// Find a Today task row in the (hidden) real DOM by id, so we reuse the app's
+// own click handlers (done-toggle, options sheet) verbatim — no logic fork.
+function _v4FindRow(id){
+  if (id == null) return null;
+  const sel = (window.CSS && CSS.escape) ? CSS.escape(String(id)) : String(id).replace(/["\\]/g, '\\$&');
+  return document.querySelector('#tTasks .t-task[data-id="' + sel + '"]');
+}
+function _v4HandleAction(d){
+  switch (d.name) {
+    case 'calendar':
+      if (typeof openCalDrawer === 'function') openCalDrawer();
+      break;
+    case 'notifications': {
+      const b = document.getElementById('hmBellBtn'); if (b) b.click();
+      break;
+    }
+    case 'add': {                         // hamburger (תפריט) → real add-task flow
+      const a = document.getElementById('tNavAdd'); if (a) a.click();
+      break;
+    }
+    case 'hero':                          // hero "next task" card → its detail
+      if (typeof openHeroCard === 'function') openHeroCard();
+      break;
+    case 'showAll':                       // "הצג הכל" → full week/journal view
+      if (typeof openWeekView === 'function') openWeekView();
+      break;
+    case 'member':                        // family arch portrait → member profile
+      if (d.id && typeof openMemberProfile === 'function') openMemberProfile(d.id, 's-today');
+      break;
+    case 'task': {                        // task row body → options/details sheet
+      const el = _v4FindRow(d.id);
+      if (el) { const opener = el.querySelector('.t-share') || el.querySelector('.t-task-main'); if (opener) opener.click(); }
+      break;
+    }
+    case 'toggleDone': {                  // status circle → real done-toggle (+undo)
+      const el = _v4FindRow(d.id);
+      if (el) { const ck = el.querySelector('.t-ck'); if (ck) ck.click(); }
+      break;
+    }
+    case 'nav':
+      if (d.which === 'calendar') { if (typeof openCalDrawer === 'function') openCalDrawer(); }
+      else if (d.which === 'tasks') { if (typeof openWeekView === 'function') openWeekView(); }
+      else if (d.which === 'family') { if (typeof goto === 'function') goto('s-family-members','txLeaveFade','txEnterFade'); }
+      else if (d.which === 'home') { if (typeof goto === 'function') goto('s-settings','txLeaveFade','txEnterFade'); }
+      else if (d.which === 'today') { /* already on the home screen */ }
+      break;
+  }
+}
 
 // Max dimension + JPEG quality for the blob we actually upload. AI output is a
 // ~1MB webp at full res; downscaling to 768px JPEG q0.85 typically yields
