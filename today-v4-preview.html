@@ -54,7 +54,10 @@
     overflow-y:auto;overflow-x:hidden;
     -webkit-overflow-scrolling:touch;
     scrollbar-width:none;
-    background:#FBF6EE;
+    /* The home photo lives on the VIEWPORT (the visible screen), shown as-is,
+       fixed behind the scrolling content → real "home atmosphere" with a
+       gentle crop, instead of being stretched over the tall scroll height. */
+    background:#FBF6EE url('home-bg.png') center center / cover no-repeat;
   }
   .viewport::-webkit-scrollbar{display:none}
   @media (min-width:540px){
@@ -69,20 +72,16 @@
     position:relative;
     width:1024px;
     transform-origin:top left;
-    background:#FBF6EE;
+    background:transparent;
     display:flex;flex-direction:column;
     min-height:100%;
   }
   /* placeholder images standing in for the app's avatar system */
   .slot-img{width:100%;height:100%;object-fit:cover;display:block}
   /* approved background — back layer only */
-  .bg-layer{
-    position:absolute;inset:0;z-index:0;
-    background:url('home-bg.png') center center/cover no-repeat;
-    /* the source photo is very pale/airy — lift its presence so the room
-       reads through instead of looking like a flat cream wash */
-    filter:saturate(1.4) contrast(1.28) brightness(0.9);
-  }
+  /* old full-height background layer retired — the photo now lives on the
+     viewport (shown as-is, gentle crop). Kept as a no-op to avoid markup churn. */
+  .bg-layer{ display:none; }
   .bg-veil{
     position:absolute;inset:0;z-index:1;pointer-events:none;
     /* much lighter than before — only a faint top/bottom fade for legibility,
