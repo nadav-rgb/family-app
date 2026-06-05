@@ -55,9 +55,10 @@
     -webkit-overflow-scrolling:touch;
     scrollbar-width:none;
     /* The home photo lives on the VIEWPORT (the visible screen), shown as-is,
-       fixed behind the scrolling content → real "home atmosphere" with a
-       gentle crop, instead of being stretched over the tall scroll height. */
-    background:#FBF6EE url('home-bg.png') center center / cover no-repeat;
+       fixed behind the scrolling content. FULL WIDTH (100% auto) so the
+       left/right elements (plant, window) are kept — not cropped by cover —
+       anchored to the top; the area below is covered by the cards anyway. */
+    background:#FBF6EE url('home-bg.png') center top / 100% auto no-repeat;
   }
   .viewport::-webkit-scrollbar{display:none}
   @media (min-width:540px){
