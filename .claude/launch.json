@@ -7,6 +7,12 @@
       "runtimeArgs": ["serve", "C:\\Users\\LENOVO\\OneDrive\\Desktop\\family-app", "--no-clipboard"],
       "autoPort": true,
       "port": 3461
+    },
+    {
+      "name": "v4preview",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["_v4server.js"],
+      "port": 8099
     }
   ]
 }

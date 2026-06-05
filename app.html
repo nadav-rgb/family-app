@@ -3588,7 +3588,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
 
 <div class="app-screen active" id="s-today">
   <!-- NEW HOME: user's design (Today v4) rendered verbatim, isolated from app CSS. -->
-  <iframe id="v4Home" src="today-v4-preview.html?v=4" title="Today" style="position:absolute;inset:0;width:100%;height:100%;border:0;z-index:60;background:#FBF6EE;display:block;"></iframe>
+  <iframe id="v4Home" src="today-v4-preview.html?v=5" title="Today" style="position:absolute;inset:0;width:100%;height:100%;border:0;z-index:60;background:#FBF6EE;display:block;"></iframe>
   <div class="t-scroll">
     <!-- ═══ NEW HOME HEADER (Home.html redesign) ═══ -->
     <div class="hm-header">
@@ -9836,6 +9836,9 @@ function _doCommitPreview() {
     fill.style.transition = '';
     updateProgress();
   });
+  // Defensive re-push: guarantees the freshly-committed task reaches the v4
+  // iframe even if the first push raced the screen transition / iframe load.
+  try { requestAnimationFrame(() => { if (typeof _v4Push === 'function') _v4Push(); }); } catch (_) {}
 }
 
 function vBurst() {
@@ -14419,8 +14422,15 @@ function _v4Push(){
   const fr = document.getElementById('v4Home');
   if (!fr || !fr.contentWindow) return;
   try {
-    const cache = (typeof _familyMembersCache !== 'undefined' && _familyMembersCache) || [];
-    const members = cache.map(m => ({ memberId: m.memberId, name: m.name || '', photoUrl: _v4AvatarSrc(m) }));
+    // Members from the SAME real-participant pipeline as the old home
+    // (_renderTodayMembers): filters seed/phantom members, dedupes re-joins,
+    // falls back to self — so the home never shows "חבר 1/2/3/4".
+    const myId = DataAdapter.userId;
+    const real = (typeof _loadRealParticipants === 'function') ? _loadRealParticipants() : [];
+    const members = real.map(p => {
+      const nm = (typeof _participantDisplayName === 'function') ? _participantDisplayName(p, myId) : (p.displayName || p.name || '');
+      return { memberId: p.userId || p.memberId || '', name: nm, photoUrl: _v4AvatarSrc({ name: nm, avatar: p.avatar }) };
+    });
     const tasks = (typeof activeTasks === 'function') ? activeTasks() : [];
     const tlist = tasks.map(t => {
       let url = '';
@@ -14433,7 +14443,14 @@ function _v4Push(){
       let hurl = '';
       try { hurl = _v4AvatarSrc(typeof resolveMember === 'function' ? resolveMember(next) : null); } catch (e) {}
       hero = { title: next.title || '', meta: next.location || '', time: (next.mins != null ? m2t(next.mins) : ''), photoUrl: hurl, hidden: false };
-    } else { hero = { hidden: true }; }
+    } else {
+      // No next task → keep the hero card as a celebratory "all done" state
+      // instead of collapsing the layout.
+      const anyDone = tasks.some(t => t.completed);
+      hero = anyDone
+        ? { success: true, title: 'סיימת את כל משימות היום בהצלחה 🎉', meta: 'כל הכבוד למשפחה' }
+        : { success: true, title: 'אין משימות להיום ✨', meta: 'אפשר להוסיף משימה חדשה' };
+    }
     const n = tasks.length;
     const payload = {
       dateText:   new Date().toLocaleDateString('he-IL', { weekday:'long', day:'numeric', month:'long' }),
@@ -14473,8 +14490,19 @@ function _v4HandleAction(d){
       const b = document.getElementById('hmBellBtn'); if (b) b.click();
       break;
     }
-    case 'add': {                         // hamburger (תפריט) → real add-task flow
+    case 'add': {                         // floating + button → real add-task / recording flow
       const a = document.getElementById('tNavAdd'); if (a) a.click();
+      break;
+    }
+    case 'menu':                          // hamburger (תפריט) → "היומן שלי"
+      if (typeof openWeekView === 'function') openWeekView();
+      break;
+    case 'delete': {                      // swipe-left on a task row → real undoable delete
+      const t = (typeof activeTasks === 'function') ? activeTasks().find(x => String(x.id) === String(d.id)) : null;
+      if (t && typeof doDelete === 'function') {
+        doDelete(t, 's-today');
+        try { if (typeof renderToday === 'function') renderToday(); } catch (_) {}
+      }
       break;
     }
     case 'hero':                          // hero "next task" card → its detail
@@ -14498,9 +14526,9 @@ function _v4HandleAction(d){
     }
     case 'nav':
       if (d.which === 'calendar') { if (typeof openCalDrawer === 'function') openCalDrawer(); }
-      else if (d.which === 'tasks') { if (typeof openWeekView === 'function') openWeekView(); }
+      else if (d.which === 'settings') { if (typeof goto === 'function') goto('s-settings','txLeaveFade','txEnterFade'); }
       else if (d.which === 'family') { if (typeof goto === 'function') goto('s-family-members','txLeaveFade','txEnterFade'); }
-      else if (d.which === 'home') { if (typeof goto === 'function') goto('s-settings','txLeaveFade','txEnterFade'); }
+      else if (d.which === 'home') { if (typeof goto === 'function') goto('s-today','txLeaveFade','txEnterFade'); }
       else if (d.which === 'today') { /* already on the home screen */ }
       break;
   }
