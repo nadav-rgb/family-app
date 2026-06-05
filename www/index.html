@@ -3588,7 +3588,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
 
 <div class="app-screen active" id="s-today">
   <!-- NEW HOME: user's design (Today v4) rendered verbatim, isolated from app CSS. -->
-  <iframe id="v4Home" src="today-v4-preview.html?v=16" title="Today" style="position:absolute;inset:0;width:100%;height:100%;border:0;z-index:60;background:#FBF6EE;display:block;"></iframe>
+  <iframe id="v4Home" src="today-v4-preview.html?v=17" title="Today" style="position:absolute;inset:0;width:100%;height:100%;border:0;z-index:60;background:#FBF6EE;display:block;"></iframe>
   <div class="t-scroll">
     <!-- ═══ NEW HOME HEADER (Home.html redesign) ═══ -->
     <div class="hm-header">
@@ -7290,12 +7290,15 @@ function goto(toId, leaveKf, enterKf, onDone) {
   }
   busy = true;
   const to   = document.getElementById(toId);
-  const dur  = 440;
+  // Premium motion: snappier (was 440ms, felt sluggish) + a strong ease-out
+  // curve so screens enter with immediate, intentional movement.
+  const dur  = 300;
+  const ease = 'cubic-bezier(0.23,1,0.32,1)';
   const fl   = document.getElementById('txFlash');
   fl.classList.remove('on'); void fl.offsetWidth; fl.classList.add('on');
-  from.style.animation     = `${leaveKf} ${dur}ms ease forwards`;
+  from.style.animation     = `${leaveKf} ${dur}ms ${ease} forwards`;
   from.style.pointerEvents = 'none';
-  to.style.animation       = `${enterKf} ${dur}ms ease forwards`;
+  to.style.animation       = `${enterKf} ${dur}ms ${ease} forwards`;
   to.classList.add('active');
   setTimeout(() => {
     from.classList.remove('active');
@@ -14452,7 +14455,12 @@ function _v4Push(){
         : { success: true, title: 'אין משימות להיום ✨', meta: 'אפשר להוסיף משימה חדשה' };
     }
     const n = tasks.length;
+    // Time-aware, name-aware greeting — the warm "shared home" touch.
+    const _hr = new Date().getHours();
+    const _part = _hr < 12 ? 'בוקר טוב' : _hr < 17 ? 'צהריים טובים' : _hr < 21 ? 'ערב טוב' : 'לילה טוב';
+    const _myName = String((DataAdapter.displayName || '')).trim().split(/\s+/)[0] || '';
     const payload = {
+      greetText:  _myName ? (_part + ', ' + _myName) : _part,
       dateText:   new Date().toLocaleDateString('he-IL', { weekday:'long', day:'numeric', month:'long' }),
       familyName: 'המשפחה',
       members:    members,

@@ -37,6 +37,8 @@
     --done-fill2:#95B687;
     --divider:rgba(60,45,25,.07);
     --hairline:rgba(60,45,25,.08);
+    /* premium motion: one strong ease-out curve for all interactions */
+    --ease-out:cubic-bezier(0.23,1,0.32,1);
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{margin:0;padding:0;}
@@ -130,10 +132,16 @@
     -webkit-mask-image:linear-gradient(to right, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.40) 100%);
             mask-image:linear-gradient(to right, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.40) 100%);
   }
-  .header .date{
-    margin-top:10px;
+  .header .greet{
+    margin-top:8px;
     font-family:'Rubik',sans-serif;
-    font-size:23px;font-weight:500;color:#6A5E4D;
+    font-size:27px;font-weight:600;color:var(--gold-deep);
+    direction:rtl;text-align:left;letter-spacing:.2px;
+  }
+  .header .date{
+    margin-top:3px;
+    font-family:'Rubik',sans-serif;
+    font-size:21px;font-weight:400;color:#8A7E6D;
     direction:rtl;text-align:left;
   }
   .header .actions{display:flex;gap:18px}
@@ -144,9 +152,9 @@
     box-shadow:0 6px 18px rgba(150,110,40,.10), inset 0 1px 1px rgba(255,255,255,.9);
     display:flex;align-items:center;justify-content:center;
     color:#5A4E40;cursor:pointer;
-    transition:transform .15s ease;
+    transition:transform 140ms var(--ease-out);
   }
-  .circ-btn:active{transform:scale(.94)}
+  .circ-btn:active{transform:scale(.92)}
 
   /* ---- family arch hero (mobile-first star of the screen) ---- */
   .family{
@@ -270,7 +278,16 @@
     -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
     border:1px solid rgba(255,255,255,.7);
     box-shadow:0 20px 42px -20px rgba(150,110,40,.30), inset 0 1px 0 rgba(255,255,255,.65);
+    cursor:pointer;transition:transform 160ms var(--ease-out);
   }
+  .next-task:active{transform:scale(.985)}
+  /* ── Press feedback: every tappable element confirms the touch ── */
+  .show-all{transition:transform 140ms var(--ease-out)}
+  .show-all:active{transform:scale(.94)}
+  .portrait{transition:transform 150ms var(--ease-out)}
+  .portrait:active{transform:scale(.95)}
+  .nav-item:not(.add){transition:color .15s ease, transform 140ms var(--ease-out)}
+  .nav-item:not(.add):active{transform:scale(.9)}
   .next-task::before{
     content:"";position:absolute;inset:0;pointer-events:none;z-index:1;
     background:radial-gradient(80% 120% at 92% 0%, rgba(255,250,236,.55), transparent 55%);
@@ -376,10 +393,10 @@
     border-radius:36px;
     border:1px solid var(--hairline);
     background:#FFFDFA;
-    transition:transform .14s ease, box-shadow .2s ease;
+    transition:transform 150ms var(--ease-out), box-shadow .2s ease;
     cursor:pointer;
   }
-  .task:active{transform:scale(.992)}
+  .task:active{transform:scale(.975)}
   .task .time{
     flex:0 0 auto;width:118px;text-align:center;
     font-size:42px;font-weight:600;font-variant-numeric:tabular-nums;
@@ -531,6 +548,7 @@
       <div class="header">
         <div class="titles">
           <img class="logo-img" src="family-logo.png" alt="Family">
+          <div class="greet">בוקר טוב</div>
           <div class="date">יום חמישי, 24 באפריל</div>
         </div>
         <div class="actions">
@@ -830,6 +848,7 @@
 
   window.applyFamilyData = function(d){
     if(!d) return;
+    if(d.greetText)  _setTxt('.header .greet', d.greetText);
     if(d.dateText)   _setTxt('.header .date', d.dateText);
     if(d.familyName) _setTxt('.fam-title h2', d.familyName);
 
