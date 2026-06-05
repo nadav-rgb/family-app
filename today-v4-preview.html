@@ -437,7 +437,7 @@
      The static markup hand-placed exactly 4 frames. applyFamilyData now
      rebuilds the arch from the real member count; these rules keep every
      count symmetric and beautiful while reusing the design's frame look. */
-  .portraits{flex-direction:column;gap:34px;padding:0}
+  .portraits{flex-direction:column;align-items:stretch;gap:34px;padding:0}
   .prow{
     position:relative;display:flex;align-items:flex-end;justify-content:center;
     gap:5%;padding:0 26px;
@@ -469,30 +469,32 @@
   /* ── Swipe-to-delete on a task row ───────────────────────────────────
      Each row sits in a wrap; swiping left reveals a delete background and
      posts a delete action to the host app (which keeps the undo + sync). */
-  .task-wrap{position:relative;overflow:hidden;border-radius:36px;flex:0 0 auto}
+  .task-wrap{position:relative;overflow:hidden;border-radius:36px;flex:0 0 auto;transition:max-height .3s ease, opacity .24s ease, margin .3s ease}
+  /* Delete reveal: warm app tones (clay→gold-brown), not a jarring red. The
+     word "מחק" sits centred in the design's serif with a soft trash glyph. */
   .task-del{
     position:absolute;inset:0;border-radius:36px;z-index:0;
-    display:flex;align-items:center;justify-content:flex-end;gap:14px;
-    padding:0 44px;
-    background:linear-gradient(90deg,#C9543E,#E06A52);
-    color:#fff;font-size:30px;font-weight:700;
+    display:flex;align-items:center;justify-content:center;gap:16px;
+    background:linear-gradient(110deg, var(--cream-bot) 0%, var(--peach-bg) 100%);
+    color:var(--gold-deep);
+    font-family:'Frank Ruhl Libre',serif;font-size:34px;font-weight:700;letter-spacing:.5px;
   }
+  .task-del svg{opacity:.9}
   .task-wrap .task{position:relative;z-index:1;touch-action:pan-y;will-change:transform}
 
-  /* ── Floating action button (record / add task) ──────────────────────
-     The hamburger now opens "היומן שלי", so the add entry moves to this
-     gold FAB pinned to the viewport, leading to the recording flow. */
-  .fab{
-    position:fixed;bottom:118px;left:24px;
+  /* ── Center "add task" nav button (primary CTA, replaces TODAY) ───────
+     Bigger and gold-filled so it reads as the main action of the bar. */
+  .nav-item.add{flex:0 0 auto;width:120px;color:var(--gold-deep);gap:8px}
+  .nav-item.add .add-fab{
     width:66px;height:66px;border-radius:50%;
-    background:linear-gradient(145deg,var(--gold-soft),var(--gold) 55%,var(--gold-deep));
-    border:none;color:#fff;cursor:pointer;z-index:55;
     display:flex;align-items:center;justify-content:center;
-    box-shadow:0 12px 28px -6px rgba(180,140,60,.62), inset 0 1px 1px rgba(255,255,255,.6);
-    transition:transform .15s ease, box-shadow .2s ease;
+    margin-top:-30px;color:#fff;
+    background:linear-gradient(145deg,var(--gold-soft),var(--gold) 52%,var(--gold-deep));
+    box-shadow:0 14px 30px -8px rgba(180,140,60,.7), inset 0 1px 2px rgba(255,255,255,.65), 0 0 0 6px rgba(253,250,244,.9);
+    transition:transform .15s ease;
   }
-  .fab:active{transform:scale(.92)}
-  @media (min-width:540px){ .fab{position:absolute} }
+  .nav-item.add:active .add-fab{transform:scale(.92)}
+  .nav-item.add .lbl{font-weight:700}
 </style>
 </head>
 <body>
@@ -662,32 +664,28 @@
       <div class="nav">
         <div class="nav-item">
           <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><path d="M16 5.3a3 3 0 0 1 0 5.8"/><path d="M17.4 13.4A5.5 5.5 0 0 1 20.5 18.5"/></svg>
-          <span class="lbl">משפחה</span>
+          <span class="lbl">בני המשפחה</span>
         </div>
         <div class="nav-item">
           <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.05.05a2 2 0 1 1-2.83 2.83l-.05-.05a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.46V21a2 2 0 1 1-4 0v-.06a1.6 1.6 0 0 0-1.05-1.46 1.6 1.6 0 0 0-1.8.3l-.05.05a2 2 0 1 1-2.83-2.83l.05-.05a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.46-1H3a2 2 0 1 1 0-4h.06a1.6 1.6 0 0 0 1.46-1.05 1.6 1.6 0 0 0-.3-1.8l-.05-.05a2 2 0 1 1 2.83-2.83l.05.05a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.46V3a2 2 0 1 1 4 0v.06a1.6 1.6 0 0 0 1 1.46 1.6 1.6 0 0 0 1.8-.3l.05-.05a2 2 0 1 1 2.83 2.83l-.05.05a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.46 1H21a2 2 0 1 1 0 4h-.06a1.6 1.6 0 0 0-1.46 1z"/></svg>
           <span class="lbl">הגדרות</span>
         </div>
-        <div class="nav-item today">
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.4"/><path d="M12 2.2v2.8M12 19v2.8M21.8 12H19M5 12H2.2M18.7 5.3l-2 2M7.3 16.7l-2 2M18.7 18.7l-2-2M7.3 7.3l-2-2"/></svg>
-          <span class="lbl">Today</span>
+        <div class="nav-item add" aria-label="הוספת משימה">
+          <span class="add-fab"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></span>
+          <span class="lbl">הוסף</span>
         </div>
         <div class="nav-item">
           <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2.5"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
           <span class="lbl">לוח שנה</span>
         </div>
         <div class="nav-item">
-          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 11 12 4l8.5 7"/><path d="M5.5 9.5V20h13V9.5"/><path d="M10 20v-6h4v6"/></svg>
-          <span class="lbl">בית</span>
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11l3 3v13H5z"/><path d="M9 9h7M9 13h7M9 17h4"/></svg>
+          <span class="lbl">היומן שלי</span>
         </div>
       </div>
 
     </div>
   </div>
-  <!-- floating record/add button (hamburger now opens "היומן שלי") -->
-  <button class="fab" id="fabAdd" aria-label="הוספת משימה">
-    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
-  </button>
 </div>
 
 <script>
@@ -769,31 +767,80 @@
     row.addEventListener('touchcancel',end);
   }
 
+  // ── Surgical task-row helpers (diff-based update; no destroy/rebuild) ──
+  // Rebuilding the whole list on every done/delete made the page collapse &
+  // regrow and reloaded avatars. These build/update/remove only what changed.
+  var _CHECK_SVG='<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>';
+  function _buildTaskWrap(t, cls){
+    var wrap=document.createElement('div'); wrap.className='task-wrap'; wrap.dataset.id=String(t.id);
+    var del=document.createElement('div'); del.className='task-del';
+    del.innerHTML='<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>מחק';
+    var row=document.createElement('div'); row.className='task '+cls+(t.done?' done':'');
+    var t2=document.createElement('div'); t2.textContent=t.title||''; var titleHtml=t2.innerHTML;
+    var m2=document.createElement('div'); m2.textContent=t.meta||''; var metaHtml=m2.innerHTML;
+    row.innerHTML=
+      '<span class="time">'+(t.time||'')+'</span>'+
+      '<span class="av"><img class="slot-img" src="'+(t.photoUrl||'photo.jpeg')+'" alt=""></span>'+
+      '<div class="body"><div class="nm">'+titleHtml+'</div>'+(t.meta?'<div class="meta">'+metaHtml+'</div>':'')+'</div>'+
+      '<span class="status-circle">'+(t.done?_CHECK_SVG:'')+'</span>';
+    row.addEventListener('click', function(){ _post({type:'action',name:'task',id:t.id}); });
+    var sc=row.querySelector('.status-circle');
+    if(sc) sc.addEventListener('click', function(ev){ ev.stopPropagation(); _post({type:'action',name:'toggleDone',id:wrap.dataset.id}); });
+    _attachSwipe(row, wrap.dataset.id);
+    wrap.appendChild(del); wrap.appendChild(row);
+    var img=row.querySelector('.av img'); if(img) focusFace(img);
+    return wrap;
+  }
+  function _updateTaskWrap(wrap, t, cls){
+    var row=wrap.querySelector('.task'); if(!row) return;
+    row.className='task '+cls+(t.done?' done':'');
+    var tm=row.querySelector('.time'); if(tm && tm.textContent!==(t.time||'')) tm.textContent=t.time||'';
+    var nm=row.querySelector('.nm'); if(nm && nm.textContent!==(t.title||'')) nm.textContent=t.title||'';
+    var body=row.querySelector('.body'); var meta=row.querySelector('.meta');
+    if(t.meta){ if(!meta){ meta=document.createElement('div'); meta.className='meta'; body.appendChild(meta);} if(meta.textContent!==t.meta) meta.textContent=t.meta; }
+    else if(meta){ meta.remove(); }
+    var img=row.querySelector('.av img'); var src=t.photoUrl||'photo.jpeg';
+    if(img && img.getAttribute('src')!==src){ img.setAttribute('src',src); focusFace(img); }
+    var sc=row.querySelector('.status-circle');
+    if(sc){ var has=!!sc.querySelector('svg'); if(t.done&&!has) sc.innerHTML=_CHECK_SVG; else if(!t.done&&has) sc.innerHTML=''; }
+  }
+  function _collapseRemove(w){
+    if(w._collapsing) return; w._collapsing=true; w.dataset.id='';
+    var h=w.offsetHeight; w.style.maxHeight=h+'px'; void w.offsetHeight;
+    w.style.maxHeight='0'; w.style.opacity='0'; w.style.marginTop='-28px';
+    setTimeout(function(){ if(w.parentNode) w.parentNode.removeChild(w); }, 320);
+  }
+
   window.applyFamilyData = function(d){
     if(!d) return;
     if(d.dateText)   _setTxt('.header .date', d.dateText);
     if(d.familyName) _setTxt('.fam-title h2', d.familyName);
 
-    // family arch portraits — rebuild dynamically for 1–6 members.
-    // 1–4 → one balanced row; 5 → 3+2; 6 → 3+3. Always symmetric.
+    // family arch portraits — rebuild ONLY when the member set/photos change
+    // (signature guard), so a done/delete never reloads avatars or reflows.
+    // 1–4 → one balanced row; 5 → 3+2; 6 → 3+3. Always symmetric & centered.
     if(Array.isArray(d.members)){
       var pc = _q('.portraits');
       if(pc){
         var ms = d.members.slice(0,6);
-        var rows;
-        if(ms.length<=4) rows=[ms];
-        else if(ms.length===5) rows=[ms.slice(0,3), ms.slice(3)];
-        else rows=[ms.slice(0,3), ms.slice(3,6)];
-        var esc=function(s){ return String(s==null?'':s).replace(/"/g,'&quot;'); };
-        pc.innerHTML = rows.map(function(r){
-          var cells = r.map(function(m){
-            return '<div class="portrait" data-member-id="'+esc(m.memberId)+'">'
-                 +   '<div class="frame"><img class="slot-img" src="'+esc(m.photoUrl||'photo.jpeg')+'" alt=""></div>'
-                 + '</div>';
+        var sig = ms.map(function(m){ return (m.memberId||'')+'~'+(m.photoUrl||''); }).join('|');
+        if(pc.dataset.sig !== sig){
+          pc.dataset.sig = sig;
+          var rows;
+          if(ms.length<=4) rows=[ms];
+          else if(ms.length===5) rows=[ms.slice(0,3), ms.slice(3)];
+          else rows=[ms.slice(0,3), ms.slice(3,6)];
+          var esc=function(s){ return String(s==null?'':s).replace(/"/g,'&quot;'); };
+          pc.innerHTML = rows.map(function(r){
+            var cells = r.map(function(m){
+              return '<div class="portrait" data-member-id="'+esc(m.memberId)+'">'
+                   +   '<div class="frame"><img class="slot-img" src="'+esc(m.photoUrl||'photo.jpeg')+'" alt=""></div>'
+                   + '</div>';
+            }).join('');
+            return '<div class="prow" data-n="'+r.length+'"><div class="shelf"></div>'+cells+'</div>';
           }).join('');
-          return '<div class="prow" data-n="'+r.length+'"><div class="shelf"></div>'+cells+'</div>';
-        }).join('');
-        pc.querySelectorAll('.frame .slot-img').forEach(focusFace);
+          pc.querySelectorAll('.frame .slot-img').forEach(focusFace);
+        }
       }
     }
 
@@ -825,40 +872,30 @@
       if(d.stats.together!=null){  var v3=_q('.stats .stat:nth-child(5) .val'); if(v3) v3.textContent=d.stats.together; }
     }
 
-    // task list — rebuild from real tasks, preserving the design's markup
+    // task list — DIFF against existing rows by id. Update in place (toggle
+    // done / text / avatar), collapse-remove gone rows, insert new ones in
+    // order. No innerHTML wipe → no collapse-then-regrow, no avatar flash.
     if(Array.isArray(d.tasks)){
       var list = _q('.tlist');
       if(list){
-        list.innerHTML='';
-        d.tasks.forEach(function(t,i){
-          var cls = 't'+((i%4)+1);
-          var done = !!t.done;
-          var wrap = document.createElement('div');
-          wrap.className = 'task-wrap';
-          var del = document.createElement('div');
-          del.className = 'task-del';
-          del.innerHTML = '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>מחק';
-          var row = document.createElement('div');
-          row.className = 'task '+cls+(done?' done':'');
-          var status = done
-            ? '<span class="status-circle"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></span>'
-            : '<span class="status-circle"></span>';
-          var t2=document.createElement('div'); t2.textContent=t.title||''; var titleHtml=t2.innerHTML;
-          var m2=document.createElement('div'); m2.textContent=t.meta||''; var metaHtml=m2.innerHTML;
-          row.innerHTML =
-            '<span class="time">'+(t.time||'')+'</span>'+
-            '<span class="av"><img class="slot-img" src="'+(t.photoUrl||'photo.jpeg')+'" alt=""></span>'+
-            '<div class="body"><div class="nm">'+titleHtml+'</div>'+(t.meta?'<div class="meta">'+metaHtml+'</div>':'')+'</div>'+
-            status;
-          row.addEventListener('click', function(){ _post({type:'action',name:'task',id:t.id}); });
-          var _sc = row.querySelector('.status-circle');
-          if(_sc) _sc.addEventListener('click', function(ev){ ev.stopPropagation(); _post({type:'action',name:'toggleDone',id:t.id}); });
-          _attachSwipe(row, t.id);
-          wrap.appendChild(del);
-          wrap.appendChild(row);
-          list.appendChild(wrap);
+        var byId={};
+        Array.prototype.forEach.call(list.children, function(w){ if(w.dataset.id) byId[w.dataset.id]=w; });
+        var desired={}; d.tasks.forEach(function(t){ desired[String(t.id)]=true; });
+        // collapse-remove rows no longer present
+        Array.prototype.slice.call(list.children).forEach(function(w){
+          if(w.dataset.id && !desired[w.dataset.id]) _collapseRemove(w);
         });
-        document.querySelectorAll('.tlist .av .slot-img').forEach(focusFace);
+        // add / update / order (skipping collapsing nodes)
+        var cursor=list.firstChild;
+        d.tasks.forEach(function(t,i){
+          var id=String(t.id); var cls='t'+((i%4)+1);
+          var wrap=byId[id];
+          if(wrap){ _updateTaskWrap(wrap, t, cls); }
+          else { wrap=_buildTaskWrap(t, cls); }
+          while(cursor && cursor._collapsing) cursor=cursor.nextSibling;
+          if(cursor===wrap){ cursor=cursor.nextSibling; }
+          else { list.insertBefore(wrap, cursor); }
+        });
       }
     }
   };
@@ -869,8 +906,6 @@
     var bell= _q('.actions .circ-btn[aria-label="התראות"]'); if(bell) bell.onclick=function(){ _post({type:'action',name:'notifications'}); };
     // hamburger (תפריט) → "היומן שלי" (week/journal view)
     var menu= _q('.actions .circ-btn[aria-label="תפריט"]'); if(menu) menu.onclick=function(){ _post({type:'action',name:'menu'}); };
-    // floating + button → recording / add-task flow
-    var fab = document.getElementById('fabAdd'); if(fab) fab.onclick=function(){ _post({type:'action',name:'add'}); };
     var sa  = _q('.show-all'); if(sa) sa.onclick=function(){ _post({type:'action',name:'showAll'}); };
     // hero "next task" card → open the next task's detail (openHeroCard)
     var hero= _q('.next-task'); if(hero) hero.onclick=function(){ _post({type:'action',name:'hero'}); };
@@ -879,9 +914,9 @@
       var pp=e.target.closest('.portrait'); if(!pp) return;
       var mid=pp.dataset.memberId; if(mid) _post({type:'action',name:'member',id:mid});
     });
-    var navMap=['family','settings','today','calendar','home'];
-    var vp=_q('.viewport');
-    document.querySelectorAll('.nav .nav-item').forEach(function(it,i){ it.onclick=function(){ var w=navMap[i]||''; if(w==='today'&&vp){ try{vp.scrollTo({top:0,behavior:'smooth'});}catch(_){vp.scrollTop=0;} } _post({type:'action',name:'nav',which:w}); }; });
+    // RTL order: [0]בני המשפחה [1]הגדרות [2]+הוסף(center) [3]לוח שנה [4]היומן שלי
+    var navMap=['family','settings','add','calendar','journal'];
+    document.querySelectorAll('.nav .nav-item').forEach(function(it,i){ it.onclick=function(){ _post({type:'action',name:'nav',which:navMap[i]||''}); }; });
   })();
 
   window.addEventListener('message', function(e){

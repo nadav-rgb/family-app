@@ -3588,7 +3588,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
 
 <div class="app-screen active" id="s-today">
   <!-- NEW HOME: user's design (Today v4) rendered verbatim, isolated from app CSS. -->
-  <iframe id="v4Home" src="today-v4-preview.html?v=5" title="Today" style="position:absolute;inset:0;width:100%;height:100%;border:0;z-index:60;background:#FBF6EE;display:block;"></iframe>
+  <iframe id="v4Home" src="today-v4-preview.html?v=8" title="Today" style="position:absolute;inset:0;width:100%;height:100%;border:0;z-index:60;background:#FBF6EE;display:block;"></iframe>
   <div class="t-scroll">
     <!-- ═══ NEW HOME HEADER (Home.html redesign) ═══ -->
     <div class="hm-header">
@@ -3925,7 +3925,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
 
     <!-- Header -->
     <div class="header">
-      <button class="back" aria-label="חזרה" type="button" onclick="goto('s-settings','txLeaveFade','txEnterFade')">
+      <button class="back" aria-label="חזרה" type="button" onclick="goto('s-today','txLeaveFade','txEnterFade')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
       </button>
       <div class="head-text">
@@ -14528,8 +14528,8 @@ function _v4HandleAction(d){
       if (d.which === 'calendar') { if (typeof openCalDrawer === 'function') openCalDrawer(); }
       else if (d.which === 'settings') { if (typeof goto === 'function') goto('s-settings','txLeaveFade','txEnterFade'); }
       else if (d.which === 'family') { if (typeof goto === 'function') goto('s-family-members','txLeaveFade','txEnterFade'); }
-      else if (d.which === 'home') { if (typeof goto === 'function') goto('s-today','txLeaveFade','txEnterFade'); }
-      else if (d.which === 'today') { /* already on the home screen */ }
+      else if (d.which === 'add') { const a = document.getElementById('tNavAdd'); if (a) a.click(); }   // center "+ הוסף"
+      else if (d.which === 'journal') { if (typeof openWeekView === 'function') openWeekView(); }        // "היומן שלי"
       break;
   }
 }
@@ -15464,6 +15464,9 @@ function _refreshAvatarUI(memberId, avatar) {
   }
   console.log('[Avatar] render +' + Math.round(performance.now() - tStart)
     + 'ms memberId=' + memberId + ' nodes=' + nodes.length + ' type=' + avatar.type);
+  // Reflect the new photo on the v4 home immediately (portraits/hero/task
+  // avatars) instead of waiting for the next done/delete to trigger a push.
+  try { if (typeof _v4Push === 'function') _v4Push(); } catch (_) {}
   return nodes.length;
 }
 
@@ -16284,6 +16287,12 @@ function _initBackButton() {
     const App = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App;
     if (!App || !App.addListener) return;
     App.addListener('backButton', () => {
+      // Open overlays/drawers consume the back press first (so it closes the
+      // overlay instead of exiting the app from the home screen behind it).
+      const calBg = document.getElementById('calBg');
+      if (calBg && calBg.classList.contains('open')) { try { closeCalDrawer(); } catch (_) {} return; }
+      const undo = document.getElementById('undoToast');
+      if (undo && undo.classList.contains('show')) { try { clearUndoToast(true); } catch (_) {} return; }
       const active = document.querySelector('.app-screen.active');
       const id = active && active.id;
       if (!id || id === 's-today' || !(id in _BACK_MAP || id === 's-member-profile')) {
