@@ -85,6 +85,28 @@
   /* old full-height background layer retired — the photo now lives on the
      viewport (shown as-is, gentle crop). Kept as a no-op to avoid markup churn. */
   .bg-layer{ display:none; }
+
+  /* ── Loading skeleton (no content pop on cold start) ── */
+  .v4-skel{
+    position:absolute;inset:0;z-index:8;
+    display:flex;flex-direction:column;align-items:center;
+    padding:118px 60px 0;gap:34px;
+    background:linear-gradient(180deg,#FBF6EE 0%,#F4EBDC 100%);
+    transition:opacity .45s var(--ease-out);
+  }
+  .v4-skel.hide{opacity:0;pointer-events:none}
+  .v4-skel .sk{
+    background:linear-gradient(100deg,#EDE3D2 28%,#F8F1E6 50%,#EDE3D2 72%);
+    background-size:200% 100%;
+    animation:skShimmer 1.3s linear infinite;
+    border-radius:26px;flex:0 0 auto;
+  }
+  @keyframes skShimmer{from{background-position:200% 0}to{background-position:-200% 0}}
+  .v4-skel .sk-logo{width:250px;height:96px;border-radius:18px;align-self:flex-start;margin-bottom:6px}
+  .v4-skel .sk-arch{width:300px;height:360px;border-radius:50% 50% 12% 12% / 40% 40% 8% 8%}
+  .v4-skel .sk-hero{width:100%;height:170px;border-radius:32px}
+  .v4-skel .sk-row{width:100%;height:140px;border-radius:32px}
+  @media (prefers-reduced-motion: reduce){ .v4-skel .sk{animation:none} }
   .bg-veil{
     position:absolute;inset:0;z-index:1;pointer-events:none;
     /* much lighter than before — only a faint top/bottom fade for legibility,
@@ -535,6 +557,17 @@
 <div class="viewport">
   <div class="stage" id="stage">
 
+    <!-- loading skeleton: shown instantly, hides the sample data, fades out
+         the moment real family data arrives (no content "pop") -->
+    <div class="v4-skel" id="v4Skel" aria-hidden="true">
+      <div class="sk sk-logo"></div>
+      <div class="sk sk-arch"></div>
+      <div class="sk sk-hero"></div>
+      <div class="sk sk-row"></div>
+      <div class="sk sk-row"></div>
+      <div class="sk sk-row"></div>
+    </div>
+
     <!-- approved background (back layer) -->
     <div class="bg-layer"></div>
     <div class="bg-veil"></div>
@@ -773,6 +806,9 @@
   function _q(s,r){ return (r||document).querySelector(s); }
   function _setTxt(s,v){ var e=_q(s); if(e&&v!=null) e.textContent=v; }
   function _post(msg){ try{ parent.postMessage(Object.assign({source:'v4home'},msg),'*'); }catch(e){} }
+  // Subtle tactile feedback (Web Vibration API — works in the Android WebView
+  // with the VIBRATE permission). Light for taps, firmer for done/delete.
+  function _haptic(ms){ try{ if(navigator.vibrate) navigator.vibrate(ms); }catch(e){} }
 
   // Swipe a task row left to delete. Posts {name:'delete'} to the host app,
   // which performs the real (undoable, cloud-synced) delete. The .stage uses
@@ -794,6 +830,7 @@
     function end(){
       if(!active) return; active=false; row.style.transition='';
       if(horiz && dx < -120){
+        _haptic(26);
         row.style.transform='translateX(-115%)';
         setTimeout(function(){ _post({type:'action',name:'delete',id:id}); }, 170);
       } else { row.style.transform=''; }
@@ -818,9 +855,9 @@
       '<span class="av"><img class="slot-img" src="'+(t.photoUrl||'photo.jpeg')+'" alt=""></span>'+
       '<div class="body"><div class="nm">'+titleHtml+'</div>'+(t.meta?'<div class="meta">'+metaHtml+'</div>':'')+'</div>'+
       '<span class="status-circle">'+(t.done?_CHECK_SVG:'')+'</span>';
-    row.addEventListener('click', function(){ _post({type:'action',name:'task',id:t.id}); });
+    row.addEventListener('click', function(){ _haptic(8); _post({type:'action',name:'task',id:t.id}); });
     var sc=row.querySelector('.status-circle');
-    if(sc) sc.addEventListener('click', function(ev){ ev.stopPropagation(); _post({type:'action',name:'toggleDone',id:wrap.dataset.id}); });
+    if(sc) sc.addEventListener('click', function(ev){ ev.stopPropagation(); _haptic(14); _post({type:'action',name:'toggleDone',id:wrap.dataset.id}); });
     _attachSwipe(row, wrap.dataset.id);
     wrap.appendChild(del); wrap.appendChild(row);
     var img=row.querySelector('.av img'); if(img) focusFace(img);
@@ -846,8 +883,13 @@
     setTimeout(function(){ if(w.parentNode) w.parentNode.removeChild(w); }, 320);
   }
 
+  function _hideSkeleton(){
+    var s=document.getElementById('v4Skel'); if(!s) return;
+    s.classList.add('hide'); setTimeout(function(){ if(s.parentNode) s.parentNode.removeChild(s); }, 480);
+  }
   window.applyFamilyData = function(d){
     if(!d) return;
+    _hideSkeleton();   // real data is here → reveal the home
     if(d.greetText)  _setTxt('.header .greet', d.greetText);
     if(d.dateText)   _setTxt('.header .date', d.dateText);
     if(d.familyName) _setTxt('.fam-title h2', d.familyName);
@@ -938,27 +980,29 @@
 
   // user actions → host app
   (function(){
-    var cal = _q('.actions .circ-btn[aria-label="לוח שנה"]'); if(cal) cal.onclick=function(){ _post({type:'action',name:'calendar'}); };
-    var bell= _q('.actions .circ-btn[aria-label="התראות"]'); if(bell) bell.onclick=function(){ _post({type:'action',name:'notifications'}); };
+    var cal = _q('.actions .circ-btn[aria-label="לוח שנה"]'); if(cal) cal.onclick=function(){ _haptic(8); _post({type:'action',name:'calendar'}); };
+    var bell= _q('.actions .circ-btn[aria-label="התראות"]'); if(bell) bell.onclick=function(){ _haptic(8); _post({type:'action',name:'notifications'}); };
     // hamburger (תפריט) → "היומן שלי" (week/journal view)
-    var menu= _q('.actions .circ-btn[aria-label="תפריט"]'); if(menu) menu.onclick=function(){ _post({type:'action',name:'menu'}); };
-    var sa  = _q('.show-all'); if(sa) sa.onclick=function(){ _post({type:'action',name:'showAll'}); };
+    var menu= _q('.actions .circ-btn[aria-label="תפריט"]'); if(menu) menu.onclick=function(){ _haptic(8); _post({type:'action',name:'menu'}); };
+    var sa  = _q('.show-all'); if(sa) sa.onclick=function(){ _haptic(8); _post({type:'action',name:'showAll'}); };
     // hero "next task" card → open the next task's detail (openHeroCard)
-    var hero= _q('.next-task'); if(hero) hero.onclick=function(){ _post({type:'action',name:'hero'}); };
+    var hero= _q('.next-task'); if(hero) hero.onclick=function(){ _haptic(8); _post({type:'action',name:'hero'}); };
     // family arch portraits → open that member's profile (memberId set in applyFamilyData)
     var parch=_q('.portraits'); if(parch) parch.addEventListener('click', function(e){
       var pp=e.target.closest('.portrait'); if(!pp) return;
-      var mid=pp.dataset.memberId; if(mid) _post({type:'action',name:'member',id:mid});
+      var mid=pp.dataset.memberId; if(mid){ _haptic(8); _post({type:'action',name:'member',id:mid}); }
     });
     // RTL order: [0]בני המשפחה [1]הגדרות [2]+הוסף(center) [3]לוח שנה [4]היומן שלי
     var navMap=['family','settings','add','calendar','journal'];
-    document.querySelectorAll('.nav .nav-item').forEach(function(it,i){ it.onclick=function(){ _post({type:'action',name:'nav',which:navMap[i]||''}); }; });
+    document.querySelectorAll('.nav .nav-item').forEach(function(it,i){ it.onclick=function(){ _haptic(it.classList.contains('add')?12:8); _post({type:'action',name:'nav',which:navMap[i]||''}); }; });
   })();
 
   window.addEventListener('message', function(e){
     var d=e.data; if(d && d.type==='familyData') window.applyFamilyData(d.payload);
   });
   _post({type:'ready'});   // tell the host we're loaded and want data
+  // Safety: never let the skeleton hang if data is slow/absent.
+  setTimeout(_hideSkeleton, 4000);
 </script>
 </body>
 </html>
