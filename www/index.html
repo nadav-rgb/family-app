@@ -166,13 +166,13 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 
 /* ── Ambient warm halo behind the active mic (wraps heart/star/classic/blob) ── */
 .mic-aura{position:absolute;inset:-6px;border-radius:50%;pointer-events:none;z-index:0;opacity:0;
-  background:radial-gradient(circle, rgba(255,150,90,.32) 0%, rgba(255,120,80,.12) 42%, transparent 68%);
+  background:radial-gradient(circle, rgba(245,200,120,.34) 0%, rgba(232,168,92,.13) 42%, transparent 68%);
   transition:opacity .55s ease;will-change:transform,opacity;}
 #micZone.rec .mic-aura{opacity:1;animation:auraBreath 2.4s ease-in-out infinite;}
 @keyframes auraBreath{0%,100%{transform:scale(1);opacity:.78;}50%{transform:scale(1.09);opacity:1;}}
 /* Processing: halo warms + holds */
 #micZone.processing .mic-aura{opacity:1;animation:auraBreath 1.8s ease-in-out infinite;
-  background:radial-gradient(circle, rgba(255,150,90,.42) 0%, rgba(255,110,60,.16) 46%, transparent 70%);}
+  background:radial-gradient(circle, rgba(245,200,120,.44) 0%, rgba(232,160,80,.17) 46%, transparent 70%);}
 
 /* ── Processing particle ring — ambient intelligence, not a spinner ── */
 .mic-particles{position:absolute;inset:0;z-index:1;pointer-events:none;opacity:0;transition:opacity .4s ease;}
@@ -284,7 +284,7 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 .v-type-helper{font-size:11px;font-weight:700;color:#c4ae9f;text-align:center;padding-bottom:2px;}
 .v-voice-back{font-size:13px;font-weight:800;color:#9e8878;text-align:center;cursor:pointer;padding-top:4px;letter-spacing:.01em;border-bottom:1.5px solid rgba(158,136,120,.35);display:inline-block;transition:color .15s;}
 .v-voice-back:active{color:#6b4f3a;}
-.v-type-btn{width:100%;padding:15px;border:none;border-radius:16px;background:linear-gradient(135deg,#ff9a4e,#ff5e14);font-family:'Nunito',sans-serif;font-size:15px;font-weight:900;color:white;cursor:pointer;box-shadow:0 5px 18px rgba(255,94,20,.3);transition:transform .18s,box-shadow .18s,opacity .2s,background .2s;}
+.v-type-btn{width:100%;padding:15px;border:none;border-radius:16px;background:linear-gradient(135deg,#f4b860,#df8a2c);font-family:'Nunito',sans-serif;font-size:15px;font-weight:900;color:white;cursor:pointer;box-shadow:0 5px 18px rgba(214,140,50,.3);transition:transform .18s,box-shadow .18s,opacity .2s,background .2s;}
 .v-type-btn:active:not(:disabled){transform:scale(.97);box-shadow:0 2px 10px rgba(255,94,20,.2);}
 .v-type-btn:disabled{background:linear-gradient(135deg,#fdd8b0,#f8c08a);box-shadow:none;cursor:default;opacity:1;}
 /* Thinking state — shown while vOrganize is processing typed input */
@@ -358,6 +358,192 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 .cshape{font-size:19px;line-height:1;}
 .clbl{font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.5px;color:#c4ae9f;}
 .mchip.on .clbl{color:#e07c3a;}
+
+/* ════════════════════════════════════════════════════════════════════
+   RECORDING SCREEN — warm home atmosphere (morning-desk skin)
+   UI-only skin over the existing #s-voice. Phases are driven entirely by
+   the EXISTING class toggles on #micZone (''/.rec/.processing) via :has().
+   No STT/parse logic touched.
+════════════════════════════════════════════════════════════════════ */
+:root{ --ease-soft:cubic-bezier(0.22,0.61,0.36,1); --ease-out:cubic-bezier(0.16,1,0.3,1); }
+@keyframes famBreath{0%,100%{transform:scale(1);opacity:.9;}50%{transform:scale(1.06);opacity:1;}}
+@keyframes famBlink{0%,50%{opacity:1;}51%,100%{opacity:0;}}
+@keyframes famPulse{0%{transform:scale(1);opacity:.55;}100%{transform:scale(1.55);opacity:0;}}
+@keyframes recWaveBar{0%,100%{transform:scaleY(.30);}50%{transform:scaleY(1);}}
+@keyframes recHeadIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+
+/* The screen itself: warm paper base so there is no orange-gradient flash
+   before the photo paints. */
+#s-voice.rec-skin{background:#EADCC4;}
+
+/* warm photographic background (an <img>, not a CSS background) */
+#s-voice .rec-bg{
+  position:absolute;inset:0;width:100%;height:100%;z-index:0;
+  object-fit:cover;object-position:center 20%;
+  filter:saturate(1.05) contrast(1.015) brightness(1.02);
+  transform:scale(1.04);transform-origin:58% 38%;
+  transition:transform 1.6s var(--ease-soft),filter .8s var(--ease-soft);
+}
+#s-voice.rec-listening .rec-bg{transform:scale(1.10);filter:saturate(1.12) brightness(1.04);}
+#s-voice.rec-proc .rec-bg{transform:scale(1.07);filter:saturate(1.06) brightness(1.0);}
+
+/* top scrim / readability layer */
+#s-voice .rec-scrim{
+  position:absolute;inset:0;pointer-events:none;z-index:1;
+  background:
+    linear-gradient(180deg, rgba(252,247,238,.5) 0%, rgba(252,247,238,0) 20%, rgba(250,242,230,0) 46%, rgba(243,230,209,.35) 72%, rgba(235,219,193,.6) 100%),
+    radial-gradient(125% 95% at 52% 30%, transparent 56%, rgba(76,52,26,.18) 100%);
+}
+/* candle warmth */
+#s-voice .rec-candle{
+  position:absolute;left:4%;top:9%;width:230px;height:230px;z-index:1;
+  border-radius:50%;pointer-events:none;mix-blend-mode:screen;filter:blur(6px);
+  background:radial-gradient(circle, rgba(255,209,128,.6) 0%, rgba(255,197,112,.26) 42%, rgba(255,197,112,0) 72%);
+  opacity:.45;transition:opacity .6s var(--ease-soft);
+}
+#s-voice.rec-listening .rec-candle,
+#s-voice.rec-proc .rec-candle{opacity:.85;}
+#s-voice.rec-listening .rec-candle{animation:famBreath 4.6s var(--ease-soft) infinite;}
+
+/* top bar floats over the photo */
+#s-voice .v-topbar{position:absolute;top:0;left:0;right:0;z-index:5;padding:calc(12px + var(--sat,0px)) 18px 0;}
+
+/* headline block over the photo */
+#s-voice .prompt{position:absolute;top:96px;left:0;right:0;z-index:4;padding:0 30px;}
+#s-voice .v-eyebrow{color:#A86A26;}
+#s-voice .v-ptxt{
+  font-family:'Frank Ruhl Libre',serif;font-weight:500;font-size:34px;line-height:1.18;
+  color:#382616;text-shadow:0 1px 0 rgba(255,255,255,.55),0 2px 14px rgba(255,247,235,.6);
+}
+/* per-phase headline — the prompt holds the idle text; listening/processing
+   swap in via .rec-head2 lines toggled by phase. */
+#s-voice .rec-head2{display:none;font-family:'Frank Ruhl Libre',serif;font-weight:500;font-size:34px;line-height:1.18;color:#382616;text-shadow:0 1px 0 rgba(255,255,255,.55),0 2px 14px rgba(255,247,235,.6);animation:recHeadIn .5s var(--ease-out) both;}
+#s-voice.rec-listening .v-ptxt,
+#s-voice.rec-proc .v-ptxt{display:none;}
+#s-voice.rec-listening .rec-head-listen{display:block;}
+#s-voice.rec-proc .rec-head-proc{display:block;}
+
+/* mode-row sits just under the headline */
+#s-voice .v-mode-row{position:absolute;top:188px;left:50%;transform:translateX(-50%);z-index:4;}
+/* hide the mode row + headline once recording/processing (keep it calm) */
+#s-voice.rec-listening .v-mode-row,
+#s-voice.rec-proc .v-mode-row{opacity:0;pointer-events:none;transition:opacity .3s;}
+
+/* the chosen mic variant floats over the photo as the hero, secondary scale */
+#s-voice .mic-zone{position:absolute;left:50%;top:50%;transform:translate(-50%,-58%) scale(.62);z-index:4;transition:transform .5s var(--ease-soft),opacity .4s;animation:micZoneIn .5s var(--ease-out) .08s both;}
+@keyframes micZoneIn{from{opacity:0;}to{opacity:1;}}
+#s-voice.rec-listening .mic-zone{transform:translate(-50%,-66%) scale(.66);}
+#s-voice.rec-proc .mic-zone{transform:translate(-50%,-72%) scale(.5);opacity:.85;}
+
+/* ── bottom glass-paper card ── */
+#s-voice .rec-page{
+  position:absolute;left:16px;right:16px;bottom:calc(16px + var(--sab,0px));z-index:4;
+  border-radius:28px;padding:0 18px 18px;
+  background:linear-gradient(180deg, rgba(253,250,244,.84), rgba(248,241,229,.9));
+  border:1px solid rgba(255,255,255,.7);
+  box-shadow:0 1px 0 rgba(255,255,255,.95) inset, 0 2px 10px rgba(58,40,22,.07), 0 14px 36px rgba(58,40,22,.17);
+  backdrop-filter:blur(20px) saturate(1.1);-webkit-backdrop-filter:blur(20px) saturate(1.1);
+  transition:all .5s var(--ease-soft);
+  display:flex;flex-direction:column;align-items:center;gap:12px;
+}
+#s-voice .rec-page-binding{width:34px;height:4px;border-radius:999px;margin:10px auto 2px;background:rgba(94,71,47,.12);flex-shrink:0;}
+
+/* WarmWave — 38 fine honey bars, only animated while listening */
+#s-voice .rec-wave{display:none;align-items:center;justify-content:center;gap:2px;height:38px;width:100%;position:relative;}
+#s-voice.rec-listening .rec-wave{display:flex;}
+#s-voice .rec-wave::before{content:'';position:absolute;left:50%;top:50%;width:200px;height:60px;transform:translate(-50%,-50%);background:radial-gradient(ellipse,rgba(226,181,116,.45),transparent 70%);pointer-events:none;}
+#s-voice .rec-wbar{width:2.5px;border-radius:2px;background:linear-gradient(180deg,#E2B574,#C08437);transform-origin:center;transform:scaleY(.3);transition:height .16s ease;position:relative;}
+#s-voice.rec-listening .rec-wbar{animation:recWaveBar 1s ease-in-out infinite;}
+
+/* live "recording" ember + stop pill row */
+#s-voice .rec-live-row{display:none;align-items:center;justify-content:space-between;width:100%;padding:2px 2px 0;}
+#s-voice.rec-listening .rec-live-row{display:flex;}
+#s-voice .rec-ember-wrap{display:inline-flex;align-items:center;gap:8px;font-family:'Heebo',sans-serif;font-size:13px;font-weight:700;color:#B85138;}
+#s-voice .rec-ember{position:relative;width:9px;height:9px;border-radius:50%;background:#C25D45;box-shadow:0 0 0 0 rgba(194,93,69,.5);}
+#s-voice .rec-ember::after{content:'';position:absolute;inset:0;border-radius:50%;border:1px solid rgba(194,93,69,.6);animation:famPulse 1.6s var(--ease-out) infinite;}
+#s-voice .rec-stop{display:inline-flex;align-items:center;gap:7px;cursor:pointer;background:rgba(194,93,69,.95);border:none;border-radius:999px;padding:9px 18px;color:#fff;font-family:'Heebo',sans-serif;font-weight:800;font-size:13.5px;box-shadow:0 5px 14px rgba(194,93,69,.24);-webkit-tap-highlight-color:transparent;transition:transform .18s var(--ease-soft);}
+#s-voice .rec-stop:active{transform:scale(.96);}
+#s-voice .rec-stop svg{width:12px;height:12px;}
+
+/* status text inside the card */
+#s-voice .listen-sec{width:100%;}
+#s-voice .ltxt{font-family:'Heebo',sans-serif;}
+
+/* transcript as ruled notebook paper (captions mode) */
+#s-voice .speech-bubble{
+  margin:0;width:100%;box-sizing:border-box;background:transparent;box-shadow:none;border-radius:0;
+  background-image:repeating-linear-gradient(180deg, transparent 0 33px, rgba(94,71,47,.08) 33px 34px);background-position:0 6px;
+}
+#s-voice .speech-bubble .sb-text{color:#5E472F;line-height:34px;}
+#s-voice .speech-bubble .sb-label{color:#A86A26;}
+
+/* typing row inside the card */
+#s-voice .v-type-row{width:100%;}
+#s-voice .v-type-area{margin:0;width:100%;box-sizing:border-box;}
+/* hide voice-only blocks per phase to keep the card focused */
+#s-voice.rec-listening .v-type-row,
+#s-voice.rec-proc .v-type-row{display:none;}
+#s-voice:not(.rec-listening):not(.rec-proc) .rec-live-row,
+#s-voice:not(.rec-listening):not(.rec-proc) .rec-wave{display:none;}
+
+/* keep the existing pause/cancel actions, restyled inside the card */
+#s-voice .v-rec-actions{width:100%;}
+
+/* ════ Golden orb mic — the single recording button (new design) ════ */
+.zone-orb{position:relative;width:240px;height:240px;display:flex;align-items:center;justify-content:center;}
+.orb-halo{position:absolute;width:222px;height:222px;border-radius:50%;pointer-events:none;
+  background:radial-gradient(circle, rgba(248,206,134,.5) 0%, rgba(240,180,108,.26) 46%, rgba(240,180,108,0) 70%);
+  animation:orbHalo 3.8s var(--ease-soft) infinite;}
+@keyframes orbHalo{0%,100%{transform:scale(1);opacity:.82;}50%{transform:scale(1.07);opacity:1;}}
+.btn-orb{position:relative;z-index:2;width:150px;height:150px;border-radius:50%;cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+  background:radial-gradient(circle at 50% 36%, #fff7e9 0%, #f8d99f 38%, #edba68 72%, #d99c46 100%);
+  box-shadow:0 16px 40px rgba(196,132,55,.42),0 5px 16px rgba(196,132,55,.26),
+    inset 0 2px 5px rgba(255,255,255,.72),inset 0 -9px 20px rgba(176,112,40,.3);
+  display:flex;align-items:center;justify-content:center;
+  animation:orbIdle 3.6s var(--ease-soft) infinite;transition:transform .16s var(--ease-soft);}
+.btn-orb:active{transform:scale(.95);}
+.btn-orb .mic-ov{position:static;filter:drop-shadow(0 1px 3px rgba(140,84,20,.45));}
+.btn-orb .mic-ov svg{width:46px;height:46px;}
+@keyframes orbIdle{0%,100%{transform:scale(1);}50%{transform:scale(1.035);}}
+#micZone.rec .btn-orb{animation:orbRec 1.15s var(--ease-soft) infinite;
+  box-shadow:0 18px 48px rgba(214,120,40,.55),inset 0 2px 5px rgba(255,255,255,.78),inset 0 -9px 20px rgba(176,112,40,.34);}
+@keyframes orbRec{0%,100%{transform:scale(1.05);}50%{transform:scale(1.13);}}
+#micZone.rec .orb-halo{animation:orbHaloRec .95s var(--ease-soft) infinite;
+  background:radial-gradient(circle, rgba(250,212,142,.66) 0%, rgba(240,170,90,.32) 48%, rgba(240,170,90,0) 72%);}
+@keyframes orbHaloRec{0%,100%{transform:scale(1.05);opacity:.9;}50%{transform:scale(1.2);opacity:1;}}
+/* flanking sound-wave bars — subtle at idle, brighter while recording */
+.orb-wave{position:absolute;top:50%;width:46px;height:50px;transform:translateY(-50%);pointer-events:none;opacity:.42;
+  background:repeating-linear-gradient(90deg, rgba(214,150,72,.9) 0 2px, transparent 2px 8px);
+  -webkit-mask:linear-gradient(90deg,transparent,#000 75%);mask:linear-gradient(90deg,transparent,#000 75%);
+  transition:opacity .45s var(--ease-soft);}
+.orb-wave-r{right:2px;}
+.orb-wave-l{left:2px;transform:translateY(-50%) scaleX(-1);}
+#micZone.rec .orb-wave{opacity:.92;}
+
+/* "אני מקשיב…" caption just under the orb */
+#s-voice .rec-undercap{position:absolute;left:0;right:0;top:53.5%;z-index:4;text-align:center;
+  font-family:'Heebo',sans-serif;font-size:14px;font-weight:500;color:#9a7b52;letter-spacing:.02em;
+  text-shadow:0 1px 0 rgba(255,255,255,.5);}
+
+/* bottom card — "דברו חופשי" block */
+#s-voice .ls-title{font-family:'Frank Ruhl Libre',serif;font-weight:600;font-size:22px;color:#5E472F;line-height:1.2;}
+#s-voice .ltxt{font-family:'Heebo',sans-serif;font-size:14px;font-weight:500;color:#8a7257;}
+#s-voice .ls-helper{font-family:'Heebo',sans-serif;font-size:11.5px;font-weight:400;color:#a99683;line-height:1.55;max-width:30ch;margin:2px auto 0;}
+#s-voice.rec-listening .ls-title,#s-voice.rec-listening .ls-helper,
+#s-voice.rec-proc .ls-title,#s-voice.rec-proc .ls-helper{display:none;}
+
+/* privacy line at the foot of the card */
+#s-voice .rec-privacy{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;
+  padding-top:10px;margin-top:2px;border-top:1px solid rgba(94,71,47,.08);
+  color:#a99683;font-family:'Heebo',sans-serif;font-size:11px;font-weight:500;}
+#s-voice .rec-privacy svg{flex-shrink:0;opacity:.8;}
+
+/* centered Family heart mark in the topbar */
+.v-topmark{display:flex;align-items:center;justify-content:center;width:24px;height:22px;}
+.v-topmark svg{width:23px;height:21px;filter:drop-shadow(0 1px 2px rgba(196,132,55,.25));}
+
+@media (prefers-reduced-motion: reduce){ #s-voice *{animation:none !important;} }
 
 /* ════════════════════════════════════
    SCREEN 2 — DAY PREVIEW
@@ -2540,7 +2726,7 @@ body.text-large .phone{font-size:17px}
 /* 9. Voice recording mode selector */
 .v-mode-row{display:flex;gap:0;justify-content:center;width:max-content;margin:12px auto 0;padding:5px;background:rgba(255,255,255,.55);border:1px solid rgba(255,255,255,.72);border-radius:999px;box-shadow:0 6px 18px rgba(180,110,70,.12),inset 0 1px 0 rgba(255,255,255,.8);backdrop-filter:blur(8px);}
 .v-mode-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:none;background:none;color:#a8856b;font-family:'Nunito',sans-serif;font-weight:800;font-size:13px;padding:9px 20px;border-radius:999px;cursor:pointer;box-shadow:none;transition:color .2s,background .25s,box-shadow .25s;letter-spacing:.2px;}
-.v-mode-btn.sel{background:linear-gradient(135deg,#ff9d5e,#ff6f3c);color:#fff;box-shadow:0 4px 12px rgba(255,110,60,.4);}
+.v-mode-btn.sel{background:linear-gradient(135deg,#f4ba63,#e0892c);color:#fff;box-shadow:0 4px 12px rgba(214,140,50,.38);}
 .v-mode-btn svg{width:15px;height:15px;}
 #s-voice.no-captions #speechBubble{display:none!important;}
 /* 3. Biometric option rows */
@@ -3436,13 +3622,16 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
 </div>
 
 <!-- ════ SCREEN 1: VOICE ════ -->
-<div class="app-screen no-captions" id="s-voice" style="display:none">
+<div class="app-screen no-captions rec-skin" id="s-voice" style="display:none">
+  <img class="rec-bg" src="assets/morning-desk.png" alt="" aria-hidden="true">
+  <div class="rec-scrim"></div>
+  <div class="rec-candle"></div>
   <div class="v-topbar">
     <button class="back-btn" onclick="goto('s-today','txLeaveFade','txEnterFade')"><svg width="8" height="14" viewBox="0 0 8 14" fill="none"><path d="M7 1L1 7l6 6" stroke="#9e8878" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span id="vBackTxt">היום</span></button>
-    <button class="v-settings-btn" id="vSettingsBtn"><svg width="20" height="16" viewBox="0 0 20 16" fill="none"><line x1="1" y1="2.5" x2="19" y2="2.5" stroke="#9e8878" stroke-width="1.8" stroke-linecap="round"/><circle cx="14" cy="2.5" r="2.2" fill="#fffaf5" stroke="#9e8878" stroke-width="1.6"/><line x1="1" y1="8" x2="19" y2="8" stroke="#9e8878" stroke-width="1.8" stroke-linecap="round"/><circle cx="6" cy="8" r="2.2" fill="#fffaf5" stroke="#9e8878" stroke-width="1.6"/><line x1="1" y1="13.5" x2="19" y2="13.5" stroke="#9e8878" stroke-width="1.8" stroke-linecap="round"/><circle cx="14" cy="13.5" r="2.2" fill="#fffaf5" stroke="#9e8878" stroke-width="1.6"/></svg></button>
+    <span class="v-topmark" aria-hidden="true"><svg viewBox="0 0 24 22" fill="none"><path d="M12 20.5C12 20.5 1.5 13.2 1.5 6.4C1.5 2.9 4.2 1 6.7 1C9 1 10.9 2.6 12 4.7C13.1 2.6 15 1 17.3 1C19.8 1 22.5 2.9 22.5 6.4C22.5 13.2 12 20.5 12 20.5Z" fill="url(#vtmg)"/><defs><linearGradient id="vtmg" x1="2" y1="2" x2="22" y2="20" gradientUnits="userSpaceOnUse"><stop stop-color="#F4B860"/><stop offset="1" stop-color="#E0892C"/></linearGradient></defs></svg></span>
+    <button class="v-settings-btn" id="vSettingsBtn" aria-label="סגירה"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="#9e8878" stroke-width="2" stroke-linecap="round"/></svg></button>
   </div>
-  <div class="sp"></div>
-  <div class="prompt"><div class="v-eyebrow" id="vPromptEyebrow">✨ קלט קולי</div><div class="v-ptxt" id="vPromptText">ספר לי מה<br>צריך לקרות היום</div></div>
+  <div class="prompt"><div class="v-ptxt" id="vPromptText">ספרו לי מה<br>צריך לקרות היום</div><div class="rec-head2 rec-head-listen">אני מקשיבה…</div><div class="rec-head2 rec-head-proc">מסדרת את היום…</div></div>
   <div class="v-mode-row" id="vModeRow">
     <button class="v-mode-btn sel" id="vModeQuick" type="button" onclick="setVoiceCaptions(false)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
@@ -3453,11 +3642,20 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
       עם טקסט
     </button>
   </div>
-  <div class="sp-lg"></div>
   <div class="mic-zone" id="micZone">
     <div class="mic-aura" id="micAura"></div>
     <div class="mic-particles" id="micParticles"><i style="--a:0deg"></i><i style="--a:30deg"></i><i style="--a:60deg"></i><i style="--a:90deg"></i><i style="--a:120deg"></i><i style="--a:150deg"></i><i style="--a:180deg"></i><i style="--a:210deg"></i><i style="--a:240deg"></i><i style="--a:270deg"></i><i style="--a:300deg"></i><i style="--a:330deg"></i></div>
-    <div class="mwrap" id="wrap-heart">
+    <div class="mwrap" id="wrap-orb">
+      <div class="zone-orb">
+        <span class="orb-wave orb-wave-r" aria-hidden="true"></span>
+        <span class="orb-wave orb-wave-l" aria-hidden="true"></span>
+        <div class="orb-halo" aria-hidden="true"></div>
+        <div class="btn-orb" id="btn-orb">
+          <div class="mic-ov"><svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.96)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="11" rx="3"/><path d="M5 10c0 3.866 3.134 7 7 7s7-3.134 7-7"/><line x1="12" y1="17" x2="12" y2="22"/><line x1="8" y1="22" x2="16" y2="22"/></svg></div>
+        </div>
+      </div>
+    </div>
+    <div class="mwrap off" id="wrap-heart">
       <div class="zone-heart">
         <div class="btn-heart" id="btn-heart">
           <svg class="heart-svg" viewBox="0 0 100 82"><defs><linearGradient id="hg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#ffb3c8"/><stop offset="100%" stop-color="#ff5c8a"/></linearGradient></defs><path d="M50 80 C50 80 8 52 8 26 C8 10 22 2 34 2 C42 2 48 8 50 15 C52 8 58 2 66 2 C78 2 92 10 92 26 C92 52 50 80 50 80Z" fill="url(#hg)"/></svg>
@@ -3482,15 +3680,24 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
       <div class="mic-ov"><svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.92)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="11" rx="3"/><path d="M5 10c0 3.866 3.134 7 7 7s7-3.134 7-7"/><line x1="12" y1="17" x2="12" y2="22"/><line x1="8" y1="22" x2="16" y2="22"/></svg></div>
     </div>
   </div>
-  <div class="sp"></div>
-  <div class="speech-bubble" id="speechBubble">
+  <div class="rec-undercap" id="recUndercap">אני מקשיב…</div>
+  <div class="rec-page">
+    <div class="rec-page-binding"></div>
+    <div class="rec-wave" id="recWave"></div>
+    <div class="speech-bubble" id="speechBubble">
     <div class="sb-label" id="sbLabel">Listening…</div>
     <div class="sb-text" id="sbText"></div>
     <div class="sb-dots"><span></span><span></span><span></span></div>
   </div>
   <div class="listen-sec">
-    <div class="ltxt" id="ltxt">לחצו ודברו אליי</div>
+    <div class="ls-title">דברו חופשי</div>
+    <div class="ltxt" id="ltxt">אנחנו נסדר לכם את היום</div>
+    <div class="ls-helper">כל מה שתספרו הופך לתזכורת מסודרת עבורכם ועבור המשפחה</div>
     <div class="wdots" id="wdots"><div class="wd wd1"></div><div class="wd wd2"></div><div class="wd wd3"></div><div class="wd wd4"></div><div class="wd wd5"></div></div>
+  </div>
+  <div class="rec-live-row">
+    <span class="rec-ember-wrap"><span class="rec-ember"></span>מקליטה</span>
+    <button class="rec-stop" type="button" onclick="document.getElementById('micZone').click()"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>סיימתי</button>
   </div>
   <div class="v-rec-actions" id="vRecActions">
     <button class="v-act-btn v-act-cancel" id="vCancelBtn" type="button">↺ הקלטה מחדש</button>
@@ -3510,7 +3717,8 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
       </div>
     </div>
   </div>
-  <div class="sp"></div>
+  <div class="rec-privacy"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span>מה שאתם אומרים נשמר בבית</span></div>
+  </div>
 </div>
 
 <!-- ════ SCREEN 2: DAY PREVIEW ════ -->
@@ -3882,6 +4090,11 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
         <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></span>
       </div>
       <script>document.currentScript.previousElementSibling.addEventListener('click',function(){goto('s-appearance','txLeaveFade','txEnterFade');renderAppearance();});</script>
+      <div class="row" onclick="openSfxPicker()">
+        <div class="icn ic-bell" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg></div>
+        <div class="body"><div class="t">צלילי הקלטה</div><div class="s">בחרו את הצליל של תחילת וסיום הקלטה</div></div>
+        <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></span>
+      </div>
       <div class="row" onclick="goto('s-sync','txLeaveFade','txEnterFade')">
         <div class="icn ic-cloud" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18a5 5 0 0 1-1-9.9A6 6 0 0 1 17.5 9 4.5 4.5 0 0 1 17 18Z"/></svg></div>
         <div class="body"><div class="t">סנכרון וגיבוי</div><div class="s">גיבוי בענן וסנכרון בין מכשירים</div></div>
@@ -6531,7 +6744,7 @@ document.querySelectorAll('#appr-voices .tile').forEach(function(t) {
 const I18N = {
   en: {
     voice_eyebrow:'✨ Voice Input', voice_prompt:'Tell me what needs<br>to happen today',
-    voice_back:'Today', voice_listening:'Listening…', voice_tap:'Tap and talk to me',
+    voice_back:'Today', voice_listening:'Listening…', voice_tap:"We'll organize your day",
     voice_listen_active:'Listening to you…', voice_tap_finish:'Tap to finish',
     voice_organizing_sub:'One moment, getting it right',
     voice_stop:'✋ Tap to stop', voice_type_toggle:'Or type it instead',
@@ -6610,7 +6823,7 @@ const I18N = {
   },
   he: {
     voice_eyebrow:'✨ קלט קולי', voice_prompt:'ספרו לי מה<br>צריך לקרות היום',
-    voice_back:'היום', voice_listening:'מאזין…', voice_tap:'לחצו ודברו אליי',
+    voice_back:'היום', voice_listening:'מאזין…', voice_tap:'אנחנו נסדר לכם את היום',
     voice_listen_active:'מקשיב לך…', voice_tap_finish:'הקישו לסיום',
     voice_organizing_sub:'רגע, אני מבין מה חשוב',
     voice_stop:'✋ לחץ לעצירה', voice_type_toggle:'או הקלד במקום',
@@ -7316,11 +7529,47 @@ function goto(toId, leaveKf, enterKf, onDone) {
 }
 
 // ─── Voice screen ─────────────────────────────────────────────────
-let vMode = 'heart', vListening = false, vPaused = false, vTimer = null, _restartTimer = null;
-const wrapIds = { heart:'wrap-heart', star:'wrap-star', classic:'wrap-classic', blob:'wrap-blob' };
+let vMode = 'orb', vListening = false, vPaused = false, vTimer = null, _restartTimer = null;
+const wrapIds = { orb:'wrap-orb', heart:'wrap-heart', star:'wrap-star', classic:'wrap-classic', blob:'wrap-blob' };
 const zone  = document.getElementById('micZone');
 const ltxt  = document.getElementById('ltxt');
 const wdots = document.getElementById('wdots');
+
+// ─── WarmWave bars (recording-screen skin, visual only) ───────────────
+// 38 fine honey bars with a soft envelope (low at the edges) and per-bar
+// animation offsets to fake organic motion. Pure decoration — driven by
+// CSS animation that only runs while #micZone has the existing .rec class.
+(function buildWarmWave(){
+  const wave = document.getElementById('recWave');
+  if (!wave || wave.childElementCount) return;
+  const BARS = 38;
+  for (let i = 0; i < BARS; i++) {
+    const env = Math.pow(Math.sin((i/(BARS-1)) * Math.PI), 0.82); // soft envelope
+    const b = document.createElement('span');
+    b.className = 'rec-wbar';
+    b.style.height = (3 + env * 31).toFixed(1) + 'px';
+    b.style.animationDuration = (0.8 + (i % 5) * 0.14).toFixed(2) + 's';
+    b.style.animationDelay = (((i * 37) % 100) / 100 * -1).toFixed(2) + 's';
+    wave.appendChild(b);
+  }
+})();
+
+// ─── Phase reflector (recording-screen skin, view-only) ───────────────
+// The recording flow already toggles ''/.rec/.processing on #micZone. Mirror
+// that onto #s-voice as .rec-listening / .rec-proc so the skin CSS can react
+// without relying on :has() (older Android WebViews lack it). Does NOT change
+// any recording/STT/parse logic — it only observes class changes.
+(function reflectRecPhase(){
+  const mic = document.getElementById('micZone');
+  const scr = document.getElementById('s-voice');
+  if (!mic || !scr) return;
+  const sync = () => {
+    scr.classList.toggle('rec-listening', mic.classList.contains('rec'));
+    scr.classList.toggle('rec-proc',      mic.classList.contains('processing'));
+  };
+  sync();
+  new MutationObserver(sync).observe(mic, { attributes: true, attributeFilter: ['class'] });
+})();
 
 // ─── Audio feedback ───────────────────────────────────────────────
 // AudioContext is created lazily on first user gesture (required by browsers).
@@ -7341,9 +7590,23 @@ function _getAudio() {
 // beep — the synthesized tones were rejected; silence is preferable).
 const _sfxBuffers = {};      // { start: AudioBuffer, stop: AudioBuffer }
 let _sfxLoading = null;      // promise guard so we only load once
+function _sfxFiles() {
+  // User can override start/stop with a chosen candidate via the sound picker.
+  // Falls back to the bundled defaults. ?v bump busts the WebView HTTP cache.
+  let start = 'sounds/rec-start.mp3?v=2', stop = 'sounds/rec-stop.mp3?v=2';
+  try {
+    const s = localStorage.getItem('sfx-rec-start');
+    const e = localStorage.getItem('sfx-rec-stop');
+    if (s) start = s + '?v=2';
+    if (e) stop  = e + '?v=2';
+  } catch (_) {}
+  return { start, stop };
+}
+// Drop cached buffers and reload (called by the picker after a new choice).
+function _reloadSfx() { _sfxLoading = null; delete _sfxBuffers.start; delete _sfxBuffers.stop; return _loadSfx(); }
 function _loadSfx() {
   if (_sfxLoading) return _sfxLoading;
-  const files = { start: 'sounds/rec-start.mp3', stop: 'sounds/rec-stop.mp3' };
+  const files = _sfxFiles();
   _sfxLoading = (async () => {
     const ctx = _getAudio();
     await Promise.all(Object.keys(files).map(async (key) => {
@@ -8223,7 +8486,7 @@ function closeStyleDrawer() {
   document.getElementById('styleBg').classList.remove('open');
 }
 
-document.getElementById('vSettingsBtn').addEventListener('click', openStyleDrawer);
+document.getElementById('vSettingsBtn').addEventListener('click', () => goto('s-today','txLeaveFade','txEnterFade'));
 document.getElementById('styleBg').addEventListener('click', e => { if (e.target === document.getElementById('styleBg')) closeStyleDrawer(); });
 document.getElementById('drawerOpts').addEventListener('click', e => {
   const opt = e.target.closest('.dopt');
@@ -9069,15 +9332,9 @@ document.getElementById('shareBg').addEventListener('click', e => {
   if (e.target === document.getElementById('shareBg')) closeShareDrawer();
 });
 
-// Load saved mic style
-(function() {
-  const saved = localStorage.getItem(MIC_STYLE_KEY);
-  if (saved && wrapIds[saved] && saved !== vMode) {
-    document.getElementById(wrapIds[vMode]).classList.add('off');
-    vMode = saved;
-    document.getElementById(wrapIds[vMode]).classList.remove('off');
-  }
-})();
+// Mic button is the golden orb by default. Legacy saved styles (heart/star/
+// classic/blob) are intentionally NOT restored — the new recording design
+// uses a single orb. switchMode() still works if ever re-enabled.
 
 zone.addEventListener('click', () => {
   if (!SpeechAPI) {
@@ -19978,6 +20235,197 @@ async function _mpSaveField(memberId, updates) {
     var cta  = root.querySelector('#ssCta');
     if (cta)  cta.addEventListener('click', commitAndReturn);
   }
+})();
+</script>
+
+<!-- ════════════════ Recording-sound picker modal ════════════════ -->
+<div id="sfxPicker" class="sfx-overlay" aria-hidden="true">
+  <div class="sfx-sheet" role="dialog" aria-modal="true" aria-label="בחירת צלילי הקלטה">
+    <div class="sfx-grip"></div>
+    <button class="sfx-x" type="button" aria-label="סגירה" onclick="closeSfxPicker()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+    <div class="sfx-head">
+      <h2>הצליל של הבית</h2>
+      <p>בחרו איך תרגישו כשמתחילים ומסיימים להקליט משימה.<br>הקישו לנגן, החליפו ביניהם, ובחרו את מה שמתיישב על הלב.</p>
+    </div>
+    <button class="sfx-all" type="button" id="sfxListenAll">▶&nbsp;&nbsp;השמע את כולם בזה אחר זה</button>
+    <div class="sfx-group">
+      <div class="sfx-glabel"><span class="d"></span><h3>תחילת הקלטה</h3></div>
+      <div id="sfxStart"></div>
+    </div>
+    <div class="sfx-group">
+      <div class="sfx-glabel"><span class="d"></span><h3>סיום הקלטה</h3></div>
+      <div id="sfxStop"></div>
+    </div>
+    <button class="sfx-save" id="sfxSave" type="button" disabled>שמירת הבחירה</button>
+    <div class="sfx-note" id="sfxNote">נשמר ✓ הצלילים החדשים פעילים</div>
+  </div>
+</div>
+<style>
+  .sfx-overlay{position:fixed;inset:0;z-index:1200;display:none;justify-content:center;align-items:flex-end;
+    background:rgba(45,32,18,.34);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);
+    opacity:0;transition:opacity .32s cubic-bezier(0.23,1,0.32,1);}
+  .sfx-overlay.open{display:flex;opacity:1}
+  .sfx-sheet{position:relative;width:100%;max-width:440px;max-height:92vh;overflow-y:auto;scrollbar-width:none;
+    background:linear-gradient(180deg,#FBF7F0 0%,#F8F1E6 50%,#F1E7D6 100%);
+    border-radius:30px 30px 0 0;padding:10px 20px max(26px,env(safe-area-inset-bottom)) 20px;
+    box-shadow:0 -20px 60px -20px rgba(80,55,20,.4);
+    transform:translateY(28px);transition:transform .42s cubic-bezier(0.23,1,0.32,1);}
+  .sfx-sheet::-webkit-scrollbar{display:none}
+  .sfx-overlay.open .sfx-sheet{transform:translateY(0)}
+  .sfx-grip{width:42px;height:5px;border-radius:3px;background:rgba(60,45,25,.16);margin:4px auto 6px}
+  .sfx-x{position:absolute;top:14px;left:16px;width:32px;height:32px;border-radius:50%;border:none;
+    background:rgba(60,45,25,.06);color:#6b5d49;display:flex;align-items:center;justify-content:center;cursor:pointer}
+  .sfx-x svg{width:15px;height:15px}
+  .sfx-head{margin:6px 2px 18px}
+  .sfx-head h2{font-family:'Cormorant Garamond','Frank Ruhl Libre',serif;font-weight:700;font-size:30px;line-height:1.05;margin:0 0 6px;color:#3B3127}
+  .sfx-head p{margin:0;font-size:13.5px;color:#A99E8E;font-weight:400;line-height:1.5}
+  .sfx-all{width:100%;border:1px dashed #E3CC93;background:rgba(214,170,96,.07);color:#B68C42;
+    font-weight:600;font-size:14px;border-radius:15px;padding:12px;cursor:pointer;margin-bottom:20px;
+    transition:background .3s cubic-bezier(0.23,1,0.32,1)}
+  .sfx-all:active{background:rgba(214,170,96,.16)}
+  .sfx-group{margin-bottom:22px}
+  .sfx-glabel{display:flex;align-items:center;gap:9px;margin:0 2px 12px}
+  .sfx-glabel .d{width:8px;height:8px;border-radius:50%;background:#C6A15A;box-shadow:0 0 0 4px rgba(214,170,96,.4)}
+  .sfx-glabel h3{font-family:'Cormorant Garamond','Frank Ruhl Libre',serif;font-weight:600;font-size:20px;margin:0;color:#4E4338}
+  .sfx-opt{display:flex;align-items:center;gap:13px;background:#fff;border:1px solid rgba(60,45,25,.08);
+    border-radius:18px;padding:13px 14px;margin-bottom:10px;cursor:pointer;
+    transition:transform .35s cubic-bezier(0.23,1,0.32,1),box-shadow .35s cubic-bezier(0.23,1,0.32,1),border-color .35s;
+    box-shadow:0 1px 2px rgba(60,45,25,.04)}
+  .sfx-opt:active{transform:scale(.985)}
+  .sfx-opt.sel{border-color:#E3CC93;box-shadow:0 10px 26px -12px rgba(214,170,96,.45),0 0 0 1.5px #E3CC93 inset}
+  .sfx-play{flex:0 0 auto;width:42px;height:42px;border-radius:50%;
+    background:linear-gradient(160deg,#FBF3E2,#F1E2C6);border:1px solid #E3CC93;
+    display:flex;align-items:center;justify-content:center;color:#B68C42;position:relative;
+    transition:transform .3s cubic-bezier(0.23,1,0.32,1)}
+  .sfx-opt.playing .sfx-play{transform:scale(1.06)}
+  .sfx-opt.playing .sfx-play::after{content:"";position:absolute;inset:-5px;border-radius:50%;
+    border:2px solid #E3CC93;animation:sfxRing 1.1s cubic-bezier(0.23,1,0.32,1) infinite}
+  @keyframes sfxRing{0%{transform:scale(.85);opacity:.6}100%{transform:scale(1.35);opacity:0}}
+  .sfx-play svg{width:18px;height:18px;display:block}
+  .sfx-meta{flex:1 1 auto;min-width:0;text-align:right}
+  .sfx-meta .t{font-size:15px;font-weight:600;color:#3B3127;margin:0 0 2px}
+  .sfx-meta .s{font-size:12px;color:#A99E8E;font-weight:300;line-height:1.4}
+  .sfx-check{flex:0 0 auto;width:23px;height:23px;border-radius:50%;border:1.5px solid rgba(60,45,25,.12);
+    display:flex;align-items:center;justify-content:center;transition:all .3s cubic-bezier(0.23,1,0.32,1)}
+  .sfx-opt.sel .sfx-check{background:#C6A15A;border-color:#C6A15A}
+  .sfx-check svg{width:12px;height:12px;color:#fff;opacity:0;transition:opacity .25s}
+  .sfx-opt.sel .sfx-check svg{opacity:1}
+  .sfx-save{width:100%;border:none;border-radius:17px;padding:15px;cursor:pointer;
+    background:linear-gradient(160deg,#C6A15A,#B68C42);color:#fff;font-weight:700;font-size:16px;letter-spacing:.2px;
+    box-shadow:0 14px 30px -12px rgba(214,170,96,.45);transition:transform .3s cubic-bezier(0.23,1,0.32,1),opacity .3s}
+  .sfx-save:active{transform:translateY(1px) scale(.99)}
+  .sfx-save:disabled{opacity:.4;box-shadow:none;cursor:default}
+  .sfx-note{text-align:center;font-size:13px;color:#B68C42;margin-top:11px;height:18px;opacity:0;transition:opacity .3s}
+  .sfx-note.show{opacity:1}
+</style>
+<script>
+(function(){
+  var PLAY='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.14v13.72c0 .8.87 1.28 1.54.86l10.4-6.86a1 1 0 0 0 0-1.72L9.54 4.28A1 1 0 0 0 8 5.14z"/></svg>';
+  var CHK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>';
+  var BASE='sounds/candidates/v2/';
+  var DATA={
+    start:[
+      {id:'start-1-feltpiano',t:'פסנתר רך',s:'תו לבד חמים ועגול — כמו הפיכת דף'},
+      {id:'start-2-harp',     t:'נבל עדין', s:'פריטה אחת עולה, רכה ואינטימית'},
+      {id:'start-3-breath',   t:'נשימה',    s:'אוויר חמים שמתרומם לתו אחד'}
+    ],
+    stop:[
+      {id:'stop-1-feltpiano', t:'פסנתר רך',  s:'שני תווים יורדים ומתיישבים — נשיפה'},
+      {id:'stop-2-harp',      t:'נבל מתפוגג',s:'תו חמים שדועך בעדינות'},
+      {id:'stop-3-acoustic',  t:'אקוסטי חם', s:'שני תווים נסגרים בביטחון שקט'}
+    ]
+  };
+  var sel={start:null,stop:null};
+  var audio=new Audio();
+  var playingEl=null;
+  function stopAudio(){try{audio.pause();audio.currentTime=0;}catch(e){} if(playingEl){playingEl.classList.remove('playing');playingEl=null;}}
+  function play(id,el){
+    if(playingEl===el){stopAudio();return;}
+    stopAudio();
+    audio.src=BASE+id+'.mp3';audio.play().catch(function(){});
+    el.classList.add('playing');playingEl=el;
+  }
+  audio.addEventListener('ended',function(){if(playingEl){playingEl.classList.remove('playing');playingEl=null;}});
+
+  function build(kind){
+    var host=document.getElementById(kind==='start'?'sfxStart':'sfxStop');
+    if(host.dataset.built)return; host.dataset.built='1';
+    DATA[kind].forEach(function(o){
+      var row=document.createElement('div');
+      row.className='sfx-opt';row.dataset.id=o.id;
+      row.innerHTML='<div class="sfx-play">'+PLAY+'</div>'+
+        '<div class="sfx-meta"><div class="t">'+o.t+'</div><div class="s">'+o.s+'</div></div>'+
+        '<div class="sfx-check">'+CHK+'</div>';
+      row.querySelector('.sfx-play').addEventListener('click',function(e){e.stopPropagation();play(o.id,row);});
+      row.addEventListener('click',function(){
+        sel[kind]=o.id;
+        host.querySelectorAll('.sfx-opt').forEach(function(x){x.classList.remove('sel');});
+        row.classList.add('sel');
+        play(o.id,row);
+        document.getElementById('sfxSave').disabled=!(sel.start&&sel.stop);
+      });
+      host.appendChild(row);
+    });
+  }
+
+  document.getElementById('sfxListenAll').addEventListener('click',function(){
+    stopAudio();
+    var seq=DATA.start.map(function(o){return o.id;}).concat(DATA.stop.map(function(o){return o.id;}));
+    var i=0;
+    function next(){
+      if(i>=seq.length){playingEl=null;return;}
+      var id=seq[i++];
+      var el=document.querySelector('#sfxPicker .sfx-opt[data-id="'+id+'"]');
+      audio.src=BASE+id+'.mp3';el.classList.add('playing');playingEl=el;
+      audio.play().catch(function(){});
+      audio.onended=function(){el.classList.remove('playing');audio.onended=null;setTimeout(next,260);};
+    }
+    next();
+  });
+
+  document.getElementById('sfxSave').addEventListener('click',function(){
+    if(!(sel.start&&sel.stop))return;
+    try{
+      localStorage.setItem('sfx-rec-start',BASE+sel.start+'.mp3');
+      localStorage.setItem('sfx-rec-stop', BASE+sel.stop +'.mp3');
+    }catch(e){}
+    // reload the app's sfx buffers so the choice is live immediately (web)
+    try{ if(typeof _reloadSfx==='function')_reloadSfx(); }catch(e){}
+    var n=document.getElementById('sfxNote');n.classList.add('show');
+    stopAudio();audio.src=BASE+sel.stop+'.mp3';audio.play().catch(function(){});
+    setTimeout(closeSfxPicker,1100);
+  });
+
+  // preselect from stored choice
+  function preselect(){
+    var map={'sfx-rec-start':'start','sfx-rec-stop':'stop'};
+    Object.keys(map).forEach(function(k){
+      var v;try{v=localStorage.getItem(k);}catch(e){}
+      if(!v)return;
+      var id=v.split('/').pop().replace('.mp3','');
+      var row=document.querySelector('#sfx'+(map[k]==='start'?'Start':'Stop')+' .sfx-opt[data-id="'+id+'"]');
+      if(row){row.classList.add('sel');sel[map[k]]=id;}
+    });
+    document.getElementById('sfxSave').disabled=!(sel.start&&sel.stop);
+  }
+
+  window.openSfxPicker=function(){
+    build('start');build('stop');preselect();
+    document.getElementById('sfxNote').classList.remove('show');
+    var ov=document.getElementById('sfxPicker');
+    ov.classList.add('open');ov.setAttribute('aria-hidden','false');
+  };
+  window.closeSfxPicker=function(){
+    stopAudio();
+    var ov=document.getElementById('sfxPicker');
+    ov.classList.remove('open');ov.setAttribute('aria-hidden','true');
+  };
+  // tap backdrop to close
+  document.getElementById('sfxPicker').addEventListener('click',function(e){
+    if(e.target===this)closeSfxPicker();
+  });
 })();
 </script>
 </body>
