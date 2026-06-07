@@ -360,190 +360,197 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 .mchip.on .clbl{color:#e07c3a;}
 
 /* ════════════════════════════════════════════════════════════════════
-   RECORDING SCREEN — warm home atmosphere (morning-desk skin)
-   UI-only skin over the existing #s-voice. Phases are driven entirely by
-   the EXISTING class toggles on #micZone (''/.rec/.processing) via :has().
-   No STT/parse logic touched.
+   RECORDING SCREEN — Design System clean skin
+   Visual layer only. Existing speech/parse state remains driven by #micZone:
+   idle / .rec / .processing, mirrored to #s-voice by the phase reflector.
 ════════════════════════════════════════════════════════════════════ */
 :root{ --ease-soft:cubic-bezier(0.22,0.61,0.36,1); --ease-out:cubic-bezier(0.16,1,0.3,1); }
 @keyframes famBreath{0%,100%{transform:scale(1);opacity:.9;}50%{transform:scale(1.06);opacity:1;}}
+@keyframes famWordIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+@keyframes famLineIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
 @keyframes famBlink{0%,50%{opacity:1;}51%,100%{opacity:0;}}
 @keyframes famPulse{0%{transform:scale(1);opacity:.55;}100%{transform:scale(1.55);opacity:0;}}
 @keyframes recWaveBar{0%,100%{transform:scaleY(.30);}50%{transform:scaleY(1);}}
 @keyframes recHeadIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
 
-/* The screen itself: warm paper base so there is no orange-gradient flash
-   before the photo paints. */
-#s-voice.rec-skin{background:#EADCC4;}
-
-/* warm photographic background (an <img>, not a CSS background) */
-#s-voice .rec-bg{
+#s-voice.rec-skin{background:#EADCC4;overflow:hidden;direction:rtl;}
+#s-voice.rec-skin .rec-bg{
   position:absolute;inset:0;width:100%;height:100%;z-index:0;
   object-fit:cover;object-position:center 20%;
   filter:saturate(1.05) contrast(1.015) brightness(1.02);
   transform:scale(1.04);transform-origin:58% 38%;
   transition:transform 1.6s var(--ease-soft),filter .8s var(--ease-soft);
 }
-#s-voice.rec-listening .rec-bg{transform:scale(1.10);filter:saturate(1.12) brightness(1.04);}
-#s-voice.rec-proc .rec-bg{transform:scale(1.07);filter:saturate(1.06) brightness(1.0);}
-
-/* top scrim / readability layer */
-#s-voice .rec-scrim{
+#s-voice.rec-skin.rec-listening .rec-bg{transform:scale(1.10);filter:saturate(1.12) brightness(1.04);}
+#s-voice.rec-skin.rec-proc .rec-bg{transform:scale(1.07);filter:saturate(1.06) brightness(1.0);}
+#s-voice.rec-skin .rec-scrim{
   position:absolute;inset:0;pointer-events:none;z-index:1;
   background:
-    linear-gradient(180deg, rgba(252,247,238,.5) 0%, rgba(252,247,238,0) 20%, rgba(250,242,230,0) 46%, rgba(243,230,209,.35) 72%, rgba(235,219,193,.6) 100%),
-    radial-gradient(125% 95% at 52% 30%, transparent 56%, rgba(76,52,26,.18) 100%);
+    linear-gradient(180deg,rgba(252,247,238,.5) 0%,rgba(252,247,238,0) 20%,rgba(250,242,230,0) 46%,rgba(243,230,209,.35) 72%,rgba(235,219,193,.6) 100%),
+    radial-gradient(125% 95% at 52% 30%,transparent 56%,rgba(76,52,26,.18) 100%);
 }
-/* candle warmth */
-#s-voice .rec-candle{
+#s-voice.rec-skin .rec-candle{
   position:absolute;left:4%;top:9%;width:230px;height:230px;z-index:1;
   border-radius:50%;pointer-events:none;mix-blend-mode:screen;filter:blur(6px);
-  background:radial-gradient(circle, rgba(255,209,128,.6) 0%, rgba(255,197,112,.26) 42%, rgba(255,197,112,0) 72%);
+  background:radial-gradient(circle,rgba(255,209,128,.6) 0%,rgba(255,197,112,.26) 42%,rgba(255,197,112,0) 72%);
   opacity:.45;transition:opacity .6s var(--ease-soft);
 }
-#s-voice.rec-listening .rec-candle,
-#s-voice.rec-proc .rec-candle{opacity:.85;}
-#s-voice.rec-listening .rec-candle{animation:famBreath 4.6s var(--ease-soft) infinite;}
+#s-voice.rec-skin.rec-listening .rec-candle,
+#s-voice.rec-skin.rec-proc .rec-candle{opacity:.85;}
+#s-voice.rec-skin.rec-listening .rec-candle{animation:famBreath 4.6s var(--ease-soft) infinite;}
 
-/* top bar floats over the photo */
-#s-voice .v-topbar{position:absolute;top:0;left:0;right:0;z-index:5;padding:calc(12px + var(--sat,0px)) 18px 0;}
-
-/* headline block over the photo */
-#s-voice .prompt{position:absolute;top:96px;left:0;right:0;z-index:4;padding:0 30px;}
-#s-voice .v-eyebrow{color:#A86A26;}
-#s-voice .v-ptxt{
-  font-family:'Frank Ruhl Libre',serif;font-weight:500;font-size:34px;line-height:1.18;
-  color:#382616;text-shadow:0 1px 0 rgba(255,255,255,.55),0 2px 14px rgba(255,247,235,.6);
+#s-voice.rec-skin .v-topbar{position:absolute;top:0;left:0;right:0;z-index:5;display:flex;align-items:center;justify-content:space-between;padding:calc(14px + var(--sat,0px)) 18px 0;}
+#s-voice.rec-skin .v-topbar .back-btn,
+#s-voice.rec-skin .v-settings-btn{
+  min-width:40px;height:40px;border-radius:999px;border:1px solid rgba(255,255,255,.6);
+  background:rgba(255,251,244,.66);display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:0 13px;
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  box-shadow:0 4px 14px rgba(76,52,26,.12);color:#5E472F;font-family:'Heebo',sans-serif;
 }
-/* per-phase headline — the prompt holds the idle text; listening/processing
-   swap in via .rec-head2 lines toggled by phase. */
-#s-voice .rec-head2{display:none;font-family:'Frank Ruhl Libre',serif;font-weight:500;font-size:34px;line-height:1.18;color:#382616;text-shadow:0 1px 0 rgba(255,255,255,.55),0 2px 14px rgba(255,247,235,.6);animation:recHeadIn .5s var(--ease-out) both;}
-#s-voice.rec-listening .v-ptxt,
-#s-voice.rec-proc .v-ptxt{display:none;}
-#s-voice.rec-listening .rec-head-listen{display:block;}
-#s-voice.rec-proc .rec-head-proc{display:block;}
+#s-voice.rec-skin .v-settings-btn{width:40px;min-width:40px;padding:0;border-radius:50%;}
+#s-voice.rec-skin .v-topbar .back-btn{
+  width:auto!important;height:40px!important;gap:7px!important;padding:0 13px!important;justify-content:center!important;
+}
+#s-voice.rec-skin .v-topbar .back-btn span{display:inline!important;font-size:14px;font-weight:800;color:#7A6049;}
+#s-voice.rec-skin .v-topbar .back-btn svg{transform:scaleX(-1);}
+#s-voice.rec-skin .v-settings-btn{cursor:pointer;}
+#s-voice.rec-skin .v-topmark{
+  height:auto;min-width:0;padding:3px 14px;border-radius:999px;
+  background:rgba(255,251,244,.50);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.45);
+}
+#s-voice.rec-skin .v-topmark img{display:block;height:44px;width:auto;max-height:none;object-fit:contain;filter:drop-shadow(0 4px 9px rgba(194,89,50,.13));}
 
-/* mode-row sits just under the headline */
-#s-voice .v-mode-row{position:absolute;top:188px;left:50%;transform:translateX(-50%);z-index:4;}
-/* hide the mode row + headline once recording/processing (keep it calm) */
-#s-voice.rec-listening .v-mode-row,
-#s-voice.rec-proc .v-mode-row{opacity:0;pointer-events:none;transition:opacity .3s;}
+#s-voice.rec-skin .prompt{position:absolute;top:108px;left:0;right:0;z-index:4;text-align:center;padding:0 34px;}
+#s-voice.rec-skin .v-ptxt,
+#s-voice.rec-skin .rec-head2{
+  font-family:'Frank Ruhl Libre',serif;font-weight:700;font-size:35px;line-height:1.1;letter-spacing:0;
+  color:#382616;margin:0;text-shadow:0 1px 24px rgba(255,250,240,.92),0 1px 3px rgba(255,248,236,.85);
+}
+#s-voice.rec-skin .rec-subline{
+  font-family:'Heebo',sans-serif;font-size:15px;font-weight:600;line-height:1.62;color:#7A6049;
+  max-width:270px;margin:11px auto 0;text-shadow:0 1px 14px rgba(255,250,240,.9);
+}
+#s-voice.rec-skin .rec-head2{display:none;animation:recHeadIn .5s var(--ease-out) both;}
+#s-voice.rec-skin.rec-listening .v-ptxt,
+#s-voice.rec-skin.rec-proc .v-ptxt,
+#s-voice.rec-skin.rec-listening .rec-subline,
+#s-voice.rec-skin.rec-proc .rec-subline{display:none;}
+#s-voice.rec-skin.rec-listening .rec-head-listen,
+#s-voice.rec-skin.rec-proc .rec-head-proc{display:block;}
+#s-voice.rec-skin .v-mode-row{display:none!important;}
+#s-voice.rec-skin.rec-listening .v-mode-row,
+#s-voice.rec-skin.rec-proc .v-mode-row,
+#s-voice.rec-skin.typing-mode .v-mode-row{opacity:0;pointer-events:none;transition:opacity .3s;}
+#s-voice.rec-skin .v-mode-btn{
+  display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(255,255,255,.62);border-radius:999px;
+  background:rgba(255,251,244,.58);padding:7px 12px;color:#7A6049;font-family:'Heebo',sans-serif;font-size:12px;font-weight:800;
+  box-shadow:0 4px 14px rgba(76,52,26,.08);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+}
+#s-voice.rec-skin .v-mode-btn svg{width:14px;height:14px;}
+#s-voice.rec-skin .v-mode-btn.sel{color:#A86A26;background:rgba(255,251,244,.78);}
 
-/* the chosen mic variant floats over the photo as the hero, secondary scale */
-#s-voice .mic-zone{position:absolute;left:50%;top:50%;transform:translate(-50%,-58%) scale(.62);z-index:4;transition:transform .5s var(--ease-soft),opacity .4s;animation:micZoneIn .5s var(--ease-out) .08s both;}
-@keyframes micZoneIn{from{opacity:0;}to{opacity:1;}}
-#s-voice.rec-listening .mic-zone{transform:translate(-50%,-66%) scale(.66);}
-#s-voice.rec-proc .mic-zone{transform:translate(-50%,-72%) scale(.5);opacity:.85;}
-
-/* ── bottom glass-paper card ── */
-#s-voice .rec-page{
-  position:absolute;left:16px;right:16px;bottom:calc(16px + var(--sab,0px));z-index:4;
-  border-radius:28px;padding:0 18px 18px;
-  background:linear-gradient(180deg, rgba(253,250,244,.84), rgba(248,241,229,.9));
+#s-voice.rec-skin .rec-page{
+  position:absolute;left:16px;right:16px;bottom:calc(18px + var(--sab,0px));z-index:4;
+  border-radius:28px;background:linear-gradient(180deg,rgba(253,250,244,.84),rgba(248,241,229,.9));
   border:1px solid rgba(255,255,255,.7);
-  box-shadow:0 1px 0 rgba(255,255,255,.95) inset, 0 2px 10px rgba(58,40,22,.07), 0 14px 36px rgba(58,40,22,.17);
+  box-shadow:0 1px 0 rgba(255,255,255,.95) inset,0 2px 10px rgba(58,40,22,.07),0 14px 36px rgba(58,40,22,.17);
   backdrop-filter:blur(20px) saturate(1.1);-webkit-backdrop-filter:blur(20px) saturate(1.1);
-  transition:all .5s var(--ease-soft);
-  display:flex;flex-direction:column;align-items:center;gap:12px;
+  transition:all .5s var(--ease-soft);overflow:hidden;
 }
-#s-voice .rec-page-binding{width:34px;height:4px;border-radius:999px;margin:10px auto 2px;background:rgba(94,71,47,.12);flex-shrink:0;}
+#s-voice.rec-skin .rec-page-binding{width:34px;height:4px;border-radius:999px;margin:10px auto 0;background:rgba(94,71,47,.12);}
+#s-voice.rec-skin .rec-panel{padding:22px 24px 20px;display:flex;flex-direction:column;align-items:center;gap:16px;}
 
-/* WarmWave — 38 fine honey bars, only animated while listening */
-#s-voice .rec-wave{display:none;align-items:center;justify-content:center;gap:2px;height:38px;width:100%;position:relative;}
-#s-voice.rec-listening .rec-wave{display:flex;}
-#s-voice .rec-wave::before{content:'';position:absolute;left:50%;top:50%;width:200px;height:60px;transform:translate(-50%,-50%);background:radial-gradient(ellipse,rgba(226,181,116,.45),transparent 70%);pointer-events:none;}
-#s-voice .rec-wbar{width:2.5px;border-radius:2px;background:linear-gradient(180deg,#E2B574,#C08437);transform-origin:center;transform:scaleY(.3);transition:height .16s ease;position:relative;}
-#s-voice.rec-listening .rec-wbar{animation:recWaveBar 1s ease-in-out infinite;}
-
-/* live "recording" ember + stop pill row */
-#s-voice .rec-live-row{display:none;align-items:center;justify-content:space-between;width:100%;padding:2px 2px 0;}
-#s-voice.rec-listening .rec-live-row{display:flex;}
-#s-voice .rec-ember-wrap{display:inline-flex;align-items:center;gap:8px;font-family:'Heebo',sans-serif;font-size:13px;font-weight:700;color:#B85138;}
-#s-voice .rec-ember{position:relative;width:9px;height:9px;border-radius:50%;background:#C25D45;box-shadow:0 0 0 0 rgba(194,93,69,.5);}
-#s-voice .rec-ember::after{content:'';position:absolute;inset:0;border-radius:50%;border:1px solid rgba(194,93,69,.6);animation:famPulse 1.6s var(--ease-out) infinite;}
-#s-voice .rec-stop{display:inline-flex;align-items:center;gap:7px;cursor:pointer;background:rgba(194,93,69,.95);border:none;border-radius:999px;padding:9px 18px;color:#fff;font-family:'Heebo',sans-serif;font-weight:800;font-size:13.5px;box-shadow:0 5px 14px rgba(194,93,69,.24);-webkit-tap-highlight-color:transparent;transition:transform .18s var(--ease-soft);}
-#s-voice .rec-stop:active{transform:scale(.96);}
-#s-voice .rec-stop svg{width:12px;height:12px;}
-
-/* status text inside the card */
-#s-voice .listen-sec{width:100%;}
-#s-voice .ltxt{font-family:'Heebo',sans-serif;}
-
-/* transcript as ruled notebook paper (captions mode) */
-#s-voice .speech-bubble{
-  margin:0;width:100%;box-sizing:border-box;background:transparent;box-shadow:none;border-radius:0;
-  background-image:repeating-linear-gradient(180deg, transparent 0 33px, rgba(94,71,47,.08) 33px 34px);background-position:0 6px;
+#s-voice.rec-skin .mic-zone{
+  width:72px;height:72px;border-radius:50%;cursor:pointer;position:relative;display:grid;place-items:center;flex-shrink:0;
+  background:linear-gradient(105deg,#B26E26 0%,#D49A4E 42%,#EAD2A4 100%);
+  border:5px solid rgba(255,251,244,.92);box-shadow:0 10px 28px rgba(192,132,55,.28),0 0 0 7px rgba(226,181,116,.12),inset 0 1px 0 rgba(255,255,255,.45);
+  transition:transform .18s var(--ease-soft),opacity .3s var(--ease-soft);animation:famBreath 5s var(--ease-soft) infinite;
 }
-#s-voice .speech-bubble .sb-text{color:#5E472F;line-height:34px;}
-#s-voice .speech-bubble .sb-label{color:#A86A26;}
+#s-voice.rec-skin .mic-zone:active{transform:scale(.94);}
+#s-voice.rec-skin .mic-zone svg{width:30px;height:30px;}
+#s-voice.rec-skin.rec-listening .mic-zone,
+#s-voice.rec-skin.rec-proc .mic-zone{display:none;}
 
-/* typing row inside the card */
-#s-voice .v-type-row{width:100%;}
-#s-voice .v-type-area{margin:0;width:100%;box-sizing:border-box;}
-/* hide voice-only blocks per phase to keep the card focused */
-#s-voice.rec-listening .v-type-row,
-#s-voice.rec-proc .v-type-row{display:none;}
-#s-voice:not(.rec-listening):not(.rec-proc) .rec-live-row,
-#s-voice:not(.rec-listening):not(.rec-proc) .rec-wave{display:none;}
+#s-voice.rec-skin .rec-wave{display:none;align-items:center;justify-content:center;gap:2.5px;height:44px;width:100%;position:relative;}
+#s-voice.rec-skin.rec-listening .rec-wave{display:flex;}
+#s-voice.rec-skin .rec-wave::before{content:'';position:absolute;left:50%;top:50%;width:220px;height:30px;border-radius:50%;transform:translate(-50%,-50%);background:radial-gradient(60% 100% at 50% 50%,rgba(226,181,116,.45),rgba(226,181,116,0) 72%);filter:blur(5px);pointer-events:none;}
+#s-voice.rec-skin .rec-wbar{width:2.5px;border-radius:2px;background:linear-gradient(180deg,#E2B574,#C08437);transform-origin:center;transform:scaleY(.3);transition:height .16s ease;position:relative;opacity:.72;}
+#s-voice.rec-skin.rec-listening .rec-wbar{animation:recWaveBar 1s ease-in-out infinite;}
 
-/* keep the existing pause/cancel actions, restyled inside the card */
-#s-voice .v-rec-actions{width:100%;}
+#s-voice.rec-skin .speech-bubble{
+  display:none;margin:16px 0 0;width:100%;min-height:102px;box-sizing:border-box;background:transparent;box-shadow:none;border-radius:0;padding:0;
+  background-image:repeating-linear-gradient(180deg,transparent 0 33px,rgba(94,71,47,.08) 33px 34px);background-position:0 6px;
+}
+#s-voice.rec-skin .speech-bubble.on{display:block;}
+#s-voice.rec-skin .speech-bubble .sb-label,
+#s-voice.rec-skin .speech-bubble .sb-dots{display:none;}
+#s-voice.rec-skin .speech-bubble .sb-text{font-family:'Heebo',sans-serif;font-size:18px;font-weight:500;line-height:34px;color:#4A3422;text-align:right;}
+#s-voice.rec-skin .speech-bubble.on .sb-text::after{content:'';display:inline-block;width:2px;height:20px;background:#C08437;margin-inline-start:2px;vertical-align:middle;animation:famBlink 1s steps(1) infinite;}
 
-/* ════ Golden orb mic — the single recording button (new design) ════ */
-.zone-orb{position:relative;width:240px;height:240px;display:flex;align-items:center;justify-content:center;}
-.orb-halo{position:absolute;width:222px;height:222px;border-radius:50%;pointer-events:none;
-  background:radial-gradient(circle, rgba(248,206,134,.5) 0%, rgba(240,180,108,.26) 46%, rgba(240,180,108,0) 70%);
-  animation:orbHalo 3.8s var(--ease-soft) infinite;}
-@keyframes orbHalo{0%,100%{transform:scale(1);opacity:.82;}50%{transform:scale(1.07);opacity:1;}}
-.btn-orb{position:relative;z-index:2;width:150px;height:150px;border-radius:50%;cursor:pointer;
-  -webkit-tap-highlight-color:transparent;
-  background:radial-gradient(circle at 50% 36%, #fff7e9 0%, #f8d99f 38%, #edba68 72%, #d99c46 100%);
-  box-shadow:0 16px 40px rgba(196,132,55,.42),0 5px 16px rgba(196,132,55,.26),
-    inset 0 2px 5px rgba(255,255,255,.72),inset 0 -9px 20px rgba(176,112,40,.3);
-  display:flex;align-items:center;justify-content:center;
-  animation:orbIdle 3.6s var(--ease-soft) infinite;transition:transform .16s var(--ease-soft);}
-.btn-orb:active{transform:scale(.95);}
-.btn-orb .mic-ov{position:static;filter:drop-shadow(0 1px 3px rgba(140,84,20,.45));}
-.btn-orb .mic-ov svg{width:46px;height:46px;}
-@keyframes orbIdle{0%,100%{transform:scale(1);}50%{transform:scale(1.035);}}
-#micZone.rec .btn-orb{animation:orbRec 1.15s var(--ease-soft) infinite;
-  box-shadow:0 18px 48px rgba(214,120,40,.55),inset 0 2px 5px rgba(255,255,255,.78),inset 0 -9px 20px rgba(176,112,40,.34);}
-@keyframes orbRec{0%,100%{transform:scale(1.05);}50%{transform:scale(1.13);}}
-#micZone.rec .orb-halo{animation:orbHaloRec .95s var(--ease-soft) infinite;
-  background:radial-gradient(circle, rgba(250,212,142,.66) 0%, rgba(240,170,90,.32) 48%, rgba(240,170,90,0) 72%);}
-@keyframes orbHaloRec{0%,100%{transform:scale(1.05);opacity:.9;}50%{transform:scale(1.2);opacity:1;}}
-/* flanking sound-wave bars — subtle at idle, brighter while recording */
-.orb-wave{position:absolute;top:50%;width:46px;height:50px;transform:translateY(-50%);pointer-events:none;opacity:.42;
-  background:repeating-linear-gradient(90deg, rgba(214,150,72,.9) 0 2px, transparent 2px 8px);
-  -webkit-mask:linear-gradient(90deg,transparent,#000 75%);mask:linear-gradient(90deg,transparent,#000 75%);
-  transition:opacity .45s var(--ease-soft);}
-.orb-wave-r{right:2px;}
-.orb-wave-l{left:2px;transform:translateY(-50%) scaleX(-1);}
-#micZone.rec .orb-wave{opacity:.92;}
+#s-voice.rec-skin .listen-sec{width:100%;text-align:center;min-height:0;display:flex;flex-direction:column;align-items:center;gap:5px;animation:none;}
+#s-voice.rec-skin .ls-title{font-family:'Frank Ruhl Libre',serif;font-weight:600;font-size:22px;color:#5E472F;line-height:1.2;}
+#s-voice.rec-skin .ltxt{font-family:'Heebo',sans-serif;font-size:14px;font-weight:600;color:#8a7257;line-height:1.45;text-align:center;}
+#s-voice.rec-skin .ltxt-sub{display:block;font-size:12px;font-weight:500;color:#a99683;margin-top:2px;}
+#s-voice.rec-skin .ls-helper{font-family:'Heebo',sans-serif;font-size:11.5px;font-weight:400;color:#a99683;line-height:1.55;max-width:30ch;margin:2px auto 0;}
+#s-voice.rec-skin .wdots{display:none!important;}
+#s-voice.rec-skin.rec-listening .ls-title,
+#s-voice.rec-skin.rec-listening .ls-helper,
+#s-voice.rec-skin.rec-proc .ls-title,
+#s-voice.rec-skin.rec-proc .ls-helper{display:none;}
+/* Idle restraint: calm, voice-first. Headline + subline carry the message;
+   hide redundant helper/title text in idle only (display-only — IDs preserved). */
+#s-voice.rec-skin:not(.rec-listening):not(.rec-proc):not(.typing-mode) .listen-sec{display:none;}
 
-/* "אני מקשיב…" caption just under the orb */
-#s-voice .rec-undercap{position:absolute;left:0;right:0;top:53.5%;z-index:4;text-align:center;
-  font-family:'Heebo',sans-serif;font-size:14px;font-weight:500;color:#9a7b52;letter-spacing:.02em;
-  text-shadow:0 1px 0 rgba(255,255,255,.5);}
+#s-voice.rec-skin .rec-live-row{display:none;align-items:center;justify-content:space-between;width:100%;margin-top:18px;}
+#s-voice.rec-skin.rec-listening .rec-live-row{display:flex;}
+#s-voice.rec-skin .rec-ember-wrap{display:inline-flex;align-items:center;gap:8px;font-family:'Heebo',sans-serif;font-size:13px;font-weight:700;color:#B85138;}
+#s-voice.rec-skin .rec-ember{position:relative;width:9px;height:9px;border-radius:50%;background:#C25D45;}
+#s-voice.rec-skin .rec-ember::after{content:'';position:absolute;inset:-2px;border-radius:50%;border:1px solid rgba(194,93,69,.6);animation:famPulse 1.6s var(--ease-out) infinite;}
+#s-voice.rec-skin .rec-stop{display:inline-flex;align-items:center;gap:8px;cursor:pointer;background:rgba(194,93,69,.95);border:none;border-radius:999px;padding:9px 16px;color:#FFFBF2;font-family:'Heebo',sans-serif;font-weight:800;font-size:14px;box-shadow:0 5px 14px rgba(194,93,69,.24);transition:transform .18s var(--ease-soft);}
+#s-voice.rec-skin .rec-stop:active{transform:scale(.96);}
+#s-voice.rec-skin .rec-stop svg{width:14px;height:14px;}
 
-/* bottom card — "דברו חופשי" block */
-#s-voice .ls-title{font-family:'Frank Ruhl Libre',serif;font-weight:600;font-size:22px;color:#5E472F;line-height:1.2;}
-#s-voice .ltxt{font-family:'Heebo',sans-serif;font-size:14px;font-weight:500;color:#8a7257;}
-#s-voice .ls-helper{font-family:'Heebo',sans-serif;font-size:11.5px;font-weight:400;color:#a99683;line-height:1.55;max-width:30ch;margin:2px auto 0;}
-#s-voice.rec-listening .ls-title,#s-voice.rec-listening .ls-helper,
-#s-voice.rec-proc .ls-title,#s-voice.rec-proc .ls-helper{display:none;}
+#s-voice.rec-skin .v-rec-actions{width:100%;display:none;gap:10px;justify-content:center;align-items:center;min-height:0;margin-top:4px;opacity:.78;}
+#s-voice.rec-skin .v-rec-actions.show{display:flex;opacity:1;pointer-events:auto;}
+#s-voice.rec-skin .v-act-btn{font-family:'Heebo',sans-serif;font-size:12.5px;border-radius:999px;padding:8px 14px;box-shadow:none;}
+#s-voice.rec-skin.rec-proc .v-rec-actions{display:none!important;}
 
-/* privacy line at the foot of the card */
-#s-voice .rec-privacy{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;
-  padding-top:10px;margin-top:2px;border-top:1px solid rgba(94,71,47,.08);
-  color:#a99683;font-family:'Heebo',sans-serif;font-size:11px;font-weight:500;}
-#s-voice .rec-privacy svg{flex-shrink:0;opacity:.8;}
+#s-voice.rec-skin .v-type-row{width:100%;text-align:center;}
+#s-voice.rec-skin.rec-listening .v-type-row,
+#s-voice.rec-skin.rec-proc .v-type-row{display:none;}
+#s-voice.rec-skin .v-type-toggle{display:inline-block;font-family:'Heebo',sans-serif;font-size:13px;font-weight:700;color:#9A8268;cursor:pointer;padding:3px 0;border-bottom:1px solid rgba(154,130,104,.28);}
+#s-voice.rec-skin .v-type-area{
+  margin:0;width:100%;box-sizing:border-box;display:none;flex-direction:column;gap:10px;
+  background:linear-gradient(180deg,rgba(253,250,244,.86),rgba(248,241,229,.92));
+  border:1px solid rgba(255,255,255,.7);border-radius:24px;padding:16px 18px 14px;
+  box-shadow:0 1px 0 rgba(255,255,255,.95) inset,0 2px 10px rgba(58,40,22,.07),0 14px 36px rgba(58,40,22,.16);
+  backdrop-filter:blur(20px) saturate(1.1);-webkit-backdrop-filter:blur(20px) saturate(1.1);
+}
+#s-voice.rec-skin .v-type-area.open,
+#s-voice.rec-skin .v-type-area.closing{display:flex;}
+#s-voice.rec-skin.typing-mode .mic-zone,
+#s-voice.rec-skin.typing-mode .listen-sec,
+#s-voice.rec-skin.typing-mode .v-type-toggle{display:none;}
+#s-voice.rec-skin .v-type-area:focus-within{box-shadow:0 1px 0 rgba(255,255,255,.95) inset,0 14px 38px rgba(58,40,22,.2),0 0 0 1.5px rgba(196,132,55,.32);}
+#s-voice.rec-skin .v-type-inp{font-family:'Heebo',sans-serif;font-size:16.5px;font-weight:600;color:#5E472F;line-height:1.8;min-height:118px;max-height:230px;}
+#s-voice.rec-skin .v-type-inp:empty:before{color:#b6a48f;font-style:normal;font-weight:500;}
+#s-voice.rec-skin .v-type-helper{font-family:'Heebo',sans-serif;color:#a99683;}
+#s-voice.rec-skin .v-voice-back{font-family:'Heebo',sans-serif;color:#8a7257;border-bottom-color:rgba(138,114,87,.32);}
+#s-voice.rec-skin .v-type-btn{font-family:'Heebo',sans-serif;background:linear-gradient(135deg,#f2cd86,#d99c46);box-shadow:0 6px 18px rgba(196,132,55,.3);}
+#s-voice.rec-skin .v-type-btn:disabled{background:linear-gradient(135deg,#efdcc0,#e6cda6);box-shadow:none;}
+#s-voice.rec-skin .v-type-btn.thinking{background:linear-gradient(135deg,#eec98a,#dca85a);box-shadow:0 4px 14px rgba(196,132,55,.28);}
+#s-voice.rec-skin .vtp-core{background:radial-gradient(circle at 38% 32%,#fff7e9 0%,#f3cd86 45%,#d99c46 100%);box-shadow:0 8px 22px rgba(196,132,55,.4),inset 0 -5px 12px rgba(176,112,40,.3),inset 0 4px 10px rgba(255,255,255,.5);}
+#s-voice.rec-skin .vtp-orb::before{background:radial-gradient(circle,rgba(240,180,108,.42) 0%,rgba(217,156,70,.15) 46%,transparent 70%);}
+#s-voice.rec-skin .vtp-particles i{background:radial-gradient(circle,#ffe9c8,#d99c46);box-shadow:0 0 7px rgba(214,150,72,.6);}
+#s-voice.rec-skin .vtp-title{color:#A86A26;}
+#s-voice.rec-skin .vtp-sub{color:#a99683;}
 
-/* centered Family heart mark in the topbar */
-.v-topmark{display:flex;align-items:center;justify-content:center;width:24px;height:22px;}
-.v-topmark svg{width:23px;height:21px;filter:drop-shadow(0 1px 2px rgba(196,132,55,.25));}
+#s-voice.rec-skin .rec-privacy{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding-top:10px;margin-top:2px;border-top:1px solid rgba(94,71,47,.08);color:#a99683;font-family:'Heebo',sans-serif;font-size:11px;font-weight:500;}
+#s-voice.rec-skin .rec-privacy svg{flex-shrink:0;opacity:.8;}
+#s-voice.rec-skin .legacy-mic-compat{display:none!important;}
 
-@media (prefers-reduced-motion: reduce){ #s-voice *{animation:none !important;} }
+@media (prefers-reduced-motion: reduce){ #s-voice.rec-skin *{animation:none!important;} }
 
 /* ════════════════════════════════════
    SCREEN 2 — DAY PREVIEW
@@ -2711,6 +2718,9 @@ body.text-large .phone{font-size:17px}
 .back-btn,.td-back,.back{width:36px!important;height:36px!important;border-radius:50%!important;background:var(--card-bg,#fff)!important;border:1px solid rgba(255,255,255,0.7)!important;box-shadow:var(--card-shadow,0 2px 8px rgba(160,90,30,.08))!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;padding:0!important;gap:0!important;color:var(--ink,#1A0F08)!important;}
 .back-btn svg,.td-back svg,.back svg{width:18px!important;height:18px!important;}
 .back-btn span{display:none!important;}
+#s-voice.rec-skin .v-topbar .back-btn{width:auto!important;height:40px!important;min-width:72px!important;border-radius:999px!important;padding:0 13px!important;gap:7px!important;background:rgba(255,251,244,.66)!important;color:#5E472F!important;}
+#s-voice.rec-skin .v-topbar .back-btn span{display:inline!important;font-size:14px!important;font-weight:800!important;color:#7A6049!important;}
+#s-voice.rec-skin .v-topbar .back-btn svg{width:18px!important;height:18px!important;}
 /* Recovery banner after factory reset — overlays any screen */
 /* top: this banner is attached to .phone (a sibling of .app-screen), so it does
    NOT inherit the --sat safe-area inset. The hardcoded 54px let it slide under
@@ -3628,10 +3638,15 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
   <div class="rec-candle"></div>
   <div class="v-topbar">
     <button class="back-btn" onclick="goto('s-today','txLeaveFade','txEnterFade')"><svg width="8" height="14" viewBox="0 0 8 14" fill="none"><path d="M7 1L1 7l6 6" stroke="#9e8878" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span id="vBackTxt">היום</span></button>
-    <span class="v-topmark" aria-hidden="true"><svg viewBox="0 0 24 22" fill="none"><path d="M12 20.5C12 20.5 1.5 13.2 1.5 6.4C1.5 2.9 4.2 1 6.7 1C9 1 10.9 2.6 12 4.7C13.1 2.6 15 1 17.3 1C19.8 1 22.5 2.9 22.5 6.4C22.5 13.2 12 20.5 12 20.5Z" fill="url(#vtmg)"/><defs><linearGradient id="vtmg" x1="2" y1="2" x2="22" y2="20" gradientUnits="userSpaceOnUse"><stop stop-color="#F4B860"/><stop offset="1" stop-color="#E0892C"/></linearGradient></defs></svg></span>
+    <span class="v-topmark" aria-hidden="true"><img src="family-logo.png" alt=""></span>
     <button class="v-settings-btn" id="vSettingsBtn" aria-label="סגירה"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="#9e8878" stroke-width="2" stroke-linecap="round"/></svg></button>
   </div>
-  <div class="prompt"><div class="v-ptxt" id="vPromptText">ספרו לי מה<br>צריך לקרות היום</div><div class="rec-head2 rec-head-listen">אני מקשיבה…</div><div class="rec-head2 rec-head-proc">מסדרת את היום…</div></div>
+  <div class="prompt">
+    <div class="v-ptxt" id="vPromptText">ספרו לי מה<br>צריך לקרות היום</div>
+    <div class="rec-subline">דברו חופשי, אני כבר אסדר הכול</div>
+    <div class="rec-head2 rec-head-listen">אני מקשיבה…</div>
+    <div class="rec-head2 rec-head-proc">מסדרת את היום…</div>
+  </div>
   <div class="v-mode-row" id="vModeRow">
     <button class="v-mode-btn sel" id="vModeQuick" type="button" onclick="setVoiceCaptions(false)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
@@ -3642,82 +3657,55 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
       עם טקסט
     </button>
   </div>
-  <div class="mic-zone" id="micZone">
-    <div class="mic-aura" id="micAura"></div>
-    <div class="mic-particles" id="micParticles"><i style="--a:0deg"></i><i style="--a:30deg"></i><i style="--a:60deg"></i><i style="--a:90deg"></i><i style="--a:120deg"></i><i style="--a:150deg"></i><i style="--a:180deg"></i><i style="--a:210deg"></i><i style="--a:240deg"></i><i style="--a:270deg"></i><i style="--a:300deg"></i><i style="--a:330deg"></i></div>
-    <div class="mwrap" id="wrap-orb">
-      <div class="zone-orb">
-        <span class="orb-wave orb-wave-r" aria-hidden="true"></span>
-        <span class="orb-wave orb-wave-l" aria-hidden="true"></span>
-        <div class="orb-halo" aria-hidden="true"></div>
-        <div class="btn-orb" id="btn-orb">
-          <div class="mic-ov"><svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.96)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="11" rx="3"/><path d="M5 10c0 3.866 3.134 7 7 7s7-3.134 7-7"/><line x1="12" y1="17" x2="12" y2="22"/><line x1="8" y1="22" x2="16" y2="22"/></svg></div>
-        </div>
-      </div>
-    </div>
-    <div class="mwrap off" id="wrap-heart">
-      <div class="zone-heart">
-        <div class="btn-heart" id="btn-heart">
-          <svg class="heart-svg" viewBox="0 0 100 82"><defs><linearGradient id="hg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#ffb3c8"/><stop offset="100%" stop-color="#ff5c8a"/></linearGradient></defs><path d="M50 80 C50 80 8 52 8 26 C8 10 22 2 34 2 C42 2 48 8 50 15 C52 8 58 2 66 2 C78 2 92 10 92 26 C92 52 50 80 50 80Z" fill="url(#hg)"/></svg>
-        </div>
-        <div class="mic-ov heart-pos"><svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.92)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="11" rx="3"/><path d="M5 10c0 3.866 3.134 7 7 7s7-3.134 7-7"/><line x1="12" y1="17" x2="12" y2="22"/><line x1="8" y1="22" x2="16" y2="22"/></svg></div>
-      </div>
-    </div>
-    <div class="mwrap off" id="wrap-star">
-      <div class="zone-star">
-        <div class="sparkle-c" id="sparkleCont"></div>
-        <div class="btn-star" id="btn-star"></div>
-        <div class="mic-ov"><svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.92)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="11" rx="3"/><path d="M5 10c0 3.866 3.134 7 7 7s7-3.134 7-7"/><line x1="12" y1="17" x2="12" y2="22"/><line x1="8" y1="22" x2="16" y2="22"/></svg></div>
-      </div>
-    </div>
-    <div class="mwrap off" id="wrap-classic">
-      <div class="ring r1"></div><div class="ring r2"></div><div class="ring r3"></div>
-      <div class="btn-classic" id="btn-classic"></div>
-      <div class="mic-ov"><svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.92)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="11" rx="3"/><path d="M5 10c0 3.866 3.134 7 7 7s7-3.134 7-7"/><line x1="12" y1="17" x2="12" y2="22"/><line x1="8" y1="22" x2="16" y2="22"/></svg></div>
-    </div>
-    <div class="mwrap off" id="wrap-blob">
-      <div class="btn-blob" id="btn-blob"></div>
-      <div class="mic-ov"><svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.92)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="11" rx="3"/><path d="M5 10c0 3.866 3.134 7 7 7s7-3.134 7-7"/><line x1="12" y1="17" x2="12" y2="22"/><line x1="8" y1="22" x2="16" y2="22"/></svg></div>
-    </div>
-  </div>
-  <div class="rec-undercap" id="recUndercap">אני מקשיב…</div>
   <div class="rec-page">
     <div class="rec-page-binding"></div>
-    <div class="rec-wave" id="recWave"></div>
-    <div class="speech-bubble" id="speechBubble">
-    <div class="sb-label" id="sbLabel">Listening…</div>
-    <div class="sb-text" id="sbText"></div>
-    <div class="sb-dots"><span></span><span></span><span></span></div>
-  </div>
-  <div class="listen-sec">
-    <div class="ls-title">דברו חופשי</div>
-    <div class="ltxt" id="ltxt">אנחנו נסדר לכם את היום</div>
-    <div class="ls-helper">כל מה שתספרו הופך לתזכורת מסודרת עבורכם ועבור המשפחה</div>
-    <div class="wdots" id="wdots"><div class="wd wd1"></div><div class="wd wd2"></div><div class="wd wd3"></div><div class="wd wd4"></div><div class="wd wd5"></div></div>
-  </div>
-  <div class="rec-live-row">
-    <span class="rec-ember-wrap"><span class="rec-ember"></span>מקליטה</span>
-    <button class="rec-stop" type="button" onclick="document.getElementById('micZone').click()"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>סיימתי</button>
-  </div>
-  <div class="v-rec-actions" id="vRecActions">
-    <button class="v-act-btn v-act-cancel" id="vCancelBtn" type="button">↺ הקלטה מחדש</button>
-    <button class="v-act-btn v-act-pause" id="vPauseBtn" type="button">⏸ השהה</button>
-  </div>
-  <div class="v-type-row" id="vTypeRow">
-    <div class="v-type-toggle" id="vTypeToggle">או הקלד במקום</div>
-    <div class="v-type-area" id="vTypeArea">
-      <div class="v-type-inp" id="vTypeInp" contenteditable="true" role="textbox" aria-multiline="true" spellcheck="false"></div>
-      <div class="v-type-helper" id="vTypeHelper">כתוב בחופשיות — אנחנו נסדר לך</div>
-      <button class="v-type-btn" id="vTypeBtn" disabled>סדר לי את היום ✨</button>
-      <div class="v-voice-back" id="vVoiceBack">🎙 חזור לדיבור</div>
-      <div class="v-type-proc" id="vTypeProc">
-        <div class="vtp-orb"><div class="vtp-core"></div><div class="vtp-particles"><i style="--a:0deg"></i><i style="--a:30deg"></i><i style="--a:60deg"></i><i style="--a:90deg"></i><i style="--a:120deg"></i><i style="--a:150deg"></i><i style="--a:180deg"></i><i style="--a:210deg"></i><i style="--a:240deg"></i><i style="--a:270deg"></i><i style="--a:300deg"></i><i style="--a:330deg"></i></div></div>
-        <div class="vtp-title" id="vtpTitle">מסדר לך את היום…</div>
-        <div class="vtp-sub" id="vtpSub">רגע, אני מבין מה חשוב</div>
+    <div class="rec-panel">
+      <div class="mic-zone" id="micZone" role="button" tabindex="0" aria-label="התחילו לדבר">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#FFFBF2" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2" width="6" height="11" rx="3"/><path d="M5 10c0 3.866 3.134 7 7 7s7-3.134 7-7"/><line x1="12" y1="17" x2="12" y2="22"/><line x1="8" y1="22" x2="16" y2="22"/></svg>
       </div>
+      <div class="rec-wave" id="recWave"></div>
+      <div class="speech-bubble" id="speechBubble">
+        <div class="sb-label" id="sbLabel">Listening…</div>
+        <div class="sb-text" id="sbText"></div>
+        <div class="sb-dots"><span></span><span></span><span></span></div>
+      </div>
+      <div class="listen-sec">
+        <div class="ls-title">דברו חופשי</div>
+        <div class="ltxt" id="ltxt">אנחנו נסדר לכם את היום</div>
+        <div class="ls-helper">כל מה שתספרו הופך לתזכורת מסודרת עבורכם ועבור המשפחה</div>
+        <div class="wdots" id="wdots"><div class="wd wd1"></div><div class="wd wd2"></div><div class="wd wd3"></div><div class="wd wd4"></div><div class="wd wd5"></div></div>
+      </div>
+      <div class="rec-live-row">
+        <span class="rec-ember-wrap"><span class="rec-ember"></span>מקליטה</span>
+        <button class="rec-stop" type="button" onclick="document.getElementById('micZone').click()"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>סיימתי</button>
+      </div>
+      <div class="v-rec-actions" id="vRecActions">
+        <button class="v-act-btn v-act-cancel" id="vCancelBtn" type="button">↺ הקלטה מחדש</button>
+        <button class="v-act-btn v-act-pause" id="vPauseBtn" type="button">⏸ השהה</button>
+      </div>
+      <div class="v-type-row" id="vTypeRow">
+        <div class="v-type-toggle" id="vTypeToggle">מעדיפים להקליד?</div>
+        <div class="v-type-area" id="vTypeArea">
+          <div class="v-type-inp" id="vTypeInp" contenteditable="true" role="textbox" aria-multiline="true" spellcheck="false"></div>
+          <div class="v-type-helper" id="vTypeHelper">כתוב בחופשיות — אנחנו נסדר לך</div>
+          <button class="v-type-btn" id="vTypeBtn" disabled>סדר לי את היום ✨</button>
+          <div class="v-voice-back" id="vVoiceBack">🎙 חזור לדיבור</div>
+          <div class="v-type-proc" id="vTypeProc">
+            <div class="vtp-orb"><div class="vtp-core"></div><div class="vtp-particles"><i style="--a:0deg"></i><i style="--a:30deg"></i><i style="--a:60deg"></i><i style="--a:90deg"></i><i style="--a:120deg"></i><i style="--a:150deg"></i><i style="--a:180deg"></i><i style="--a:210deg"></i><i style="--a:240deg"></i><i style="--a:270deg"></i><i style="--a:300deg"></i><i style="--a:330deg"></i></div></div>
+            <div class="vtp-title" id="vtpTitle">מסדר לך את היום…</div>
+            <div class="vtp-sub" id="vtpSub">רגע, אני מבין מה חשוב</div>
+          </div>
+        </div>
+      </div>
+      <div class="rec-privacy"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span>מה שאתם אומרים נשמר בבית</span></div>
     </div>
   </div>
-  <div class="rec-privacy"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span>מה שאתם אומרים נשמר בבית</span></div>
+  <div class="legacy-mic-compat" aria-hidden="true">
+    <div class="mwrap" id="wrap-orb"></div>
+    <div class="mwrap off" id="wrap-heart"></div>
+    <div class="mwrap off" id="wrap-star"><div class="sparkle-c" id="sparkleCont"></div></div>
+    <div class="mwrap off" id="wrap-classic"></div>
+    <div class="mwrap off" id="wrap-blob"></div>
   </div>
 </div>
 
@@ -6747,7 +6735,7 @@ const I18N = {
     voice_back:'Today', voice_listening:'Listening…', voice_tap:"We'll organize your day",
     voice_listen_active:'Listening to you…', voice_tap_finish:'Tap to finish',
     voice_organizing_sub:'One moment, getting it right',
-    voice_stop:'✋ Tap to stop', voice_type_toggle:'Or type it instead',
+    voice_stop:'✋ Tap to stop', voice_type_toggle:'Prefer typing?',
     voice_type_helper:"Write freely — we'll organize it for you",
     voice_type_btn:'Organize my day ✨', voice_type_btn_thinking:'Organizing your day',
     voice_back_btn:'🎙 Use voice instead',
@@ -6826,7 +6814,7 @@ const I18N = {
     voice_back:'היום', voice_listening:'מאזין…', voice_tap:'אנחנו נסדר לכם את היום',
     voice_listen_active:'מקשיב לך…', voice_tap_finish:'הקישו לסיום',
     voice_organizing_sub:'רגע, אני מבין מה חשוב',
-    voice_stop:'✋ לחץ לעצירה', voice_type_toggle:'או הקלד במקום',
+    voice_stop:'✋ לחץ לעצירה', voice_type_toggle:'מעדיפים להקליד?',
     voice_type_helper:'כתוב בחופשיות — נסדר עבורך',
     voice_type_btn:'סדר לי את היום ✨', voice_type_btn_thinking:'מסדר לך את היום',
     voice_back_btn:'🎙 חזור לדיבור',

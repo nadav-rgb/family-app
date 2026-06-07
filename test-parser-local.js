@@ -31,12 +31,32 @@ check('P0#1 task2 time = 14:00',              t[1] && t[1].time === '14:00',    
 // ── P0 #2: preamble date AND time preserved ───────────────────────────────────
 t = L('מחר בשעה 2 לקחת את לאלי לחוג');
 check('P0#2 → 1 task',                        t.length === 1,                                t.map(x => x.title));
-check('P0#2 title = "לקחת את לאלי לחוג"',     t[0] && t[0].title === 'לקחת את לאלי לחוג',     t[0] && t[0].title);
+check('P0#2 title keeps preamble',             t[0] && t[0].title === 'מחר בשעה 2 לקחת את לאלי לחוג', t[0] && t[0].title);
 check('P0#2 date = tomorrow',                 t[0] && t[0].date === 'tomorrow',              t[0] && t[0].date);
 check('P0#2 time = 14:00',                    t[0] && t[0].time === '14:00',                 t[0] && t[0].time);
 // control: time-only preamble (no "מחר") must also keep the time
 t = L('בשעה 2 לקחת את לאלי לחוג');
 check('P0#2 control (no מחר): time = 14:00',  t.length === 1 && t[0].time === '14:00',       t.map(x => ({ t: x.title, m: x.time, d: x.date })));
+
+// ── Visible title keeps date/time preamble for single-task inputs ─────────────
+const visibleTitleCases = [
+  'מחר בשמונה לקחת את הילדים לחוג',
+  'היום בשש לקנות חלב',
+  'ביום ראשון בתשע להתקשר לרופא',
+  'לקנות חלב',
+];
+for (const input of visibleTitleCases) {
+  t = L(input);
+  check(`visible title preserved: "${input}"`,
+    t.length === 1 && t[0].title === input,
+    t.map(x => x.title));
+}
+
+// Shared preamble behavior for multiple tasks is intentionally unchanged.
+t = L('מחר בשמונה לקנות חלב ולהתקשר לרופא');
+check('multi-task preamble remains excluded from visible titles',
+  t.length === 2 && t.every(x => !x.title.startsWith('מחר בשמונה')),
+  t.map(x => x.title));
 
 // ── noun-phrase completion guard: never "verb + את" standalone ────────────────
 t = L('לסדר את ולקנות חלב');

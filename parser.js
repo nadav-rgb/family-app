@@ -535,6 +535,12 @@
       }
     }
 
+    // For a single resulting task, keep the spoken preamble in the visible title.
+    // Date/time extraction remains unchanged; multi-task shared preambles stay metadata-only.
+    if (segments.length === 1 && preambleStr) {
+      segments[0].text = (preambleStr + ' ' + segments[0].text).trim();
+    }
+
     // A time stated in the preamble ("מחר בשעה 2 לקחת...") belongs to the FIRST task
     // only (date carries to all tasks; time only to the adjacent first action).
     if (preambleTime && preambleTime.fromText && segments.length) {
