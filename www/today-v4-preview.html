@@ -408,6 +408,7 @@
   .show-all svg{color:var(--muted)}
 
   .tlist{display:flex;flex-direction:column;gap:28px;flex:0 0 auto}
+  .tlist-empty{padding:34px 16px;text-align:center;font-size:19px;font-weight:600;color:var(--gold-deep);opacity:.8}
   .task{
     display:flex;align-items:center;gap:26px;
     flex:0 0 auto;min-height:208px;
@@ -687,44 +688,7 @@
           </span>
         </div>
         <div class="tlist">
-          <div class="task t1">
-            <span class="time">10:00</span>
-            <span class="av"><img class="slot-img" src="photo.jpeg" alt=""></span>
-            <div class="body">
-              <div class="nm">חוג כדורגל של יונתן</div>
-              <div class="meta">פארק הספורט, רעננה</div>
-            </div>
-            <span class="status-circle">
-              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>
-            </span>
-          </div>
-          <div class="task t2">
-            <span class="time">13:30</span>
-            <span class="av"><img class="slot-img" src="photo.jpeg" alt=""></span>
-            <div class="body">
-              <div class="nm">פגישה עם המורה של נועה</div>
-              <div class="meta">בית הספר</div>
-            </div>
-            <span class="status-circle"></span>
-          </div>
-          <div class="task t3">
-            <span class="time">17:00</span>
-            <span class="av"><img class="slot-img" src="photo.jpeg" alt=""></span>
-            <div class="body">
-              <div class="nm">סופר יחד</div>
-              <div class="meta">רשימת קניות משותפת</div>
-            </div>
-            <span class="status-circle"></span>
-          </div>
-          <div class="task t4">
-            <span class="time">19:30</span>
-            <span class="av"><img class="slot-img" src="photo.jpeg" alt=""></span>
-            <div class="body">
-              <div class="nm">ערב סרט משפחתי</div>
-              <div class="meta">בחירת סרט והכנת פופקורן</div>
-            </div>
-            <span class="status-circle"></span>
-          </div>
+          <div class="tlist-empty">אין משימות להיום עדיין</div>
         </div>
       </div>
 

@@ -13,3 +13,4 @@ serviceAccount.json
 firebase-adminsdk*.json
 # Admin backfill run manifests (rollback records)
 backfill-run-*.json
+_eleven-key.txt
