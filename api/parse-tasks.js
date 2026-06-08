@@ -1,6 +1,7 @@
 const { parseWithClaude } = require('./_providers/claude');
 const { parseWithOpenAI } = require('./_providers/openai');
 const { guard } = require('./_lib/guard');
+const { removeUmbrellaOriginalTask } = require('./_lib/task-postprocess');
 
 const PROVIDER = process.env.AI_PROVIDER || 'claude';
 const CONFIDENCE_THRESHOLD = 0.7;
@@ -174,8 +175,9 @@ module.exports = async function handler(req, res) {
 
     // 4. Safety net: never let a context-less bare-verb task through. Drop it and
     //    force review so the user can re-dictate, rather than store "להכין".
-    const tasks      = cleaned.filter(t => !isContextlessTitle(t.title));
-    const droppedAny = tasks.length !== cleaned.length;
+    const withoutBare = cleaned.filter(t => !isContextlessTitle(t.title));
+    const tasks       = removeUmbrellaOriginalTask(transcript, withoutBare);
+    const droppedAny  = tasks.length !== cleaned.length;
 
     const _serverMs = Date.now() - _serverT0;
     console.log(`[parse-tasks] cold=${_cold} serverMs=${_serverMs} aiMs=${_aiMs} tasks=${tasks.length}`);

@@ -85,5 +85,17 @@ check('baseline#6 local: returns Array',           Array.isArray(t),       typeo
 check('baseline#6 local: at least 1 task',         t.length >= 1,          t.length);
 check('baseline#6 local: each task has title',     t.every(x => x && typeof x.title === 'string' && x.title.length > 0), t.map(x => x && x.title));
 
+const bug1 = 'ללכת למכות לקנות תותים לחזור הביתה לנעול נעליים';
+t = L(bug1);
+check('bug#1 local: no original-plus-splits duplicate',
+  !(t.length > 1 && t.some(x => x.title === bug1)),
+  t.map(x => x.title));
+
+const bug2 = 'ללכת לסופר לקנות תותים לקנות נעליים';
+t = L(bug2);
+check('bug#2 local: does not create 3 tasks',
+  t.length !== 3,
+  t.map(x => x.title));
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
