@@ -3821,7 +3821,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
 
 <div class="app-screen active" id="s-today">
   <!-- NEW HOME: user's design (Today v4) rendered verbatim, isolated from app CSS. -->
-  <iframe id="v4Home" src="today-v4-preview.html?v=18" title="Today" style="position:absolute;inset:0;width:100%;height:100%;border:0;z-index:60;background:#FBF6EE;display:block;"></iframe>
+  <iframe id="v4Home" src="today-v4-preview.html?v=19" title="Today" style="position:absolute;inset:0;width:100%;height:100%;border:0;z-index:60;background:#FBF6EE;display:block;"></iframe>
   <div class="t-scroll">
     <!-- ═══ NEW HOME HEADER (Home.html redesign) ═══ -->
     <div class="hm-header">
@@ -8552,7 +8552,7 @@ function isShoppingListTitle(title) {
   // Very long list — almost certainly a list regardless of content
   if (words.length >= 12) return true;
   // Grocery item detection — 2+ known food/household items + 3+ words = shopping list
-  const GROCERY_RX = /חלב|ביצ|לחם|גבינ|שמן|קמח|בשר|פסט|שוקו|בנ[ננ]|תפוח|עגבני|מלפפ|גזר|עוף|דג[יו]?|שמנת|חמאה|יוגורט|קפה|סוכר|מלח|אורז|בצל|שום|לימון|תות|גלידה|מיץ|שקד|אגוז|דבש|חטיף|עוגי/g;
+  const GROCERY_RX = /חלב|ביצ|לחם|גבינ|שמן|קמח|בשר|פסט|שוקו|בנ[ננ]|תפוח|עגבני|מלפפ|גזר|עוף|דג[יו]?|שמנת|חמאה|יוגורט|קפה|סוכר|מלח|אורז|בצל|שום|לימון|תות|גלידה|מיץ|שקד|אגוז|דבש|חטיף|עוגי|טונה|יין|בירה|נקני|קטשופ|מיונז|טחינה|חומוס|סלמון|שניצל|פלפל|תפוז|אבטיח|מלון|ענב|רוטב|קולה|סודה|שימור|קורנפלקס|קרקר|במבה|ביסלי|דגני|חזה|כרוב|חסה|פטרוז|תרד|קישוא|חציל|תפודי?ם?|נייר|סבון|שמפו|אקונומיק/g;
   const groceryHits = (title.match(GROCERY_RX) || []).length;
   if (groceryHits >= 2 && words.length >= 3) return true;
   return false;
@@ -8615,7 +8615,17 @@ function categorizeShoppingTitle(task) {
         try { saveState(); } catch(_) {}
         // Persist the resolved list to the cloud so it survives sync merges and
         // reaches other family devices (categorization runs only on one device).
-        try { if (typeof _daWriteTask === 'function') _daWriteTask(task, false).catch(() => {}); } catch (_) {}
+        // GUARD: write ONLY for a COMMITTED task (its id already lives in
+        // AppState.tasks). A preview/confirmation task carries a temporary id that
+        // reconcile discards for a fresh one at commit — writing it here would leave
+        // an orphan cloud doc that the onSnapshot listener later resurrects as a
+        // duplicate. The committed task (final id) gets categorized again on the
+        // Today/home screen, so the cloud write + cart still happen — on the right id.
+        const _committed = Array.isArray(AppState.tasks) &&
+                           AppState.tasks.some(t => String(t.id) === String(task.id));
+        if (_committed) {
+          try { if (typeof _daWriteTask === 'function') _daWriteTask(task, false).catch(() => {}); } catch (_) {}
+        }
       }
     } catch (err) {
       console.error('[categorize-shopping] failed for:', task.title, err?.message || err);
@@ -9721,30 +9731,13 @@ function renderConfirmationTasks() {
       });
     }
 
-    // Shopping categorization — show 🛒 button when AI returns grouped list.
-    // Note: dpRender may have already kicked off categorization for the same task.
-    // categorizeShoppingTitle now returns a shared promise, so awaiting it here
-    // correctly resolves after categorization completes (whoever started it).
-    if (task.shoppingList) {
-      _attachConfShoppingBtn(task, taskEl);
-    } else if (task._shopError) {
-      // silently skip — no error shown to user
-    } else if (isShoppingListTitle(task.title)) {
-      var spinner = document.createElement('span');
-      spinner.className = 'shop-spinner';
-      spinner.textContent = '⏳';
-      var colMidSpin = taskEl.querySelector('.col-mid');
-      if (colMidSpin) colMidSpin.appendChild(spinner);
-      categorizeShoppingTitle(task).then(function() {
-        var el = listEl.querySelector('[data-taskid="' + task.id + '"]');
-        if (!el) return;
-        var sp = el.querySelector('.shop-spinner');
-        if (sp) sp.remove();
-        if (task.shoppingList) {
-          _attachConfShoppingBtn(task, el);
-        }
-        // _shopError: silently skip
-      });
+    // Shopping categorization — runs SILENTLY here. The confirmation screen ("הנה
+    // מה שהבנתי") must never show a cart button, tag, or spinner; the grocery list
+    // surfaces only on the Today screen after the task is saved. We still kick off
+    // categorization in the background so task.shoppingList is ready by then — but
+    // with no UI attached. (Cart UI lives in the Today/detail renderers only.)
+    if (!task.shoppingList && !task._shopError && isShoppingListTitle(task.title)) {
+      categorizeShoppingTitle(task); // fire-and-forget, no spinner, no button
     }
   });
 
@@ -10018,6 +10011,23 @@ function _restoreOkBtn() {
   if (btn) { btn.disabled = false; btn.classList.remove('success'); btn.textContent = t('dp_ok'); }
 }
 
+// True when aiTitle is exactly localTitle with a leading time/date phrase removed —
+// i.e. the AI dropped a "בשעה 8" / "מחר" / "ביום ראשון" prefix the local parser kept.
+// Used by #3 guard to preserve the fuller local title. Conservative: the dropped
+// prefix must be ONLY a time/date expression, and the remainder must match exactly.
+function _aiDroppedLeadingTimeDate(localTitle, aiTitle) {
+  const lt = String(localTitle || '').trim();
+  const at = String(aiTitle || '').trim();
+  if (!lt || !at || lt === at) return false;
+  if (!lt.endsWith(at)) return false;                 // AI must be the trailing remainder
+  const prefix = lt.slice(0, lt.length - at.length).trim();
+  if (!prefix) return false;
+  // One time/date token, e.g. "בשעה 8", "מחר", "ביום ראשון", "בתשע בבוקר".
+  const TOKEN = '(?:ב?שעה\\s*)?(?:ב[-־]?\\s*)?(?:\\d{1,2}(?::\\d{2})?|מחרתיים|מחר|היום|אתמול|אחת\\s+עשרה|שתים\\s+עשרה|שתיים|שתים|שלוש|שלש|ארבע|חמש|שש|שבע|שמונה|תשע|עשר|אחת|אחד|ביום\\s+\\S+)(?:\\s+(?:בבוקר|בצהריי?ם|אחר[\\s-]?הצהריים|בערב|בלילה))?';
+  // The dropped prefix must be ONE OR MORE time/date tokens and nothing else.
+  return new RegExp('^(?:' + TOKEN + ')(?:\\s+(?:' + TOKEN + '))*$').test(prefix);
+}
+
 // Reconcile the background AI result into the (already-visible) local preview.
 function _reconcileAi(gen, aiResult, aiT0, failed) {
   if (gen !== AppState.previewGen) return; // a newer run superseded this one
@@ -10041,6 +10051,19 @@ function _reconcileAi(gen, aiResult, aiT0, failed) {
   const aiTasks = (aiResult.tasks && aiResult.tasks.length)
     ? aiResult.tasks.map(aiParsedToTask)
     : AppState.previewTasks; // AI returned nothing usable → keep local
+
+  // #3 guard: the server AI sometimes shortens a single task's title by dropping a
+  // leading time/date phrase the local parser kept ("בשעה 8 להתקשר לשוש" → "להתקשר
+  // לשוש"). When local and AI both yield exactly one task and the only difference is
+  // that dropped leading time/date prefix, keep the fuller LOCAL title (internal AI
+  // fields are still adopted with the rest of the AI task). Title-only, never splits.
+  const _localTasks = AppState.previewTasks;
+  if (_localTasks && _localTasks.length === 1 && aiTasks.length === 1
+      && aiTasks !== _localTasks
+      && _aiDroppedLeadingTimeDate(_localTasks[0].title, aiTasks[0].title)) {
+    aiTasks[0] = Object.assign({}, aiTasks[0], { title: _localTasks[0].title });
+    AppLog.info('phase2-reconcile', 'kept local title (AI dropped leading time/date)');
+  }
   AppLog.info('phase2-reconcile',
     `gen=${gen} aiMs=${aiMs} aiTasks=${aiTasks.length} edited=${AppState.previewUserEdited} pending=${AppState.previewCommitPending} delayed=${_commitDelayed}`);
 
@@ -14742,10 +14765,21 @@ function _v4Push(){
       return { memberId: p.userId || p.memberId || '', name: nm, photoUrl: _v4AvatarSrc({ name: nm, avatar: p.avatar }) };
     });
     const tasks = (typeof activeTasks === 'function') ? activeTasks() : [];
+    const _hasShop = t => !!(t.shoppingList && t.shoppingList.categories && Object.keys(t.shoppingList.categories).length > 0);
     const tlist = tasks.map(t => {
       let url = '';
       try { url = _v4AvatarSrc(typeof resolveMember === 'function' ? resolveMember(t) : null); } catch (e) {}
-      return { id: t.id, time: (t.mins != null ? m2t(t.mins) : ''), title: t.title || '', meta: t.location || '', done: !!t.completed, photoUrl: url };
+      return { id: t.id, time: (t.mins != null ? m2t(t.mins) : ''), title: t.title || '', meta: t.location || '', done: !!t.completed, photoUrl: url, shopping: _hasShop(t) };
+    });
+    // Shopping cart lives on the Today/home screen (per product spec). The v4 home
+    // can't categorize on its own, so kick it off here for any shopping-title task
+    // that isn't categorized yet, then re-push so the 🛒 appears once ready. Idempotent:
+    // categorizeShoppingTitle dedupes in-flight calls and sets shoppingList once, so the
+    // guard below stops re-triggering after success (no push loop).
+    tasks.forEach(t => {
+      if (!t.shoppingList && !t._shopError && typeof isShoppingListTitle === 'function' && isShoppingListTitle(t.title)) {
+        try { categorizeShoppingTitle(t).then(() => { if (t.shoppingList) _v4Push(); }); } catch (_) {}
+      }
     });
     const next = tasks.find(t => !t.completed && t.mins != null) || tasks.find(t => !t.completed);
     let hero;
@@ -14818,6 +14852,22 @@ function _v4HandleAction(d){
         doDelete(t, 's-today');
         try { if (typeof renderToday === 'function') renderToday(); } catch (_) {}
       }
+      break;
+    }
+    case 'shopping': {                    // 🛒 in v4 home → open the categorized shopping list
+      const t = (typeof activeTasks === 'function') ? activeTasks().find(x => String(x.id) === String(d.id)) : null;
+      if (!t) break;
+      // The v4 iframe is full-screen (inset:0), so the button rect it reported is in
+      // the same viewport coords as the host. Build a throwaway 0-size anchor at that
+      // rect so showTitleTip positions the shopping tip over the tapped 🛒.
+      const phone = document.querySelector('.phone');
+      const r = d.rect || { left: 0, top: 0, width: 0, height: 0 };
+      const anchor = document.createElement('div');
+      anchor.style.cssText = 'position:fixed;left:' + r.left + 'px;top:' + r.top + 'px;width:' + (r.width||1) + 'px;height:' + (r.height||1) + 'px;pointer-events:none;opacity:0;z-index:0;';
+      (phone || document.body).appendChild(anchor);
+      try { showTitleTip(t, anchor); } catch (_) {}
+      // The tip keeps its own reference; drop the anchor node shortly after.
+      setTimeout(() => { if (anchor.parentNode) anchor.parentNode.removeChild(anchor); }, 8000);
       break;
     }
     case 'hero':                          // hero "next task" card → its detail

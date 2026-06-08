@@ -274,16 +274,12 @@
       }
     }
 
-    // Tier 3: bare mention — but NOT if preceded by "את" (direct object)
-    for (const { names, id } of people) {
-      for (const name of names) {
-        if (!new RegExp('את\\s+' + name).test(text) && text.includes(name)) {
-          Log.info('assignee', `tier-3 mention: ${name} → ${id}`);
-          return { id, fromText: true, match: name };
-        }
-      }
-    }
-
+    // Tier 3 (bare mention) intentionally REMOVED: a family name appearing inside
+    // task content ("להתקשר לאמא", "לאסוף את דודי") is plain text — the object or
+    // recipient of the action, NOT the performer. Only an explicit subject — a name
+    // at sentence start (tier 1) or name + conjugated agent-verb "אמא תקנה" (tier 2)
+    // — assigns the task. Inferring an assignee from a content mention wrongly stole
+    // the name out of the title ("להתקשר לאמא" → "להתקשר ל", assignee=mom).
     Log.info('assignee', 'none detected');
     return { id: null, fromText: false, match: null };
   }
@@ -304,6 +300,12 @@
     }
     // Strip reminder verb keywords (Hebrew — Phase 2 should move to config)
     s = s.replace(/\b(תזכיר|תזכור|תזכרי|תזכרו|להזכיר|זכור|זכרי)\b/g, '');
+    // Strip a sequential connector left at a split boundary ("...ואז להתקשר" →
+    // task "ואז להתקשר", or task1 "...מלפפונים ואז"). These join two actions; once
+    // split they are noise at the head or tail of a title. Does not change meaning.
+    const SEQ_CONNECTOR = '(?:ואז|אז|אחר\\s+כך|ואחר\\s+כך|אחרי\\s+זה|ואחרי\\s+זה|לאחר\\s+מכן|ולאחר\\s+מכן)';
+    s = s.replace(new RegExp('^' + SEQ_CONNECTOR + '\\s+'), '')
+         .replace(new RegExp('\\s+' + SEQ_CONNECTOR + '$'), '');
     s = s.replace(/\s{2,}/g, ' ')
          .replace(/^[\s,.\-–״׳]+/, '')
          .replace(/[\s,.\-–״׳]+$/, '')
@@ -419,6 +421,30 @@
     return MOVEMENT_VERBS.has(segText.trim().split(/\s+/)[0]);
   }
 
+  // Shopping-list guard: dictating a long grocery list, the speech-to-text often
+  // repeats the buy verb ("לקנות חלב לקנות לחם", "...בצל ולקנות טונה"). Each "לקנות"
+  // becomes its own verb position → the list is wrongly split into several tasks
+  // (and the tail half, stripped of "לקנות", may not even register as a shopping
+  // list → no cart). A shopping segment is one that opens with the buy verb, OR a
+  // movement compound headed to a store ("ללכת לסופר לקנות..."). Two such segments
+  // in a row are the SAME shopping trip — merge them.
+  const BUY_VERBS    = new Set(['לקנות', 'לקחת']);
+  const STORE_RE     = /לסופר|בסופר|פיצוצי|בשוק|סופרמרקט|קניות/;
+  function isShoppingSeg(segText) {
+    const s = String(segText || '').trim();
+    if (!s) return false;
+    const first = s.split(/\s+/)[0];
+    if (BUY_VERBS.has(first)) return true;
+    if (MOVEMENT_VERBS.has(first) && STORE_RE.test(s)) return true;
+    return false;
+  }
+  // A segment that begins with a bare buy verb is a continuation of the previous
+  // shopping segment — drop its redundant leading verb when merging so the title
+  // reads as one list ("לקנות חלב לחם", not "לקנות חלב לקנות לחם").
+  function stripLeadingBuyVerb(segText) {
+    return String(segText || '').trim().replace(/^לקנות\s+/, '');
+  }
+
   // Noun-phrase completion guard. These construct/preposition words REQUIRE an object
   // after them, so a segment must never END on one ("...לסדר את"). If it does, the
   // object was orphaned into the next segment and we merge it back. Deterministic.
@@ -522,6 +548,21 @@
         splitReason:  cur.reason,
         preambleDate: (preambleDate && preambleDate.fromText) ? preambleDate : null,
       });
+    }
+
+    // Shopping-list merge: collapse consecutive shopping segments (repeated buy
+    // verb from speech-to-text) back into one grocery task. Only merges when BOTH
+    // the current segment and the next are shopping segments — a genuine second
+    // action (לשלם/להתקשר/...) starts with a different verb and is left untouched.
+    for (let i = 0; i < segments.length - 1; ) {
+      if (isShoppingSeg(segments[i].text) && isShoppingSeg(segments[i + 1].text)) {
+        const tail = stripLeadingBuyVerb(segments[i + 1].text);
+        segments[i].text = (segments[i].text + (tail ? ' ' + tail : '')).trim();
+        Log.info('shopping-merge', `merged "${segments[i + 1].text}" → "${segments[i].text}"`);
+        segments.splice(i + 1, 1);
+      } else {
+        i++;
+      }
     }
 
     // Noun-phrase completion guard: never leave a segment ending on a construct word

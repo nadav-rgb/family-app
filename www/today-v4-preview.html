@@ -394,6 +394,15 @@
     flex:0 0 auto;
     display:flex;flex-direction:column;
   }
+  .v4-shop-btn{
+    display:inline-flex;align-items:center;gap:6px;margin-top:8px;
+    padding:7px 13px;border:none;border-radius:13px;cursor:pointer;
+    background:linear-gradient(135deg,#fff3e8,#ffe7cf);
+    color:#7a4a1e;font-family:inherit;font-size:14px;font-weight:700;
+    box-shadow:0 2px 8px rgba(160,110,40,.18);
+    -webkit-tap-highlight-color:transparent;transition:transform .12s ease,box-shadow .15s ease;
+  }
+  .v4-shop-btn:active{ transform:scale(.96); box-shadow:0 1px 4px rgba(160,110,40,.16); }
   .tasks-head{
     display:flex;align-items:center;justify-content:space-between;
     margin-bottom:20px;flex:0 0 auto;
@@ -807,6 +816,25 @@
   // Rebuilding the whole list on every done/delete made the page collapse &
   // regrow and reloaded avatars. These build/update/remove only what changed.
   var _CHECK_SVG='<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>';
+  // 🛒 shopping button — shown when the host marks a task as a categorized shopping
+  // list (t.shopping). Tapping asks the host to open the categorized list; we report
+  // the button's viewport rect so the host can anchor its tooltip over it.
+  function _shopBtnPost(id, btn){
+    var r = btn.getBoundingClientRect();
+    _post({ type:'action', name:'shopping', id:id, rect:{ left:r.left, top:r.top, width:r.width, height:r.height } });
+  }
+  function _syncShopBtn(row, t){
+    var body = row.querySelector('.body'); if(!body) return;
+    var existing = body.querySelector('.v4-shop-btn');
+    if(t.shopping){
+      if(!existing){
+        var b=document.createElement('button'); b.className='v4-shop-btn'; b.type='button';
+        b.textContent='🛒 רשימת קניות מסודרת';
+        b.addEventListener('click', function(ev){ ev.stopPropagation(); _haptic(8); _shopBtnPost(String(t.id), b); });
+        body.appendChild(b);
+      }
+    } else if(existing){ existing.remove(); }
+  }
   function _buildTaskWrap(t, cls){
     var wrap=document.createElement('div'); wrap.className='task-wrap'; wrap.dataset.id=String(t.id);
     var del=document.createElement('div'); del.className='task-del';
@@ -823,6 +851,7 @@
     var sc=row.querySelector('.status-circle');
     if(sc) sc.addEventListener('click', function(ev){ ev.stopPropagation(); _haptic(14); _post({type:'action',name:'toggleDone',id:wrap.dataset.id}); });
     _attachSwipe(row, wrap.dataset.id);
+    _syncShopBtn(row, t);
     wrap.appendChild(del); wrap.appendChild(row);
     var img=row.querySelector('.av img'); if(img) focusFace(img);
     return wrap;
@@ -839,6 +868,7 @@
     if(img && img.getAttribute('src')!==src){ img.setAttribute('src',src); focusFace(img); }
     var sc=row.querySelector('.status-circle');
     if(sc){ var has=!!sc.querySelector('svg'); if(t.done&&!has) sc.innerHTML=_CHECK_SVG; else if(!t.done&&has) sc.innerHTML=''; }
+    _syncShopBtn(row, t);
   }
   function _collapseRemove(w){
     if(w._collapsing) return; w._collapsing=true; w.dataset.id='';

@@ -97,5 +97,52 @@ check('bug#2 local: does not create 3 tasks',
   t.length !== 3,
   t.map(x => x.title));
 
+// ── Shopping-list merge: repeated buy verb (speech-to-text artifact) → ONE task ──
+// A long grocery dictation often repeats "לקנות" (or "ולקנות"). Each repeat used to
+// become its own task, splitting one shopping list into several (and the tail half,
+// stripped of the verb, lost its cart). These must collapse back to a single list.
+t = L('לקנות מלפפונים עגבניות בצל לקנות טונה שמן יין');
+check('shop-merge: repeated לקנות → 1 task',
+  t.length === 1 && t[0].title === 'לקנות מלפפונים עגבניות בצל טונה שמן יין',
+  t.map(x => x.title));
+t = L('לקנות מלפפונים עגבניות בצל ולקנות טונה שמן יין');
+check('shop-merge: ולקנות → 1 task',
+  t.length === 1 && t[0].title === 'לקנות מלפפונים עגבניות בצל טונה שמן יין',
+  t.map(x => x.title));
+t = L('לקנות חלב לחם לקנות ביצים גבינה');
+check('shop-merge: three-ish items, one drop → 1 task',
+  t.length === 1 && t[0].title === 'לקנות חלב לחם ביצים גבינה',
+  t.map(x => x.title));
+// A genuine second action must STILL split — the merge only joins shopping segments.
+t = L('לקנות מלפפונים עגבניות ולשלם חשבון');
+check('shop-merge: לשלם stays its own task → 2',
+  t.length === 2 && t.some(x => x.title.startsWith('לשלם')),
+  t.map(x => x.title));
+
+// ── #2: no assignee inferred from a name inside task content (zombie removed) ──
+t = L('להתקשר לאמא');
+check('#2 "להתקשר לאמא": title whole, no assignee',
+  t.length === 1 && t[0].title === 'להתקשר לאמא' && !t[0].assignee,
+  t.map(x => ({ t: x.title, a: x.assignee })));
+t = L('לאסוף את דודי');
+check('#2 "לאסוף את דודי": title whole, no assignee',
+  t.length === 1 && t[0].title === 'לאסוף את דודי' && !t[0].assignee,
+  t.map(x => ({ t: x.title, a: x.assignee })));
+// Explicit subject assignment MUST still work.
+t = L('אמא תקנה חלב בערב');
+check('#2 explicit "אמא תקנה" still assigns mom', t[0] && t[0].assignee === 'mom', t[0] && t[0].assignee);
+t = L('יונתן יסדר את החדר');
+check('#2 explicit "יונתן יסדר" still assigns yonatan', t[0] && t[0].assignee === 'yonatan', t[0] && t[0].assignee);
+
+// ── #4: sequential connector ("ואז"/"אחר כך") stripped from title after split ──
+t = L('לקנות מלפפונים ואז להתקשר לשוש');
+check('#4 "ואז" not left in any title',
+  t.length === 2 && t.every(x => !/(^|\s)(ואז|אז|אחר\s+כך)(\s|$)/.test(x.title)),
+  t.map(x => x.title));
+t = L('לסדר את החדר אחר כך לקנות חלב');
+check('#4 "אחר כך" not left in any title',
+  t.every(x => !/אחר\s+כך/.test(x.title)),
+  t.map(x => x.title));
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
