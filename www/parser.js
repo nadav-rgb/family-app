@@ -51,7 +51,7 @@
         'לשלם','לשלוח','לשמור','לשטוף',
         'לטפל','לתקן',
         'לפגוש','לפנות','לפתוח',
-        'לרשום',
+        'לרשום','לדבר',
         'לענות','לעדכן',
         'לחפש','לחזור','לחכות',
         'לדווח','למצוא','למסור',
@@ -456,6 +456,24 @@
     return DANGLING_TAIL.has(w[w.length - 1]);
   }
 
+  // A coordinated temporal prefix belongs to the action that follows it:
+  // "... ובשש לקחת" -> previous task ends before "ו", next starts "בשש לקחת".
+  // Keep this deliberately narrow to explicit ו+time/date phrases immediately
+  // before a recognized action verb.
+  function forwardTemporalPrefix(text, verbPos) {
+    const before = text.slice(0, verbPos);
+    const HOUR = '(?:\\d{1,2}(?::\\d{2})?|אחת\\s+עשרה|אחד\\s+עשר|שתים\\s+עשרה|שתיים|שתים|שלוש|שלש|ארבע|חמש|שש|שבע|שמונה|תשע|עשר|אחת|אחד)';
+    const TEMPORAL = '(?:ב(?:שעה\\s+)?' + HOUR + '(?:\\s+(?:בבוקר|בצהריי?ם|בערב|בלילה))?|בבוקר|בצהריי?ם|אחר[\\s-]?הצהריים|בערב|בלילה|ביום\\s+(?:ראשון|שני|שלישי|רביעי|חמישי|שישי|שבת))';
+    const m = before.match(new RegExp('(?:^|\\s)(ו' + TEMPORAL + ')\\s*$'));
+    if (!m) return null;
+    const boundaryStart = m.index + m[0].indexOf(m[1]);
+    return { boundaryStart, segmentStart: boundaryStart + 1 };
+  }
+
+  function isTemporalPreamble(text) {
+    return /מחרתיים|מחר|היום|ביום\s+(?:ראשון|שני|שלישי|רביעי|חמישי|שישי|שבת)|בבוקר|בצהריי?ם|אחר[\s-]?הצהריים|בערב|בלילה|(?:בשעה\s+|ב[-־]?\s*)(?:\d{1,2}(?::\d{2})?|אחת\s+עשרה|אחד\s+עשר|שתים\s+עשרה|שתיים|שתים|שלוש|שלש|ארבע|חמש|שש|שבע|שמונה|תשע|עשר)/.test(String(text || ''));
+  }
+
   /**
    * freeSpeechToIntentSegments(text, opts) → IntentSegment[]
    *
@@ -498,6 +516,10 @@
       .sort((a, b) => a.pos - b.pos)
       .filter((p, i, arr) => i === 0 || p.pos !== arr[i - 1].pos);
 
+    allPositions.forEach(function (p, i) {
+      if (i > 0 && p.verb) p.forwardTemporal = forwardTemporalPrefix(clean, p.pos);
+    });
+
     if (allPositions.length === 0) {
       Log.info('split', 'no split points → single segment');
       Log.groupEnd();
@@ -524,7 +546,10 @@
         break;
       }
 
-      const rawEnd  = next ? (next.hasVav ? next.pos - 1 : next.pos) : clean.length;
+      const segStart = cur.forwardTemporal ? cur.forwardTemporal.segmentStart : cur.pos;
+      const rawEnd   = next
+        ? (next.forwardTemporal ? next.forwardTemporal.boundaryStart : (next.hasVav ? next.pos - 1 : next.pos))
+        : clean.length;
 
       // Guard: movement+purpose compound — ו absent before this verb AND previous
       // segment starts with a movement verb → this verb is the PURPOSE, not a new task.
@@ -535,7 +560,7 @@
         Log.info('movement-compound', `merged "${purposeText}" into previous`);
         continue;
       }
-      const segText = clean.slice(cur.pos, rawEnd).trim();
+      const segText = clean.slice(segStart, rawEnd).trim();
 
       if (segText.length <= 4 && i < allPositions.length - 1) {
         Log.warn('skip', `ghost segment "${segText}"`);
@@ -576,9 +601,23 @@
       }
     }
 
-    // For a single resulting task, keep the spoken preamble in the visible title.
-    // Date/time extraction remains unchanged; multi-task shared preambles stay metadata-only.
-    if (segments.length === 1 && preambleStr) {
+    // Product rule: booking a doctor appointment and buying medicine is one
+    // connected medical errand. Keep this exception narrow; unrelated purchases
+    // or doctor actions continue through the normal segmentation behavior.
+    for (let i = 0; i < segments.length - 1; i++) {
+      const first  = segments[i].text;
+      const second = segments[i + 1].text;
+      if (/^(?:להזמין|לקבוע)(?:\s|$)/.test(first) && /(?:תור|רופא)/.test(first)
+          && /^לקנות(?:\s|$)/.test(second) && /תרופ/.test(second)) {
+        segments[i].text = (first + ' ו' + second).trim();
+        segments.splice(i + 1, 1);
+        break;
+      }
+    }
+
+    // Keep a spoken temporal preamble visible on the first action. Date metadata
+    // may still carry to later tasks, but the words themselves belong up front.
+    if (segments.length && preambleStr && isTemporalPreamble(preambleStr)) {
       segments[0].text = (preambleStr + ' ' + segments[0].text).trim();
     }
 

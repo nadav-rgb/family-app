@@ -7753,6 +7753,7 @@ function _beepStop()  { _playSfx('stop');  }
 // speech-recognition restart loop (and its per-cycle system earcon) cannot
 // keep running — and "chasing" the user — after they've moved on.
 function _haltVoice() {
+  _resetOrganizerProcessingState();
   if (!vListening && !vPaused && !_pendingOrganize) return;  // nothing active
   _pendingOrganize = false;
   vListening = false;
@@ -7899,11 +7900,11 @@ function _stopSilencePoll() {
 // false on real failure. Callers decide how to react.
 function _recStart() {
   if (!recognition) return false;
-  try { recognition.start(); return true; }
+  try { recognition.start(); _recognitionActive = true; return true; }
   catch (err) {
     AppLog.warn('rec.start failed', err.name || '', err.message || '');
     // InvalidStateError = "already started"; treat as success (idempotent).
-    if (err.name === 'InvalidStateError') return true;
+    if (err.name === 'InvalidStateError') { _recognitionActive = true; return true; }
     return false;
   }
 }
@@ -7913,6 +7914,7 @@ function _recStart() {
 // a localized message in the appropriate place. After 4s the message fades
 // back to the idle prompt so the screen doesn't stay "stuck" on an error.
 function _onRecFatal(message) {
+  _resetOrganizerProcessingState();
   vListening = false;
   _pendingOrganize = false;
   _sfxMute(false);
@@ -8020,6 +8022,7 @@ let _lastAcceptedFinal = ''; // replay/cumulative guard: last isFinal transcript
 let _vOrganizerBusy        = false; // processing lock — prevents concurrent vOrganize calls
 let _lastProcessedTranscript = '';  // dedup guard — ignores identical consecutive submissions
 let _pendingOrganize       = false; // set by vStop so onend calls vOrganize after final results
+let _recognitionActive     = false; // true from recognition.start() until recognition.onend
 
 const sbBubble = document.getElementById('speechBubble');
 const sbText   = document.getElementById('sbText');
@@ -8113,6 +8116,26 @@ if (SpeechAPI) {
   recognition.interimResults = true;
   recognition.lang           = 'he-IL';
 
+  function _mergeRecognitionText(base, incoming) {
+    base = (base || '').trim();
+    incoming = (incoming || '').trim();
+    if (!base) return incoming;
+    if (!incoming || incoming === base || base.startsWith(incoming)) return base;
+    if (incoming.startsWith(base)) return incoming;
+
+    // Android may revise one word inside a cumulative result (for example
+    // "ב-6:00" -> "בשש"). Treat a longer hypothesis with a strong shared
+    // prefix as a replacement, not as a new incremental desktop segment.
+    const a = base.split(/\s+/);
+    const b = incoming.split(/\s+/);
+    let common = 0;
+    while (common < a.length && common < b.length && a[common] === b[common]) common++;
+    if (b.length >= a.length && common >= 2 && common >= Math.ceil(Math.min(a.length, b.length) / 2)) {
+      return incoming;
+    }
+    return `${base} ${incoming}`;
+  }
+
   recognition.onresult = (e) => {
     // ── Collect new finals + current interim from this event ─────────
     // Only iterate from e.resultIndex to avoid re-processing confirmed segments.
@@ -8143,7 +8166,7 @@ if (SpeechAPI) {
         // Clear carryOver so it won't be prepended again, start session fresh.
         vCarryOver    = '';
         vSessionFinal = newFinal || '';
-        vTranscript   = [vSessionFinal, latestInterim].filter(Boolean).join(' ');
+        vTranscript   = _mergeRecognitionText(vSessionFinal, latestInterim);
         showBubble(vTranscript);
         return;
       }
@@ -8174,17 +8197,14 @@ if (SpeechAPI) {
     //
     // Desktop is unaffected: its incremental segments never trigger startsWith.
     if (newFinal && newFinal !== _lastAcceptedFinal) {
-      if (vSessionFinal && newFinal.startsWith(vSessionFinal)) {
-        vSessionFinal = newFinal;                              // Android cumulative → replace
-      } else {
-        vSessionFinal = vSessionFinal ? vSessionFinal + ' ' + newFinal : newFinal; // Desktop/standard
-      }
+      vSessionFinal = _mergeRecognitionText(vSessionFinal, newFinal);
       _lastAcceptedFinal = newFinal;
     } else if (newFinal && newFinal === _lastAcceptedFinal) {
       AppLog.warn('duplicate prevention', `skipped repeated final: "${newFinal}"`);
     }
 
-    vTranscript = [vCarryOver, vSessionFinal, latestInterim].filter(Boolean).join(' ');
+    const sessionText = _mergeRecognitionText(vSessionFinal, latestInterim);
+    vTranscript = _mergeRecognitionText(vCarryOver, sessionText);
     if (newFinal)      AppLog.info('final transcript',   newFinal);
     if (latestInterim) AppLog.info('interim transcript', latestInterim);
     showBubble(vTranscript);
@@ -8218,6 +8238,7 @@ if (SpeechAPI) {
   };
 
   recognition.onend = () => {
+    _recognitionActive = false;
     if (_pendingOrganize) {
       _pendingOrganize = false;
       setTimeout(() => { hideBubble(false); vOrganize(); }, 100);
@@ -9764,6 +9785,15 @@ function _stopParseStages() {
   _parseStageTimers = [];
 }
 
+// Release the organizer lock and its processing UI on every terminal/reset path.
+// This is intentionally separate from transcript/reconcile cleanup so it is safe
+// to call repeatedly without changing parsed tasks or navigation state.
+function _resetOrganizerProcessingState() {
+  _vOrganizerBusy = false;
+  _stopParseStages();
+  if (zone) zone.classList.remove('processing');
+}
+
 async function vOrganize() {
   vListening = false;
   wdots.classList.remove('on');
@@ -9849,8 +9879,7 @@ async function vOrganize() {
       : [aiParsedToTask({ title: spokenText || '?', time: null, date: null, assignee: null }, 0)];
     AppLog.info('add-mode insert (local-first)', newTasks.map(t => t.title));
     insertNewTasks(newTasks);
-    _stopParseStages();
-    _vOrganizerBusy = false;
+    _resetOrganizerProcessingState();
     return;
   }
 
@@ -9875,10 +9904,8 @@ async function vOrganize() {
   if (_rb) _rb.classList.remove('on');
   if (_fb) _fb.classList.remove('on');
 
-  _vOrganizerBusy = false;
-  _stopParseStages();
+  _resetOrganizerProcessingState();
   zone.classList.remove('rec');
-  zone.classList.remove('processing');
   ltxt.className = 'ltxt';
   document.getElementById('dpSub').style.color = '';
   document.getElementById('dpSub').textContent = t('dp_sub');
@@ -10028,6 +10055,61 @@ function _aiDroppedLeadingTimeDate(localTitle, aiTitle) {
   return new RegExp('^(?:' + TOKEN + ')(?:\\s+(?:' + TOKEN + '))*$').test(prefix);
 }
 
+const _RECONCILE_CONNECTOR_TOKENS = new Set([
+  'ו', 'ואז', 'אז', 'אחר', 'כך', 'ואחר', 'ואחרי', 'אחרי', 'לאחר', 'מכן',
+]);
+
+function _reconcileWords(title) {
+  return String(title || '')
+    .normalize('NFKC')
+    .replace(/[.,;:!?"'׳״()\[\]{}\-–—]+/g, ' ')
+    .split(/\s+/)
+    .map(word => word.trim())
+    .filter(word => word && !_RECONCILE_CONNECTOR_TOKENS.has(word));
+}
+
+function _sameWordMultiset(a, b) {
+  const counts = new Map();
+  _reconcileWords(a).forEach(word => counts.set(word, (counts.get(word) || 0) + 1));
+  for (const word of _reconcileWords(b)) {
+    const count = counts.get(word) || 0;
+    if (!count) return false;
+    if (count === 1) counts.delete(word);
+    else counts.set(word, count - 1);
+  }
+  return counts.size === 0;
+}
+
+function _protectedTimePhrases(title) {
+  const text = String(title || '').normalize('NFKC');
+  const phrases = text.match(/מחרתיים|מחר|היום|בבוקר|בצהריי?ם|אחר[\s-]?הצהריים|בערב|בלילה|ביום\s+(?:ראשון|שני|שלישי|רביעי|חמישי|שישי|שבת)|(?:בשעה\s+|ב[-־]?\s*)?\d{1,2}(?::\d{2})?/g) || [];
+  return phrases.map(s => s.replace(/\s+/g, ' ').trim()).sort();
+}
+
+function _preservesProtectedTimePhrases(localTitle, aiTitle) {
+  const local = _protectedTimePhrases(localTitle);
+  const ai    = _protectedTimePhrases(aiTitle);
+  return local.every(phrase => ai.includes(phrase));
+}
+
+function _isTimeDateOnlyTitle(title) {
+  const text = String(title || '').trim();
+  return /^(?:מחרתיים|מחר|היום|בבוקר|בצהריי?ם|אחר[\s-]?הצהריים|בערב|בלילה|ביום\s+(?:ראשון|שני|שלישי|רביעי|חמישי|שישי|שבת)|(?:בשעה\s+|ב[-־]?\s*)?\d{1,2}(?::\d{2})?)(?:\s+(?:בבוקר|בצהריי?ם|בערב|בלילה))?$/.test(text);
+}
+
+function _canAutoApplyAiTasks(localTasks, aiTasks) {
+  if (!Array.isArray(localTasks) || !Array.isArray(aiTasks)
+      || localTasks.length !== aiTasks.length || !localTasks.length) return false;
+
+  return localTasks.every((localTask, index) => {
+    const aiTask = aiTasks[index];
+    if (!aiTask || _isTimeDateOnlyTitle(aiTask.title)) return false;
+    if ((localTask.assignedTo || null) !== (aiTask.assignedTo || null)) return false;
+    if (!_preservesProtectedTimePhrases(localTask.title, aiTask.title)) return false;
+    return _sameWordMultiset(localTask.title, aiTask.title);
+  });
+}
+
 // Reconcile the background AI result into the (already-visible) local preview.
 function _reconcileAi(gen, aiResult, aiT0, failed) {
   if (gen !== AppState.previewGen) return; // a newer run superseded this one
@@ -10066,6 +10148,18 @@ function _reconcileAi(gen, aiResult, aiT0, failed) {
   }
   AppLog.info('phase2-reconcile',
     `gen=${gen} aiMs=${aiMs} aiTasks=${aiTasks.length} edited=${AppState.previewUserEdited} pending=${AppState.previewCommitPending} delayed=${_commitDelayed}`);
+
+  const canAutoApply = _canAutoApplyAiTasks(_localTasks, aiTasks);
+  if (!canAutoApply) {
+    AppLog.info('phase2-reconcile', 'kept local (AI failed conservative replacement guard)');
+    _applyReconcileBanners(aiResult);
+    if (AppState.previewCommitPending) {
+      AppState.previewCommitPending = false;
+      _restoreOkBtn();
+      _doCommitPreview();
+    }
+    return;
+  }
 
   // User tapped OK before the AI returned.
   if (AppState.previewCommitPending) {
@@ -10259,8 +10353,16 @@ const SPLIT_TASK_VERBS = new Set([
 
 const _PRONOUN_L = /^ל(?:י|ו|ה|נו|הם|הן|כם|כן|ך)$/;
 
+function isTimeDateOnlySegment(seg) {
+  const s = String(seg || '').trim();
+  const HOUR = '(?:\\d{1,2}(?::\\d{2})?|אחת\\s+עשרה|אחד\\s+עשר|שתים\\s+עשרה|שתיים|שתים|שלוש|שלש|ארבע|חמש|שש|שבע|שמונה|תשע|עשר|אחת|אחד)';
+  const PART = '(?:בבוקר|בצהריי?ם|אחר[\\s-]?הצהריים|בערב|בלילה)';
+  return new RegExp('^(?:מחרתיים|מחר|היום|ביום\\s+(?:ראשון|שני|שלישי|רביעי|חמישי|שישי|שבת)|ב(?:שעה\\s+)?' + HOUR + '(?:\\s+' + PART + ')?|' + PART + ')(?:\\s+(?:מחרתיים|מחר|היום|' + PART + '))?$').test(s);
+}
+
 function isBadSegment(seg) {
   const words = seg.trim().split(/\s+/).filter(Boolean);
+  if (isTimeDateOnlySegment(seg)) return true;
   if (words.length < 2) return true;                                        // lone verb
   if (_PRONOUN_L.test(words[0])) return true;                              // pronoun-ל
   if (words[0].startsWith('ל') && !SPLIT_TASK_VERBS.has(words[0])) return true; // non-verb ל
@@ -10327,6 +10429,13 @@ function filterMovementCompound(segs, originalTitle) {
 // movement+purpose-compound filter. Manual long-press keeps using the raw
 // sanitizeSegments(mockSplit(...)) as an escape hatch for explicit user intent.
 function offerableSplit(title) {
+  const words = String(title || '').trim().split(/\s+/).filter(Boolean);
+  const startsTemporal = words.length > 0 && isTimeDateOnlySegment(words.slice(0, 1).join(' '))
+    || isTimeDateOnlySegment(words.slice(0, 2).join(' '));
+  if (startsTemporal) {
+    const actionCount = words.filter(word => SPLIT_TASK_VERBS.has(word.replace(/^ו(?=ל)/, ''))).length;
+    if (actionCount <= 1) return [];
+  }
   return filterMovementCompound(sanitizeSegments(mockSplit(title)), title);
 }
 
@@ -10908,6 +11017,7 @@ function _warmParseEndpoint() {
 }
 
 function resetVoiceScreen() {
+  _resetOrganizerProcessingState();
   _warmParseEndpoint();
   // Phase 2: clear any in-flight local-first reconcile state from a prior run.
   AppState.previewGen++;            // invalidate any pending AI result
@@ -16770,10 +16880,13 @@ try { const _sv = document.getElementById('s-voice'); if (_sv) _sv.style.display
 // the mic immediately.
 function openAddSheet(opts) {
   const autoRecord = !(opts && opts.autoRecord === false);
+  if (vListening || vPaused || _pendingOrganize) _haltVoice();
   addMode = true;
   // Reset voice state fresh for add session
   vTranscript = ''; vCarryOver = ''; vSessionFinal = '';
-  _freshSession = false; _lastAcceptedFinal = '';
+  _freshSession = false; _lastAcceptedFinal = ''; _lastProcessedTranscript = '';
+  _pendingOrganize = false;
+  clearTimeout(_restartTimer);
   // Reset sheet UI
   const bubble = document.getElementById('atdBubble');
   if (bubble) { bubble.textContent = ''; bubble.classList.remove('has-text'); }
@@ -16810,7 +16923,9 @@ function openAddSheet(opts) {
 
 function closeAddSheet() {
   addMode = false;
-  if (vListening) {
+  _pendingOrganize = false;
+  clearTimeout(_restartTimer);
+  if (vListening || vPaused) {
     _stopKeepAlive();
     _clearMaxRecTimers();
     clearTimeout(_restartTimer);
@@ -16847,6 +16962,10 @@ function setAtdFast(on) {
 
 function _atdStartRec() {
   if (!addMode) return;
+  _pendingOrganize = false;
+  clearTimeout(_restartTimer);
+  vTranscript = ''; vCarryOver = ''; vSessionFinal = '';
+  _freshSession = false; _lastAcceptedFinal = ''; _lastProcessedTranscript = '';
   _lastBurstLen = 0;   // fresh threshold reference per session
   _lastBurstAt  = 0;
   _sfxMute(true);   // silence Android recognizer earcons for the whole session
@@ -16880,12 +16999,20 @@ function _atdStopAndOrganize() {
   _setAtdRecording(false);
   // Use stop() (not abort) so the final audio chunk is delivered before we
   // organize — last words ("...לחם") are not cut off. onend (via _pendingOrganize)
-  // triggers vOrganize once the engine flushes; fall back to a timer if stop throws.
+  // is the completion signal; no timer may organize while results are still arriving.
   if (recognition) {
-    try { _pendingOrganize = true; recognition.stop(); }
-    catch(_) { _pendingOrganize = false; setTimeout(() => { if (addMode) vOrganize(); }, 120); }
+    try {
+      _pendingOrganize = true;
+      recognition.stop();
+    }
+    catch(_) {
+      if (!_recognitionActive) {
+        _pendingOrganize = false;
+        setTimeout(() => { if (addMode) vOrganize(); }, 0);
+      }
+    }
   } else {
-    setTimeout(() => { if (addMode) vOrganize(); }, 120);
+    setTimeout(() => { if (addMode) vOrganize(); }, 0);
   }
 }
 
@@ -16930,7 +17057,8 @@ document.getElementById('atdAddBtn').addEventListener('click', () => {
   // If still recording, stop (with sound) + organize. If the user already
   // tapped the mic to stop, just organize the captured text (no double beep).
   if (vListening) _atdStopAndOrganize();
-  else { setTimeout(() => { if (addMode) vOrganize(); }, 40); }
+  else if (_recognitionActive) _pendingOrganize = true;
+  else setTimeout(() => { if (addMode) vOrganize(); }, 0);
 });
 
 // ─── Typing toggle inside the Add-Task sheet ──────────────────────
