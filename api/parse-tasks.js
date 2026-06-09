@@ -2,6 +2,7 @@ const { parseWithClaude } = require('./_providers/claude');
 const { parseWithOpenAI } = require('./_providers/openai');
 const { guard } = require('./_lib/guard');
 const { removeUmbrellaOriginalTask } = require('./_lib/task-postprocess');
+const { applyTemporalOwnership } = require('./_lib/temporal');
 
 const PROVIDER = process.env.AI_PROVIDER || 'claude';
 const CONFIDENCE_THRESHOLD = 0.7;
@@ -34,6 +35,11 @@ function isContextlessTitle(title) {
   return BARE_TRANSITIVE_VERBS.has(clean);
 }
 
+// ─── DORMANT (intentionally NOT called) ───────────────────────────────────────
+// Restored verbatim from checkpoint baefb72 to keep rollback cheap until the new
+// deterministic temporal layer (api/_lib/temporal.js → applyTemporalOwnership) is
+// verified on a deployed device. Fragment cleanup is currently handled inside that
+// layer; this copy is kept dead, NOT wired into the flow. Do not call it.
 // ─── Time/date-fragment merge ─────────────────────────────────────────────────
 // gpt-4o-mini sometimes mis-splits a bare time/date phrase ("בשעה 14:00", "מחר",
 // "14:00") into its own task. That is never a real task. This guard detects such a
@@ -153,9 +159,15 @@ module.exports = async function handler(req, res) {
     const _aiMs = Date.now() - _aiT0;
 
     // 1. Trust the AI's split — the model is the brain. No local re-splitting.
-    //    Exception: merge back any bare time/date fragment the model split off
-    //    (e.g. "בשעה 14:00") so the time/date lands on its action, not a phantom task.
-    const splitTasks = mergeTimeDateFragments(raw.rawTasks.slice());
+    //    Then the deterministic temporal layer takes ownership of time/date:
+    //    it works on the RAW transcript (where word order is intact), assigns each
+    //    time to the action it belongs to (forward-binding), inherits the date,
+    //    and drops any bare time/date fragment the model split off. It mutates
+    //    ONLY time/date — task boundaries / titles / assignees stay the AI's.
+    const _nowMins = /^\d{1,2}:\d{2}$/.test(String(time || ''))
+      ? (+time.split(':')[0]) * 60 + (+time.split(':')[1])
+      : null;
+    const splitTasks = applyTemporalOwnership(transcript, raw.rawTasks.slice(), { nowMins: _nowMins });
 
     // 2. Fill missing assignees from preamble (only when AI left them null)
     if (assigneeFromPreamble) {
