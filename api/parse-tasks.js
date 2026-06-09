@@ -3,6 +3,7 @@ const { parseWithOpenAI } = require('./_providers/openai');
 const { guard } = require('./_lib/guard');
 const { removeUmbrellaOriginalTask } = require('./_lib/task-postprocess');
 const { applyTemporalOwnership } = require('./_lib/temporal');
+const { restoreTemporalPrefix } = require('./_lib/title-preserve');
 
 const PROVIDER = process.env.AI_PROVIDER || 'claude';
 const CONFIDENCE_THRESHOLD = 0.7;
@@ -190,6 +191,12 @@ module.exports = async function handler(req, res) {
     const withoutBare = cleaned.filter(t => !isContextlessTitle(t.title));
     const tasks       = removeUmbrellaOriginalTask(transcript, withoutBare);
     const droppedAny  = tasks.length !== cleaned.length;
+
+    // 5. Title preservation (deterministic, title-only): tasks are final here —
+    //    restore any time/date EXPRESSION the AI dropped from the visible title,
+    //    using the raw transcript. Mutates ONLY title; never touches
+    //    time/date/assignee/count/splits. Conservative: skips when ambiguous.
+    restoreTemporalPrefix(transcript, tasks);
 
     const _serverMs = Date.now() - _serverT0;
     console.log(`[parse-tasks] cold=${_cold} serverMs=${_serverMs} aiMs=${_aiMs} tasks=${tasks.length}`);
