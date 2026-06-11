@@ -21,14 +21,15 @@
 // (FCM) and iOS (APNs-over-FCM), so adding iPhone needs no change here.
 
 const fcm = require('./_lib/fcm');
+const { guard } = require('./_lib/guard');
 
 const ALLOWED_TYPES = { TaskCreated: true, TaskCompleted: true };
 
 module.exports = async (req, res) => {
-  if (req.method !== 'POST') {
-    res.status(405).json({ error: 'method-not-allowed' });
-    return;
-  }
+  // CORS + OPTIONS preflight + method + per-IP rate limit (same helper the
+  // working AI endpoints use). The Capacitor WebView origin (https://localhost)
+  // is on the guard's allowlist, so the app's cross-origin POST is permitted.
+  if (!(await guard(req, res, 'family-event'))) return;
   try {
     if (!fcm.isConfigured()) {
       res.status(503).json({ error: 'fcm-not-configured', detail: fcm.configError() });
