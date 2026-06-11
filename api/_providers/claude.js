@@ -15,7 +15,7 @@ Return this exact structure:
   "tasks": [
     {
       "title": "task in Hebrew — keep time/date words exactly as spoken; strip only filler and the doer's name",
-      "assignedTo": "mom|dad|dudi|yonatan|null",
+      "assignedTo": null,
       "mins": 540,
       "date": "today|tomorrow|day-after-tomorrow|null",
       "confidence": 0.9
@@ -80,27 +80,22 @@ title:
   NEVER use English action identifiers such as "take_", "call_", "buy_", "go_", etc.
   Keep the Hebrew infinitive verb verbatim: לקחת / להתקשר / לקנות / ללכת / לשלם …
   Strip: filler ONLY. KEEP time phrases and date words ("מחר", "היום", "בשעה 4", "ב-21:00") verbatim in the title — they are part of the spoken text and must stay.
-  Filler to strip: "אני צריך", "אני חייב", "צריך", "בבקשה", "תזכיר לי", "תזכרי לי"
-  Strip person name ONLY when it is the grammatical SUBJECT/DOER of the task:
-    "אמא תקנה חלב" → assignee=mom, title="לקנות חלב" (strip "אמא" — she is the doer)
-    "יונתן צריך לסדר" → assignee=yonatan, title="לסדר את החדר" (strip "יונתן")
-  Do NOT strip a name when it is the OBJECT or RECIPIENT — it is essential context:
-    "להתקשר לאמא"   → title stays "להתקשר לאמא"   (אמא is who you call, not the doer)
-    "לאסוף את דודי" → title stays "לאסוף את דודי" (דודי is the object)
-    "לשלוח ליונתן"  → title stays "לשלוח ליונתן"  (יונתן is the recipient)
+  Filler to strip — ONLY a LEADING opener at the very start: "אני צריך", "אני חייב", "בבקשה", "תזכיר לי", "תזכרי לי". NEVER strip a word from the middle of the sentence. When in doubt, KEEP the word — prefer the full spoken text.
+  NEVER strip a person name. Keep EVERY name verbatim in the title, including a leading
+  name or doer — assignment is a manual action (assignedTo is ALWAYS null), so the model
+  must never remove a name:
+    "אבא צריך להוציא אוכל" → title stays "אבא צריך להוציא אוכל"
+    "אמא תקנה חלב"        → title stays "אמא תקנה חלב"
+    "להתקשר לאמא"         → title stays "להתקשר לאמא"
+    "לאסוף את דודי"       → title stays "לאסוף את דודי"
+  PRESERVE THE EXACT WORD ORDER as spoken — NEVER reorder words and NEVER move a
+  time/date phrase to the front or the end. The title is the spoken sentence in its
+  original word order.
 
 assignedTo:
-  Set to null when no clear person is mentioned — this is the normal default.
-  Detect assignee from these patterns (in order):
-    1. Name at sentence start followed by a conjugated verb:
-       "אמא תקנה..." → mom | "אבא ייקח..." → dad | "יונתן יסדר..." → yonatan
-    2. Sentence-level subject: "X צריך/צריכה/חייב/חייבת + [tasks...]"
-       The assignee applies to ALL tasks split from that sentence, even after splitting
-       removes the name from individual task titles:
-         "יונתן צריך לסדר את החדר ולעשות שיעורים" → BOTH tasks get assignee=yonatan
-         "אמא צריכה לקחת את דודי ולקנות לחם" → BOTH tasks get assignee=mom
-    3. Bare conjugated verb tied to a name anywhere in the segment.
-  Strip the person name from the title after assigning.
+  ALWAYS null. Do NOT infer, guess, or assign any person — not from a name at the
+  start, not from a conjugated verb, not from a sentence subject. Assigning a task to
+  someone is a manual user action handled outside the model. Always return assignedTo: null.
 
 mins:
   Minutes from midnight as an integer.
