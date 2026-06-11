@@ -1390,6 +1390,46 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 .split-sh-confirm:active{transform:scale(.97);}
 .split-sh-cancel{background:#fff;border:1.5px solid rgba(160,90,30,.14);border-radius:14px;color:#9e8878;font-family:'Rubik',sans-serif;font-size:14px;font-weight:700;cursor:pointer;padding:12px;width:100%;box-shadow:0 2px 6px rgba(160,90,30,.05);}
 
+/* ─── Phase 3: confirmation tools sheet (manual split / merge) ─── */
+#s-confirmation .conf-more-btn{display:inline-flex;align-items:center;gap:5px;background:none;border:none;color:#A98C6B;font-family:'Rubik',sans-serif;font-size:11.5px;font-weight:700;padding:4px 6px;border-radius:10px;cursor:pointer;transition:background .15s ease,transform .12s ease;}
+#s-confirmation .conf-more-btn svg{width:13px;height:13px;flex:0 0 auto;}
+#s-confirmation .conf-more-btn:active{background:rgba(174,118,48,.08);transform:scale(.96);}
+.ctools-bg{position:fixed;inset:0;z-index:9150;background:rgba(28,17,10,.42);display:flex;align-items:flex-end;justify-content:center;pointer-events:none;opacity:0;transition:opacity .22s ease;}
+.ctools-bg.open{opacity:1;pointer-events:auto;}
+.ctools-sheet{width:100%;max-width:420px;background:#fffaf5;border-radius:26px 26px 0 0;box-shadow:0 -8px 40px rgba(100,60,20,.22);transform:translateY(100%);transition:transform .3s cubic-bezier(.34,1.1,.64,1);max-height:82dvh;max-height:82vh;display:flex;flex-direction:column;overflow:hidden;direction:rtl;padding-bottom:max(36px,env(safe-area-inset-bottom,36px));}
+.ctools-bg.open .ctools-sheet{transform:translateY(0);}
+.ctools-pill{width:36px;height:4px;border-radius:99px;background:#e0d4cc;margin:10px auto 6px;flex-shrink:0;}
+.ctools-head{display:flex;align-items:center;gap:8px;padding:4px 18px 4px;flex-shrink:0;}
+.ctools-back{width:30px;height:30px;border-radius:50%;border:none;background:rgba(60,45,25,.06);color:#6b5d49;display:none;align-items:center;justify-content:center;cursor:pointer;flex:0 0 auto;}
+.ctools-back.show{display:flex;}
+.ctools-back svg{width:14px;height:14px;}
+.ctools-title{font-family:'Rubik',sans-serif;font-size:17px;font-weight:900;color:#1c110a;}
+.ctools-sub{font-family:'Rubik',sans-serif;font-size:12px;font-weight:600;color:#9e8878;padding:0 18px 12px;line-height:1.5;flex-shrink:0;}
+.ctools-body{flex:1;overflow-y:auto;padding:2px 18px 8px;scrollbar-width:none;-webkit-overflow-scrolling:touch;}
+.ctools-body::-webkit-scrollbar{display:none;}
+.ctools-foot{padding:12px 18px 0;display:flex;flex-direction:column;gap:8px;flex-shrink:0;}
+.ctools-foot .split-sh-confirm:disabled{opacity:.45;box-shadow:none;cursor:default;}
+.ctools-row{display:flex;align-items:center;gap:13px;width:100%;padding:13px 12px;border:1.5px solid rgba(160,90,30,.10);border-radius:16px;background:#fff;box-shadow:0 2px 8px rgba(160,90,30,.06);font-family:'Rubik',sans-serif;cursor:pointer;direction:rtl;text-align:right;margin-bottom:9px;transition:transform .12s ease;}
+.ctools-row:active{transform:scale(.985);}
+.ctools-row.dis{opacity:.4;pointer-events:none;}
+.ctools-row-icon{width:42px;height:42px;border-radius:13px;background:#FBF3E4;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.ctools-row-body{flex:1;display:flex;flex-direction:column;align-items:flex-start;gap:2px;}
+.ctools-row-title{font-size:15px;font-weight:800;color:#1c110a;}
+.ctools-row-sub{font-size:11.5px;font-weight:600;color:#9e8878;line-height:1.4;}
+.ctools-row-chev{color:#c4ae9f;flex-shrink:0;}
+.ctools-task{display:flex;align-items:flex-start;gap:9px;width:100%;background:#fff;border-radius:14px;border:1.5px solid rgba(160,90,30,.12);padding:12px 13px;font-family:'Rubik',sans-serif;font-size:13.5px;font-weight:700;color:#1c110a;line-height:1.4;text-align:right;direction:rtl;cursor:pointer;margin-bottom:8px;transition:border-color .15s ease,background .15s ease;}
+.ctools-task.dis{opacity:.4;pointer-events:none;}
+.ctools-task .ck{width:18px;height:18px;border-radius:50%;border:2px solid rgba(160,90,30,.25);display:flex;align-items:center;justify-content:center;flex:0 0 auto;margin-top:1px;transition:border-color .15s ease,background .15s ease;}
+.ctools-task .ck svg{width:9px;height:9px;stroke:#fff;opacity:0;}
+.ctools-task.sel{border-color:#FF7A3D;background:#FFF7F0;}
+.ctools-task.sel .ck{background:#FF7A3D;border-color:#FF7A3D;}
+.ctools-task.sel .ck svg{opacity:1;}
+.ctools-task .tx{flex:1;}
+.ctools-task .tm{display:block;font-size:11px;font-weight:600;color:#9e8878;margin-top:2px;}
+.ctools-words{display:flex;flex-wrap:wrap;gap:6px;direction:rtl;margin-bottom:14px;}
+.ctools-word{padding:7px 11px;border-radius:11px;background:#fff;border:1.5px solid rgba(160,90,30,.14);font-family:'Rubik',sans-serif;font-size:14px;font-weight:700;color:#1c110a;cursor:pointer;transition:background .15s ease,border-color .15s ease,color .15s ease;}
+.ctools-word.w2{background:#FBF3E4;border-color:rgba(174,118,48,.4);color:#9B6828;}
+
 /* ─── Family settings sheet ─── */
 .fam-sheet-bg{position:absolute;inset:0;background:rgba(28,17,10,.42);opacity:0;pointer-events:none;transition:opacity .26s ease;z-index:92;}
 .fam-sheet-bg.open{opacity:1;pointer-events:auto;}
@@ -4773,6 +4813,11 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
     <div class="tasks-card">
       <div class="tasks-head">
         <div class="tasks-count"><span class="spark" aria-hidden="true">✨</span><span id="confirmTaskCount">0 משימות נמצאו</span></div>
+        <!-- Phase 3: manual split/merge entry — quiet, opens the tools sheet -->
+        <button class="conf-more-btn" id="confMoreBtn" type="button" aria-label="אפשרויות נוספות" onclick="if(typeof openConfTools==='function')openConfTools()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 21v-7"/><path d="M4 10V3"/><path d="M12 21v-9"/><path d="M12 8V3"/><path d="M20 21v-5"/><path d="M20 12V3"/><path d="M1 14h6"/><path d="M9 8h6"/><path d="M17 16h6"/></svg>
+          <span>אפשרויות נוספות</span>
+        </button>
       </div>
       <div id="confirmTasksList"></div>
     </div>
@@ -5905,6 +5950,10 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
   #s-share-sheet .ss-bell-badge.ss-muted .ss-b-slash{ display:block; stroke:#fffdf8; stroke-width:2; stroke-linecap:round; }
   #s-share-sheet .ss-bell-badge.ss-off{ opacity:.5; cursor:default; pointer-events:none; box-shadow:0 2px 6px rgba(60,42,20,.2); }
   @keyframes ssBadgePop{ from{transform:scale(.4);} to{transform:scale(1);} }
+  /* Read-only (non-creator): view the share but cannot change it. */
+  #s-share-sheet.ss-readonly .ss-grid{ opacity:.72; pointer-events:none; }
+  #s-share-sheet.ss-readonly #ssCta{ display:none; }
+  #s-share-sheet.ss-readonly .ss-summary::after{ content:'רק מי שיצר/ה את המשימה יכול/ה לשנות שיתוף'; display:block; margin-top:9px; font-size:12px; font-weight:600; color:#9e8878; text-align:center; }
   #s-share-sheet .ss-actions{ display:flex; align-items:center; gap:13px; padding:0 2px; margin-top:2px; }
   #s-share-sheet .ss-back{
     width:48px; height:48px; flex:0 0 auto; border-radius:50%; border:1px solid rgba(255,255,255,.55);
@@ -6111,6 +6160,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
         badge.innerHTML = bellSVG();
         badge.addEventListener('click', function(e){
           e.stopPropagation();
+          if(window._ssReadOnly) return;                      // non-creator: view only
           if(!c.classList.contains('ss-selected')) return;   // ring only if they see it
           if(notify[k]) delete notify[k]; else notify[k]=1;
           renderBadges(); updateNotifyText();
@@ -6158,6 +6208,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
 
   // Delegated selection toggle — works for static AND dynamically-built cards.
   grid.addEventListener('click', function(e){
+    if (window._ssReadOnly) return; // non-creator: view only, no toggling
     if (e.target.closest('.ss-bell-badge')) return; // the bell handles itself
     var card = e.target.closest('.ss-polaroid');
     if(!card || !grid.contains(card)) return;
@@ -6406,6 +6457,25 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
   </div>
 </div>
 
+<!-- ════ CONFIRMATION TOOLS SHEET (Phase 3 — manual split/merge) ════
+     Opened from the "אפשרויות נוספות" button on #s-confirmation.
+     Lives at body level (outside .phone and outside any .app-screen) so the
+     inactive-screen pointer-events kill rule never disables it. -->
+<div class="ctools-bg" id="ctoolsBg">
+  <div class="ctools-sheet" role="dialog" aria-modal="true" aria-label="אפשרויות נוספות">
+    <div class="ctools-pill"></div>
+    <div class="ctools-head">
+      <button class="ctools-back" id="ctoolsBack" type="button" aria-label="חזרה">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+      </button>
+      <div class="ctools-title" id="ctoolsTitle">אפשרויות נוספות</div>
+    </div>
+    <div class="ctools-sub" id="ctoolsSub"></div>
+    <div class="ctools-body" id="ctoolsBody"></div>
+    <div class="ctools-foot" id="ctoolsFoot"></div>
+  </div>
+</div>
+
 <!-- ════ AVATAR SHEETS (1A — infrastructure) ════ -->
 <!-- Hidden file inputs: two separate (camera vs gallery) for cross-device reliability -->
 <input type="file" id="avFileCamera"  accept="image/*" capture="user" style="display:none">
@@ -6610,7 +6680,7 @@ const _urlDbg  = new URLSearchParams(window.location.search).get('debug') === '1
 // ── Runtime build marker (visible in Settings + Sync Diagnostics) ──
 // Bump this string on every web build so we can confirm — from the device —
 // exactly which code is actually running, independent of Android versionCode.
-const APP_BUILD = '1.4.3-build10-herofix-2026-06-04';
+const APP_BUILD = '1.4.3-build11-splitmerge-2026-06-10';
 window.APP_BUILD = APP_BUILD;
 try { const _bv = document.getElementById('settingsBuildVal'); if (_bv) _bv.textContent = APP_BUILD; } catch (e) {}
 const _urlDiag = new URLSearchParams(window.location.search).get('diag') === '1';
@@ -8133,6 +8203,19 @@ if (SpeechAPI) {
     if (b.length >= a.length && common >= 2 && common >= Math.ceil(Math.min(a.length, b.length) / 2)) {
       return incoming;
     }
+    // Revision+extension: speech-to-text sometimes re-states the SAME utterance with
+    // an early word corrected and more words appended (e.g. base "מחר ב-8:00 לקחת את"
+    // → incoming "מחר בשמונה לקחת את הילדים לחוג"). The shared prefix is short (one word
+    // changed) so the rule above misses it and we would wrongly append, duplicating the
+    // transcript. Detect it: if incoming is at least as long and its first base.length
+    // words match base with at most ONE substitution, incoming is a corrected restatement
+    // → replace, don't append. Guarded to base.length >= 3 so a genuinely new short
+    // segment is never eaten.
+    if (b.length >= a.length && a.length >= 3) {
+      let mismatches = 0;
+      for (let i = 0; i < a.length; i++) { if (a[i] !== b[i]) mismatches++; }
+      if (mismatches <= 1) return incoming;
+    }
     return `${base} ${incoming}`;
   }
 
@@ -8681,6 +8764,11 @@ function isAgendaCandidate(title) {
 // /api/summarize-task endpoint stay in the repo so we can flip this
 // back on later (e.g. after the Capacitor port or a prompt redesign).
 const AGENDA_SUMMARY_ENABLED = false;
+// Phase 1 (verbatim) — the split SUGGESTION is suspended on the confirmation screen.
+// Splitting belongs to a later phase; with verbatim titles the current offer heuristic
+// wrongly proposes peeling openers ("אני צריך"/"תזכיר לי"). Flip to false later to
+// restore the offer. offerableSplit/mockSplit logic is intentionally left untouched.
+const PHASE1_SUSPEND_SPLIT_SUGGESTION = true;
 
 async function summarizeAgendaTitle(task) {
   if (!AGENDA_SUMMARY_ENABLED) return;
@@ -9722,7 +9810,7 @@ function renderConfirmationTasks() {
       '<button class="menu" aria-label="אפשרויות" onclick="_visBackScreen=\'s-confirmation\';AppState._editingTask=(AppState.previewTasks||[]).find(function(t){return String(t.id)===\'' + task.id + '\';})||AppState._editingTask;if(typeof renderVisibility===\'function\')renderVisibility();goto(\'s-visibility\',\'txLeaveBloom\',\'txEnterFocus\')">' + MENU_SVG + '</button>' +
       '<button class="col-left" type="button" aria-label="ערוך שעה">' + timeHTML + '</button>' +
       '<div class="col-mid"><div class="t-title"><span contenteditable="plaintext-only" role="textbox" aria-label="כותרת משימה">' + esc(task.title) + '</span></div>' +
-        (offerableSplit(task.subItems ? task.subItems.mainTitle || task.title : task.title).length >= 2 ?
+        (!PHASE1_SUSPEND_SPLIT_SUGGESTION && offerableSplit(task.subItems ? task.subItems.mainTitle || task.title : task.title).length >= 2 ?
           '<button class="conf-split-btn" data-splitid="' + task.id + '">' +
           '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5"/><path d="M8 3H3v5"/><path d="M12 22v-8.3a4 4 0 0 0-1.172-2.872L3 3"/><path d="m15 9 6-6"/></svg>' +
           ' פצל' +
@@ -10232,6 +10320,8 @@ function _doCommitPreview() {
   AppState.previewAiResult      = null;
   _hideAiChip();
   saveState();
+  // TaskCreated push is emitted centrally inside _daWriteTask (covers every
+  // creation + share/notify-edit path), so no per-commit emit is needed here.
   newTasks.forEach(task => _daWriteTask(task, true).catch(() => {}));
   _capRescheduleAll().catch(() => {});
   renderToday();
@@ -12218,6 +12308,10 @@ document.getElementById('tTasks').addEventListener('click', e => {
     _daWriteTask(task).catch(() => {});
     _capCancelTask(task.id).catch(() => {});
     _cancelScheduledPushesForTask(task.id).catch(() => {});
+    // Family Event System — TaskCompleted (core Family moment). Lets the creator
+    // + watchers know "X completed: …" and wakes notifyTo to cancel their local
+    // alarms. Runs AFTER local save + cloud write; fire-and-forget, never blocks.
+    try { if (window.PushService) PushService.emitTaskCompleted(task); } catch (_) {}
   }
 
   // Shopping split spawned a follow-up task — a full repaint is simpler and
@@ -13871,6 +13965,161 @@ async function _capRescheduleAll() {
   } catch (_) {}
 }
 
+// ─── PushService: cross-platform wake-push (FCM now; iOS-ready) ───────────
+// Platform-neutral abstraction. Method names + the member-doc fields it writes
+// (pushToken / pushPlatform / pushProvider / pushUpdatedAt) are deliberately
+// provider- and OS-agnostic, so adding iPhone later needs NO rename or rewrite —
+// only enabling APNs in the Firebase console and shipping the iOS build. The
+// push is only a WAKE signal: the woken device reschedules its own LOCAL
+// notifications via the existing _capRescheduleAll, so all reminder TIMING
+// stays on-device and unchanged. Android is the only platform tested for now.
+const PushService = (() => {
+  let _token = null;
+  let _registered = false;
+  let _listenersWired = false;
+  const _emitted = new Set();   // dedup guard: eventIds already POSTed this session
+
+  function _plugin() {
+    try { return window?.Capacitor?.Plugins?.PushNotifications ?? null; } catch (_) { return null; }
+  }
+  function _platform() {
+    try { return (window.Capacitor && Capacitor.getPlatform && Capacitor.getPlatform()) || 'web'; } catch (_) { return 'web'; }
+  }
+  function _isNative() {
+    try { return !!(window.Capacitor && Capacitor.isNativePlatform && Capacitor.isNativePlatform()); } catch (_) { return false; }
+  }
+
+  // 1. Ask permission, register with the OS push service, capture the token.
+  async function registerPushToken() {
+    const pn = _plugin();
+    if (!pn || !_isNative()) { console.log('[push] not native / no plugin — skip register'); return null; }
+    if (_registered) return _token;
+    try {
+      // Wire listeners BEFORE register() so the async 'registration' event isn't missed.
+      handleIncomingWakePush();
+      let perm = await pn.checkPermissions();
+      if (perm.receive !== 'granted') perm = await pn.requestPermissions();
+      if (perm.receive !== 'granted') { console.log('[push] permission not granted'); return null; }
+      await pn.register();
+      _registered = true;
+      return _token; // token arrives async via the 'registration' listener → savePushTokenToMember
+    } catch (e) { console.warn('[push] register failed', e && e.message); return null; }
+  }
+
+  // 2. Persist this device's token onto the member doc (cross-platform fields).
+  async function savePushTokenToMember(token) {
+    const tok = token || _token;
+    if (!tok || !_db || !DataAdapter.isFamily() || !DataAdapter.userId) return;
+    try {
+      await _db.collection('families').doc(DataAdapter.familyId)
+               .collection('members').doc(DataAdapter.userId)
+               .set({
+                 pushToken:     tok,
+                 pushPlatform:  _platform(),     // 'android' | 'ios' | 'web'
+                 pushProvider:  'fcm',
+                 pushUpdatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+               }, { merge: true });
+      console.log('[push] token saved to member', DataAdapter.userId, _platform());
+    } catch (e) { console.warn('[push] savePushTokenToMember failed', e && e.message); }
+  }
+
+  // 3. Family Event System emitter (MVP: TaskCreated + TaskCompleted only).
+  // Generic dispatch — POSTs an event to the single /api/family-event endpoint.
+  // Fire-and-forget + fully guarded: a push failure never affects the caller.
+  function _actorName() {
+    try { return (DataAdapter.displayName && String(DataAdapter.displayName).trim()) || 'מישהו במשפחה'; } catch (_) { return 'מישהו במשפחה'; }
+  }
+  function _uniq(arr) { const s = new Set(); const o = []; (arr || []).forEach(x => { if (x && !s.has(x)) { s.add(x); o.push(x); } }); return o; }
+
+  async function _emit(payload) {
+    try {
+      if (!payload || !payload.eventId) return;
+      if (_emitted.has(payload.eventId)) return;     // session dedup (re-render / double-tap)
+      _emitted.add(payload.eventId);
+      if (!Array.isArray(payload.audience) || !payload.audience.length) return;
+      // On native the app is served from localhost, so a relative /api path can't
+      // reach the serverless function — point at the Vercel host (same base the
+      // parse-tasks / generate-avatar calls use). On web, '' keeps it same-origin.
+      const base = (typeof window !== 'undefined' && window.Capacitor)
+        ? 'https://family-app-roan.vercel.app'
+        : '';
+      await fetch(base + '/api/family-event', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      console.log('[event] emitted', payload.type, '→', payload.audience.length, 'member(s)');
+    } catch (e) { console.warn('[event] emit failed', e && e.message); }
+  }
+
+  // "אמא יצרה משימה לאבא" — audience = notifyTo \ actor.
+  async function emitTaskCreated(task) {
+    try {
+      if (!task || task.notify === false || !DataAdapter.isFamily()) return;
+      const me  = DataAdapter.userId;
+      const aud = (Array.isArray(task.notifyTo) ? task.notifyTo : []).filter(id => id && id !== me);
+      if (!aud.length) return;
+      await _emit({
+        type:     'TaskCreated',
+        eventId:  `TaskCreated:${task.id}:${me}`,
+        familyId: DataAdapter.familyId,
+        actorId:  me,
+        audience: aud,
+        taskId:   String(task.id),
+        notification: { title: 'משימה חדשה במשפחה', body: `${_actorName()} יצר/ה לך משימה: ${task.title || ''}` },
+      });
+    } catch (e) { console.warn('[event] emitTaskCreated failed', e && e.message); }
+  }
+
+  // "אבא ביצע את המשימה" — audience = unique([createdBy, ...visibleTo, ...notifyTo]) \ actor.
+  // createdBy/visibleTo need the social moment; notifyTo need the wake to cancel local alarms.
+  async function emitTaskCompleted(task) {
+    try {
+      if (!task || !DataAdapter.isFamily()) return;
+      const me  = DataAdapter.userId;
+      const aud = _uniq([task.createdBy].concat(task.visibleTo || []).concat(task.notifyTo || []))
+                    .filter(id => id && id !== me);
+      if (!aud.length) return;
+      await _emit({
+        type:     'TaskCompleted',
+        eventId:  `TaskCompleted:${task.id}:${me}:${task.completedAt || ''}`,
+        familyId: DataAdapter.familyId,
+        actorId:  me,
+        audience: aud,
+        taskId:   String(task.id),
+        notification: { title: 'משימה בוצעה', body: `${_actorName()} ביצע/ה: ${task.title || ''}` },
+      });
+    } catch (e) { console.warn('[event] emitTaskCompleted failed', e && e.message); }
+  }
+
+  // 4. Receive a wake push → pull latest + reschedule LOCAL notifications.
+  function handleIncomingWakePush() {
+    const pn = _plugin();
+    if (!pn || _listenersWired) return;
+    _listenersWired = true;
+    pn.addListener('registration', (t) => {
+      _token = (t && t.value) || null;
+      console.log('[push] registration token received');
+      savePushTokenToMember(_token);
+    });
+    pn.addListener('registrationError', (e) => console.warn('[push] registrationError', e && (e.error || e)));
+    // App alive (foreground/background): silent data wake → reschedule.
+    pn.addListener('pushNotificationReceived', (n) => { console.log('[push] received', n && n.data && n.data.type); _onWake(); });
+    // User tapped the heads-up (app was killed): reschedule on open.
+    pn.addListener('pushNotificationActionPerformed', () => { _onWake(); });
+  }
+
+  async function _onWake() {
+    try {
+      if (typeof _daLoadTasksFromCloud === 'function') await _daLoadTasksFromCloud().catch(() => {});
+      if (typeof _capRescheduleAll   === 'function') await _capRescheduleAll().catch(() => {});
+    } catch (e) { console.warn('[push] onWake failed', e && e.message); }
+  }
+
+  return { registerPushToken, savePushTokenToMember, emitTaskCreated, emitTaskCompleted, handleIncomingWakePush };
+})();
+try { window.PushService = PushService; } catch (_) {}
+
 // ─── Firestore timestamp → milliseconds ─────────────────────────
 function _toMs(val) {
   if (!val) return 0;
@@ -14304,6 +14553,11 @@ async function _fbLinkAuthToMember(authUid) {
   await ref.set(payload, { merge: true });
   console.log('[Auth] member updated —', hasLinkedAt ? 'lastSeenAt refreshed' : 'authUid linked (first time)');
 
+  // Register this device for cross-platform wake-push and persist its token onto
+  // the member doc. Fully guarded + fire-and-forget: any failure leaves the app
+  // exactly as before (local-notifications only). Android-tested; iOS-ready.
+  try { if (window.PushService) PushService.registerPushToken(); } catch (_) {}
+
   // Step A (security migration, ADDITIVE — nothing reads this yet): write the
   // uid-keyed membership marker that future Firestore rules will check. Rules can
   // only exists()/get() by a path derived from request.auth.uid — they cannot
@@ -14597,6 +14851,20 @@ async function _daWriteTask(task, isNew) {
     await ref.set(data, { merge: true });
     _diagLastWrite = { status: 'ok', id: String(task.id), path, time: new Date().toLocaleTimeString(), err: null };
     console.log('[FB] task written:', task.id, task.title);
+    // Family Event System — central emit point. Every LOCAL task write passes here
+    // (the Firestore listener never calls _daWriteTask), so this covers ALL creation
+    // and share/notify-edit paths. emitTaskCreated computes audience (notifyTo minus
+    // self) and dedups via its _emitted set, so it fires at most once per task.
+    // Gated on !completed so the "done" write (which also calls _daWriteTask) does
+    // NOT send a TaskCreated — TaskCompleted is emitted separately at its own hook.
+    // Gated on !preview so the confirmation-screen "מי מקבל התראה" share-sheet write
+    // (which writes the still-preview task via _daWriteTask before "save all") does
+    // NOT notify early — previewTasks is cleared at commit, so the real save fires it.
+    try {
+      var _isPreview = (typeof AppState !== 'undefined' && Array.isArray(AppState.previewTasks)
+        && AppState.previewTasks.some(function(p){ return String(p.id) === String(task.id); }));
+      if (window.PushService && !task.completed && !task.deleted && !_isPreview) PushService.emitTaskCreated(task);
+    } catch (_) {}
   } catch (e) {
     _diagLastWrite = { status: 'fail', id: String(task.id), path, time: new Date().toLocaleTimeString(), err: e.message || String(e) };
     AppLog.warn('FB', 'writeTask failed', e.message || e);
@@ -18378,6 +18646,257 @@ function splitSave() {
 }
 </script>
 
+<script>
+// ═════════ Phase 3 — Manual split / merge tools (confirmation screen) ═════════
+// "אפשרויות נוספות" on #s-confirmation opens #ctoolsBg with two manual controls:
+// split one preview task into two, or merge two preview tasks into one.
+// Conservative by design — the user always drives; nothing happens automatically.
+// Operates ONLY on AppState.previewTasks (pre-save). Titles are partitioned /
+// concatenated verbatim (the single exception: a leading coordinating "ו" before
+// a ל-verb is stripped on the second half — same as the existing mockSplit rule).
+// Tasks are located by ID at apply time (not by reference) so an AI-reconcile
+// array swap mid-sheet degrades to a safe no-op instead of a wrong splice.
+(function confTools() {
+  var bg      = document.getElementById('ctoolsBg');
+  var body    = document.getElementById('ctoolsBody');
+  var foot    = document.getElementById('ctoolsFoot');
+  var titleEl = document.getElementById('ctoolsTitle');
+  var subEl   = document.getElementById('ctoolsSub');
+  var backBtn = document.getElementById('ctoolsBack');
+  if (!bg || !body || !foot || !titleEl || !subEl || !backBtn) return;
+
+  var _step       = 'menu'; // 'menu' | 'pick' | 'split' | 'merge'
+  var _splitId    = null;   // id of the task being split
+  var _splitTitle = '';     // title snapshot taken when the split editor opened
+  var _boundary   = null;   // word index where task 2 starts (null = not chosen yet)
+  var _mergeSel   = [];     // ids of tasks selected for merging (max 2)
+
+  var CHEV = '<svg class="ctools-row-chev" width="10" height="16" viewBox="0 0 10 16" fill="none"><path d="M7 1L1 8l6 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  var CK   = '<span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg></span>';
+
+  function esc(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  function tasks()   { return (typeof AppState !== 'undefined' && AppState.previewTasks) || []; }
+  function byId(id)  { return tasks().find(function(t){ return String(t.id) === String(id); }) || null; }
+  function words(s)  { return String(s || '').trim().split(/\s+/).filter(Boolean); }
+  function newId()   { return (typeof _genCode === 'function') ? _genCode(16) : String(Date.now()) + '_s2'; }
+  function fmtMins(m){
+    if (m == null) return '';
+    return String(Math.floor(m / 60)).padStart(2,'0') + ':' + String(m % 60).padStart(2,'0');
+  }
+  function splittable(t) { return t && words(t.title).length >= 2; }
+
+  // Suggested boundary (word index where task 2 starts) from the existing
+  // deterministic helpers — used only to PRESELECT; never applied on its own.
+  // Valid only when the first suggested segment is a verbatim prefix of the title.
+  function suggestedBoundary(title) {
+    try {
+      var segs = sanitizeSegments(mockSplit(title));
+      if (segs.length < 2) return null;
+      var w = words(title), k = words(segs[0]).length;
+      if (k >= 1 && k < w.length && w.slice(0, k).join(' ') === segs[0]) return k;
+    } catch (_) {}
+    return null;
+  }
+  function splitHalves(title, boundary) {
+    var w  = words(title);
+    var t1 = w.slice(0, boundary).join(' ');
+    var t2 = w.slice(boundary).join(' ').replace(/^ו(?=ל)/, ''); // mockSplit's own rule
+    return [t1, t2];
+  }
+  function previewRow(label, text) {
+    return '<div><div class="split-sh-row-lbl">' + label + '</div>' +
+      '<div class="split-sh-row visible"><span class="split-sh-row-ck">' +
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg>' +
+      '</span><span>' + esc(text) + '</span></div></div>';
+  }
+  function taskRowHTML(t, attrs, sel, dis) {
+    var tm = (t.mins != null) ? '<span class="tm">' + fmtMins(t.mins) + '</span>' : '';
+    return '<button type="button" class="ctools-task' + (sel ? ' sel' : '') + (dis ? ' dis' : '') + '" ' + attrs +
+      ' data-tid="' + esc(t.id) + '">' + CK + '<span class="tx">' + esc(t.title) + tm + '</span></button>';
+  }
+
+  window.openConfTools = function () {
+    _step = 'menu'; _splitId = null; _splitTitle = ''; _boundary = null; _mergeSel = [];
+    render();
+    bg.classList.add('open');
+  };
+  function close() { bg.classList.remove('open'); }
+  function finishApply() {
+    AppState.previewUserEdited = true;            // reconcile must not overwrite manual work
+    if (typeof renderConfirmationTasks === 'function') { try { renderConfirmationTasks(); } catch(_){} }
+    close();
+  }
+
+  function enterSplit(task) {
+    _step       = 'split';
+    _splitId    = task.id;
+    _splitTitle = task.title;
+    _boundary   = suggestedBoundary(task.title);  // may be null — user must tap a word
+    render();
+  }
+
+  function render() {
+    var ts = tasks();
+    backBtn.classList.toggle('show', _step !== 'menu');
+
+    if (_step === 'menu') {
+      var canSplit = ts.some(splittable);
+      var canMerge = ts.length >= 2;
+      titleEl.textContent = 'אפשרויות נוספות';
+      subEl.textContent   = 'שליטה ידנית במשימות — לפני השמירה.';
+      body.innerHTML =
+        '<button class="ctools-row' + (canSplit ? '' : ' dis') + '" id="ctoolsSplitGo" type="button">' +
+          '<div class="ctools-row-icon">✂️</div>' +
+          '<div class="ctools-row-body"><span class="ctools-row-title">פצל משימה</span>' +
+          '<span class="ctools-row-sub">' + (canSplit ? 'הפרידו משימה אחת לשתי משימות' : 'אין כאן משימה שאפשר לפצל') + '</span></div>' +
+          CHEV + '</button>' +
+        '<button class="ctools-row' + (canMerge ? '' : ' dis') + '" id="ctoolsMergeGo" type="button">' +
+          '<div class="ctools-row-icon">🔗</div>' +
+          '<div class="ctools-row-body"><span class="ctools-row-title">אחד משימות</span>' +
+          '<span class="ctools-row-sub">' + (canMerge ? 'חברו שתי משימות למשימה אחת' : 'צריך לפחות שתי משימות במסך') + '</span></div>' +
+          CHEV + '</button>';
+      foot.innerHTML = '<button class="split-sh-cancel" id="ctoolsCancel" type="button">סגור</button>';
+
+    } else if (_step === 'pick') {
+      titleEl.textContent = 'פצל משימה';
+      subEl.textContent   = 'איזו משימה לפצל?';
+      body.innerHTML = ts.map(function(t){
+        return taskRowHTML(t, 'data-pick="1"', false, !splittable(t));
+      }).join('');
+      foot.innerHTML = '<button class="split-sh-cancel" id="ctoolsCancel" type="button">ביטול</button>';
+
+    } else if (_step === 'split') {
+      var live = byId(_splitId);
+      var tl   = (live && live.title === _splitTitle) ? _splitTitle : null;
+      titleEl.textContent = 'פצל משימה';
+      subEl.textContent   = 'הקישו על המילה שממנה תתחיל המשימה השנייה.';
+      if (tl == null) { _step = 'menu'; render(); return; }   // task changed under us — back out safely
+      var w = words(tl);
+      var chips = w.map(function(word, i){
+        return '<button type="button" class="ctools-word' + (_boundary != null && i >= _boundary ? ' w2' : '') + '" data-wi="' + i + '">' + esc(word) + '</button>';
+      }).join('');
+      var prev = '';
+      if (_boundary != null) {
+        var h = splitHalves(tl, _boundary);
+        prev = previewRow('משימה 1', h[0]) + previewRow('משימה 2', h[1]);
+      }
+      body.innerHTML = '<div class="ctools-words">' + chips + '</div>' + prev;
+      foot.innerHTML =
+        '<button class="split-sh-confirm" id="ctoolsApplySplit" type="button"' + (_boundary == null ? ' disabled' : '') + '>פצל לשתי משימות</button>' +
+        '<button class="split-sh-cancel" id="ctoolsCancel" type="button">ביטול</button>';
+
+    } else if (_step === 'merge') {
+      titleEl.textContent = 'אחד משימות';
+      subEl.textContent   = 'בחרו שתי משימות לחיבור למשימה אחת.';
+      body.innerHTML = ts.map(function(t){
+        return taskRowHTML(t, 'data-merge="1"', _mergeSel.indexOf(String(t.id)) !== -1, false);
+      }).join('');
+      if (_mergeSel.length === 2) {
+        var pair = mergeOrdered();
+        if (pair) {
+          body.innerHTML += previewRow('המשימה המאוחדת',
+            (pair[0].title.trim() + ' ' + pair[1].title.trim()).replace(/\s+/g, ' '));
+        }
+      }
+      foot.innerHTML =
+        '<button class="split-sh-confirm" id="ctoolsApplyMerge" type="button"' + (_mergeSel.length !== 2 ? ' disabled' : '') + '>אחד למשימה אחת</button>' +
+        '<button class="split-sh-cancel" id="ctoolsCancel" type="button">ביטול</button>';
+    }
+  }
+
+  // The two selected tasks in LIST order (earlier first) so the merged text
+  // reads in the order the tasks appear on screen. Null if either is gone.
+  function mergeOrdered() {
+    var ts = tasks();
+    var ia = ts.findIndex(function(t){ return String(t.id) === _mergeSel[0]; });
+    var ib = ts.findIndex(function(t){ return String(t.id) === _mergeSel[1]; });
+    if (ia === -1 || ib === -1) return null;
+    return ia < ib ? [ts[ia], ts[ib]] : [ts[ib], ts[ia]];
+  }
+
+  function applySplit() {
+    var ts  = tasks();
+    var idx = ts.findIndex(function(t){ return String(t.id) === String(_splitId); });
+    if (idx === -1 || _boundary == null) { close(); return; }
+    var live = ts[idx];
+    if (live.title !== _splitTitle) { close(); return; }      // reconcile changed it — don't mis-split
+    var h = splitHalves(_splitTitle, _boundary);
+    if (!h[0] || !h[1]) return;
+    live.title = h[0];
+    delete live.shoppingList; delete live._shopError; delete live.subItems; // stale for the shorter title
+    var second = Object.assign({}, live, {
+      id: newId(),
+      title: h[1],
+      mins: null,                 // conservative: the parsed clock stays on the half it came from
+      timeSource: 'suggested',
+    });
+    delete second.shoppingList; delete second._shopError; delete second.subItems;
+    if (Array.isArray(second.visibleTo)) second.visibleTo = second.visibleTo.slice();
+    if (Array.isArray(second.notifyTo))  second.notifyTo  = second.notifyTo.slice();
+    if (second.recurrence) second.recurrence = Object.assign({}, second.recurrence);
+    ts.splice(idx + 1, 0, second);
+    finishApply();
+  }
+
+  function applyMerge() {
+    var pair = mergeOrdered();
+    if (!pair) { close(); return; }
+    var a = pair[0], b = pair[1];
+    a.title = (a.title.trim() + ' ' + b.title.trim()).replace(/\s+/g, ' ');
+    if (a.mins == null && b.mins != null) {
+      a.mins = b.mins;
+      if (b.date) a.date = b.date;
+      if (b.timeSource) a.timeSource = b.timeSource;
+    }
+    delete a.shoppingList; delete a._shopError; delete a.subItems; // re-categorized on render
+    var ts = tasks();
+    ts.splice(ts.indexOf(b), 1);
+    finishApply();
+  }
+
+  bg.addEventListener('click', function (e) {
+    if (e.target === bg) { close(); return; }
+    var el = e.target.closest ? e.target.closest('button') : null;
+    if (!el) return;
+
+    if (el.id === 'ctoolsCancel') { close(); return; }
+    if (el.id === 'ctoolsBack')   { _step = 'menu'; _splitId = null; _boundary = null; _mergeSel = []; render(); return; }
+
+    if (el.id === 'ctoolsSplitGo') {
+      var cands = tasks().filter(splittable);
+      if (!cands.length) return;
+      if (tasks().length === 1) enterSplit(cands[0]);
+      else { _step = 'pick'; render(); }
+      return;
+    }
+    if (el.id === 'ctoolsMergeGo') { _step = 'merge'; _mergeSel = []; render(); return; }
+
+    if (el.hasAttribute('data-pick')) {
+      var pt = byId(el.getAttribute('data-tid'));
+      if (pt && splittable(pt)) enterSplit(pt);
+      return;
+    }
+    if (el.hasAttribute('data-merge')) {
+      var id = String(el.getAttribute('data-tid'));
+      var at = _mergeSel.indexOf(id);
+      if (at !== -1) _mergeSel.splice(at, 1);
+      else if (_mergeSel.length < 2) _mergeSel.push(id);
+      render();
+      return;
+    }
+    if (el.classList.contains('ctools-word')) {
+      var wi = parseInt(el.getAttribute('data-wi'), 10);
+      if (wi >= 1) { _boundary = wi; render(); }              // word 0 can't start task 2
+      return;
+    }
+    if (el.id === 'ctoolsApplySplit') { applySplit(); return; }
+    if (el.id === 'ctoolsApplyMerge') { applyMerge(); return; }
+  });
+})();
+</script>
+
 <!-- ════════════════════════════════════════════════════════════════════
      DESIGN SCREEN ROUTER — unified hash-based navigation for all screens
      added as part of the Claude Design merge.
@@ -18710,9 +19229,28 @@ function splitSave() {
 
       var editing = AppState._editingTask;
       if (editing) {
+        // Creator protection (same rule as the share-sheet): a non-creator editor
+        // may not strip the task's original creator from seeing / being notified.
+        var _origCr = editing.createdBy || null;
+        var _edr    = DataAdapter.userId || null;
+        if (_origCr && _edr && _origCr !== _edr) {
+          if (seeIds.indexOf(_origCr)    === -1) seeIds.push(_origCr);
+          if (notifyIds.indexOf(_origCr) === -1) notifyIds.push(_origCr);
+        }
         editing.visibleTo  = seeIds.length    ? seeIds    : editing.visibleTo;
         editing.notifyTo   = notifyIds.length ? notifyIds : editing.notifyTo;
         editing.updatedAt  = Date.now();
+        // Same anti-duplication guard as the share-sheet: never write a still-preview
+        // task to Firestore here (listener echo + commit add = doubled row).
+        var _isPrevVis = (typeof AppState !== 'undefined' && Array.isArray(AppState.previewTasks)
+          && AppState.previewTasks.some(function(p){ return String(p.id) === String(editing.id); }));
+        if (_isPrevVis) {
+          if (typeof renderConfirmationTasks === 'function') { try { renderConfirmationTasks(); } catch(_){} }
+          AppState._editingTask = null;
+          var destP = (typeof _visBackScreen !== 'undefined' && _visBackScreen) ? _visBackScreen : 's-confirmation';
+          if (typeof goto === 'function') goto(destP, 'txLeaveFade', 'txEnterFade');
+          return;
+        }
         if (typeof saveState === 'function') { try { saveState(); } catch (_) {} }
         if (typeof _daWriteTask === 'function') _daWriteTask(editing, false).catch(function(){});
         if (typeof _capRescheduleAll === 'function') _capRescheduleAll().catch(function(){});
@@ -20402,6 +20940,18 @@ async function _mpSaveField(memberId, updates) {
 
   function openShareSheet(origin){
     _ssReturnTo = origin || (document.querySelector('.app-screen.active') || {}).id || 's-today';
+    // Read-only for non-creators: only the task's creator may change who sees /
+    // is notified. Others can view the share but cannot toggle anything (and no
+    // write/push goes out). Preview tasks are always editable (you're creating them).
+    try {
+      var _ed = (typeof AppState !== 'undefined') ? AppState._editingTask : null;
+      var _me = (typeof DataAdapter !== 'undefined') ? DataAdapter.userId : null;
+      var _isPrev = !!(_ed && typeof AppState !== 'undefined' && Array.isArray(AppState.previewTasks)
+        && AppState.previewTasks.some(function(p){ return String(p.id) === String(_ed.id); }));
+      window._ssReadOnly = !!(_ed && _ed.createdBy && _me && _ed.createdBy !== _me && !_isPrev);
+      var _r = document.getElementById('s-share-sheet');
+      if (_r) _r.classList.toggle('ss-readonly', window._ssReadOnly);
+    } catch(_) { window._ssReadOnly = false; }
     try { if (typeof window._ssSyncMembers === 'function') window._ssSyncMembers(); } catch(_){}
     if (typeof goto === 'function') goto('s-share-sheet', 'txLeaveFade', 'txEnterFade');
   }
@@ -20412,6 +20962,8 @@ async function _mpSaveField(memberId, updates) {
   // _daWriteTask + reschedule + renderToday; preview/creation task → write onto
   // previewTasks (finalised later by "שמור הכל"). No new persistence is invented.
   function commitAndReturn(){
+    // Non-creator: nothing was editable, so write nothing — just return.
+    if (window._ssReadOnly) { if (typeof goto === 'function') goto(_ssReturnTo, 'txLeaveFade', 'txEnterFade'); return; }
     try{
       var root = document.getElementById('s-share-sheet');
       var toLegacy = function(id){ return (typeof _VIS_TO_LEGACY !== 'undefined' && _VIS_TO_LEGACY[id]) ? _VIS_TO_LEGACY[id] : id; };
@@ -20426,13 +20978,33 @@ async function _mpSaveField(memberId, updates) {
 
       var editing = (typeof AppState !== 'undefined') ? AppState._editingTask : null;
       if (editing) {
+        // Creator protection: a member who is NOT the task's creator may not strip
+        // the creator from seeing / being notified about their own task. Only the
+        // creator may freely remove themselves. (Bug: a non-creator editor could
+        // hide the task from the person who created it.)
+        var _origCreator = editing.createdBy || null;
+        var _editor = (typeof DataAdapter !== 'undefined') ? DataAdapter.userId : null;
+        if (_origCreator && _editor && _origCreator !== _editor) {
+          if (seeIds.indexOf(_origCreator)    === -1) seeIds.push(_origCreator);
+          if (notifyIds.indexOf(_origCreator) === -1) notifyIds.push(_origCreator);
+        }
         editing.visibleTo = seeIds.length ? seeIds : editing.visibleTo;
         editing.notifyTo  = notifyIds;             // bell is the explicit ring state
         editing.updatedAt = Date.now();
-        if (typeof saveState === 'function') { try { saveState(); } catch(_){} }
-        if (typeof _daWriteTask === 'function') _daWriteTask(editing, false).catch(function(){});
-        if (typeof _capRescheduleAll === 'function') _capRescheduleAll().catch(function(){});
-        if (typeof renderToday === 'function') { try { renderToday(); } catch(_){} }
+        // If this is still a PREVIEW task (confirmation screen), do NOT write it to
+        // Firestore yet — that early write made the live listener pull the doc back
+        // as a separate row while "שמור הכל" also added it locally → the task showed
+        // TWICE. Only update the in-memory preview; the real write happens at commit.
+        var _isPreviewEdit = (typeof AppState !== 'undefined' && Array.isArray(AppState.previewTasks)
+          && AppState.previewTasks.some(function(p){ return String(p.id) === String(editing.id); }));
+        if (_isPreviewEdit) {
+          if (typeof renderConfirmationTasks === 'function') { try { renderConfirmationTasks(); } catch(_){} }
+        } else {
+          if (typeof saveState === 'function') { try { saveState(); } catch(_){} }
+          if (typeof _daWriteTask === 'function') _daWriteTask(editing, false).catch(function(){});
+          if (typeof _capRescheduleAll === 'function') _capRescheduleAll().catch(function(){});
+          if (typeof renderToday === 'function') { try { renderToday(); } catch(_){} }
+        }
         AppState._editingTask = null;
       } else if (typeof AppState !== 'undefined') {
         (AppState.previewTasks || []).forEach(function(t){
