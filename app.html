@@ -123,11 +123,24 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
    (e.g. s-confirmation from s-time-date / s-visibility) cross-fades in place
    instead of sliding up, which read as an annoying small "jump". */
 @keyframes txEnterSoft  {from{opacity:0;}to{opacity:1;}}
+/* א — flat opacity-only leave (no scale → no "jump", no GPU layer flash). */
+@keyframes txLeaveSoftFade {from{opacity:1;}to{opacity:0;}}
 
 /* ── Warm flash overlay ── */
 #txFlash{position:absolute;inset:0;z-index:999;pointer-events:none;background:radial-gradient(ellipse at 50% 38%,rgba(255,210,130,.5) 0%,transparent 68%);opacity:0;}
 #txFlash.on{animation:txFlashKf .6s ease forwards;}
 @keyframes txFlashKf{0%{opacity:0;}20%{opacity:1;}100%{opacity:0;}}
+
+/* א — black-flash killer. The Android System WebView paints a BLACK frame for
+   one tick every time a `backdrop-filter` compositing layer is created — which
+   happens as popups, calendars, sheets and bottom-navs appear. That was the
+   "the new window flashes black" report. We disable the live blur app-wide and
+   lean on the (already mostly-opaque) translucent fills, so nothing flashes.
+   Reversible: delete this block to restore frosted-glass blur. */
+*, *::before, *::after {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
 
 /* ── Shared ── */
 @keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
@@ -419,11 +432,11 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 #s-voice.rec-skin .v-topbar .back-btn svg{transform:scaleX(-1);}
 #s-voice.rec-skin .v-settings-btn{cursor:pointer;}
 #s-voice.rec-skin .v-topmark{
-  height:auto;min-width:0;padding:3px 14px;border-radius:999px;
-  background:rgba(255,251,244,.50);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
-  display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.45);
+  height:auto;min-width:0;padding:0;border-radius:0;
+  background:none;backdrop-filter:none;-webkit-backdrop-filter:none;
+  display:flex;align-items:center;justify-content:center;border:none;
 }
-#s-voice.rec-skin .v-topmark img{display:block;height:44px;width:auto;max-height:none;object-fit:contain;filter:drop-shadow(0 4px 9px rgba(194,89,50,.13));}
+#s-voice.rec-skin .v-topmark img{display:block;height:44px;width:auto;max-height:none;object-fit:contain;filter:drop-shadow(0 2px 7px rgba(255,250,242,.9)) drop-shadow(0 3px 10px rgba(76,52,26,.22));}
 
 #s-voice.rec-skin .prompt{position:absolute;top:108px;left:0;right:0;z-index:4;text-align:center;padding:0 34px;}
 #s-voice.rec-skin .v-ptxt,
@@ -473,14 +486,18 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 }
 #s-voice.rec-skin .mic-zone:active{transform:scale(.94);}
 #s-voice.rec-skin .mic-zone svg{width:30px;height:30px;}
-#s-voice.rec-skin.rec-listening .mic-zone,
 #s-voice.rec-skin.rec-proc .mic-zone{display:none;}
+/* ט — while listening, the golden mic stays and PULSES with the voice (JS-driven
+   scale via recMicPulse). The breathing CSS animation is disabled so the JS owns
+   the transform. The old waveform line is gone (the user found it ugly). */
+#s-voice.rec-skin.rec-listening .mic-zone{display:grid;animation:none;}
 
-#s-voice.rec-skin .rec-wave{display:none;align-items:center;justify-content:center;gap:2.5px;height:44px;width:100%;position:relative;}
-#s-voice.rec-skin.rec-listening .rec-wave{display:flex;}
+#s-voice.rec-skin .rec-wave{display:none !important;}
 #s-voice.rec-skin .rec-wave::before{content:'';position:absolute;left:50%;top:50%;width:220px;height:30px;border-radius:50%;transform:translate(-50%,-50%);background:radial-gradient(60% 100% at 50% 50%,rgba(226,181,116,.45),rgba(226,181,116,0) 72%);filter:blur(5px);pointer-events:none;}
-#s-voice.rec-skin .rec-wbar{width:2.5px;border-radius:2px;background:linear-gradient(180deg,#E2B574,#C08437);transform-origin:center;transform:scaleY(.3);transition:height .16s ease;position:relative;opacity:.72;}
-#s-voice.rec-skin.rec-listening .rec-wbar{animation:recWaveBar 1s ease-in-out infinite;}
+#s-voice.rec-skin .rec-wbar{width:4.5px;border-radius:3px;background:linear-gradient(180deg,#E2B574,#C08437);transform-origin:center;transform:scaleY(.14);transition:transform .12s cubic-bezier(.22,.61,.36,1);position:relative;opacity:.82;}
+/* ט — bars are driven by the real voice-energy equalizer (recEqualizer rAF),
+   not a free-running keyframe. They sit flat when nothing is heard. */
+#s-voice.rec-skin.rec-listening .rec-wbar{opacity:.9;}
 
 #s-voice.rec-skin .speech-bubble{
   display:none;margin:16px 0 0;width:100%;min-height:102px;box-sizing:border-box;background:transparent;box-shadow:none;border-radius:0;padding:0;
@@ -506,18 +523,29 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
    hide redundant helper/title text in idle only (display-only — IDs preserved). */
 #s-voice.rec-skin:not(.rec-listening):not(.rec-proc):not(.typing-mode) .listen-sec{display:none;}
 
-#s-voice.rec-skin .rec-live-row{display:none;align-items:center;justify-content:space-between;width:100%;margin-top:18px;}
+/* י — recording controls, redesigned as one calm centred cluster:
+   status → primary "סיימתי" (honey, on-brand) → matched secondary pair. */
+#s-voice.rec-skin .rec-live-row{display:none;flex-direction:column;align-items:center;justify-content:center;gap:13px;width:100%;margin-top:16px;}
 #s-voice.rec-skin.rec-listening .rec-live-row{display:flex;}
-#s-voice.rec-skin .rec-ember-wrap{display:inline-flex;align-items:center;gap:8px;font-family:'Heebo',sans-serif;font-size:13px;font-weight:700;color:#B85138;}
-#s-voice.rec-skin .rec-ember{position:relative;width:9px;height:9px;border-radius:50%;background:#C25D45;}
+#s-voice.rec-skin .rec-ember-wrap{display:inline-flex;align-items:center;gap:7px;font-family:'Heebo',sans-serif;font-size:12.5px;font-weight:700;letter-spacing:.02em;color:#B85138;opacity:.92;}
+#s-voice.rec-skin .rec-ember{position:relative;width:8px;height:8px;border-radius:50%;background:#C25D45;}
 #s-voice.rec-skin .rec-ember::after{content:'';position:absolute;inset:-2px;border-radius:50%;border:1px solid rgba(194,93,69,.6);animation:famPulse 1.6s var(--ease-out) infinite;}
-#s-voice.rec-skin .rec-stop{display:inline-flex;align-items:center;gap:8px;cursor:pointer;background:rgba(194,93,69,.95);border:none;border-radius:999px;padding:9px 16px;color:#FFFBF2;font-family:'Heebo',sans-serif;font-weight:800;font-size:14px;box-shadow:0 5px 14px rgba(194,93,69,.24);transition:transform .18s var(--ease-soft);}
-#s-voice.rec-skin .rec-stop:active{transform:scale(.96);}
-#s-voice.rec-skin .rec-stop svg{width:14px;height:14px;}
+#s-voice.rec-skin .rec-stop{display:inline-flex;align-items:center;justify-content:center;gap:9px;cursor:pointer;
+  background:linear-gradient(105deg,#B26E26 0%,#D49A4E 45%,#E9C77F 100%);border:none;border-radius:999px;
+  padding:13px 32px;color:#FFFBF2;font-family:'Heebo',sans-serif;font-weight:800;font-size:15.5px;letter-spacing:.01em;
+  box-shadow:0 1px 0 rgba(255,255,255,.4) inset,0 8px 22px rgba(178,110,38,.34),0 3px 8px rgba(178,110,38,.22);
+  transition:transform .18s var(--ease-soft),box-shadow .18s var(--ease-soft);}
+#s-voice.rec-skin .rec-stop:active{transform:scale(.96);box-shadow:0 1px 0 rgba(255,255,255,.4) inset,0 4px 12px rgba(178,110,38,.3);}
+#s-voice.rec-skin .rec-stop svg{width:15px;height:15px;}
 
-#s-voice.rec-skin .v-rec-actions{width:100%;display:none;gap:10px;justify-content:center;align-items:center;min-height:0;margin-top:4px;opacity:.78;}
-#s-voice.rec-skin .v-rec-actions.show{display:flex;opacity:1;pointer-events:auto;}
-#s-voice.rec-skin .v-act-btn{font-family:'Heebo',sans-serif;font-size:12.5px;border-radius:999px;padding:8px 14px;box-shadow:none;}
+#s-voice.rec-skin .v-rec-actions{width:100%;display:none;gap:10px;justify-content:center;align-items:center;min-height:0;margin-top:2px;opacity:1;}
+#s-voice.rec-skin .v-rec-actions.show{display:flex;pointer-events:auto;}
+#s-voice.rec-skin .v-act-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  font-family:'Heebo',sans-serif;font-size:13px;font-weight:700;border-radius:999px;padding:9px 18px;cursor:pointer;
+  background:rgba(255,251,244,.74);color:#7A6049;border:1.5px solid rgba(122,96,73,.22);
+  box-shadow:0 2px 8px rgba(76,52,26,.08);transition:transform .15s var(--ease-soft),background .15s,border-color .15s;}
+#s-voice.rec-skin .v-act-btn:active{transform:scale(.95);}
+#s-voice.rec-skin .v-act-cancel{color:#B85138;border-color:rgba(194,93,69,.32);background:rgba(255,247,243,.82);}
 #s-voice.rec-skin.rec-proc .v-rec-actions{display:none!important;}
 
 #s-voice.rec-skin .v-type-row{width:100%;text-align:center;}
@@ -979,7 +1007,7 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 /* ── Undo toast ── */
 @keyframes toastIn{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
 @keyframes toastOut{from{opacity:1;transform:translateY(0);}to{opacity:0;transform:translateY(10px);}}
-.undo-toast{position:absolute;bottom:100px;left:18px;right:18px;margin:0 auto;width:fit-content;max-width:calc(100% - 36px);background:rgba(45,32,24,.86);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-radius:999px;padding:9px 8px 9px 18px;display:inline-flex;align-items:center;gap:10px;z-index:200;box-shadow:0 8px 28px rgba(0,0,0,.22),0 1px 0 rgba(255,255,255,.04) inset;pointer-events:none;opacity:0;white-space:nowrap;}
+.undo-toast{position:absolute;bottom:158px;left:18px;right:18px;margin:0 auto;width:fit-content;max-width:calc(100% - 36px);background:rgba(45,32,24,.86);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-radius:999px;padding:9px 8px 9px 18px;display:inline-flex;align-items:center;gap:10px;z-index:200;box-shadow:0 8px 28px rgba(0,0,0,.22),0 1px 0 rgba(255,255,255,.04) inset;pointer-events:none;opacity:0;white-space:nowrap;}
 .undo-toast.show{pointer-events:auto;animation:toastIn .32s cubic-bezier(.34,1.2,.64,1) both;}
 .undo-toast.hide{animation:toastOut .22s ease both;}
 .undo-msg{font-size:13px;font-weight:700;color:rgba(255,255,255,.86);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:.01em;}
@@ -1135,10 +1163,13 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 .t-share-name{font-size:13px;font-weight:800;color:#5a3e2b;flex:1;letter-spacing:.1px;}
 .t-share-avs{flex:1 1 auto;display:flex;align-items:center;gap:9px;justify-content:flex-start;min-width:0;flex-wrap:wrap;}
 .t-share-av{position:relative;flex:0 0 auto;display:flex;flex-direction:column;align-items:center;}
-.t-share-circle{width:22px;height:22px;border-radius:50%;background:radial-gradient(120% 120% at 30% 25%,#ffffff 0%,#FBF4EB 60%,#EFE3D2 100%);border:1px solid rgba(255,255,255,0.85);box-shadow:0 2px 5px rgba(160,90,30,0.10),0 1px 2px rgba(160,90,30,0.06),inset 0 1px 2px rgba(255,255,255,0.95);}
-.t-share-av.owner .t-share-circle{width:36px;height:36px;border:2px solid #FF7A3D;box-shadow:0 3px 8px rgba(229,98,26,0.22),inset 0 1px 2px rgba(255,255,255,0.95);}
-.t-share-bell{position:absolute;bottom:-2px;left:-3px;width:13px;height:13px;border-radius:50%;background:#EFE3D2;color:#9E8878;font-size:8px;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(160,90,30,0.12),0 0 0 1.5px #fff;line-height:1;}
-.t-share-av.owner .t-share-bell{width:15px;height:15px;font-size:9px;bottom:-2px;left:-3px;}
+/* ה — equal, clearly-visible recipient avatars (was 22px tucked next to a big
+   36px creator, so recipients like אמא went unnoticed). Now all 30px. */
+.t-share-circle{width:30px;height:30px;border-radius:50%;overflow:hidden;background:radial-gradient(120% 120% at 30% 25%,#ffffff 0%,#FBF4EB 60%,#EFE3D2 100%);border:1.5px solid rgba(255,255,255,0.9);box-shadow:0 2px 6px rgba(160,90,30,0.14),inset 0 1px 2px rgba(255,255,255,0.95);}
+.t-share-av.owner .t-share-circle{width:30px;height:30px;border:2px solid #C08437;box-shadow:0 3px 8px rgba(192,132,55,0.26),inset 0 1px 2px rgba(255,255,255,0.95);}
+/* ה — notify bell sits bottom-RIGHT, lightly overlapping the avatar. */
+.t-share-bell{position:absolute;bottom:-2px;right:-3px;left:auto;width:13px;height:13px;border-radius:50%;background:#FFF3D6;color:#B8884A;font-size:8px;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(160,90,30,0.16),0 0 0 1.5px #fff;line-height:1;}
+.t-share-av.owner .t-share-bell{width:15px;height:15px;font-size:9px;bottom:-2px;right:-3px;left:auto;}
 /* Subtle "more options" hint added before the arrow so the user knows
    tapping the bar opens a panel with extra settings (sharing, reminder,
    recurrence, etc.). Same style for preview cards (.card-share-more-hint)
@@ -2430,8 +2461,22 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 #s-confirmation .lock-hint u{text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:2px;}
 /* Phase 2: local-first reconcile chip */
 #s-confirmation .conf-ai-chip{margin-top:12px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;background:#FFF7E5;border:1px solid rgba(190,128,43,0.16);border-radius:17px;padding:10px 12px;box-shadow:0 5px 16px rgba(106,72,37,0.05);animation:confChipIn .28s ease;}
-#s-confirmation .conf-ai-chip.syncing{justify-content:center;}
+#s-confirmation .conf-ai-chip.syncing{justify-content:center;gap:9px;background:linear-gradient(180deg,#FFF8EA,#FCEFD6);border-color:rgba(192,132,55,0.22);}
 #s-confirmation .conf-ai-chip.syncing .conf-ai-chip-actions{display:none;}
+#s-confirmation .conf-ai-chip.syncing .conf-ai-chip-text{color:#8C5A1E;font-weight:800;}
+/* יא — "thinking" indicator: a breathing mic ringed by gently pulsing hearts.
+   Only shown while the chip is in .syncing (processing) state. */
+#s-confirmation .conf-think{display:none;position:relative;width:36px;height:30px;flex:0 0 auto;align-items:center;justify-content:center;}
+#s-confirmation .conf-ai-chip.syncing .conf-think{display:inline-flex;}
+#s-confirmation .conf-think-mic{color:#C08437;display:inline-flex;animation:confMicBreath 1.8s ease-in-out infinite;}
+#s-confirmation .conf-think-mic svg{width:16px;height:16px;}
+#s-confirmation .conf-think-heart{position:absolute;color:#C25D45;display:inline-flex;}
+#s-confirmation .conf-think-heart svg{width:9px;height:9px;fill:currentColor;}
+#s-confirmation .conf-think-heart.h1{top:-2px;left:50%;margin-left:-4.5px;animation:confHeartPulse 1.5s ease-in-out 0s infinite;}
+#s-confirmation .conf-think-heart.h2{bottom:-1px;left:0;animation:confHeartPulse 1.5s ease-in-out .5s infinite;}
+#s-confirmation .conf-think-heart.h3{bottom:-1px;right:0;animation:confHeartPulse 1.5s ease-in-out 1s infinite;}
+@keyframes confHeartPulse{0%,100%{transform:scale(.5);opacity:.3;}50%{transform:scale(1);opacity:1;}}
+@keyframes confMicBreath{0%,100%{transform:scale(1);}50%{transform:scale(1.13);}}
 #s-confirmation .conf-ai-chip-text{font-size:12px;font-weight:800;color:var(--orange-deep);}
 #s-confirmation .conf-ai-chip-actions{display:flex;gap:6px;}
 #s-confirmation .conf-ai-chip-btn{font-family:inherit;font-size:11px;font-weight:800;border:1px solid rgba(157,111,58,0.1);border-radius:11px;padding:7px 12px;cursor:pointer;background:rgba(255,253,247,0.86);color:var(--orange-deep);}
@@ -3144,7 +3189,7 @@ body.text-large .phone{font-size:17px}
 #s-time-date .td-subtitle{margin:0;font-size:12px;font-weight:500;line-height:1.5;color:var(--muted);text-align:right;}
 #s-time-date .td-reminder{margin-top:14px;border-radius:24px;background:linear-gradient(to left,#FFFCF6 0%,#FCEDDC 60%,#F5DFCA 100%);padding:14px;position:relative;overflow:hidden;box-shadow:0 16px 42px rgba(106,72,37,0.08),0 2px 7px rgba(106,72,37,0.05);border:1px solid rgba(157,111,58,0.09);display:flex;align-items:center;gap:10px;min-height:110px;}
 #s-time-date .td-reminder::before{content:"";position:absolute;inset:0;border-radius:24px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.6);pointer-events:none;}
-#s-time-date .td-placeholder-circle{flex:0 0 auto;width:84px;height:84px;border-radius:50%;background:radial-gradient(120% 120% at 30% 25%,#ffffff 0%,#FFFDF8 60%,#FAEAD2 100%);box-shadow:0 4px 14px rgba(180,110,60,0.10),inset 0 1px 2px rgba(255,255,255,0.9);border:1px solid rgba(255,255,255,0.7);}
+#s-time-date .td-placeholder-circle{flex:0 0 auto;width:84px;height:84px;border-radius:50%;overflow:hidden;background:radial-gradient(120% 120% at 30% 25%,#F6EAD8 0%,#EFE0C8 60%,#E7D6BD 100%);box-shadow:0 4px 14px rgba(180,110,60,0.14),inset 0 1px 2px rgba(255,255,255,0.6);border:2px solid rgba(255,255,255,0.85);}
 #s-time-date .td-r-text{flex:1 1 auto;text-align:right;display:flex;flex-direction:column;gap:6px;align-items:flex-start;position:relative;z-index:2;}
 #s-time-date .td-r-title-row{display:flex;align-items:center;gap:8px;}
 #s-time-date .td-r-icon{width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,#FFE3CB 0%,#FFCFA8 100%);color:var(--orange-deep);display:flex;align-items:center;justify-content:center;box-shadow:inset 0 1px 0 rgba(255,255,255,0.6),0 2px 5px rgba(160,90,30,0.08);flex:0 0 auto;}
@@ -3165,10 +3210,10 @@ body.text-large .phone{font-size:17px}
 #s-time-date .td-time-picker{display:flex;align-items:center;justify-content:center;gap:8px;padding:4px 0 8px;direction:ltr;}
 #s-time-date .td-time-picker.td-no-time{opacity:.35;pointer-events:none;}
 #s-time-date .td-time-slot{background:#fff;border-radius:14px;width:78px;height:120px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:6px 0;box-shadow:0 2px 8px rgba(160,90,30,0.08),inset 0 1px 0 rgba(255,255,255,0.7);border:1px solid rgba(160,90,30,0.06);flex:0 0 auto;}
-#s-time-date .td-chev{background:transparent;border:none;cursor:pointer;color:var(--orange);padding:6px 10px;line-height:0;}
+#s-time-date .td-chev{background:transparent;border:none;cursor:pointer;color:#C08437;padding:6px 10px;line-height:0;}
 #s-time-date .td-chev svg{width:28px;height:28px;display:block}
 #s-time-date .td-digit{font-size:40px;font-weight:500;line-height:1;letter-spacing:-0.02em;font-variant-numeric:tabular-nums;}
-#s-time-date .td-digit.td-hour{color:var(--orange)}
+#s-time-date .td-digit.td-hour{color:#C08437}
 #s-time-date .td-digit.td-min{color:var(--ink)}
 #s-time-date .td-colon{font-size:30px;font-weight:900;color:var(--ink);line-height:1;padding-bottom:4px;}
 #s-time-date .td-period-card{padding:5px;margin-top:10px;}
@@ -3239,9 +3284,14 @@ body.text-large .phone{font-size:17px}
 #s-time-date .td-week-label{font-size:10px;font-weight:700;color:rgba(158,136,120,0.5);text-align:right;padding:12px 4px 3px;direction:rtl;letter-spacing:.01em;}
 #s-time-date .td-day.past{opacity:.28;pointer-events:none;cursor:default;}
 /* recurrence info popup */
-#s-time-date .td-recur-popup{overflow:hidden;max-height:0;transition:max-height .3s ease,opacity .3s ease;opacity:0;}
-#s-time-date .td-recur-popup.open{max-height:80px;opacity:1;}
-#s-time-date .td-recur-popup-inner{background:var(--orange-soft);border-radius:12px;padding:8px 12px;font-size:11px;font-weight:600;color:var(--orange-deep);text-align:right;direction:rtl;margin-top:6px;}
+#s-time-date .td-recur-popup{overflow:hidden;max-height:0;transition:max-height .32s ease,opacity .3s ease;opacity:0;}
+#s-time-date .td-recur-popup.open{max-height:170px;opacity:1;}
+#s-time-date .td-recur-popup-inner{background:#FBF2DF;border-radius:14px;padding:11px 12px;font-size:11px;font-weight:600;color:#8C5A1E;text-align:right;direction:rtl;margin-top:6px;}
+#s-time-date .td-recur-days{display:flex;flex-direction:row;direction:rtl;gap:5px;justify-content:center;margin-bottom:9px;}
+#s-time-date .td-rday{flex:1 1 0;min-width:0;height:34px;border-radius:10px;border:1.5px solid rgba(192,132,55,.28);background:#fff;color:#9A8268;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer;transition:transform .12s ease,background .15s ease,color .15s ease,border-color .15s ease;-webkit-tap-highlight-color:transparent;}
+#s-time-date .td-rday.on{background:#C08437;border-color:#C08437;color:#fff;box-shadow:0 3px 8px rgba(155,97,31,.22);}
+#s-time-date .td-rday:active{transform:scale(.9);}
+#s-time-date .td-recur-text{text-align:center;color:#8C5A1E;font-size:11.5px;font-weight:700;}
 /* reminder section — disabled when no-time */
 #s-time-date #tdReminderSection{transition:opacity .25s ease;}
 #s-time-date #tdReminderSection.td-rem-disabled{opacity:.3;pointer-events:none;}
@@ -3861,7 +3911,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
 
 <div class="app-screen active" id="s-today">
   <!-- NEW HOME: user's design (Today v4) rendered verbatim, isolated from app CSS. -->
-  <iframe id="v4Home" src="today-v4-preview.html?v=19" title="Today" style="position:absolute;inset:0;width:100%;height:100%;border:0;z-index:60;background:#FBF6EE;display:block;"></iframe>
+  <iframe id="v4Home" src="today-v4-preview.html?v=19" title="Today" style="position:absolute;inset:0;width:100%;height:100%;border:0;z-index:60;background:#FBF6EE;display:block;transform:translateZ(0);backface-visibility:hidden;"></iframe>
   <div class="t-scroll">
     <!-- ═══ NEW HOME HEADER (Home.html redesign) ═══ -->
     <div class="hm-header">
@@ -4824,6 +4874,12 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
 
     <!-- Phase 2: gentle AI-reconcile chip (hidden by default) -->
     <div id="confAiChip" class="conf-ai-chip" style="display:none;">
+      <span class="conf-think" aria-hidden="true">
+        <span class="conf-think-mic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="11" rx="3"/><path d="M5 10c0 3.866 3.134 7 7 7s7-3.134 7-7"/><line x1="12" y1="17" x2="12" y2="22"/></svg></span>
+        <span class="conf-think-heart h1"><svg viewBox="0 0 24 24"><path d="M12 20.5C12 20.5 3.5 15 3.5 8.9 3.5 6.1 5.7 4 8.4 4c1.7 0 3.1.85 3.6 2.1C12.5 4.85 13.9 4 15.6 4 18.3 4 20.5 6.1 20.5 8.9 20.5 15 12 20.5 12 20.5Z"/></svg></span>
+        <span class="conf-think-heart h2"><svg viewBox="0 0 24 24"><path d="M12 20.5C12 20.5 3.5 15 3.5 8.9 3.5 6.1 5.7 4 8.4 4c1.7 0 3.1.85 3.6 2.1C12.5 4.85 13.9 4 15.6 4 18.3 4 20.5 6.1 20.5 8.9 20.5 15 12 20.5 12 20.5Z"/></svg></span>
+        <span class="conf-think-heart h3"><svg viewBox="0 0 24 24"><path d="M12 20.5C12 20.5 3.5 15 3.5 8.9 3.5 6.1 5.7 4 8.4 4c1.7 0 3.1.85 3.6 2.1C12.5 4.85 13.9 4 15.6 4 18.3 4 20.5 6.1 20.5 8.9 20.5 15 12 20.5 12 20.5Z"/></svg></span>
+      </span>
       <span class="conf-ai-chip-text">✨ שיפרנו כמה פרטים</span>
       <div class="conf-ai-chip-actions">
         <button type="button" id="confAiUpdate" class="conf-ai-chip-btn primary">עדכן</button>
@@ -5542,7 +5598,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
         <div class="td-r-owner" id="tdTaskOwner"></div>
         <div class="td-r-desc">עכשיו בוחרים מתי המשימה תקודם</div>
       </div>
-      <div class="td-placeholder-circle"></div>
+      <div class="td-placeholder-circle" id="tdAvatar"></div>
     </div>
 
     <!-- Date -->
@@ -5660,7 +5716,10 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
           <button class="td-optfull-chip" data-recur="weekly" type="button">שבועי</button>
         </div>
         <div class="td-recur-popup" id="tdRecurPopup">
-          <div class="td-recur-popup-inner" id="tdRecurPopupText"></div>
+          <div class="td-recur-popup-inner">
+            <div class="td-recur-days" id="tdRecurDays"></div>
+            <div class="td-recur-text" id="tdRecurPopupText"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -5695,6 +5754,48 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
       <button class="td-cancel" type="button" id="tdCancelBtn">ביטול</button>
     </div>
 
+  </div>
+</div>
+
+<!-- ════ SCREEN: UNFINISHED TASKS (bug ו) ════ -->
+<style>
+  #s-unfinished{background:linear-gradient(180deg,#FDF9F2 0%,#F8F1E6 45%,#F3E8D6 100%);}
+  #s-unfinished .uf-scroll{flex:1;overflow-y:auto;padding:calc(env(safe-area-inset-top,0px) + 16px) 18px calc(env(safe-area-inset-bottom,0px) + 26px);}
+  #s-unfinished .uf-header{display:flex;align-items:center;gap:12px;margin-bottom:4px;}
+  #s-unfinished .uf-back{width:42px;height:42px;border-radius:15px;background:rgba(255,253,247,0.9);box-shadow:0 6px 18px rgba(106,72,37,0.08);display:flex;align-items:center;justify-content:center;color:#76543A;border:1px solid rgba(151,103,53,0.1);cursor:pointer;flex:0 0 auto;}
+  #s-unfinished .uf-back svg{width:20px;height:20px;}
+  #s-unfinished .uf-htext h1{font-family:'Frank Ruhl Libre','Heebo',serif;font-size:24px;font-weight:800;color:#382616;margin:0;letter-spacing:-.4px;}
+  #s-unfinished .uf-htext p{font-size:13px;color:#9A8268;margin:3px 0 0;font-weight:600;}
+  #s-unfinished .uf-list{display:flex;flex-direction:column;gap:11px;margin-top:18px;}
+  #s-unfinished .uf-card{background:#FFFDF8;border-radius:18px;padding:14px 15px;box-shadow:0 2px 14px rgba(140,80,20,.07),0 1px 3px rgba(140,80,20,.05);border:1.5px solid rgba(192,132,55,.10);animation:fadeUp .35s ease both;}
+  #s-unfinished .uf-card-top{display:flex;align-items:flex-start;gap:10px;}
+  #s-unfinished .uf-icn{width:34px;height:34px;border-radius:11px;background:#FBF2DF;color:#C08437;display:flex;align-items:center;justify-content:center;flex:0 0 auto;}
+  #s-unfinished .uf-icn svg{width:18px;height:18px;}
+  #s-unfinished .uf-body{flex:1;min-width:0;}
+  #s-unfinished .uf-title{font-size:15px;font-weight:800;color:#382616;line-height:1.3;}
+  #s-unfinished .uf-meta{font-size:12px;font-weight:700;color:#B8884A;margin-top:4px;}
+  #s-unfinished .uf-actions{display:flex;gap:9px;margin-top:12px;}
+  #s-unfinished .uf-btn{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:6px;border-radius:13px;padding:10px 12px;font-family:inherit;font-size:13.5px;font-weight:800;cursor:pointer;border:none;transition:transform .14s ease;-webkit-tap-highlight-color:transparent;}
+  #s-unfinished .uf-btn:active{transform:scale(.96);}
+  #s-unfinished .uf-import{background:linear-gradient(105deg,#B26E26,#D49A4E 50%,#E9C77F);color:#FFFBF2;box-shadow:0 6px 16px rgba(178,110,38,.26);}
+  #s-unfinished .uf-del{background:rgba(194,93,69,.08);color:#B85138;border:1.5px solid rgba(194,93,69,.28);}
+  #s-unfinished .uf-empty{text-align:center;padding:64px 20px;color:#9A8268;}
+  #s-unfinished .uf-empty .uf-emoji{font-size:42px;margin-bottom:12px;}
+  #s-unfinished .uf-empty-t{font-size:16px;font-weight:800;color:#5E472F;}
+  #s-unfinished .uf-empty-s{font-size:13px;margin-top:5px;}
+</style>
+<div class="app-screen" id="s-unfinished">
+  <div class="uf-scroll">
+    <div class="uf-header">
+      <button class="uf-back" type="button" aria-label="חזרה" onclick="goto('s-today','txLeaveFade','txEnterFade')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+      </button>
+      <div class="uf-htext">
+        <h1>משימות שלא הסתיימו</h1>
+        <p>אפשר לייבא להיום, למחוק, או להשאיר כאן</p>
+      </div>
+    </div>
+    <div class="uf-list" id="ufList"></div>
   </div>
 </div>
 
@@ -5956,10 +6057,11 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
   #s-share-sheet.ss-readonly .ss-summary::after{ content:'רק מי שיצר/ה את המשימה יכול/ה לשנות שיתוף'; display:block; margin-top:9px; font-size:12px; font-weight:600; color:#9e8878; text-align:center; }
   #s-share-sheet .ss-actions{ display:flex; align-items:center; gap:13px; padding:0 2px; margin-top:2px; }
   #s-share-sheet .ss-back{
-    width:48px; height:48px; flex:0 0 auto; border-radius:50%; border:1px solid rgba(255,255,255,.55);
+    position:absolute; top:calc(env(safe-area-inset-top,0px) + 12px); right:18px; left:auto; z-index:30;
+    width:44px; height:44px; flex:0 0 auto; border-radius:50%; border:1px solid rgba(255,255,255,.55);
     background:linear-gradient(165deg, rgba(255,251,243,.85), rgba(240,228,208,.68));
     -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px); display:grid; place-items:center; cursor:pointer;
-    box-shadow:0 8px 18px rgba(40,26,12,.28), 0 1px 0 rgba(255,255,255,.7) inset; transition:.2s; }
+    box-shadow:0 8px 18px rgba(40,26,12,.28), 0 1px 0 rgba(255,255,255,.7) inset; transition:transform .2s; }
   #s-share-sheet .ss-back:active{ transform:scale(.93); }
   #s-share-sheet .ss-back svg{ width:22px; height:22px; stroke:#7a6447; }
   #s-share-sheet .ss-cta{
@@ -6050,7 +6152,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
       <div class="ss-actions">
         <button class="ss-cta" id="ssCta">המשך</button>
         <button class="ss-back" aria-label="חזרה">
-          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
         </button>
       </div>
     </div>
@@ -7605,10 +7707,15 @@ function goto(toId, leaveKf, enterKf, onDone) {
   const to   = document.getElementById(toId);
   // Premium motion: snappier (was 440ms, felt sluggish) + a strong ease-out
   // curve so screens enter with immediate, intentional movement.
-  const dur  = 300;
-  const ease = 'cubic-bezier(0.23,1,0.32,1)';
-  const fl   = document.getElementById('txFlash');
-  fl.classList.remove('on'); void fl.offsetWidth; fl.classList.add('on');
+  // א — black/white flash + "jump" fix. The old transitions scaled the screens
+  // (scale 1.07 / .95) which both read as a jarring jump AND promoted a GPU
+  // compositing layer that flashed black/white for a frame in the Android
+  // WebView (worsened by the backdrop-filter bottom-nav). We now do a flat,
+  // fast, OPACITY-ONLY cross-fade — no transform, no warm-flash overlay.
+  const dur  = 190;
+  const ease = 'ease';
+  leaveKf = 'txLeaveSoftFade';
+  enterKf = 'txEnterSoft';
   from.style.animation     = `${leaveKf} ${dur}ms ${ease} forwards`;
   from.style.pointerEvents = 'none';
   to.style.animation       = `${enterKf} ${dur}ms ${ease} forwards`;
@@ -7623,6 +7730,7 @@ function goto(toId, leaveKf, enterKf, onDone) {
     if (toId === 's-settings' && typeof _syncSettingsDeviceMember === 'function') _syncSettingsDeviceMember();
     if (toId === 's-settings' && typeof _renderSettingsMembers === 'function') _renderSettingsMembers();
     if (toId === 's-today' && typeof _renderTodayMembers === 'function') _renderTodayMembers();
+    if (toId === 's-unfinished' && typeof _renderUnfinished === 'function') _renderUnfinished();
     if (toId === 's-invite-member' && typeof _inviteScreenEnter === 'function') _inviteScreenEnter();
     if (onDone) onDone();
   }, dur);
@@ -7635,23 +7743,33 @@ const zone  = document.getElementById('micZone');
 const ltxt  = document.getElementById('ltxt');
 const wdots = document.getElementById('wdots');
 
-// ─── WarmWave bars (recording-screen skin, visual only) ───────────────
-// 38 fine honey bars with a soft envelope (low at the edges) and per-bar
-// animation offsets to fake organic motion. Pure decoration — driven by
-// CSS animation that only runs while #micZone has the existing .rec class.
-(function buildWarmWave(){
-  const wave = document.getElementById('recWave');
-  if (!wave || wave.childElementCount) return;
-  const BARS = 38;
-  for (let i = 0; i < BARS; i++) {
-    const env = Math.pow(Math.sin((i/(BARS-1)) * Math.PI), 0.82); // soft envelope
-    const b = document.createElement('span');
-    b.className = 'rec-wbar';
-    b.style.height = (3 + env * 31).toFixed(1) + 'px';
-    b.style.animationDuration = (0.8 + (i % 5) * 0.14).toFixed(2) + 's';
-    b.style.animationDelay = (((i * 37) % 100) / 100 * -1).toFixed(2) + 's';
-    wave.appendChild(b);
+
+// ─── ט — pulsing mic (replaces the waveform line the user disliked) ────
+// While listening, the golden mic gently breathes AND swells with each spoken
+// word (energy bumped via _recWaveBump from recognition.onresult). Calm in
+// silence. No mic/AudioContext is opened — that would steal the mic from the
+// Android SpeechRecognizer and break dictation; we drive off recogniser events.
+(function recMicPulse(){
+  var mic = document.getElementById('micZone');
+  var scr = document.getElementById('s-voice');
+  if (!mic || !scr) return;
+  var energy = 0, target = 0, raf = null, t = 0;
+  function frame(){
+    t += 0.05;
+    target *= 0.90; if (target < 0) target = 0;          // each word swells, then settles
+    energy += (target - energy) * 0.16;                  // ease → buttery, never jumpy
+    var s = 1 + 0.045 * Math.sin(t * 1.6) + energy * 0.16;   // idle breathe + voice swell
+    mic.style.transform = 'scale(' + s.toFixed(3) + ')';
+    raf = requestAnimationFrame(frame);
   }
+  function start(){ if (!raf) raf = requestAnimationFrame(frame); }
+  function stop(){ if (raf){ cancelAnimationFrame(raf); raf = null; } mic.style.transform = ''; }
+  window._recWaveBump = function(){ target = 1; };       // recognised word → swell
+  var obs = new MutationObserver(function(){
+    if (scr.classList.contains('rec-listening')) start(); else stop();
+  });
+  obs.observe(scr, { attributes: true, attributeFilter: ['class'] });
+  if (scr.classList.contains('rec-listening')) start();
 })();
 
 // ─── Phase reflector (recording-screen skin, view-only) ───────────────
@@ -7877,6 +7995,15 @@ let _lastBurstAt   = 0;
 let _lastBurstLen  = 0;
 function _signalVoiceActivity(currentLen) {
   _lastTranscriptAt = Date.now();
+  // ט — feed the real voice-energy equalizer on word-level growth. Same
+  // ambient-flicker filter as the dots, but independent of the wdots guard
+  // below (the rec-skin equalizer must react even when the dots are hidden).
+  if (typeof currentLen === 'number'
+      && currentLen - _lastBurstLen >= _BURST_MIN_GROWTH
+      && Date.now() - _lastBurstAt   >= _BURST_MIN_INTERVAL
+      && typeof window._recWaveBump === 'function') {
+    window._recWaveBump();
+  }
   if (!wdots || !wdots.classList.contains('on')) return;
   // Filter out interim flicker: must grow by at least _BURST_MIN_GROWTH chars
   // AND respect the throttle interval.
@@ -8220,6 +8347,10 @@ if (SpeechAPI) {
   }
 
   recognition.onresult = (e) => {
+    // ט — pulse the equalizer on every recognised-speech event. This is the
+    // reliable speech signal (showBubble isn't called in every caption mode),
+    // so the bars now actually react while the user is talking.
+    if (typeof window._recWaveBump === 'function') window._recWaveBump();
     // ── Collect new finals + current interim from this event ─────────
     // Only iterate from e.resultIndex to avoid re-processing confirmed segments.
     let newFinal      = '';   // isFinal text confirmed in THIS event
@@ -10085,7 +10216,7 @@ function _setPreviewSyncing(on) {
     _aiChipMode = null;
     chip.classList.add('syncing');
     const txt = chip.querySelector('.conf-ai-chip-text');
-    if (txt) txt.textContent = '✨ משדרגים פרטים…';
+    if (txt) txt.textContent = 'מסדר לך את היום…';
     chip.style.display = 'flex';
   } else {
     chip.classList.remove('syncing');
@@ -11549,23 +11680,38 @@ function renderToday() {
         const leg = _legacyIdForMemberId(id); if (leg) out.add(String(leg));
         return out;
       };
-      const html = ordered.map(id => {
+      // ה fix — visibleTo/notifyTo hold real member ids (often 8-char join
+      // codes like "9CGMXVBZ", NOT "member_mom"). The old code only painted an
+      // avatar when _memberIdForLegacyId() resolved to a member_* id, so for
+      // real families the circles came out EMPTY ("don't see anyone"). Resolve
+      // each id to its participant and render the avatar inline instead.
+      const _shareParts = (typeof _loadRealParticipants === 'function') ? _loadRealParticipants() : [];
+      const _findShareP = (id) => {
+        const aliases = idAliases(id);
+        return _shareParts.find(p =>
+          aliases.has(String(p.userId)) || (p.memberId && aliases.has(String(p.memberId)))
+        ) || null;
+      };
+      const html = ordered.map((id, gi) => {
         const isOwner = String(id) === String(emphId);   // emphasized = creator
         let hasBell = false;
         if (notifyOn) {
           for (const a of idAliases(id)) { if (notifyIds.has(a)) { hasBell = true; break; } }
         }
-        // Resolve legacy id → memberId so renderAvatarHTML can paint photos.
-        const memId  = _memberIdForLegacyId(id) || (String(id).startsWith('member_') ? id : null);
-        const size   = isOwner ? 36 : 22;
-        const avAttr = memId
-          ? ` data-avatar-for="${memId}" data-avatar-size="${size}"`
-          : '';
-        const slot   = memId
-          ? '<div data-avatar-slot style="position:absolute;inset:0;border-radius:inherit;"></div>'
-          : '';
+        const size = 30;
+        let inner = '';
+        const part = _findShareP(id);
+        if (part && typeof _participantInner === 'function') {
+          const nm = (typeof _participantDisplayName === 'function')
+            ? _participantDisplayName(part, DataAdapter.userId) : (part.name || '');
+          inner = _participantInner(part, nm, gi, size);
+        } else {
+          // Fallback for member_* ids (live-updating avatar slot) or a blank.
+          const memId = _memberIdForLegacyId(id) || (String(id).startsWith('member_') ? id : null);
+          if (memId) inner = `<div data-avatar-for="${memId}" data-avatar-size="${size}"><div data-avatar-slot style="position:absolute;inset:0;border-radius:inherit;"></div></div>`;
+        }
         return `<div class="t-share-av${isOwner?' owner':''}" data-id="${id}">
-                <div class="t-share-circle"${avAttr} style="position:relative;overflow:hidden;">${slot}</div>
+                <div class="t-share-circle" style="position:relative;overflow:hidden;">${inner}</div>
                 ${hasBell?'<span class="t-share-bell">🔔</span>':''}
               </div>`;
       }).join('');
@@ -13191,7 +13337,10 @@ function _renderBellList() {
     const dotCls = item.stage === 'before'                   ? 'urgent'
                  : item.stage === 'due'                    ? 'warning'
                  : (item.stage||'').startsWith('overdue')  ? 'overdue' : 'past';
-    return `<div class="bell-item">
+    // ו — the unfinished-tasks alert opens the carry-over screen on tap.
+    const isUnfin = item.taskId === '__unfinished__';
+    const clickAttr = isUnfin ? ' style="cursor:pointer" onclick="closeBellPanel();goto(\'s-unfinished\',\'txLeaveFade\',\'txEnterFade\');"' : '';
+    return `<div class="bell-item"${clickAttr}>
       <div class="bell-item-dot ${dotCls}"></div>
       <div class="bell-item-body">
         <div class="bell-item-title">${item.taskTitle}</div>
@@ -13220,6 +13369,88 @@ document.getElementById('bellBg').addEventListener('click', e => { if (e.target 
 
 // init dot on load
 _updateBellDot();
+
+// ─── ו — Unfinished (carry-over) tasks ────────────────────────────────
+// Any non-completed task whose date is before today is "unfinished". When the
+// calendar day changes we raise a bell notification (red dot) linking here; the
+// screen lets the user import each task to today, delete it, or leave it.
+const UF_DAY_KEY = 'family-app-last-active-day';
+function _collectUnfinishedTasks() {
+  const today = (typeof todayDate === 'function') ? todayDate() : new Date().toISOString().slice(0,10);
+  const all = (typeof AppState !== 'undefined' && Array.isArray(AppState.tasks)) ? AppState.tasks : [];
+  return all.filter(t => {
+    if (!t || t.completed || t.deleted) return false;
+    if (t.isRecurring) return false;                                   // virtual recurrence instances
+    if (t.recurrence && t.recurrence.type && t.recurrence.type !== 'none') return false; // recurring templates
+    if (!t.date) return false;                                         // undated backlog never "expires"
+    return String(t.date) < String(today);
+  }).sort((a,b) => String(a.date) < String(b.date) ? -1 : 1);
+}
+function _ufDateLabel(t) {
+  const d = t.date ? new Date(t.date + 'T00:00:00') : null;
+  if (!d || isNaN(d)) return '';
+  return 'נוצרה ב-' + String(d.getDate()).padStart(2,'0') + '/' + String(d.getMonth()+1).padStart(2,'0') + '/' + d.getFullYear();
+}
+function _renderUnfinished() {
+  const list = document.getElementById('ufList');
+  if (!list) return;
+  const items = _collectUnfinishedTasks();
+  if (!items.length) {
+    list.innerHTML = '<div class="uf-empty"><div class="uf-emoji">🌿</div><div class="uf-empty-t">הכול נקי כאן</div><div class="uf-empty-s">אין משימות שנשארו מאחור</div></div>';
+    return;
+  }
+  list.innerHTML = items.map(t => {
+    const title = _v4Esc((t.subItems && t.subItems.mainTitle) || t.title || 'משימה');
+    return '<div class="uf-card" data-id="' + _escAttr(String(t.id)) + '">'
+      + '<div class="uf-card-top">'
+      +   '<div class="uf-icn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>'
+      +   '<div class="uf-body"><div class="uf-title">' + title + '</div><div class="uf-meta">' + _ufDateLabel(t) + '</div></div>'
+      + '</div>'
+      + '<div class="uf-actions">'
+      +   '<button class="uf-btn uf-import" type="button" data-act="import">↗ ייבא להיום</button>'
+      +   '<button class="uf-btn uf-del" type="button" data-act="delete">מחק</button>'
+      + '</div></div>';
+  }).join('');
+}
+function _syncUnfinishedBell(forceAlert) {
+  if (typeof _addBellItem !== 'function' || typeof _clearBellItems !== 'function') return;
+  const n = _collectUnfinishedTasks().length;
+  if (n === 0) { _clearBellItems('__unfinished__'); return; }
+  if (forceAlert) _clearBellItems('__unfinished__');                  // re-add unseen → red dot
+  _addBellItem('__unfinished__', 'משימות שלא הושלמו', n + ' משימות ממתינות מימים קודמים — הקש לניהול', 'overdue');
+}
+function _checkDayRollover() {
+  const today = (typeof todayDate === 'function') ? todayDate() : new Date().toISOString().slice(0,10);
+  let last = null;
+  try { last = localStorage.getItem(UF_DAY_KEY); } catch(_) {}
+  const rolled = !!(last && last !== today);
+  try { localStorage.setItem(UF_DAY_KEY, today); } catch(_) {}
+  _syncUnfinishedBell(rolled);
+}
+(function _wireUnfinished(){
+  const ufList = document.getElementById('ufList');
+  if (ufList) ufList.addEventListener('click', e => {
+    const btn = e.target.closest('.uf-btn'); if (!btn) return;
+    const card = btn.closest('.uf-card'); if (!card) return;
+    const task = (AppState.tasks || []).find(t => String(t.id) === String(card.dataset.id));
+    if (!task) { card.remove(); return; }
+    if (btn.dataset.act === 'import') {
+      task.date = (typeof todayDate === 'function') ? todayDate() : task.date;
+      task.updatedAt = Date.now();
+      if (typeof saveState === 'function') saveState();
+      if (typeof _daWriteTask === 'function') _daWriteTask(task, false).catch(() => {});
+      if (typeof _capRescheduleAll === 'function') _capRescheduleAll().catch(() => {});
+      if (typeof renderToday === 'function') renderToday();
+      if (typeof showNotifToast === 'function') showNotifToast('המשימה הועברה להיום');
+    } else if (btn.dataset.act === 'delete') {
+      if (typeof doDelete === 'function') doDelete(task, 's-unfinished');
+    }
+    _renderUnfinished();
+    _syncUnfinishedBell(false);
+  });
+  // Run the rollover check once tasks have loaded.
+  setTimeout(() => { try { _checkDayRollover(); } catch(_) {} }, 1800);
+})();
 
 // ─── Bell panel: poll tasks vs clock, works on both Capacitor and browser ──
 function _checkBellItems() {
@@ -15129,6 +15360,35 @@ function _v4AvatarSrc(m){
     + 'font-family="Heebo,Arial,sans-serif" font-size="92" font-weight="700" fill="#B68C42">' + ini + '</text></svg>';
   return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
 }
+// ה — audience hint for the v4 home cards: the members who can SEE a shared
+// task (with their photo) + whether each is notified. Empty for solo tasks so
+// the card keeps its single assignee avatar. Resolves the real member ids
+// (8-char join codes) → participants, same as the share row on the old home.
+function _v4TaskAudience(t){
+  try {
+    var vis = Array.isArray(t.visibleTo) ? t.visibleTo.map(String) : [];
+    if (vis.length < 2) return [];
+    var notify   = {};
+    (Array.isArray(t.notifyTo) ? t.notifyTo : []).forEach(function(id){ notify[String(id)] = 1; });
+    var notifyOn = t.notify !== false;
+    var parts = (typeof _loadRealParticipants === 'function') ? _loadRealParticipants() : [];
+    var byId  = {};
+    parts.forEach(function(p){ byId[String(p.userId)] = p; if (p.memberId) byId[String(p.memberId)] = p; });
+    var myId = DataAdapter.userId;
+    var seen = {}, out = [];
+    vis.forEach(function(id){
+      if (seen[id]) return; seen[id] = 1;
+      var p  = byId[id] || null;
+      var nm = p ? ((typeof _participantDisplayName === 'function') ? _participantDisplayName(p, myId) : (p.name || '')) : '';
+      out.push({
+        photoUrl: _v4AvatarSrc(p ? { name: nm, avatar: p.avatar } : { name: nm }),
+        name:     nm,
+        notify:   !!(notifyOn && notify[id])
+      });
+    });
+    return out;
+  } catch (e) { return []; }
+}
 function _v4Push(){
   const fr = document.getElementById('v4Home');
   if (!fr || !fr.contentWindow) return;
@@ -15147,7 +15407,7 @@ function _v4Push(){
     const tlist = tasks.map(t => {
       let url = '';
       try { url = _v4AvatarSrc(typeof resolveMember === 'function' ? resolveMember(t) : null); } catch (e) {}
-      return { id: t.id, time: (t.mins != null ? m2t(t.mins) : ''), title: t.title || '', meta: t.location || '', done: !!t.completed, photoUrl: url, shopping: _hasShop(t) };
+      return { id: t.id, time: (t.mins != null ? m2t(t.mins) : ''), title: t.title || '', meta: t.location || '', done: !!t.completed, photoUrl: url, shopping: _hasShop(t), audience: _v4TaskAudience(t) };
     });
     // Shopping cart lives on the Today/home screen (per product spec). The v4 home
     // can't categorize on its own, so kick it off here for any shopping-title task
@@ -17768,6 +18028,32 @@ function renderTimeDateScreen(taskId) {
   if (remSec) remSec.classList.remove('td-rem-disabled');
   if (typeof _tdInitCalAndOptions === 'function') _tdInitCalAndOptions(task);
   if (typeof _tdUpdateTimeBounds === 'function') _tdUpdateTimeBounds();
+  if (typeof _tdRenderAvatar === 'function') _tdRenderAvatar();
+}
+
+// ד — real avatar in the time/date reminder card (was a blank white circle).
+// Shows the current device member's avatar (who is scheduling — tasks default
+// to the current user). Robust fallbacks: family participant → DataAdapter
+// avatar → default emoji. Never throws.
+function _tdRenderAvatar() {
+  var el = document.getElementById('tdAvatar');
+  if (!el) return;
+  try {
+    if (typeof DataAdapter !== 'undefined' && DataAdapter.isFamily && DataAdapter.isFamily()
+        && typeof _loadRealParticipants === 'function' && typeof _participantInner === 'function') {
+      var myId = DataAdapter.userId;
+      var list = _loadRealParticipants() || [];
+      var idx  = list.findIndex(function(p){ return p.userId === myId; });
+      var p    = idx >= 0 ? list[idx] : (list[0] || null);
+      if (p) {
+        var nm = (typeof _participantDisplayName === 'function') ? _participantDisplayName(p, myId) : (p.name || '');
+        el.innerHTML = _participantInner(p, nm, idx < 0 ? 0 : idx, 84);
+        return;
+      }
+    }
+    var av = (typeof DataAdapter !== 'undefined' && DataAdapter.avatar) ? DataAdapter.avatar : null;
+    if (typeof renderAvatarHTML === 'function') el.innerHTML = renderAvatarHTML(av, 84);
+  } catch (e) { /* keep the empty circle rather than break the screen */ }
 }
 
 function tdSave() {
@@ -17807,11 +18093,16 @@ function tdSave() {
       var freq = recurChip.dataset.recur || 'none';
       task.recurrenceFreq = freq;
       if (freq === 'daily') {
-        task.recurrence = { type: 'daily' };
+        // ג — honour the chosen days. All 7 → true 'daily'; a subset (e.g. א–ה)
+        // is stored as weekly+days so the existing engine filters out the rest
+        // (e.g. שישי/שבת). recurrenceFreq stays 'daily' for the chip's UI label.
+        var dDays = (_tdRecurDays && _tdRecurDays.size) ? Array.from(_tdRecurDays).sort(function(a,b){return a-b;}) : [0,1,2,3,4,5,6];
+        if (dDays.length >= 7) task.recurrence = { type: 'daily' };
+        else                   task.recurrence = { type: 'weekly', daysOfWeek: dDays };
       } else if (freq === 'weekly') {
-        var basisDate = task.date || (typeof todayDate === 'function' ? todayDate() : null);
-        var dow = basisDate ? new Date(basisDate + 'T00:00:00').getDay() : new Date().getDay();
-        task.recurrence = { type: 'weekly', daysOfWeek: [dow] };
+        var wDays = (_tdRecurDays && _tdRecurDays.size) ? Array.from(_tdRecurDays).sort(function(a,b){return a-b;})
+                  : [ (task.date ? new Date(task.date + 'T00:00:00').getDay() : new Date().getDay()) ];
+        task.recurrence = { type: 'weekly', daysOfWeek: wDays };
       } else {
         task.recurrence = { type: 'none' };
       }
@@ -18390,6 +18681,9 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!slot) return;
     slot.style.cursor = 'ns-resize';
     slot.style.userSelect = 'none';
+    // ב — claim the vertical gesture so Android doesn't steal it as page-scroll
+    // (this was why the clock "didn't scroll" — the page scrolled instead).
+    slot.style.touchAction = 'none';
     // mouse drag
     slot.addEventListener('mousedown', function(e) {
       if (e.target.closest('.td-chev')) return;
@@ -18403,26 +18697,73 @@ document.addEventListener('DOMContentLoaded', function() {
       _tdActivateTimeIfNeeded();
       _tdChev(elId, e.deltaY > 0 ? -1 : +1, isHour);
     }, {passive: false});
-    // touch — passive:false כדי לחסום גלילת דף בזמן שינוי שעה
-    var _tY = 0, _tA = 0;
-    slot.addEventListener('touchstart', function(e) {
-      if (e.target.closest('.td-chev')) return;
-      _tY = e.touches[0].clientY; _tA = 0;
-      _tdActivateTimeIfNeeded();
-    }, {passive: true});
-    slot.addEventListener('touchmove', function(e) {
-      if (e.target.closest('.td-chev')) return;
-      e.preventDefault();
-      var dy = _tY - e.touches[0].clientY;
-      var step = isHour ? 12 : 8;
-      var steps = Math.floor(dy / step);
-      var diff = steps - _tA;
-      if (diff !== 0) { _tA = steps; _tdChev(elId, diff, isHour); }
-    }, {passive: false});
+    // NOTE: touch dragging is handled by a screen-level CAPTURE listener
+    // (_tdWireWheelDrag below) — per-slot touch listeners did not fire reliably
+    // on the device WebView, while document/screen capture provably does.
   }
 
   _tdSetupSlot(hourSlot, 'tdHourDigit', true);
   _tdSetupSlot(minSlot,  'tdMinDigit',  false);
+
+  // ב — screen-level CAPTURE drag. Per-slot touch listeners did not fire on the
+  // device WebView (verified: a swipe delivered touchstart+touchmove to the
+  // document capture phase, yet the slot's own listener never changed the value).
+  // Capture on #s-time-date is on the proven-reliable event path, so we drive the
+  // wheels from here: hit-test which slot the finger is on, then roll with inertia.
+  (function _tdWireWheelDrag(){
+    var screen = document.getElementById('s-time-date');
+    if (!screen) return;
+    var active = null, sY = 0, accum = 0, lastY = 0, lastT = 0, vel = 0, mo = null, stp = 0;
+    function slotHit(x, y){
+      var defs = [['tdHourDigit', true], ['tdMinDigit', false]];
+      for (var i = 0; i < defs.length; i++){
+        var dg = document.getElementById(defs[i][0]);
+        var s  = dg ? dg.closest('.td-time-slot') : null;
+        if (!s) continue;
+        var r = s.getBoundingClientRect();
+        if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom)
+          return { el: defs[i][0], isHour: defs[i][1] };
+      }
+      return null;
+    }
+    screen.addEventListener('touchstart', function(e){
+      var t = e.touches[0]; if (!t) return;
+      if (e.target.closest && e.target.closest('.td-chev')) { active = null; return; }
+      var h = slotHit(t.clientX, t.clientY);
+      if (!h) { active = null; return; }
+      if (mo) { cancelAnimationFrame(mo); mo = null; }
+      active = h; stp = h.isHour ? 16 : 9; sY = t.clientY; accum = 0;
+      lastY = t.clientY; lastT = e.timeStamp || 0; vel = 0;
+      if (typeof _tdActivateTimeIfNeeded === 'function') _tdActivateTimeIfNeeded();
+    }, true);
+    screen.addEventListener('touchmove', function(e){
+      if (!active) return;
+      var t = e.touches[0]; if (!t) return;
+      e.preventDefault();
+      var steps = Math.round((sY - t.clientY) / stp);
+      var diff = steps - accum;
+      if (diff !== 0 && window._tdChev) { accum = steps; window._tdChev(active.el, diff, active.isHour); }
+      var dt = (e.timeStamp || 0) - lastT;
+      if (dt > 0) vel = (lastY - t.clientY) / stp / dt;
+      lastY = t.clientY; lastT = e.timeStamp || 0;
+    }, { capture: true, passive: false });
+    function end(){
+      if (!active) return;
+      var el = active.el, isHour = active.isHour; active = null;
+      var v = vel * 16;
+      if (Math.abs(v) < 0.14) return;
+      if (v > 2.4) v = 2.4; if (v < -2.4) v = -2.4;
+      var carry = 0;
+      (function spin(){
+        v *= 0.92; carry += v;
+        var w = carry > 0 ? Math.floor(carry) : Math.ceil(carry);
+        if (w !== 0 && window._tdChev) { carry -= w; window._tdChev(el, w, isHour); }
+        mo = Math.abs(v) > 0.045 ? requestAnimationFrame(spin) : null;
+      })();
+    }
+    screen.addEventListener('touchend', end, true);
+    screen.addEventListener('touchcancel', end, true);
+  })();
 
   var manualBtn = document.getElementById('tdManualEditBtn');
   if (manualBtn) {
@@ -18497,6 +18838,25 @@ document.addEventListener('DOMContentLoaded', function() {
       _tdUpdateRecurPopup(chip.dataset.recur || 'none');
     });
   }
+
+  // ג — day-of-week chips inside the recurrence popup
+  var recurDaysEl = document.getElementById('tdRecurDays');
+  if (recurDaysEl) {
+    recurDaysEl.addEventListener('click', function(e) {
+      var b = e.target.closest('.td-rday');
+      if (!b) return;
+      var d = parseInt(b.dataset.d, 10);
+      if (!_tdRecurDays) _tdRecurDays = new Set();
+      if (_tdRecurMode === 'weekly') {
+        _tdRecurDays = new Set([d]);                 // weekly = exactly one day
+      } else {
+        if (_tdRecurDays.has(d)) { if (_tdRecurDays.size > 1) _tdRecurDays.delete(d); }
+        else _tdRecurDays.add(d);                     // daily = multi-select, keep ≥1
+      }
+      _tdRenderRecurDayChips();
+      _tdRenderRecurText(_tdRecurMode);
+    });
+  }
 });
 
 function _tdInitCalAndOptions(task) {
@@ -18529,8 +18889,14 @@ function _tdInitCalAndOptions(task) {
   if (rcc) rcc.querySelectorAll('.td-optfull-chip').forEach(function(c) {
     c.classList.toggle('on', c.dataset.recur === freq);
   });
-  var recurPopup = document.getElementById('tdRecurPopup');
-  if (recurPopup) recurPopup.classList.remove('open');
+  // ג — restore the chosen days from an existing task, then show the picker.
+  var savedDays = (task.recurrence && Array.isArray(task.recurrence.daysOfWeek)) ? task.recurrence.daysOfWeek : null;
+  if (freq === 'daily')      _tdRecurDays = new Set(savedDays && savedDays.length ? savedDays : [0,1,2,3,4,5,6]);
+  else if (freq === 'weekly')_tdRecurDays = new Set(savedDays && savedDays.length ? savedDays : [_tdSelectedWeekday()]);
+  else                       _tdRecurDays = null;
+  _tdRecurMode = freq;
+  if (freq === 'daily' || freq === 'weekly') { _tdUpdateRecurPopup(freq); }
+  else { var rp = document.getElementById('tdRecurPopup'); if (rp) rp.classList.remove('open'); }
 }
 
 var _TD_DOW_FULL = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
@@ -18563,24 +18929,61 @@ function _tdUpdateRemInfo() {
   ri.textContent = text;
 }
 
-function _tdUpdateRecurPopup(recur) {
-  var popup = document.getElementById('tdRecurPopup');
-  var textEl = document.getElementById('tdRecurPopupText');
-  if (!popup || !textEl) return;
-  if (!recur || recur === 'none') { popup.classList.remove('open'); return; }
+// ─── ג — choose which days a recurring reminder rings ────────────────
+// "יומי" → all 7 days on by default; deselect e.g. שישי/שבת for א–ה.
+// "שבועי" → exactly one day. Stored via the engine's existing
+// recurrence.daysOfWeek (weekly already filters by it everywhere), so no
+// recurrence-engine change is needed. recurrenceFreq keeps the chip's UI label.
+var _tdRecurDays = null;       // Set<0..6> currently selected
+var _tdRecurMode = 'none';     // 'daily' | 'weekly' | 'none'
+var _TD_DOW_SHORT = ['א','ב','ג','ד','ה','ו','ש'];
+
+function _tdSelectedWeekday() {
   var selDay = document.querySelector('#tdDateStrip .td-day.on');
-  var dayName = 'ראשון';
-  if (selDay) { var dObj = new Date(selDay.dataset.date + 'T00:00:00'); dayName = _TD_DOW_FULL[dObj.getDay()]; }
-  if (_tdNoTime) {
-    if (recur === 'daily')  textEl.textContent = 'המשימה תופיע מדי יום';
-    else                    textEl.textContent = 'המשימה תופיע מדי יום ' + dayName;
-  } else {
+  if (selDay && selDay.dataset.date) return new Date(selDay.dataset.date + 'T00:00:00').getDay();
+  return new Date().getDay();
+}
+function _tdEnsureRecurDays(recur) {
+  if (recur === 'daily') {
+    if (!_tdRecurDays || _tdRecurMode !== 'daily') _tdRecurDays = new Set([0,1,2,3,4,5,6]);
+  } else if (recur === 'weekly') {
+    if (!_tdRecurDays || _tdRecurMode !== 'weekly' || _tdRecurDays.size !== 1) _tdRecurDays = new Set([_tdSelectedWeekday()]);
+  }
+  _tdRecurMode = recur;
+}
+function _tdRenderRecurDayChips() {
+  var c = document.getElementById('tdRecurDays');
+  if (!c) return;
+  c.innerHTML = _TD_DOW_SHORT.map(function(lb, d) {
+    var on = _tdRecurDays && _tdRecurDays.has(d);
+    return '<button type="button" class="td-rday' + (on ? ' on' : '') + '" data-d="' + d + '">' + lb + '</button>';
+  }).join('');
+}
+function _tdDaysPhrase(days) {
+  if (days.length === 7) return 'כל יום';
+  if (days.length === 1) return 'יום ' + _TD_DOW_FULL[days[0]];
+  return 'ימים ' + days.map(function(d){ return _TD_DOW_FULL[d]; }).join(', ');
+}
+function _tdRenderRecurText(recur) {
+  var textEl = document.getElementById('tdRecurPopupText');
+  if (!textEl) return;
+  var days = _tdRecurDays ? Array.from(_tdRecurDays).sort(function(a,b){return a-b;}) : [];
+  if (!days.length) { textEl.textContent = 'בחרו לפחות יום אחד'; return; }
+  var timeStr = '';
+  if (!_tdNoTime) {
     var hh = parseInt((document.getElementById('tdHourDigit') || {}).textContent || '0', 10) || 0;
     var mm = parseInt((document.getElementById('tdMinDigit')  || {}).textContent || '0', 10) || 0;
-    var timeStr = String(hh).padStart(2,'0') + ':' + String(mm).padStart(2,'0');
-    if (recur === 'daily')  textEl.textContent = 'התראה תישלח מדי יום בשעה ' + timeStr;
-    else                    textEl.textContent = 'התראה תישלח מדי יום ' + dayName + ' בשעה ' + timeStr;
+    timeStr = ' בשעה ' + String(hh).padStart(2,'0') + ':' + String(mm).padStart(2,'0');
   }
+  textEl.textContent = 'התראה ' + _tdDaysPhrase(days) + timeStr;
+}
+function _tdUpdateRecurPopup(recur) {
+  var popup = document.getElementById('tdRecurPopup');
+  if (!popup) return;
+  if (!recur || recur === 'none') { popup.classList.remove('open'); _tdRecurMode = 'none'; return; }
+  _tdEnsureRecurDays(recur);
+  _tdRenderRecurDayChips();
+  _tdRenderRecurText(recur);
   popup.classList.add('open');
 }
 </script>
@@ -19018,11 +19421,9 @@ function splitSave() {
     // earlier than now (forward steps allowed; the down chevrons are greyed via
     // _tdUpdateTimeBounds so this mainly catches drag/wheel). An unchanged
     // existing value stays allowed (display of an already-saved past time).
-    var iso = _tdSelectedIso();
-    if (_tdIsToday(iso)) {
-      var cand = nhh * 60 + nmm;
-      if (cand < _tdNowMins() && cand !== _tdOrigMins) { return; }
-    }
+    // ב — DON'T block here: blocking mid-scroll made the wheel feel stuck/dead
+    // when the shown time was already in the past for a today task. Let the
+    // wheel roll freely; tdSave() still rejects committing a past time.
     hEl.textContent = String(nhh).padStart(2,'0');
     mEl.textContent = String(nmm).padStart(2,'0');
     _tdNoTime = false;
@@ -19040,14 +19441,18 @@ function splitSave() {
       _tdUpdateRecurPopup(activeRecurChip.dataset.recur);
     }
   }
+  // ב — expose _tdChev so the screen-level drag handler (defined in an earlier
+  // <script> block / closure, where _tdChev is NOT in scope) can call it. Calls
+  // were silently throwing ReferenceError — which is why the wheel "didn't move".
+  try { window._tdChev = _tdChev; } catch (e) {}
   var tdHU = document.getElementById('tdHourUp');
   var tdHD = document.getElementById('tdHourDown');
   var tdMU = document.getElementById('tdMinUp');
   var tdMD = document.getElementById('tdMinDown');
   if (tdHU) tdHU.addEventListener('click', function() { _tdChev('tdHourDigit', +1, true); });
   if (tdHD) tdHD.addEventListener('click', function() { _tdChev('tdHourDigit', -1, true); });
-  if (tdMU) tdMU.addEventListener('click', function() { _tdChev('tdMinDigit',  +15, false); });
-  if (tdMD) tdMD.addEventListener('click', function() { _tdChev('tdMinDigit',  -15, false); });
+  if (tdMU) tdMU.addEventListener('click', function() { _tdChev('tdMinDigit',  +5, false); });
+  if (tdMD) tdMD.addEventListener('click', function() { _tdChev('tdMinDigit',  -5, false); });
 
   // #s-time-date: save + cancel
   var tdSaveBtn   = document.getElementById('tdSaveBtn');

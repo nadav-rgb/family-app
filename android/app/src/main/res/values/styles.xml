@@ -12,7 +12,11 @@
     <style name="AppTheme.NoActionBar" parent="Theme.AppCompat.DayNight.NoActionBar">
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
-        <item name="android:background">@null</item>
+        <!-- Black-flash fix (bug א): was @null, which let the black system window
+             show through during WebView layer compositing on screen transitions.
+             A warm cream window background means any un-painted frame is cream. -->
+        <item name="android:background">#FFFAF5</item>
+        <item name="android:windowBackground">#FFFAF5</item>
     </style>
 
 

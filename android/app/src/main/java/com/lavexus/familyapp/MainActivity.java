@@ -5,7 +5,9 @@ import android.content.res.AssetFileDescriptor;
 import android.media.AudioAttributes;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
+import android.graphics.Color;
 import android.os.Bundle;
+import android.view.View;
 import android.webkit.JavascriptInterface;
 
 import com.getcapacitor.BridgeActivity;
@@ -14,6 +16,17 @@ public class MainActivity extends BridgeActivity {
   @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
+    // Black-flash fix (bug א): the Capacitor WebView is transparent by default,
+    // so during a screen transition (transform/opacity creates a new compositing
+    // layer) the black window behind it shows through for a single frame. Paint
+    // the WebView itself an opaque warm cream so any un-painted frame is cream,
+    // never black. Pairs with android:background/windowBackground in styles.xml.
+    try {
+      getBridge().getWebView().setBackgroundColor(Color.parseColor("#FFFAF5"));
+    } catch (Exception ignored) {}
+    // NOTE: software layer (LAYER_TYPE_SOFTWARE) was tried for the black flash but
+    // it made scrolling/animations far too slow on the device — reverted. The
+    // flash fix is being pursued in CSS/web layer instead.
     // Expose a tiny audio bridge to the web layer so the recording screen can
     // (a) silence the Android speech-recognizer earcons during the continuous
     //     listen/restart loop, and

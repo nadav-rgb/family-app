@@ -445,6 +445,12 @@
   }
   .task .av image-slot{width:100%;height:100%;display:block}
   .task .av image-slot::part(frame){background:linear-gradient(170deg,#F2E7D6,#E7D6BD)}
+  /* ה — "who sees this" hint: stack of recipient avatars, bell = gets notified */
+  .task .av-stack{display:flex;flex-direction:row-reverse;align-items:center;flex:0 0 auto;}
+  .task .av-mini{width:104px;height:104px;border-radius:50%;overflow:hidden;position:relative;flex:0 0 auto;background:linear-gradient(170deg,#F2E7D6,#E7D6BD);box-shadow:0 0 0 5px #FFFDFA,0 4px 12px rgba(150,110,40,.16);}
+  .task .av-mini + .av-mini{margin-right:-34px;}
+  .task .av-bell{position:absolute;bottom:-1px;right:-1px;width:46px;height:46px;border-radius:50%;background:#FFF3D6;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 5px #FFFDFA;}
+  .task .av-bell svg{width:26px;height:26px;}
   .task .body{flex:1 1 auto;min-width:0;text-align:right}
   .task .nm{font-size:38px;font-weight:700;color:#36302A;line-height:1.18}
   .task .meta{font-size:25px;font-weight:400;color:var(--muted);margin-top:7px}
@@ -835,6 +841,21 @@
       }
     } else if(existing){ existing.remove(); }
   }
+  // ה — recipient avatar stack (+bell) for shared tasks, else single assignee av.
+  var _BELL_SVG='<svg viewBox="0 0 24 24" fill="#B8884A"><path d="M12 3.3c.66 0 1.2.54 1.2 1.2v.42c2.32.55 3.95 2.62 3.95 5.03 0 2.7.58 3.96 1.24 4.9.46.66-.02 1.55-.82 1.55H6.43c-.8 0-1.28-.89-.82-1.55.66-.94 1.24-2.2 1.24-4.9 0-2.41 1.63-4.48 3.95-5.03V4.5c0-.66.54-1.2 1.2-1.2Z"/></svg>';
+  function _avMarkup(t){
+    var aud=(t.audience&&t.audience.length>=2)?t.audience.slice(0,3):null;
+    if(!aud) return '<span class="av"><img class="slot-img" src="'+(t.photoUrl||'photo.jpeg')+'" alt=""></span>';
+    var h='<span class="av-stack">';
+    aud.forEach(function(m){
+      h+='<span class="av-mini"><img class="slot-img" src="'+(m.photoUrl||'photo.jpeg')+'" alt="">'+(m.notify?'<span class="av-bell">'+_BELL_SVG+'</span>':'')+'</span>';
+    });
+    return h+'</span>';
+  }
+  function _avSig(t){
+    if(t.audience&&t.audience.length>=2) return 'A:'+t.audience.slice(0,3).map(function(m){return (m.photoUrl||'')+(m.notify?'!':'');}).join('|');
+    return 'S:'+(t.photoUrl||'');
+  }
   function _buildTaskWrap(t, cls){
     var wrap=document.createElement('div'); wrap.className='task-wrap'; wrap.dataset.id=String(t.id);
     var del=document.createElement('div'); del.className='task-del';
@@ -844,16 +865,17 @@
     var m2=document.createElement('div'); m2.textContent=t.meta||''; var metaHtml=m2.innerHTML;
     row.innerHTML=
       '<span class="time">'+(t.time||'')+'</span>'+
-      '<span class="av"><img class="slot-img" src="'+(t.photoUrl||'photo.jpeg')+'" alt=""></span>'+
+      _avMarkup(t)+
       '<div class="body"><div class="nm">'+titleHtml+'</div>'+(t.meta?'<div class="meta">'+metaHtml+'</div>':'')+'</div>'+
       '<span class="status-circle">'+(t.done?_CHECK_SVG:'')+'</span>';
+    wrap._avSig=_avSig(t);
     row.addEventListener('click', function(){ _haptic(8); _post({type:'action',name:'task',id:t.id}); });
     var sc=row.querySelector('.status-circle');
     if(sc) sc.addEventListener('click', function(ev){ ev.stopPropagation(); _haptic(14); _post({type:'action',name:'toggleDone',id:wrap.dataset.id}); });
     _attachSwipe(row, wrap.dataset.id);
     _syncShopBtn(row, t);
     wrap.appendChild(del); wrap.appendChild(row);
-    var img=row.querySelector('.av img'); if(img) focusFace(img);
+    row.querySelectorAll('.av img, .av-mini img').forEach(function(im){ focusFace(im); });
     return wrap;
   }
   function _updateTaskWrap(wrap, t, cls){
@@ -864,8 +886,19 @@
     var body=row.querySelector('.body'); var meta=row.querySelector('.meta');
     if(t.meta){ if(!meta){ meta=document.createElement('div'); meta.className='meta'; body.appendChild(meta);} if(meta.textContent!==t.meta) meta.textContent=t.meta; }
     else if(meta){ meta.remove(); }
-    var img=row.querySelector('.av img'); var src=t.photoUrl||'photo.jpeg';
-    if(img && img.getAttribute('src')!==src){ img.setAttribute('src',src); focusFace(img); }
+    // ה — rebuild the avatar (single ↔ stack) only when its content changed.
+    var sig=_avSig(t);
+    if(wrap._avSig!==sig){
+      var oldAv=row.querySelector('.av, .av-stack');
+      if(oldAv){
+        var tmp=document.createElement('div'); tmp.innerHTML=_avMarkup(t);
+        var fresh=tmp.firstChild;
+        oldAv.parentNode.replaceChild(fresh, oldAv);
+        fresh.querySelectorAll('img').forEach(function(im){ focusFace(im); });
+        if(fresh.tagName.toLowerCase()==='span'&&fresh.querySelector&&fresh.matches('.av')){ var fi=fresh.querySelector('img'); if(fi) focusFace(fi); }
+      }
+      wrap._avSig=sig;
+    }
     var sc=row.querySelector('.status-circle');
     if(sc){ var has=!!sc.querySelector('svg'); if(t.done&&!has) sc.innerHTML=_CHECK_SVG; else if(!t.done&&has) sc.innerHTML=''; }
     _syncShopBtn(row, t);
