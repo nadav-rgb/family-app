@@ -29,15 +29,22 @@ ALWAYS return at least one task when the transcript contains any action.
 Return "tasks": [] ONLY if there is genuinely no action at all (e.g. just a greeting).
 
 How many tasks:
-  • Most sentences are ONE task. Only create a second task when the sentence clearly
-    contains a second, independent action that makes sense on its own.
-  • Do not split a sentence just because it has several verbs — verbs that share the
-    same object or topic belong together.
+  • This app's MAIN use is dictating SEVERAL errands in one breath — usually with NO
+    punctuation and no "ו" between them. A run-on like
+    "לקנות חלב לשלם חשבון חשמל להתקשר לרופא" is THREE separate tasks. Split it into one
+    task per distinct action. Do NOT glue distinct errands into a single task.
+  • SPLIT whenever each infinitive verb introduces its OWN distinct object / target /
+    errand — even with no "ו" or comma between them. Each resulting title must make
+    sense on its own.
   • CRITICAL — NEVER output a task whose title is only a time or date. A clock time
     ("14:00", "9:30", "בשעה 14:00"), a date ("מחר", "היום"), or a part-of-day ("בבוקר",
     "בערב") is ALWAYS part of the action it modifies — put it in that task's mins/date.
     WRONG → ["לקנות חלב", "בשעה 14:00"].   RIGHT → ONE task "לקנות חלב בשעה 14:00" (keep the phrase in the title; mins=840 is internal only).
-  • When unsure whether it is one task or two, return ONE task.
+  • Merge into ONE task ONLY in the narrow cases listed under "Keep together as ONE
+    task" below. When none of those apply and the sentence holds several distinct
+    actions, SPLIT them.
+  • When genuinely unsure whether two parts are one action or two distinct actions,
+    prefer SPLITTING into separate tasks.
 
 Each task title must make sense on its own. If you do split and the parts share a
 topic, include that shared topic in every title (don't leave a bare verb like "להכין").
@@ -51,6 +58,9 @@ Examples:
       or TWO:    "לבדוק חומר להרצאה של שחר לייבו"
                  "להכין חומר להרצאה של שחר לייבו"
   "לקנות חלב לשלם חשבון חשמל" → TWO independent tasks: "לקנות חלב" + "לשלם חשבון חשמל"
+  "להתקשר למשה ללכת לעורך דין לקנות מתנות" → THREE tasks: "להתקשר למשה" + "ללכת לעורך דין" + "לקנות מתנות"
+  "לכבס בגדים לשטוף כלים לסדר את הסלון" → THREE tasks: "לכבס בגדים" + "לשטוף כלים" + "לסדר את הסלון"
+  "לבדוק מיילים לענות ללקוח לעדכן את הדוח" → THREE tasks: "לבדוק מיילים" + "לענות ללקוח" + "לעדכן את הדוח"
   "להתקשר לשמעון להשאיר הודעה לסבתא מרי" → TWO tasks (different people): "להתקשר לשמעון" + "להשאיר הודעה לסבתא מרי"
   "להתקשר לשמעון ואז להשאיר הודעה לסבתא מרי" → TWO tasks ("ואז"/"אחר כך" = sequential, independent actions)
 
