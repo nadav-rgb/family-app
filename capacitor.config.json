@@ -2,6 +2,10 @@
   "appId": "com.lavexus.familyapp",
   "appName": "Family",
   "webDir": "www",
+  "server": {
+    "url": "https://family-app-roan.vercel.app",
+    "cleartext": false
+  },
   "plugins": {
     "SplashScreen": {
       "launchShowDuration": 3000,
