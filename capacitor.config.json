@@ -3,7 +3,7 @@
   "appName": "Family",
   "webDir": "www",
   "server": {
-    "url": "https://family-app-roan.vercel.app"
+    "url": "https://family-app-roan.vercel.app/app.html"
   },
   "plugins": {
     "SplashScreen": {
