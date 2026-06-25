@@ -15,7 +15,7 @@
       "splashImmersive": false
     },
     "LocalNotifications": {
-      "smallIcon": "ic_stat_icon_config_sample",
+      "smallIcon": "ic_stat_family",
       "iconColor": "#ff5e14"
     }
   },
