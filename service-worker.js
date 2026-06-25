@@ -22,12 +22,15 @@
 // Bump this version on every meaningful release. The activate handler
 // drops any cache whose name doesn't match, so users on a stale cache
 // will get fresh HTML/assets on next visit.
-const CACHE_NAME = 'family-app-v28-cleanup-2026-06-25';
+const CACHE_NAME = 'family-app-v29-swr-2026-06-25';
 const SHELL_FILES = [
   '/app.html',
+  '/today-v4-preview.html',
   '/manifest.json',
   '/icon.svg',
   '/parser.js',
+  '/home-bg.webp',
+  '/family-logo.webp',
 ];
 
 self.addEventListener('install', (event) => {
@@ -58,26 +61,30 @@ self.addEventListener('fetch', (event) => {
 
   const isHTML = req.headers.get('accept')?.includes('text/html');
   if (isHTML) {
-    // Strict network-first with a short timeout — if the network is
-    // even slightly responsive, the user gets fresh code. Only fall
-    // back to cache on outright failure. Prevents the "weak signal
-    // serves stale HTML" pattern we hit on a train with bad 5G.
+    // Stale-while-revalidate — serve the cached shell INSTANTLY (the
+    // 1.2MB app.html no longer blocks cold start on a network round-trip),
+    // and refresh the cache in the background so the next launch gets fresh
+    // code. The previous strict network-first made every online launch wait
+    // on a ~300KB download before first paint. Trade-off: a code push lands
+    // one launch later for users who were already warm — acceptable for an
+    // OTA web shell, and far faster perceptually.
     event.respondWith((async () => {
-      try {
-        const netRes = await Promise.race([
-          fetch(req, { cache: 'no-store' }),
-          new Promise((_, rej) => setTimeout(() => rej(new Error('html-timeout')), 4000)),
-        ]);
-        if (netRes && netRes.ok) {
-          const copy = netRes.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(req, copy)).catch(()=>{});
+      const cache = await caches.open(CACHE_NAME);
+      const cached = await cache.match(req);
+      const fetchAndUpdate = fetch(req, { cache: 'no-store' })
+        .then((netRes) => {
+          if (netRes && netRes.ok) cache.put(req, netRes.clone()).catch(() => {});
           return netRes;
-        }
-        throw new Error('html-bad-status-' + (netRes && netRes.status));
-      } catch (_) {
-        const cached = await caches.match(req);
-        return cached || (await caches.match('/app.html'));
+        })
+        .catch(() => null);
+      if (cached) {
+        // Keep the SW alive long enough to finish the background refresh.
+        event.waitUntil(fetchAndUpdate);
+        return cached;
       }
+      // Cold first-ever load (nothing cached yet) — wait on the network.
+      const net = await fetchAndUpdate;
+      return net || (await cache.match('/app.html'));
     })());
     return;
   }

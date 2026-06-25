@@ -1832,18 +1832,18 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
      stay on-screen. Doesn't bite on tall phones (natural height < 60vh). */
   max-height:60vh;
 }
-#firstRunScreen .fr-hero-welcome{aspect-ratio:953 / 1170;background-image:url("assets/welcome-hero.png");}
+#firstRunScreen .fr-hero-welcome{aspect-ratio:953 / 1170;background-image:url("assets/welcome-hero.webp");}
 /* create/join artwork is a clean illustration-only banner (1408×1117) — no
    status bar, no drawn UI. The lower band is empty cream so the real HTML card
    overlaps smoothly. Show the top of the art (family + logo) and let the card
    rise into the empty cream zone. height in cqw = % of shell width → stable at
    any screen size, and both images are identical so one value fits both. */
 #firstRunScreen .fr-hero-create{
-  height:64cqw;background-image:url("assets/create-family-hero.png");
+  height:64cqw;background-image:url("assets/create-family-hero.webp");
   background-position:top center;
 }
 #firstRunScreen .fr-hero-join{
-  height:64cqw;background-image:url("assets/join-family-hero.png");
+  height:64cqw;background-image:url("assets/join-family-hero.webp");
   background-position:top center;
 }
 #firstRunScreen .fr-card{
@@ -2371,7 +2371,7 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
   --turquoise:#74B9B1;--purple:#AE96D6;--peach:#EAB184;
   font-family:'Rubik',sans-serif;color:var(--ink);direction:rtl;
   background-color:#F8F0E2;
-  background-image:url("assets/FINAL_CONFIRMATION_BACKGROUND_APPROVED.png");
+  background-image:url("assets/confirmation-bg.webp");
   background-size:cover;
   background-position:center;
   background-repeat:no-repeat;
@@ -3152,7 +3152,7 @@ body.text-large .phone{font-size:17px}
    Palette: orange + ink
    All classes prefixed td- to avoid collisions
 ════════════════════════════════════════════════════════════════════ */
-#s-time-date{--orange:#D9952F;--orange-light:#E9BC63;--orange-deep:#9B611F;--orange-soft:rgba(233,188,99,0.17);--ink:#3D2B1F;--muted:#846F5E;--card-bg:rgba(255,253,247,0.96);--card-shadow:0 10px 28px rgba(106,72,37,0.09),0 2px 7px rgba(106,72,37,0.05);background-color:#F8F0E2;background-image:linear-gradient(180deg,rgba(248,240,226,0.86) 0%,rgba(248,240,226,0.55) 26%,rgba(248,240,226,0.42) 60%,rgba(248,240,226,0.66) 100%),url("assets/Time and Date Background.png");background-size:cover;background-position:center;background-repeat:no-repeat;background-attachment:fixed;}
+#s-time-date{--orange:#D9952F;--orange-light:#E9BC63;--orange-deep:#9B611F;--orange-soft:rgba(233,188,99,0.17);--ink:#3D2B1F;--muted:#846F5E;--card-bg:rgba(255,253,247,0.96);--card-shadow:0 10px 28px rgba(106,72,37,0.09),0 2px 7px rgba(106,72,37,0.05);background-color:#F8F0E2;background-image:linear-gradient(180deg,rgba(248,240,226,0.86) 0%,rgba(248,240,226,0.55) 26%,rgba(248,240,226,0.42) 60%,rgba(248,240,226,0.66) 100%),url("assets/time-date-bg.webp");background-size:cover;background-position:center;background-repeat:no-repeat;background-attachment:fixed;}
 #s-time-date .td-status{flex:0 0 auto;padding:14px 22px 0;display:flex;align-items:center;justify-content:space-between;font-weight:700;font-size:15px;color:var(--ink);direction:ltr;}
 #s-time-date .td-status .icons{display:flex;align-items:center;gap:6px}
 #s-time-date .td-scroll{flex:1 1 auto;overflow-y:auto;padding:6px 16px 18px;scrollbar-width:none;}
@@ -3466,12 +3466,12 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
 
 <!-- ════ SCREEN 1: VOICE ════ -->
 <div class="app-screen no-captions rec-skin" id="s-voice" style="display:none">
-  <img class="rec-bg" src="assets/morning-desk.png" alt="" aria-hidden="true">
+  <img class="rec-bg" src="assets/morning-desk.webp" alt="" aria-hidden="true" loading="lazy" decoding="async">
   <div class="rec-scrim"></div>
   <div class="rec-candle"></div>
   <div class="v-topbar">
     <button class="back-btn" onclick="goto('s-today','txLeaveFade','txEnterFade')"><svg width="8" height="14" viewBox="0 0 8 14" fill="none"><path d="M7 1L1 7l6 6" stroke="#9e8878" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span id="vBackTxt">היום</span></button>
-    <span class="v-topmark" aria-hidden="true"><img src="family-logo.png" alt=""></span>
+    <span class="v-topmark" aria-hidden="true"><img src="family-logo.webp" alt="" decoding="async"></span>
     <button class="v-settings-btn" id="vSettingsBtn" aria-label="סגירה"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="#9e8878" stroke-width="2" stroke-linecap="round"/></svg></button>
   </div>
   <div class="prompt">
