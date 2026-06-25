@@ -495,9 +495,6 @@
   }
   .nav-item.today .lbl{font-family:'Cormorant Garamond',serif;font-weight:700;font-size:24px}
 
-  @media (prefers-reduced-motion: no-preference){
-    .stage{animation:none}
-  }
   /* Data-driven done state: a completed task shows the design's green "done"
      circle + check regardless of row position; a pending row #1 keeps a ring
      instead of the sample's permanent green fill. Uses the design's own tokens. */
@@ -775,8 +772,6 @@
   // Hero photo + every portrait/avatar slot benefit from face-aware framing.
   document.querySelectorAll('.nt-photo .slot-img, .frame .slot-img, .av .slot-img')
           .forEach(focusFace);
-  // Expose so the live app can call it after swapping in a real avatar.
-  window.focusFace = focusFace;
 
   /* ── Data bridge ──────────────────────────────────────────────────
      The host app (app.html) owns the family data. It posts it in here
