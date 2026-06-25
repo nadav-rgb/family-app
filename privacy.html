@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>מדיניות פרטיות — Family</title>
+<style>
+  :root{--ink:#3d2b1f;--muted:#6f5b49;--orange:#ff5e14;--bg:#fffaf5;--card:#fff;--line:#efe2d4}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Rubik','Heebo',system-ui,Arial,sans-serif;line-height:1.7}
+  .wrap{max-width:760px;margin:0 auto;padding:32px 20px 80px}
+  header{text-align:center;margin-bottom:28px}
+  .logo{font-size:34px;font-weight:900;color:var(--orange);letter-spacing:.5px}
+  h1{font-size:24px;margin:18px 0 4px}
+  .updated{color:var(--muted);font-size:14px}
+  h2{font-size:19px;margin:30px 0 8px;border-bottom:2px solid var(--line);padding-bottom:6px}
+  p,li{font-size:15.5px;color:#43342a}
+  ul{padding-inline-start:22px}
+  a{color:var(--orange)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 18px;margin:12px 0}
+  table{width:100%;border-collapse:collapse;margin:10px 0;font-size:14.5px}
+  th,td{text-align:right;padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{color:var(--muted);font-weight:700}
+  .en{direction:ltr;text-align:left;margin-top:60px;border-top:3px solid var(--line);padding-top:24px}
+  .en h2{border-bottom:1px solid var(--line)}
+  footer{margin-top:50px;text-align:center;color:var(--muted);font-size:13px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">Family</div>
+    <h1>מדיניות פרטיות</h1>
+    <div class="updated">עודכן לאחרונה: 25 ביוני 2026</div>
+  </header>
+
+  <p>אפליקציית <strong>Family</strong> ("האפליקציה", "אנחנו") היא כלי לניהול משימות משפחתי. אנו מתייחסים לפרטיות שלכם ושל בני משפחתכם ברצינות. מסמך זה מסביר איזה מידע נאסף, כיצד הוא בשימוש, עם מי הוא משותף, וכיצד תוכלו לשלוט בו ולמחוק אותו.</p>
+
+  <h2>איזה מידע אנו אוספים</h2>
+  <ul>
+    <li><strong>פרטי המשפחה והחברים:</strong> שמות, כינויי תצוגה ותפקידים שאתם מזינים.</li>
+    <li><strong>תוכן שאתם יוצרים:</strong> משימות, הערות, תזכורות, רשימות וימי הולדת.</li>
+    <li><strong>תמונות פרופיל ואווטרים:</strong> תמונות שאתם מעלים או יוצרים עבור בני המשפחה.</li>
+    <li><strong>קלט קולי:</strong> כשאתם משתמשים בהקלטה ליצירת משימה, הדיבור מומר לטקסט (ראו "זיהוי דיבור" למטה). האפליקציה אינה שומרת קובצי קול.</li>
+    <li><strong>נתוני התראות:</strong> מזהה התקן (push token) לצורך שליחת תזכורות, וזמני התזכורות.</li>
+    <li><strong>מזהה משפחה:</strong> קוד הצטרפות ומזהה חבר, השמורים במכשיר (localStorage) ובשרת לצורך סנכרון.</li>
+  </ul>
+
+  <h2>כיצד אנו משתמשים במידע</h2>
+  <p>המידע משמש אך ורק כדי להפעיל את האפליקציה: להציג ולסנכרן את המשימות בין בני המשפחה, ליצור משימות מתוך דיבור או טקסט, להציג פרופילים ותמונות, ולשלוח תזכורות והתראות. <strong>איננו מוכרים את המידע שלכם ואיננו משתמשים בו לפרסום.</strong></p>
+
+  <h2>שירותי צד-שלישי (מעבדי מידע)</h2>
+  <p>כדי לספק את הפונקציות, האפליקציה נעזרת בספקים הבאים. המידע מועבר אליהם רק במידה הדרושה לתפקוד:</p>
+  <table>
+    <tr><th>ספק</th><th>לשם מה</th><th>איזה מידע</th></tr>
+    <tr><td>Google (זיהוי דיבור)</td><td>המרת קול לטקסט דרך ממשק זיהוי הדיבור של הדפדפן/המערכת</td><td>הקלט הקולי בזמן ההקלטה</td></tr>
+    <tr><td>OpenAI</td><td>ניתוח הטקסט לכדי משימות מובְנות</td><td>טקסט המשימה שהוקלד או תומלל</td></tr>
+    <tr><td>Google Firebase</td><td>אחסון נתונים (Firestore), אחסון תמונות (Storage) והתראות (FCM)</td><td>משימות, פרופילים, תמונות, מזהי התראות</td></tr>
+    <tr><td>Vercel</td><td>אירוח האפליקציה והשירות העורפי</td><td>בקשות רשת תפעוליות</td></tr>
+  </table>
+  <p>שימוש בשירותים אלה כפוף למדיניות הפרטיות שלהם. אנו נעזרים בהם כמעבדי-מידע ולא מעבירים מידע למפרסמים.</p>
+
+  <h2>אחסון, אבטחה וסנכרון</h2>
+  <p>הנתונים נשמרים ומסונכרנים בענן (Google Firebase) כדי שיהיו זמינים לכל בני המשפחה ובכל מכשיריהם, ומאובטחים בהעברה (HTTPS/TLS). הגישה לנתוני משפחה מוגבלת לבני אותה משפחה בלבד באמצעות כללי-אבטחה בשרת.</p>
+
+  <h2>קהל היעד וילדים</h2>
+  <p>האפליקציה מיועדת ל<strong>מבוגרים</strong> (הורים) המנהלים את משק הבית. היא אינה מכוונת לילדים מתחת לגיל 13 ואינה אוספת מהם מידע ביודעין. מידע על בני משפחה (כולל ילדים) מוזן על-ידי המבוגר האחראי ובאחריותו.</p>
+
+  <h2>מחיקת נתונים</h2>
+  <p>תוכלו למחוק את הנתונים שלכם בכל עת. למידע על אופן המחיקה ראו את <a href="account-deletion.html">עמוד מחיקת הנתונים</a>, או פנו אלינו בדוא"ל.</p>
+
+  <h2>הרשאות באפליקציה</h2>
+  <ul>
+    <li><strong>מיקרופון:</strong> משמש רק בזמן ההקלטה ליצירת משימה בקול. אין הקלטה ברקע.</li>
+    <li><strong>התראות:</strong> לשליחת תזכורות למשימות.</li>
+  </ul>
+
+  <h2>שינויים במדיניות</h2>
+  <p>נעדכן מסמך זה במידת הצורך, והתאריך למעלה ישקף את העדכון האחרון.</p>
+
+  <h2>יצירת קשר</h2>
+  <p>לכל שאלה בנושא פרטיות: <a href="mailto:nadav@lavexus.com">nadav@lavexus.com</a> (Lavexus).</p>
+
+  <!-- ───────────────────────── English ───────────────────────── -->
+  <div class="en">
+    <h1>Privacy Policy</h1>
+    <div class="updated">Last updated: June 25, 2026</div>
+    <p><strong>Family</strong> ("the app", "we") is a family task-management tool. This policy explains what data we collect, how it is used, who it is shared with, and how you can control and delete it.</p>
+
+    <h2>Information we collect</h2>
+    <ul>
+      <li><strong>Family & member details:</strong> names, display names, and roles you enter.</li>
+      <li><strong>Content you create:</strong> tasks, notes, reminders, lists, and birthdays.</li>
+      <li><strong>Profile photos / avatars</strong> you upload or generate.</li>
+      <li><strong>Voice input:</strong> when you record to create a task, speech is converted to text (see "Speech recognition"). The app does not store audio files.</li>
+      <li><strong>Notification data:</strong> a device push token and reminder times.</li>
+      <li><strong>Family identity:</strong> a join code and member id, stored on-device and in the cloud for sync.</li>
+    </ul>
+
+    <h2>How we use it</h2>
+    <p>Solely to operate the app: display and sync tasks across family members, turn speech/text into tasks, show profiles and photos, and send reminders. <strong>We do not sell your data and do not use it for advertising.</strong></p>
+
+    <h2>Third-party processors</h2>
+    <ul>
+      <li><strong>Google (speech recognition)</strong> — converts your voice to text via the browser/system speech API.</li>
+      <li><strong>OpenAI</strong> — parses task text into structured tasks.</li>
+      <li><strong>Google Firebase</strong> — data storage (Firestore), image storage (Storage), notifications (FCM).</li>
+      <li><strong>Vercel</strong> — app hosting and backend.</li>
+    </ul>
+
+    <h2>Storage & security</h2>
+    <p>Data is stored and synced in the cloud (Google Firebase) so it is available to all family members, secured in transit (HTTPS/TLS), and access is restricted to members of the same family via server-side security rules.</p>
+
+    <h2>Children</h2>
+    <p>The app is intended for adults (parents) managing a household. It is not directed to children under 13 and does not knowingly collect data from them.</p>
+
+    <h2>Data deletion</h2>
+    <p>You can delete your data at any time — see the <a href="account-deletion.html">data-deletion page</a> or email us.</p>
+
+    <h2>Contact</h2>
+    <p>Privacy questions: <a href="mailto:nadav@lavexus.com">nadav@lavexus.com</a> (Lavexus).</p>
+  </div>
+
+  <footer>© 2026 Lavexus · Family</footer>
+</div>
+</body>
+</html>

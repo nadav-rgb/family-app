@@ -1,5 +1,15 @@
 apply plugin: 'com.android.application'
 
+// Release signing — secrets are loaded from android/keystore.properties, which is
+// git-ignored and NEVER committed. If the file is absent (CI / a fresh clone), the
+// build falls back to the debug signing config so local/debug builds still work;
+// such a build is NOT acceptable to Google Play.
+def keystorePropsFile = rootProject.file("keystore.properties")
+def keystoreProps = new Properties()
+if (keystorePropsFile.exists()) {
+    keystoreProps.load(new FileInputStream(keystorePropsFile))
+}
+
 android {
     namespace = "com.lavexus.familyapp"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -7,7 +17,7 @@ android {
         applicationId "com.lavexus.familyapp"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 10
+        versionCode 11
         versionName "1.5.1"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
@@ -16,10 +26,25 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        release {
+            if (keystorePropsFile.exists()) {
+                // storeFile is resolved relative to the android/ root (where
+                // keystore.properties and the .jks live), not the app/ module.
+                storeFile rootProject.file(keystoreProps['storeFile'])
+                storePassword keystoreProps['storePassword']
+                keyAlias keystoreProps['keyAlias']
+                keyPassword keystoreProps['keyPassword']
+            }
+        }
+    }
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            // Use the real upload key when keystore.properties is present; otherwise
+            // fall back to debug so the build doesn't fail without the secret file.
+            signingConfig keystorePropsFile.exists() ? signingConfigs.release : signingConfigs.debug
         }
     }
 }
