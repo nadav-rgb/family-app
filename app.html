@@ -4645,8 +4645,20 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
         </div>
         <div class="body">
-          <div class="t">מחיקת נתוני האפליקציה</div>
+          <div class="t">איפוס המכשיר הזה</div>
           <div class="s">מחק נתונים מהמכשיר הזה ונתק אותו מהמשפחה</div>
+        </div>
+        <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></span>
+      </div>
+
+      <!-- מחיקת חשבון ונתוני המשפחה (danger) -->
+      <div class="row danger" onclick="openDeleteFamilyDataFlow()">
+        <div class="icn" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </div>
+        <div class="body">
+          <div class="t">מחיקת חשבון ונתוני המשפחה</div>
+          <div class="s">מחיקה לצמיתות של כל המשימות, החברים והתמונות — לכל בני המשפחה</div>
         </div>
         <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></span>
       </div>
@@ -19693,6 +19705,7 @@ document.addEventListener('click', function (e) {
 });
 
 var _deleteStep = 0;          // 0 intro · 1 code-done · 2 bio-done
+var _deleteScope = 'device';  // 'device' = local reset · 'family' = wipe all cloud data
 var _pinSetupForDelete = false;
 
 function _setDeleteCta() {
@@ -19700,22 +19713,42 @@ function _setDeleteCta() {
   const warn = document.getElementById('delWarnBody');
   const wt   = document.getElementById('delWarnTitle');
   if (!cta) return;
+  const _famDel = (_deleteScope === 'family');
   if (_deleteStep === 0) {
     cta.textContent = 'המשך לאימות קוד גישה'; cta.style.background = '';
-    if (wt)   wt.textContent = '⚠️ איפוס המכשיר הזה';
-    if (warn) warn.textContent = 'המשך כדי לאמת את זהותך לפני איפוס הנתונים במכשיר זה.';
+    if (wt)   wt.textContent = _famDel ? '⚠️ מחיקת חשבון ונתוני המשפחה' : '⚠️ איפוס המכשיר הזה';
+    if (warn) warn.textContent = _famDel
+      ? 'פעולה בלתי-הפיכה. המשך כדי לאמת את זהותך לפני מחיקת כל נתוני המשפחה מהענן.'
+      : 'המשך כדי לאמת את זהותך לפני איפוס הנתונים במכשיר זה.';
   } else if (_deleteStep === 1) {
     cta.textContent = 'המשך לאימות ביומטרי'; cta.style.background = '';
     if (wt)   wt.textContent = '✓ הקוד אומת';
     if (warn) warn.textContent = 'כעת נדרש אימות ביומטרי אמיתי — טביעת אצבע או זיהוי פנים של המכשיר.';
   } else if (_deleteStep === 2) {
-    cta.textContent = 'מחק ואפס מכשיר';
     cta.style.background = 'linear-gradient(135deg,#ff3b30,#c0392b)';
-    if (wt)   wt.textContent = 'לאפס את האפליקציה במכשיר הזה?';
-    if (warn) warn.textContent = 'פעולה זו תמחק את כל הנתונים וההגדרות מהמכשיר הזה ותנתק אותו מהמשפחה ומקוד המשפחה. המשימות עצמן נשמרות בענן ואצל שאר בני המשפחה — ותוכלו להתחבר מחדש במכשיר זה תוך 72 שעות.';
+    if (_famDel) {
+      cta.textContent = 'מחק לצמיתות את כל הנתונים';
+      if (wt)   wt.textContent = 'למחוק את כל נתוני המשפחה?';
+      if (warn) warn.textContent = 'פעולה זו תמחק לצמיתות את כל המשימות, החברים, התמונות ונתוני המשפחה — מהענן, לכל בני המשפחה ובכל המכשירים. לא ניתן לשחזר, ואין מסלול שחזור של 72 שעות.';
+    } else {
+      cta.textContent = 'מחק ואפס מכשיר';
+      if (wt)   wt.textContent = 'לאפס את האפליקציה במכשיר הזה?';
+      if (warn) warn.textContent = 'פעולה זו תמחק את כל הנתונים וההגדרות מהמכשיר הזה ותנתק אותו מהמשפחה ומקוד המשפחה. המשימות עצמן נשמרות בענן ואצל שאר בני המשפחה — ותוכלו להתחבר מחדש במכשיר זה תוך 72 שעות.';
+    }
   }
 }
 function openDeleteDataFlow() {
+  _deleteScope = 'device';
+  _deleteStep = 0; _pinSetupForDelete = false;
+  _updateDeleteSteps();
+  _setDeleteCta();
+  document.getElementById('deleteModalBg').classList.add('open');
+}
+function openDeleteFamilyDataFlow() {
+  // Full, permanent deletion of ALL family cloud data (for every member).
+  // Reuses the same PIN + biometric gate; only the copy and the final
+  // executor differ (see _setDeleteCta / deleteDataNextStep).
+  _deleteScope = 'family';
   _deleteStep = 0; _pinSetupForDelete = false;
   _updateDeleteSteps();
   _setDeleteCta();
@@ -19753,7 +19786,8 @@ function deleteDataNextStep() {
     _proceedDeleteStep2();
   } else if (_deleteStep === 2) {
     // ── Step 3: execute ──
-    _executeDeleteData();
+    if (_deleteScope === 'family') _executeDeleteFamilyData();
+    else _executeDeleteData();
   }
 }
 function _proceedDeleteStep2() {
@@ -19786,6 +19820,57 @@ function _executeDeleteData() {
   _showToast('הנתונים נמחקו והמערכת אופסה');
   // Reload into a clean, family-less factory state (recovery banner shows there).
   setTimeout(() => location.reload(), 800);
+}
+
+// Full, PERMANENT deletion of all family cloud data — every member, every device.
+// Order is load-bearing: the Firestore rules grant delete only while THIS device's
+// memberUids/{authUid} marker still exists (belongs()), so that marker is deleted
+// LAST. Avatar deletion in Storage is best-effort (those rules live in the Firebase
+// console, not this repo). Unlike the device reset, NO 72h recovery blob is kept.
+async function _executeDeleteFamilyData() {
+  const fid = (typeof DataAdapter !== 'undefined') ? DataAdapter.familyId : null;
+  const uid = (typeof DataAdapter !== 'undefined') ? DataAdapter.authUid  : null;
+  // Not actually in a cloud family → nothing remote to wipe; fall back to local reset.
+  if (!fid || !_db || !DataAdapter.isFamily()) { _executeDeleteData(); return; }
+  closeDeleteModal();
+  _showToast('מוחק את נתוני המשפחה…');
+  try { if (typeof _rtUnsubscribe === 'function') { _rtUnsubscribe(); _rtUnsubscribe = null; } } catch(_) {}
+
+  const fam = _db.collection('families').doc(fid);
+  const wipeCol = async (name, skipId) => {
+    try {
+      const snap = await fam.collection(name).get();
+      await Promise.all(snap.docs
+        .filter(d => d.id !== skipId)
+        .map(d => d.ref.delete().catch(() => {})));
+    } catch (_) {}
+  };
+
+  try {
+    // 1) tasks  2) members  3) other devices' markers — all still permitted by belongs().
+    await wipeCol('tasks');
+    await wipeCol('members');
+    await wipeCol('memberUids', uid);                // keep MY marker for now
+    // 4) avatars in Storage (best-effort).
+    try {
+      if (_storage) {
+        const listing = await _storage.ref('families/' + fid + '/avatars').listAll();
+        await Promise.all((listing.items || []).map(it => it.delete().catch(() => {})));
+      }
+    } catch (_) {}
+    // 5) MY marker last — after this belongs() is false and further deletes are denied.
+    if (uid) { try { await fam.collection('memberUids').doc(uid).delete(); } catch (_) {} }
+    // 6) my top-level identity breadcrumb (own-record rule, independent of belongs()).
+    if (uid) { try { await _db.collection('authIndex').doc(uid).delete(); } catch (_) {} }
+  } catch (_) {}
+
+  // Wipe local state with NO recovery blob — the family is gone for good.
+  try {
+    localStorage.clear();
+    try { localStorage.setItem(LANG_KEY, 'he'); } catch(_) {}
+  } catch(_) {}
+  _showToast('כל נתוני המשפחה נמחקו');
+  setTimeout(() => location.reload(), 900);
 }
 
 // ── 72h cloud recovery (works even though family session was wiped) ───
