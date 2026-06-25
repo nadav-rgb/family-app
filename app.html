@@ -733,7 +733,6 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 @keyframes timeFlash{0%{opacity:0;transform:translateY(-4px);}50%{opacity:1;transform:translateY(1px);}100%{transform:translateY(0);}}
 .card-time.time-flash{animation:timeFlash .3s cubic-bezier(.34,1.2,.64,1) both;}
 /* ── Time strip manual button ── */
-/* ── Time strip manual button ── */
 .ts-manual-btn{position:sticky;top:0;padding:7px 8px 6px;font-size:10px;font-weight:900;color:#e07c3a;background:linear-gradient(180deg,#fffaf5 85%,rgba(255,250,245,0));cursor:pointer;text-align:center;letter-spacing:.2px;z-index:2;transition:background .13s;line-height:1.35;}
 .ts-manual-btn:active{background:rgba(255,112,51,.12);}
 /* Time strip */
@@ -1798,8 +1797,6 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 /* ─── Device Setup Screen ─── */
 #deviceSetupScreen,#firstRunScreen{position:fixed;inset:0;background:#fffaf5;z-index:9999;display:flex;align-items:center;justify-content:center;direction:rtl;}
 #deviceSetupScreen.hidden,#firstRunScreen.hidden{display:none;}
-#firstRunScreen .fr-sep{font-size:13px;color:#a07050;font-weight:700;margin:4px 0;}
-#firstRunScreen .fr-join-inp{width:100%;box-sizing:border-box;text-align:center;font-family:'Rubik',sans-serif;font-size:18px;font-weight:700;letter-spacing:.12em;color:#1c110a;background:#fff8f2;border:2px solid rgba(224,180,140,.4);border-radius:14px;padding:12px 14px;}
 #firstRunScreen .fr-err{color:#c03020;font-size:13px;font-weight:700;min-height:16px;}
 #firstRunScreen .fr-reconnect{background:#fff2ea;border:1.5px solid rgba(224,120,60,.35);border-radius:16px;padding:14px 16px;margin:0 0 14px;text-align:center;}
 #firstRunScreen .fr-reconnect.hidden{display:none;}
@@ -3467,278 +3464,6 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
 <script src="vendor/cropper.min.js" defer></script>
 </head>
 <body>
-
-<!-- ════ SVG PORTRAIT SPRITES (legacy/unused — default avatar is now neutral 👤) ════ -->
-<svg width="0" height="0" style="position:absolute;overflow:hidden" aria-hidden="true">
-  <defs>
-    <!-- backgrounds -->
-    <linearGradient id="bgA" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f0d4c5"/><stop offset="1" stop-color="#c89f88"/></linearGradient>
-    <linearGradient id="bgB" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d5cfc4"/><stop offset="1" stop-color="#9a9182"/></linearGradient>
-    <linearGradient id="bgC" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e0dbd2"/><stop offset="1" stop-color="#bab3a8"/></linearGradient>
-    <linearGradient id="bgD" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e8d9c2"/><stop offset="1" stop-color="#b89878"/></linearGradient>
-    <!-- skin -->
-    <linearGradient id="skin1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f0d2b1"/><stop offset=".55" stop-color="#e0b58f"/><stop offset="1" stop-color="#cc9670"/></linearGradient>
-    <linearGradient id="skin2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#eccba6"/><stop offset=".55" stop-color="#d4a87e"/><stop offset="1" stop-color="#b8865a"/></linearGradient>
-    <linearGradient id="skin3" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f1d3b0"/><stop offset=".55" stop-color="#dfb086"/><stop offset="1" stop-color="#c28e60"/></linearGradient>
-    <linearGradient id="skin4" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f4d8b6"/><stop offset=".55" stop-color="#e3ba90"/><stop offset="1" stop-color="#c89968"/></linearGradient>
-    <!-- hair -->
-    <linearGradient id="hairA" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3a2318"/><stop offset="1" stop-color="#1e0e08"/></linearGradient>
-    <linearGradient id="hairB" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#241810"/><stop offset="1" stop-color="#140a04"/></linearGradient>
-    <linearGradient id="hairC" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5d3a1f"/><stop offset="1" stop-color="#33200d"/></linearGradient>
-    <linearGradient id="hairD" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6e4a26"/><stop offset="1" stop-color="#3e2914"/></linearGradient>
-    <!-- clothing -->
-    <linearGradient id="shirtA" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a85d70"/><stop offset="1" stop-color="#75394a"/></linearGradient>
-    <linearGradient id="shirtB" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3d4d63"/><stop offset="1" stop-color="#23303f"/></linearGradient>
-    <linearGradient id="shirtC" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5e6a4d"/><stop offset="1" stop-color="#3a4230"/></linearGradient>
-    <linearGradient id="shirtD" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b58348"/><stop offset="1" stop-color="#7b5429"/></linearGradient>
-    <radialGradient id="cheekRose" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="rgba(200,90,80,.35)"/><stop offset="1" stop-color="rgba(200,90,80,0)"/></radialGradient>
-    <!-- hero-dad gradients -->
-    <linearGradient id="g-skin-h" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F4D2AC"/><stop offset="1" stop-color="#D9A672"/></linearGradient>
-    <linearGradient id="g-jacket-h" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8A4D26"/><stop offset="1" stop-color="#5A2E12"/></linearGradient>
-
-    <!-- ═════ IMA (mother) — WIDE VOLUMINOUS CURLY dark hair, pearl earrings ═════ -->
-    <symbol id="p-ima" viewBox="0 0 100 100">
-      <rect width="100" height="100" fill="url(#bgA)"/>
-      <!-- Voluminous curly hair — much wider than face, big side puffs -->
-      <ellipse cx="50" cy="34" rx="34" ry="28" fill="url(#hairA)"/>
-      <ellipse cx="17" cy="46" rx="14" ry="24" fill="url(#hairA)"/>
-      <ellipse cx="83" cy="46" rx="14" ry="24" fill="url(#hairA)"/>
-      <ellipse cx="15" cy="66" rx="11" ry="17" fill="url(#hairA)"/>
-      <ellipse cx="85" cy="66" rx="11" ry="17" fill="url(#hairA)"/>
-      <!-- Curly texture on sides -->
-      <path d="M12 50 Q17 42 22 50" fill="none" stroke="rgba(255,195,140,.24)" stroke-width="2.2"/>
-      <path d="M11 62 Q17 54 22 62" fill="none" stroke="rgba(255,195,140,.24)" stroke-width="2.2"/>
-      <path d="M80 50 Q85 42 90 50" fill="none" stroke="rgba(255,195,140,.24)" stroke-width="2.2"/>
-      <path d="M79 62 Q85 54 90 62" fill="none" stroke="rgba(255,195,140,.24)" stroke-width="2.2"/>
-      <!-- Shirt (mauve/rose blouse) -->
-      <path d="M0 100 Q22 74 50 72 Q78 74 100 100 Z" fill="url(#shirtA)"/>
-      <!-- Neck -->
-      <rect x="43" y="66" width="14" height="13" rx="3" fill="url(#skin1)"/>
-      <!-- Face oval -->
-      <ellipse cx="50" cy="48" rx="17.5" ry="20.5" fill="url(#skin1)"/>
-      <!-- Ear lobes -->
-      <ellipse cx="32.5" cy="53" rx="2.2" ry="2.8" fill="url(#skin1)"/>
-      <ellipse cx="67.5" cy="53" rx="2.2" ry="2.8" fill="url(#skin1)"/>
-      <!-- Pearl earrings -->
-      <circle cx="31.5" cy="58" r="2.6" fill="#f0ece4"/>
-      <circle cx="31.5" cy="58" r="1.4" fill="#e2d8c6"/>
-      <circle cx="68.5" cy="58" r="2.6" fill="#f0ece4"/>
-      <circle cx="68.5" cy="58" r="1.4" fill="#e2d8c6"/>
-      <!-- Eyebrows -->
-      <path d="M38.5 42.5 Q43.5 40.5 47 42" stroke="#2a1508" stroke-width="1.3" fill="none" stroke-linecap="round"/>
-      <path d="M53 42 Q56.5 40.5 61.5 42.5" stroke="#2a1508" stroke-width="1.3" fill="none" stroke-linecap="round"/>
-      <!-- Eyes — warm, large -->
-      <ellipse cx="43" cy="48.5" rx="4.5" ry="4" fill="white"/>
-      <circle cx="43" cy="49" r="2.8" fill="#2a1508"/>
-      <circle cx="43.7" cy="48.1" r=".8" fill="white" opacity=".82"/>
-      <ellipse cx="57" cy="48.5" rx="4.5" ry="4" fill="white"/>
-      <circle cx="57" cy="49" r="2.8" fill="#2a1508"/>
-      <circle cx="57.7" cy="48.1" r=".8" fill="white" opacity=".82"/>
-      <!-- Nose -->
-      <path d="M49.5 53.5 Q49 58 50.2 60 Q51 58 50.5 53.5" stroke="#a06840" stroke-width=".6" fill="none" stroke-linecap="round" opacity=".68"/>
-      <!-- Warm smile -->
-      <path d="M44 64.5 Q50 67.5 56 64.5" stroke="#c04060" stroke-width="1.6" fill="none" stroke-linecap="round"/>
-      <path d="M44.5 64.5 Q50 66.8 55.5 64.5 Q50 65.4 44.5 64.5 Z" fill="#d04468" opacity=".5"/>
-      <!-- Cheeks -->
-      <ellipse cx="37" cy="57" rx="4.5" ry="2.8" fill="url(#cheekRose)"/>
-      <ellipse cx="63" cy="57" rx="4.5" ry="2.8" fill="url(#cheekRose)"/>
-    </symbol>
-
-    <!-- ═════ ABA (father) — ROUND CIRCULAR GLASSES, salt-pepper beard ═════ -->
-    <symbol id="p-aba" viewBox="0 0 100 100">
-      <rect width="100" height="100" fill="url(#bgB)"/>
-      <!-- White open-collar shirt -->
-      <path d="M0 100 Q22 72 50 70 Q78 72 100 100 Z" fill="#e8e4dc"/>
-      <path d="M44 74 L50 82 L56 74 L56 80 Q50 86 44 80 Z" fill="#d8d4cc"/>
-      <!-- Neck -->
-      <rect x="43" y="66" width="14" height="12" rx="3" fill="url(#skin2)"/>
-      <!-- Short dark hair — close-cropped -->
-      <path d="M30 40 Q28 20 50 17 Q72 20 70 40 Q70 32 61 29 Q50 27 39 29 Q30 32 30 40 Z" fill="url(#hairB)"/>
-      <!-- Gray temples -->
-      <path d="M30 40 Q29 32 32 27 Q30 34 30 42 Z" fill="#9a9080" opacity=".72"/>
-      <path d="M70 40 Q71 32 68 27 Q70 34 70 42 Z" fill="#9a9080" opacity=".72"/>
-      <!-- Face oval -->
-      <ellipse cx="50" cy="50" rx="19" ry="22" fill="url(#skin2)"/>
-      <!-- Ear lobes -->
-      <ellipse cx="31" cy="52" rx="2.4" ry="3.2" fill="url(#skin2)"/>
-      <ellipse cx="69" cy="52" rx="2.4" ry="3.2" fill="url(#skin2)"/>
-      <!-- FULL BEARD — covers lower face, salt-and-pepper -->
-      <path d="M31 57 Q31 77 50 81 Q69 77 69 57 Q63 72 50 74 Q37 72 31 57 Z" fill="#2D1810"/>
-      <!-- Salt (gray) streaks in beard -->
-      <path d="M37 62 Q40 73 46 77" stroke="#a09888" stroke-width="1.6" fill="none" opacity=".62"/>
-      <path d="M63 62 Q60 73 54 77" stroke="#a09888" stroke-width="1.6" fill="none" opacity=".62"/>
-      <path d="M50 64 Q50 75 50 79" stroke="#a09888" stroke-width="1.4" fill="none" opacity=".52"/>
-      <!-- Mustache -->
-      <path d="M42 62 Q50 65.5 58 62 Q50 67 42 62 Z" fill="#1a0c04"/>
-      <!-- Thick eyebrows -->
-      <path d="M36 43 Q43 40.5 48 42.5" stroke="#1a0c04" stroke-width="2" fill="none" stroke-linecap="round"/>
-      <path d="M52 42.5 Q57 40.5 64 43" stroke="#1a0c04" stroke-width="2" fill="none" stroke-linecap="round"/>
-      <!-- ROUND CIRCULAR GLASSES — the most distinctive feature! Two perfect circles -->
-      <circle cx="42" cy="51.5" r="6.5" fill="rgba(210,225,235,.14)" stroke="#1a1208" stroke-width="1.8"/>
-      <circle cx="58" cy="51.5" r="6.5" fill="rgba(210,225,235,.14)" stroke="#1a1208" stroke-width="1.8"/>
-      <!-- Bridge connecting the two circles -->
-      <path d="M48.5 51.5 L51.5 51.5" stroke="#1a1208" stroke-width="1.5"/>
-      <!-- Arms of glasses to ears -->
-      <line x1="35.5" y1="51.5" x2="31" y2="52.5" stroke="#1a1208" stroke-width="1.5"/>
-      <line x1="64.5" y1="51.5" x2="69" y2="52.5" stroke="#1a1208" stroke-width="1.5"/>
-      <!-- Eyes inside the circles -->
-      <circle cx="42" cy="51.5" r="3.8" fill="#2a1508"/>
-      <circle cx="42" cy="51.5" r="2" fill="#0a0604"/>
-      <circle cx="42.7" cy="50.5" r=".7" fill="white" opacity=".78"/>
-      <circle cx="58" cy="51.5" r="3.8" fill="#2a1508"/>
-      <circle cx="58" cy="51.5" r="2" fill="#0a0604"/>
-      <circle cx="58.7" cy="50.5" r=".7" fill="white" opacity=".78"/>
-      <!-- Lens glint -->
-      <ellipse cx="39" cy="49" rx="2" ry=".8" fill="white" opacity=".28"/>
-      <ellipse cx="55" cy="49" rx="2" ry=".8" fill="white" opacity=".28"/>
-      <!-- Nose (peeking above beard) -->
-      <path d="M49.5 55.5 Q49 59 50.2 61 Q51 59 50.5 55.5" stroke="#8a5026" stroke-width=".65" fill="none" stroke-linecap="round" opacity=".68"/>
-      <!-- Big smile, teeth showing -->
-      <path d="M43 64.5 Q50 66.5 57 64.5" stroke="rgba(255,250,240,.7)" stroke-width="1.4" fill="none" stroke-linecap="round"/>
-    </symbol>
-
-    <!-- ═════ member_laali portrait (legacy/unused) — LONG STRAIGHT dark hair past shoulders ═════ -->
-    <symbol id="p-dudi" viewBox="0 0 100 100">
-      <rect width="100" height="100" fill="url(#bgC)"/>
-      <!-- LONG STRAIGHT HAIR — falls all the way to bottom of frame, very long -->
-      <path d="M19 26 Q19 14 50 12 Q81 14 81 26 L81 102 L19 102 Z" fill="url(#hairA)"/>
-      <!-- Center part highlight -->
-      <path d="M50 12 L50 30" stroke="rgba(255,220,170,.28)" stroke-width="1.4" fill="none"/>
-      <!-- Subtle side highlights (straight hair sheen) -->
-      <path d="M24 28 L24 80" stroke="rgba(255,205,155,.13)" stroke-width="1.8" fill="none"/>
-      <path d="M76 28 L76 80" stroke="rgba(255,205,155,.13)" stroke-width="1.8" fill="none"/>
-      <!-- Navy shirt — at bottom, partly behind hair curtains -->
-      <path d="M5 100 Q22 76 40 73 Q60 76 78 100 Z" fill="#2a3a5c"/>
-      <!-- Neck -->
-      <rect x="43" y="66" width="14" height="13" rx="3" fill="url(#skin3)"/>
-      <!-- Face oval (sits over the long hair center panel) -->
-      <ellipse cx="50" cy="47" rx="17" ry="20" fill="url(#skin3)"/>
-      <!-- Hair crown (top of head, over face oval crown) -->
-      <path d="M33 33 Q50 17 67 33 Q58 21 50 19 Q42 21 33 33 Z" fill="url(#hairA)"/>
-      <!-- Eyebrows — young girl, delicate -->
-      <path d="M38.5 41.5 Q43 39.5 47 41" stroke="#2a1508" stroke-width="1.1" fill="none" stroke-linecap="round"/>
-      <path d="M53 41 Q57 39.5 61.5 41.5" stroke="#2a1508" stroke-width="1.1" fill="none" stroke-linecap="round"/>
-      <!-- Eyes — large, dark, expressive -->
-      <ellipse cx="43" cy="47.5" rx="4.8" ry="4.2" fill="white"/>
-      <circle cx="43" cy="48" r="3" fill="#1a0c04"/>
-      <circle cx="43.8" cy="47" r=".9" fill="white" opacity=".88"/>
-      <ellipse cx="57" cy="47.5" rx="4.8" ry="4.2" fill="white"/>
-      <circle cx="57" cy="48" r="3" fill="#1a0c04"/>
-      <circle cx="57.8" cy="47" r=".9" fill="white" opacity=".88"/>
-      <!-- Upper lash line -->
-      <path d="M38.5 45 Q43 43.5 47.5 45" stroke="#1a0c04" stroke-width=".9" fill="none" stroke-linecap="round"/>
-      <path d="M52.5 45 Q57 43.5 61.5 45" stroke="#1a0c04" stroke-width=".9" fill="none" stroke-linecap="round"/>
-      <!-- Nose -->
-      <path d="M49.5 52 Q49 56.5 50.2 58.5 Q51 56.5 50.5 52" stroke="#a06840" stroke-width=".55" fill="none" stroke-linecap="round" opacity=".65"/>
-      <!-- Soft smile -->
-      <path d="M44.5 63.5 Q50 66.2 55.5 63.5" stroke="#a84050" stroke-width="1.3" fill="none" stroke-linecap="round"/>
-      <path d="M45 63.5 Q50 65.6 55 63.5 Q50 64.4 45 63.5 Z" fill="#c04868" opacity=".42"/>
-      <!-- Cheeks — rosy -->
-      <ellipse cx="36" cy="54.5" rx="5" ry="3" fill="url(#cheekRose)"/>
-      <ellipse cx="64" cy="54.5" rx="5" ry="3" fill="url(#cheekRose)"/>
-    </symbol>
-
-    <!-- ═════ member_aharon portrait (legacy/unused) — colorful KIPPAH dome on head ═════ -->
-    <symbol id="p-yonatan" viewBox="0 0 100 100">
-      <rect width="100" height="100" fill="url(#bgD)"/>
-      <!-- Shirt — rust/brown -->
-      <path d="M0 100 Q22 72 50 70 Q78 72 100 100 Z" fill="#9e5c32"/>
-      <!-- Neck -->
-      <rect x="43" y="66" width="14" height="13" rx="3" fill="url(#skin4)"/>
-      <!-- Short dark hair — visible on sides below kippah -->
-      <path d="M31 44 Q30 34 50 32 Q70 34 69 44 Q66 38 50 36 Q34 38 31 44 Z" fill="url(#hairD)"/>
-      <!-- Face oval -->
-      <ellipse cx="50" cy="52" rx="19" ry="21" fill="url(#skin4)"/>
-      <!-- Ear lobes -->
-      <ellipse cx="31" cy="55" rx="2.4" ry="3.2" fill="url(#skin4)"/>
-      <ellipse cx="69" cy="55" rx="2.4" ry="3.2" fill="url(#skin4)"/>
-      <!-- COLORFUL KIPPAH DOME — unmistakable! sits atop the head -->
-      <path d="M28 44 Q28 18 50 14 Q72 18 72 44 Q66 32 50 30 Q34 32 28 44 Z" fill="#1e4d9a"/>
-      <!-- Kippah stripes (white, gold, white, gold) -->
-      <path d="M32 42 Q50 20 68 42" stroke="white" stroke-width="2.8" fill="none"/>
-      <path d="M35 37 Q50 20 65 37" stroke="#d4a020" stroke-width="2.2" fill="none"/>
-      <path d="M40 31 Q50 20 60 31" stroke="white" stroke-width="1.8" fill="none"/>
-      <path d="M45 25 Q50 20 55 25" stroke="#d4a020" stroke-width="1.4" fill="none"/>
-      <!-- Kippah rim -->
-      <path d="M28 44 Q50 18 72 44" stroke="#0a2458" stroke-width="1.3" fill="none"/>
-      <!-- Hair at temples below kippah -->
-      <path d="M29 44 Q27 38 30 32" stroke="url(#hairD)" stroke-width="3.5" fill="none" stroke-linecap="round"/>
-      <path d="M71 44 Q73 38 70 32" stroke="url(#hairD)" stroke-width="3.5" fill="none" stroke-linecap="round"/>
-      <!-- Eyebrows -->
-      <path d="M37 48 Q43 46 47 47.5" stroke="#2a1508" stroke-width="1.3" fill="none" stroke-linecap="round"/>
-      <path d="M53 47.5 Q57 46 63 48" stroke="#2a1508" stroke-width="1.3" fill="none" stroke-linecap="round"/>
-      <!-- Eyes — round, bright -->
-      <ellipse cx="43" cy="54.5" rx="4.5" ry="4" fill="white"/>
-      <circle cx="43" cy="55" r="2.8" fill="#1a0c04"/>
-      <circle cx="43.7" cy="54" r=".8" fill="white" opacity=".88"/>
-      <ellipse cx="57" cy="54.5" rx="4.5" ry="4" fill="white"/>
-      <circle cx="57" cy="55" r="2.8" fill="#1a0c04"/>
-      <circle cx="57.7" cy="54" r=".8" fill="white" opacity=".88"/>
-      <!-- Nose -->
-      <path d="M49.5 59.5 Q49 63.5 50.2 65.5 Q51 63.5 50.5 59.5" stroke="#a06840" stroke-width=".55" fill="none" stroke-linecap="round" opacity=".65"/>
-      <!-- Happy wide smile -->
-      <path d="M43 70.5 Q50 74.5 57 70.5" stroke="#a84030" stroke-width="1.6" fill="none" stroke-linecap="round"/>
-      <path d="M43.5 70.5 Q50 74 56.5 70.5 Q50 71.4 43.5 70.5 Z" fill="#c84038" opacity=".48"/>
-      <!-- Plump cheeks -->
-      <ellipse cx="35" cy="61" rx="5.2" ry="3.5" fill="url(#cheekRose)"/>
-      <ellipse cx="65" cy="61" rx="5.2" ry="3.5" fill="url(#cheekRose)"/>
-    </symbol>
-
-    <!-- ═════ HERO DAD bust — ROUND glasses, beard, jacket ═════ -->
-    <symbol id="hero-dad" viewBox="0 0 200 260">
-      <path d="M-10 260 C -6 215 10 198 40 188 L 160 188 C 190 198 206 215 210 260 Z" fill="url(#g-jacket-h)"/>
-      <path d="M70 195 L 100 232 L 130 195 L 122 188 L 100 215 L 78 188 Z" fill="#3E1F0B"/>
-      <path d="M82 198 L 100 220 L 118 198 Z" fill="#FBF1DB"/>
-      <path d="M84 202 L 100 216 L 116 202 Z" fill="#EDD9B3"/>
-      <path d="M88 178 L 88 200 C 94 208 106 208 112 200 L 112 178 Z" fill="url(#g-skin-h)"/>
-      <path d="M88 198 L 112 198 L 110 202 C 105 205 95 205 90 202 Z" fill="#A26A38" opacity=".25"/>
-      <ellipse cx="58" cy="124" rx="5" ry="9" fill="#C28B58"/>
-      <ellipse cx="142" cy="124" rx="5" ry="9" fill="#C28B58"/>
-      <ellipse cx="100" cy="118" rx="43" ry="54" fill="url(#g-skin-h)"/>
-      <path d="M58 118 C 60 152 70 168 92 174 C 78 170 64 156 60 134 Z" fill="#A26A38" opacity=".15"/>
-      <ellipse cx="74" cy="138" rx="9" ry="5.5" fill="#E69378" opacity=".5"/>
-      <ellipse cx="126" cy="138" rx="9" ry="5.5" fill="#E69378" opacity=".5"/>
-      <path d="M76 106 Q 86 102 96 106" stroke="#1F100A" stroke-width="2.8" fill="none" stroke-linecap="round"/>
-      <path d="M104 106 Q 114 102 124 106" stroke="#1F100A" stroke-width="2.8" fill="none" stroke-linecap="round"/>
-      <!-- Round glasses inner fill -->
-      <circle cx="86" cy="118.5" r="10" fill="rgba(215,230,240,.16)"/>
-      <circle cx="114" cy="118.5" r="10" fill="rgba(215,230,240,.16)"/>
-      <circle cx="86" cy="118.5" r="4" fill="#5A3320"/>
-      <circle cx="114" cy="118.5" r="4" fill="#5A3320"/>
-      <circle cx="86" cy="118.5" r="2" fill="#0F0703"/>
-      <circle cx="114" cy="118.5" r="2" fill="#0F0703"/>
-      <ellipse cx="87.6" cy="116.8" rx="1.3" ry="1" fill="#fff"/>
-      <ellipse cx="115.6" cy="116.8" rx="1.3" ry="1" fill="#fff"/>
-      <path d="M80 115 Q 86 112 92 115" stroke="#1F100A" stroke-width="1.8" fill="none" stroke-linecap="round"/>
-      <path d="M108 115 Q 114 112 120 115" stroke="#1F100A" stroke-width="1.8" fill="none" stroke-linecap="round"/>
-      <path d="M100 128 Q 95 142 100 146 Q 105 146 104 142" stroke="#A26A38" stroke-width="1.6" fill="none" stroke-linecap="round" opacity=".75"/>
-      <path d="M62 130 C 62 158 76 174 100 176 C 124 174 138 158 138 130 C 136 142 128 150 116 153 C 108 155 102 156 100 156 C 98 156 92 155 84 153 C 72 150 64 142 62 130 Z" fill="#2D1810"/>
-      <g stroke="#5B3520" stroke-width="1" fill="none" opacity=".7">
-        <path d="M72 140 Q 76 154 82 164"/><path d="M86 144 Q 88 158 92 168"/>
-        <path d="M108 168 Q 112 158 114 144"/><path d="M122 142 Q 122 156 118 164"/>
-      </g>
-      <g stroke="#8C7466" stroke-width="1.1" fill="none" opacity=".55">
-        <path d="M76 148 Q 80 158 84 164"/><path d="M118 148 Q 114 158 110 164"/>
-      </g>
-      <path d="M84 150 Q 100 144 116 150 Q 110 156 100 154 Q 90 156 84 150 Z" fill="#2D1810"/>
-      <path d="M90 156 Q 100 160 110 156" stroke="#6B2812" stroke-width="2" fill="none" stroke-linecap="round"/>
-      <path d="M54 110 C 54 76 72 56 100 56 C 130 56 148 76 148 110 C 148 116 146 122 142 124 C 138 110 126 102 116 100 C 100 96 84 100 72 110 C 64 114 58 118 56 122 C 54 118 54 114 54 110 Z" fill="#2D1810"/>
-      <path d="M76 66 C 90 58 110 58 128 68 C 116 64 102 64 92 66 C 84 70 78 72 76 66 Z" fill="#150905" opacity=".7"/>
-      <path d="M54 108 C 54 96 58 84 62 78 C 62 90 60 102 58 116 Z" fill="#8C7466" opacity=".5"/>
-      <path d="M146 108 C 146 96 142 84 138 78 C 138 90 140 102 142 116 Z" fill="#8C7466" opacity=".5"/>
-      <!-- ROUND CIRCULAR GLASSES FRAMES — two perfect circles -->
-      <g fill="none" stroke="#1F1410" stroke-width="2.4">
-        <circle cx="86" cy="118.5" r="12"/>
-        <circle cx="114" cy="118.5" r="12"/>
-        <path d="M98 118.5 L102 118.5" stroke-linecap="round"/>
-        <path d="M74 118.5 L65 120" stroke-linecap="round"/>
-        <path d="M126 118.5 L135 120" stroke-linecap="round"/>
-      </g>
-      <ellipse cx="82" cy="115" rx="3.5" ry="1.6" fill="#fff" opacity=".3"/>
-      <ellipse cx="110" cy="115" rx="3.5" ry="1.6" fill="#fff" opacity=".3"/>
-    </symbol>
-  </defs>
-</svg>
 
 <div class="phone">
 
@@ -5889,11 +5614,6 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
         <span>שמור לבחירה שלי</span>
         <span class="spl-ck-pill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg></span>
       </button>
-      <!-- "ערוך ידנית" hidden — dead button (data-todo="edit-manual", no handler yet). -->
-      <button class="spl-ghost-btn" type="button" data-todo="edit-manual" id="splEditBtn" style="display:none" aria-hidden="true">
-        <span>ערוך ידנית</span>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4Z"/></svg>
-      </button>
     </div>
 
   </div>
@@ -7442,10 +7162,6 @@ function taskPerson(t) {
   return PEOPLE[key] || PEOPLE.Mom;
 }
 
-function sharedWithEmojis(visibleTo) {
-  return FAMILY.filter(f => visibleTo.includes(f.id)).map(f => f.emoji).join('') || '—';
-}
-
 function assignedLabel(task) {
   return resolveMember(task).name;
 }
@@ -7791,8 +7507,6 @@ const wdots = document.getElementById('wdots');
 
 // ─── Audio feedback ───────────────────────────────────────────────
 // AudioContext is created lazily on first user gesture (required by browsers).
-// _silentPing() plays a 0-volume buffer right before recognition.start() to
-// claim the audio session and suppress Chrome's built-in session-restart sound.
 let _audioCtx = null;
 function _getAudio() {
   if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -7864,14 +7578,6 @@ function _playSfx(key) {
 }
 // Preload on the first user gesture (gives an unlocked AudioContext for decode).
 window.addEventListener('pointerdown', () => { _loadSfx(); }, { once: true });
-function _silentPing() {
-  try {
-    const ctx = _getAudio();
-    const buf = ctx.createBuffer(1, 256, ctx.sampleRate);
-    const src = ctx.createBufferSource();
-    src.buffer = buf; src.connect(ctx.destination); src.start();
-  } catch(_) {}
-}
 // Looping silent buffer — holds the audio session open for the entire
 // recording so Chrome cannot claim it for system notification sounds.
 let _keepAlive = null;
@@ -7889,48 +7595,6 @@ function _startKeepAlive() {
 }
 function _stopKeepAlive() {
   try { if (_keepAlive) { _keepAlive.stop(); _keepAlive = null; } } catch(_) {}
-}
-function _tone(freq, offset, dur, vol) {
-  try {
-    const ctx = _getAudio();
-    const osc = ctx.createOscillator();
-    const g   = ctx.createGain();
-    osc.connect(g); g.connect(ctx.destination);
-    osc.type = 'sine'; osc.frequency.value = freq;
-    g.gain.setValueAtTime(vol, ctx.currentTime + offset);
-    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + offset + dur);
-    osc.start(ctx.currentTime + offset);
-    osc.stop(ctx.currentTime + offset + dur + 0.02);
-  } catch(_) {}
-}
-// _note — a soft, warm single note with a gentle attack (no click) and a
-// smooth bell-like decay. Layers a quiet octave-up harmonic for a "cute",
-// rounded timbre. Used by the recording start/stop chimes below.
-function _note(freq, offset, dur, vol) {
-  try {
-    const ctx = _getAudio();
-    const t0  = ctx.currentTime + offset;
-    // Fundamental
-    const osc = ctx.createOscillator();
-    const g   = ctx.createGain();
-    osc.type  = 'sine';
-    osc.frequency.setValueAtTime(freq, t0);
-    g.gain.setValueAtTime(0.0001, t0);
-    g.gain.exponentialRampToValueAtTime(vol, t0 + 0.018);   // soft attack → no pop
-    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);  // gentle decay
-    osc.connect(g); g.connect(ctx.destination);
-    osc.start(t0); osc.stop(t0 + dur + 0.03);
-    // Quiet shimmer one octave up — adds warmth/sparkle without harshness
-    const osc2 = ctx.createOscillator();
-    const g2   = ctx.createGain();
-    osc2.type  = 'sine';
-    osc2.frequency.setValueAtTime(freq * 2, t0);
-    g2.gain.setValueAtTime(0.0001, t0);
-    g2.gain.exponentialRampToValueAtTime(vol * 0.28, t0 + 0.02);
-    g2.gain.exponentialRampToValueAtTime(0.0001, t0 + dur * 0.85);
-    osc2.connect(g2); g2.connect(ctx.destination);
-    osc2.start(t0); osc2.stop(t0 + dur + 0.03);
-  } catch(_) {}
 }
 // Recording start/stop — play the user-provided sound files.
 function _beepStart() { _playSfx('start'); }
@@ -9770,61 +9434,6 @@ function vCancel() {
   ltxt.textContent = t('voice_tap') || 'לחץ לדיבור';
 }
 
-// ─── Time extraction helper ───────────────────────────────────────
-// Detects a clock time from Hebrew/numeric free text.
-// Returns minutes-from-midnight (integer) or null if none found.
-// Does NOT modify any task or state — pure function, read-only.
-function extractTimeFromText(text) {
-  if (!text) return null;
-  const t = text.trim();
-
-  // 1. Digital time anywhere: "14:30", "8:00", "ב-14:30"
-  let m = t.match(/\b([01]?[0-9]|2[0-3]):([0-5][0-9])\b/);
-  if (m) return parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
-
-  // Helper: parse optional half/quarter modifier after an hour word
-  function withMod(baseMins, after) {
-    const s = (after || '').trim();
-    if (s.includes('וחצי'))       return baseMins + 30;
-    if (s.includes('ורבע'))       return baseMins + 15;
-    if (s.includes('פחות רבע'))   return baseMins - 15;
-    return baseMins;
-  }
-  const MOD = '(?:\\s+(וחצי|ורבע|פחות\\s+רבע))?';
-
-  // 2. Digit hour: "בשעה 8", "ב-8", "ב–8", "ב8" (with optional :MM)
-  m = t.match(/(?:בשעה\s+|ב[-–]?)([01]?[0-9]|2[0-3])(?::([0-5][0-9]))?/);
-  if (m) {
-    const h = parseInt(m[1], 10);
-    const min = m[2] ? parseInt(m[2], 10) : 0;
-    if (h >= 0 && h <= 23) return h * 60 + min;
-  }
-
-  // 3. Hebrew word hours — multi-word entries MUST come before single-word entries
-  const HEB = [
-    ['אחת עשרה', 11], ['אחד עשר',   11],
-    ['שתים עשרה', 12], ['שנים עשר', 12],
-    ['אחת',  1],  ['אחד',    1],
-    ['שתיים', 2], ['שתים',   2],
-    ['שלוש',  3], ['שלש',    3],
-    ['ארבע',  4],
-    ['חמש',   5],
-    ['שש',    6],
-    ['שבע',   7],
-    ['שמונה', 8],
-    ['תשע',   9],
-    ['עשרה', 10], ['עשר',   10],
-  ];
-  for (const [word, hour] of HEB) {
-    // Match after ב or בשעה, with optional modifier
-    const re = new RegExp('(?:בשעה\\s+|ב)' + word + MOD);
-    m = t.match(re);
-    if (m) return withMod(hour * 60, m[1]);
-  }
-
-  return null;
-}
-
 function _attachDpShoppingBtn(task, cardEl) {
   if (cardEl.querySelector('.conf-shop-btn')) return;
   const body = cardEl.querySelector('.card-body');
@@ -10549,7 +10158,6 @@ function ampm(m) {
 
 // ─── Long-press split — prototype shell ──────────────────────────
 // No real task mutation. No parser connection. Interaction feel only.
-const SPLIT_MIN_LEN = 20;
 let _splitHintShown = false; // reset per dpRender — prevents hint on >1 card per render
 
 // mockSplit: raw tokenizer — splits on (ו)ל boundaries, strips leading vav
@@ -14115,7 +13723,6 @@ async function _capScheduleTask(task) {
   const notifs     = [];
 
   // id offsets: 0=advance, 1=at-time, 2-4=overdue stages 0-2
-  // id offsets: 0=advance, 1=at-time, 2-4=overdue stages 0-2
   if (initialAt.getTime() > now && offsetMins > 0) {
     notifs.push({ id: _capNotifId(task.id, 0), title: task.title,
                   body: tFmt('time_in_min', { n: offsetMins }),
@@ -16742,13 +16349,6 @@ const _FAMILY_MEMBERS_SEED = [
   { memberId: 'member_laali',  name: 'חבר 3', role: 'child',  avatar: { type: 'emoji', value: '👤' } },
   { memberId: 'member_aharon', name: 'חבר 4', role: 'child',  avatar: { type: 'emoji', value: '👤' } },
 ];
-
-// Maps legacy assignedTo IDs → stable memberIds
-// dudi / yonatan intentionally omitted — mapping requires explicit decision
-const _ASSIGNEE_TO_MEMBER_ID = {
-  dad: 'member_dad',
-  mom: 'member_mom',
-};
 
 async function _bootstrapFamilyMembers() {
   if (!_db || !DataAdapter.isFamily()) return;
@@ -19605,7 +19205,6 @@ function splitSave() {
       if (typeof splitSave === 'function') splitSave();
     });
   }
-  // splEditBtn: data-todo="edit-manual" — no navigation yet
 
   // ── Fix "המשפחה" nav tab → s-family-members on all settings screens ──
   ['s-settings', 's-sync', 's-privacy', 's-confirmation', 's-appearance'].forEach(function(sid) {
@@ -19774,13 +19373,11 @@ function _mpIsFamilyHead() {
 
 // ── Family OWNER (admin) — the member who created the family (role:'owner',
 // written at createFamily). Distinct from _mpIsFamilyHead (legacy memberId head).
-// Generic gate so future capabilities can be delegated via _ownerCan('cap').
 function _amIOwner() {
   if (!DataAdapter.isFamily()) return false;
   const me = (_familyMembersCache || []).find(m => m.userId === DataAdapter.userId);
   return !!(me && me.role === 'owner');
 }
-function _ownerCan(_cap) { return _amIOwner(); }
 
 // All tasks "owned" by a user — assigned to them OR created by them. Used when
 // removing a member: these are deleted permanently (per product decision).
