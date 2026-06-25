@@ -51,7 +51,7 @@
         'לשלם','לשלוח','לשמור','לשטוף',
         'לטפל','לתקן',
         'לפגוש','לפנות','לפתוח',
-        'לרשום',
+        'לרשום','לדבר',
         'לענות','לעדכן',
         'לחפש','לחזור','לחכות',
         'לדווח','למצוא','למסור',
@@ -251,40 +251,11 @@
   }
 
   // ─── Assignee ─────────────────────────────────────────────────────────────
+  // Phase 2 — Tasks Belong To The Creator: the parser NEVER infers an assignee.
+  // A task defaults to the creator/current device (handled in the app layer);
+  // assigning to another person is a manual UI action only. (Tier-1/Tier-2
+  // auto-detection removed.)
   function extractAssignee(text, people, config) {
-    const agentRe = config.agentVerbsRe;
-
-    // Tier 1: name at sentence start → subject/doer
-    for (const { names, id } of people) {
-      for (const name of names) {
-        if (text.startsWith(name + ' ') || text.startsWith(name + '\t')) {
-          Log.info('assignee', `tier-1 subject-start: ${name} → ${id}`);
-          return { id, fromText: true, match: name };
-        }
-      }
-    }
-
-    // Tier 2: name + explicit agent verb anywhere
-    for (const { names, id } of people) {
-      for (const name of names) {
-        if (agentRe && new RegExp(name + '\\s+(?:' + agentRe.source + ')').test(text)) {
-          Log.info('assignee', `tier-2 agent-verb: ${name} → ${id}`);
-          return { id, fromText: true, match: name };
-        }
-      }
-    }
-
-    // Tier 3: bare mention — but NOT if preceded by "את" (direct object)
-    for (const { names, id } of people) {
-      for (const name of names) {
-        if (!new RegExp('את\\s+' + name).test(text) && text.includes(name)) {
-          Log.info('assignee', `tier-3 mention: ${name} → ${id}`);
-          return { id, fromText: true, match: name };
-        }
-      }
-    }
-
-    Log.info('assignee', 'none detected');
     return { id: null, fromText: false, match: null };
   }
 
@@ -296,19 +267,13 @@
   }
 
   // ─── Title ────────────────────────────────────────────────────────────────
+  // Phase 1 — Original Speech Is Sacred: the title is VERBATIM. We no longer
+  // strip filler, the doer's name, reminder verbs, or sequential connectors.
+  // Only whitespace is normalized. matchesToStrip/config are intentionally
+  // ignored now (kept in the signature for call-site stability).
   function cleanTitle(text, matchesToStrip, config) {
-    let s = text;
-    for (const re of (config.filler || [])) s = s.replace(re, '');
-    for (const token of matchesToStrip) {
-      if (token) s = s.replace(token, ' ');
-    }
-    // Strip reminder verb keywords (Hebrew — Phase 2 should move to config)
-    s = s.replace(/\b(תזכיר|תזכור|תזכרי|תזכרו|להזכיר|זכור|זכרי)\b/g, '');
-    s = s.replace(/\s{2,}/g, ' ')
-         .replace(/^[\s,.\-–״׳]+/, '')
-         .replace(/[\s,.\-–״׳]+$/, '')
-         .trim();
-    return s || text.trim();
+    const s = String(text == null ? '' : text).replace(/\s{2,}/g, ' ').trim();
+    return s || String(text == null ? '' : text).trim();
   }
 
   // ─── Confidence ───────────────────────────────────────────────────────────
@@ -419,6 +384,30 @@
     return MOVEMENT_VERBS.has(segText.trim().split(/\s+/)[0]);
   }
 
+  // Shopping-list guard: dictating a long grocery list, the speech-to-text often
+  // repeats the buy verb ("לקנות חלב לקנות לחם", "...בצל ולקנות טונה"). Each "לקנות"
+  // becomes its own verb position → the list is wrongly split into several tasks
+  // (and the tail half, stripped of "לקנות", may not even register as a shopping
+  // list → no cart). A shopping segment is one that opens with the buy verb, OR a
+  // movement compound headed to a store ("ללכת לסופר לקנות..."). Two such segments
+  // in a row are the SAME shopping trip — merge them.
+  const BUY_VERBS    = new Set(['לקנות', 'לקחת']);
+  const STORE_RE     = /לסופר|בסופר|פיצוצי|בשוק|סופרמרקט|קניות/;
+  function isShoppingSeg(segText) {
+    const s = String(segText || '').trim();
+    if (!s) return false;
+    const first = s.split(/\s+/)[0];
+    if (BUY_VERBS.has(first)) return true;
+    if (MOVEMENT_VERBS.has(first) && STORE_RE.test(s)) return true;
+    return false;
+  }
+  // A segment that begins with a bare buy verb is a continuation of the previous
+  // shopping segment — drop its redundant leading verb when merging so the title
+  // reads as one list ("לקנות חלב לחם", not "לקנות חלב לקנות לחם").
+  function stripLeadingBuyVerb(segText) {
+    return String(segText || '').trim().replace(/^לקנות\s+/, '');
+  }
+
   // Noun-phrase completion guard. These construct/preposition words REQUIRE an object
   // after them, so a segment must never END on one ("...לסדר את"). If it does, the
   // object was orphaned into the next segment and we merge it back. Deterministic.
@@ -428,6 +417,24 @@
   function endsWithDanglingWord(text) {
     const w = String(text || '').trim().split(/\s+/);
     return DANGLING_TAIL.has(w[w.length - 1]);
+  }
+
+  // A coordinated temporal prefix belongs to the action that follows it:
+  // "... ובשש לקחת" -> previous task ends before "ו", next starts "בשש לקחת".
+  // Keep this deliberately narrow to explicit ו+time/date phrases immediately
+  // before a recognized action verb.
+  function forwardTemporalPrefix(text, verbPos) {
+    const before = text.slice(0, verbPos);
+    const HOUR = '(?:\\d{1,2}(?::\\d{2})?|אחת\\s+עשרה|אחד\\s+עשר|שתים\\s+עשרה|שתיים|שתים|שלוש|שלש|ארבע|חמש|שש|שבע|שמונה|תשע|עשר|אחת|אחד)';
+    const TEMPORAL = '(?:ב(?:שעה\\s+)?' + HOUR + '(?:\\s+(?:בבוקר|בצהריי?ם|בערב|בלילה))?|בבוקר|בצהריי?ם|אחר[\\s-]?הצהריים|בערב|בלילה|ביום\\s+(?:ראשון|שני|שלישי|רביעי|חמישי|שישי|שבת))';
+    const m = before.match(new RegExp('(?:^|\\s)(ו' + TEMPORAL + ')\\s*$'));
+    if (!m) return null;
+    const boundaryStart = m.index + m[0].indexOf(m[1]);
+    return { boundaryStart, segmentStart: boundaryStart + 1 };
+  }
+
+  function isTemporalPreamble(text) {
+    return /מחרתיים|מחר|היום|ביום\s+(?:ראשון|שני|שלישי|רביעי|חמישי|שישי|שבת)|בעוד\s+(?:שבוע|שבועיים|חודש|חודשיים|שנה|שנתיים|יומיים|יום|\d+\s+(?:ימים|שבועות|חודשים|שנים))|(?:ביום\s+|ב)?(?:ראשון|שני|שלישי|רביעי|חמישי|שישי|שבת)\s+הבא|בבוקר|בצהריי?ם|אחר[\s-]?הצהריים|בערב|בלילה|(?:בשעה\s+|ב[-־]?\s*)(?:\d{1,2}(?::\d{2})?|אחת\s+עשרה|אחד\s+עשר|שתים\s+עשרה|שתיים|שתים|שלוש|שלש|ארבע|חמש|שש|שבע|שמונה|תשע|עשר)/.test(String(text || ''));
   }
 
   /**
@@ -463,6 +470,10 @@
     }
 
     const clean = stripPreamble(text.trim(), config);
+    // Phase 1 — capture the spoken opener ("אני צריך"/"אני חייב"/"יש לי"/"אפשר")
+    // that stripPreamble removed, so it can be re-attached to the first task title.
+    const _openerMatch = config.preambleRe ? text.trim().match(config.preambleRe) : null;
+    const openerPreamble = _openerMatch ? _openerMatch[0].trim() : '';
     if (clean !== text.trim()) Log.info('preamble stripped', `"${text.trim()}" → "${clean}"`);
 
     const allPositions = [
@@ -472,10 +483,14 @@
       .sort((a, b) => a.pos - b.pos)
       .filter((p, i, arr) => i === 0 || p.pos !== arr[i - 1].pos);
 
+    allPositions.forEach(function (p, i) {
+      if (i > 0 && p.verb) p.forwardTemporal = forwardTemporalPrefix(clean, p.pos);
+    });
+
     if (allPositions.length === 0) {
       Log.info('split', 'no split points → single segment');
       Log.groupEnd();
-      return [{ text: clean, splitReason: 'no_split', preambleDate: null }];
+      return [{ text: (openerPreamble ? openerPreamble + ' ' + clean : clean).trim(), splitReason: 'no_split', preambleDate: null }];
     }
 
     const firstPos    = allPositions[0].pos;
@@ -498,7 +513,10 @@
         break;
       }
 
-      const rawEnd  = next ? (next.hasVav ? next.pos - 1 : next.pos) : clean.length;
+      const segStart = cur.forwardTemporal ? cur.forwardTemporal.segmentStart : cur.pos;
+      const rawEnd   = next
+        ? (next.forwardTemporal ? next.forwardTemporal.boundaryStart : (next.hasVav ? next.pos - 1 : next.pos))
+        : clean.length;
 
       // Guard: movement+purpose compound — ו absent before this verb AND previous
       // segment starts with a movement verb → this verb is the PURPOSE, not a new task.
@@ -509,7 +527,7 @@
         Log.info('movement-compound', `merged "${purposeText}" into previous`);
         continue;
       }
-      const segText = clean.slice(cur.pos, rawEnd).trim();
+      const segText = clean.slice(segStart, rawEnd).trim();
 
       if (segText.length <= 4 && i < allPositions.length - 1) {
         Log.warn('skip', `ghost segment "${segText}"`);
@@ -524,6 +542,21 @@
       });
     }
 
+    // Shopping-list merge: collapse consecutive shopping segments (repeated buy
+    // verb from speech-to-text) back into one grocery task. Only merges when BOTH
+    // the current segment and the next are shopping segments — a genuine second
+    // action (לשלם/להתקשר/...) starts with a different verb and is left untouched.
+    for (let i = 0; i < segments.length - 1; ) {
+      if (isShoppingSeg(segments[i].text) && isShoppingSeg(segments[i + 1].text)) {
+        const tail = stripLeadingBuyVerb(segments[i + 1].text);
+        segments[i].text = (segments[i].text + (tail ? ' ' + tail : '')).trim();
+        Log.info('shopping-merge', `merged "${segments[i + 1].text}" → "${segments[i].text}"`);
+        segments.splice(i + 1, 1);
+      } else {
+        i++;
+      }
+    }
+
     // Noun-phrase completion guard: never leave a segment ending on a construct word
     // ("...לסדר את") — merge the next segment in so the object is not orphaned.
     for (let i = 0; i < segments.length - 1; ) {
@@ -533,6 +566,39 @@
       } else {
         i++;
       }
+    }
+
+    // Product rule: booking a doctor appointment and buying medicine is one
+    // connected medical errand. Keep this exception narrow; unrelated purchases
+    // or doctor actions continue through the normal segmentation behavior.
+    for (let i = 0; i < segments.length - 1; i++) {
+      const first  = segments[i].text;
+      const second = segments[i + 1].text;
+      if (/^(?:להזמין|לקבוע)(?:\s|$)/.test(first) && /(?:תור|רופא)/.test(first)
+          && /^לקנות(?:\s|$)/.test(second) && /תרופ/.test(second)) {
+        segments[i].text = (first + ' ו' + second).trim();
+        segments.splice(i + 1, 1);
+        break;
+      }
+    }
+
+    // Keep a spoken temporal preamble visible on the first action. Date metadata
+    // may still carry to later tasks, but the words themselves belong up front.
+    if (segments.length && preambleStr && isTemporalPreamble(preambleStr)) {
+      segments[0].text = (preambleStr + ' ' + segments[0].text).trim();
+    }
+
+    // Phase 1 verbatim — a non-temporal leading phrase before the first verb
+    // ("תזכיר לי ...") is spoken text too; re-attach it to the first task so no
+    // words are deleted. Temporal preambles are handled above; the opener lives
+    // outside `clean` and is prepended after this so the order stays correct.
+    if (segments.length && preambleStr && !isTemporalPreamble(preambleStr)
+        && !segments[0].text.startsWith(preambleStr)) {
+      segments[0].text = (preambleStr + ' ' + segments[0].text).trim();
+    }
+
+    if (segments.length && openerPreamble) {
+      segments[0].text = (openerPreamble + ' ' + segments[0].text).trim();
     }
 
     // A time stated in the preamble ("מחר בשעה 2 לקחת...") belongs to the FIRST task
@@ -546,7 +612,7 @@
 
     return segments.length
       ? segments
-      : [{ text: clean, splitReason: 'fallback', preambleDate: null }];
+      : [{ text: (openerPreamble ? openerPreamble + ' ' + clean : clean).trim(), splitReason: 'fallback', preambleDate: null }];
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -826,10 +892,10 @@ if (typeof window !== 'undefined' &&
 
     const ASSIGNEE = [
       { input: 'שי ייקח את יונתן לחוג ביום שלישי', xA: null,      xT: 'יונתן' },
-      { input: 'אמא תקנה חלב בערב',               xA: 'mom',     xT: 'חלב',    xM: 19*60 },
-      { input: 'אבא יוציא את הילדים ב 13:20',      xA: 'dad',     xT: 'הילדים', xM: 13*60+20 },
+      { input: 'אמא תקנה חלב בערב',               xA: null,      xT: 'חלב',    xM: 19*60 },
+      { input: 'אבא יוציא את הילדים ב 13:20',      xA: null,      xT: 'הילדים', xM: 13*60+20 },
       { input: 'דוד יתקשר לסבתא מחר',              xA: null,      xT: 'סבתא' },
-      { input: 'יונתן יסדר את החדר אחרי הצהריים',  xA: 'yonatan', xT: 'החדר',   xM: 14*60 },
+      { input: 'יונתן יסדר את החדר אחרי הצהריים',  xA: null,      xT: 'החדר',   xM: 14*60 },
     ];
 
     const SEGMENTS = [
