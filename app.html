@@ -203,32 +203,16 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 
 .zone-heart{position:relative;width:150px;height:140px;}
 .mic-zone.recede .mwrap:not(.off){transform:scale(.92);opacity:.45;}
-.btn-heart{width:150px;height:140px;cursor:pointer;position:relative;animation:heartIdle 2.2s ease-in-out infinite;filter:drop-shadow(0 10px 30px rgba(255,92,138,.42));}
-.heart-svg{position:absolute;inset:0;width:100%;height:100%;}
-.mic-ov.heart-pos{top:44%;}
-@keyframes heartIdle{0%,100%{transform:scale(1);}14%{transform:scale(1.08);}28%{transform:scale(1);}42%{transform:scale(1.05);}}
-@keyframes heartRec{0%,100%{transform:scale(1.03);filter:drop-shadow(0 0 34px rgba(255,92,138,.9));}50%{transform:scale(1.15);filter:drop-shadow(0 0 54px rgba(255,92,138,1));}}
-.rec .btn-heart{animation:heartRec .85s ease-in-out infinite;}
 
 .zone-star{position:relative;width:200px;height:200px;display:flex;align-items:center;justify-content:center;}
 .sparkle-c{position:absolute;inset:0;pointer-events:none;z-index:4;}
-.btn-star{width:155px;height:155px;background:linear-gradient(135deg,#ffe566,#ffaa00);clip-path:polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%);cursor:pointer;animation:starIdle 2.6s ease-in-out infinite;filter:drop-shadow(0 8px 22px rgba(255,170,0,.45));}
-@keyframes starIdle{0%,100%{transform:scale(1) rotate(0deg);filter:drop-shadow(0 8px 22px rgba(255,170,0,.45)) brightness(1);}50%{transform:scale(1.05) rotate(4deg);filter:drop-shadow(0 12px 32px rgba(255,170,0,.7)) brightness(1.12);}}
-@keyframes starRec{0%,100%{transform:scale(1.06) rotate(-4deg);filter:drop-shadow(0 10px 32px rgba(255,170,0,.88)) brightness(1.18);}50%{transform:scale(1.16) rotate(4deg);filter:drop-shadow(0 14px 44px rgba(255,170,0,1)) brightness(1.28);}}
-.rec .btn-star{animation:starRec .75s ease-in-out infinite;}
 
 .ring{position:absolute;width:140px;height:140px;border-radius:50%;border:2.5px solid rgba(255,94,20,.45);pointer-events:none;opacity:0;}
 @keyframes rippleOut{0%{transform:scale(1);opacity:.55;}100%{transform:scale(2.6);opacity:0;}}
 .rec .ring.r1{animation:rippleOut 1.5s ease-out 0s infinite;}
 .rec .ring.r2{animation:rippleOut 1.5s ease-out .38s infinite;}
 .rec .ring.r3{animation:rippleOut 1.5s ease-out .76s infinite;}
-.btn-classic{width:140px;height:140px;border-radius:50%;background:linear-gradient(135deg,#ff9a4e,#ff5e14);cursor:pointer;position:relative;z-index:2;box-shadow:0 12px 36px rgba(255,94,20,.38);transition:transform .18s;}
-.btn-classic:active{transform:scale(.95);}
 
-.btn-blob{width:150px;height:150px;background:linear-gradient(135deg,#d8b4fe,#9333ea);border-radius:60% 40% 70% 30%/60% 30% 70% 40%;cursor:pointer;animation:blobIdle 3.8s ease-in-out infinite;filter:drop-shadow(0 10px 28px rgba(147,51,234,.4));}
-@keyframes blobIdle{0%{border-radius:60% 40% 70% 30%/60% 30% 70% 40%;transform:scale(1);}25%{border-radius:40% 60% 30% 70%/30% 60% 40% 70%;transform:scale(1.03);}50%{border-radius:70% 30% 60% 40%/50% 70% 30% 50%;transform:scale(1);}75%{border-radius:30% 70% 40% 60%/70% 40% 60% 30%;transform:scale(1.02);}100%{border-radius:60% 40% 70% 30%/60% 30% 70% 40%;transform:scale(1);}}
-@keyframes blobRec{0%{border-radius:60% 40% 70% 30%/60% 30% 70% 40%;transform:scale(1.12);}33%{border-radius:40% 60% 30% 70%/30% 60% 40% 70%;transform:scale(1.18);}66%{border-radius:70% 30% 60% 40%/50% 70% 30% 50%;transform:scale(1.1);}100%{border-radius:60% 40% 70% 30%/60% 30% 70% 40%;transform:scale(1.12);}}
-.rec .btn-blob{animation:blobRec 1.1s ease-in-out infinite;filter:drop-shadow(0 14px 42px rgba(147,51,234,.72));}
 
 .listen-sec{text-align:center;flex-shrink:0;min-height:50px;display:flex;flex-direction:column;align-items:center;gap:10px;animation:fadeUp .4s ease .18s both;}
 
@@ -1797,7 +1781,6 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 /* ─── Device Setup Screen ─── */
 #deviceSetupScreen,#firstRunScreen{position:fixed;inset:0;background:#fffaf5;z-index:9999;display:flex;align-items:center;justify-content:center;direction:rtl;}
 #deviceSetupScreen.hidden,#firstRunScreen.hidden{display:none;}
-#firstRunScreen .fr-err{color:#c03020;font-size:13px;font-weight:700;min-height:16px;}
 #firstRunScreen .fr-reconnect{background:#fff2ea;border:1.5px solid rgba(224,120,60,.35);border-radius:16px;padding:14px 16px;margin:0 0 14px;text-align:center;}
 #firstRunScreen .fr-reconnect.hidden{display:none;}
 #firstRunScreen .fr-reconnect-title{font-size:16px;font-weight:800;color:#b4471d;margin-bottom:4px;}
@@ -2252,7 +2235,6 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 #s-member-profile .mp-color-card{margin-top:11px;background:#fff;border-radius:20px;padding:14px 16px;box-shadow:var(--mp-shadow);border:1px solid rgba(255,255,255,0.8);display:flex;align-items:center;justify-content:space-between;gap:10px;}
 #s-member-profile .mp-color-label{font-size:13px;font-weight:600;color:#6B5E80}
 #s-member-profile .mp-color-right{display:flex;align-items:center;gap:8px}
-#s-member-profile .mp-color-name{display:none}
 #s-member-profile .mp-color-swatch{width:26px;height:26px;border-radius:50%;box-shadow:0 0 0 2px rgba(255,255,255,0.7);position:relative;cursor:pointer;border:none;}
 #s-member-profile .mp-color-swatch input[type=color]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;border-radius:50%;}
 /* Quote */
@@ -2895,7 +2877,6 @@ body.text-large .phone{font-size:17px}
 .bio-icon{width:80px;height:80px;border-radius:50%;background:#EEE9F9;display:flex;align-items:center;justify-content:center;}
 .bio-icon svg{width:44px;height:44px;color:#7A5BE5;}
 .bio-ring{width:80px;height:80px;border-radius:50%;border:3px solid #7A5BE5;position:absolute;top:0;left:0;animation:bioRing 1.6s ease-in-out infinite;}
-@keyframes bioRing{0%,100%{transform:scale(1);opacity:.5}50%{transform:scale(1.3);opacity:0}}
 .del-warning{background:#FFF0EE;border-radius:14px;padding:14px;margin:0 20px 18px;border:1px solid rgba(220,50,50,.15);}
 .del-warning .del-w-title{font-size:14px;font-weight:800;color:#C0392B;margin-bottom:6px;}
 .del-warning .del-w-body{font-size:12px;color:#8B3030;line-height:1.55;}
@@ -4454,72 +4435,6 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
       </div>
     </div>
 
-    <!-- Connected devices — hidden for testers (fake demo content) -->
-    <div class="card" style="display:none">
-      <div class="sec-head">
-        <div class="sec-icon purple" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="10" height="14" rx="2"/><rect x="13" y="3" width="8" height="17" rx="2"/></svg>
-        </div>
-        <div class="sec-text">
-          <div class="sec-title">מכשירים מחוברים</div>
-          <div class="sec-sub">המשימות נסנכרנות בכל המכשירים הבאים</div>
-        </div>
-      </div>
-
-      <div class="device-row">
-        <div class="dev-avatar av-aba" data-avatar-for="member_dad" data-avatar-size="40"><div data-avatar-slot></div><span class="online"></span></div>
-        <div class="dev-body">
-          <div class="dev-top">
-            <span class="dev-name">הטלפון של חבר 1</span>
-            <span class="me-pill">מכשיר זה</span>
-          </div>
-          <div class="dev-model" id="devModelDad">Samsung Galaxy S24</div>
-        </div>
-        <div class="dev-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
-        </div>
-      </div>
-
-      <div class="device-row">
-        <div class="dev-avatar av-ima" data-avatar-for="member_mom" data-avatar-size="40"><div data-avatar-slot></div><span class="online"></span></div>
-        <div class="dev-body">
-          <div class="dev-top">
-            <span class="dev-name">הטלפון של חבר 2</span>
-          </div>
-          <div class="dev-model" id="devModelMom">Samsung Galaxy</div>
-        </div>
-        <div class="dev-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
-        </div>
-      </div>
-
-      <div class="device-row">
-        <div class="dev-avatar av-leali" data-avatar-for="member_laali" data-avatar-size="40"><div data-avatar-slot></div><span class="online"></span></div>
-        <div class="dev-body">
-          <div class="dev-top">
-            <span class="dev-name">הטלפון של חבר 3</span>
-          </div>
-          <div class="dev-model" id="devModelLaali">Samsung Galaxy</div>
-        </div>
-        <div class="dev-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
-        </div>
-      </div>
-
-      <div class="device-row">
-        <div class="dev-avatar av-uri" data-avatar-for="member_aharon" data-avatar-size="40"><div data-avatar-slot></div><span class="online"></span></div>
-        <div class="dev-body">
-          <div class="dev-top">
-            <span class="dev-name">הטלפון של חבר 4</span>
-          </div>
-          <div class="dev-model">Samsung Galaxy</div>
-        </div>
-        <div class="dev-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
-        </div>
-      </div>
-
-    </div>
 
     <!-- Cloud backup — honest: Firestore auto-saves & syncs; no E2E-encryption claim. -->
     <div class="card">
@@ -4884,12 +4799,6 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
           <span class="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg></span>
           <span class="tile-label">בלוב</span>
         </button>
-        <!-- "הדמות" (star) hidden — it mapped to the same mic mode as "לב" (heart), so it was a duplicate/fake choice. -->
-        <button class="tile" data-voice="star" role="radio" aria-checked="false" style="display:none" aria-hidden="true">
-          <div class="voice-art"><div class="vbtn v-star"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div></div>
-          <span class="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg></span>
-          <span class="tile-label">הדמות</span>
-        </button>
       </div>
       <div class="info-pill">
         <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="11" x2="12" y2="17"/><circle cx="12" cy="7.5" r="0.6" fill="currentColor"/><circle cx="12" cy="12" r="9.5"/></svg></span>
@@ -5014,16 +4923,6 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
       </div>
     </div>
 
-    <!-- Task summary mini-card (hidden, replaced by hero) -->
-    <div class="vis-task-summary" style="display:none!important">
-      <div class="vis-clipboard" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="12" height="17" rx="2"/><rect x="9" y="2" width="6" height="3" rx="1"/><path d="M9 11l1.5 1.5L14 9"/><path d="M9 16h5"/></svg>
-      </div>
-      <div class="vis-ts-text">
-        <div class="vis-ts-title" id="visSummaryTitle"><span>—</span></div>
-        <div class="vis-ts-meta"><span class="vis-gd"></span><span id="visSummaryMeta">—</span></div>
-      </div>
-    </div>
 
     <!-- Hero card -->
     <div class="vis-hero-card" id="visHeroCard">
@@ -5160,16 +5059,6 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
           <div class="vis-opt-sub">5, 10 ו-15 דקות לאחר הזמן המתוכנן</div>
         </div>
         <label class="vis-toggle"><input type="checkbox" checked/><span class="slider"></span></label>
-      </div>
-      <div class="vis-divider" style="display:none!important"></div>
-      <div class="vis-opt-row" style="display:none!important">
-        <div class="vis-opt-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.13 4.21a6 6 0 0 1 8.87 5.79c0 5 3 7 3 7H8"/><path d="M6 8a6 6 0 0 1 .58-2.58"/><path d="M3 11H1l3-3"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
-        </div>
-        <div class="vis-opt-text">
-          <div class="vis-opt-title">אל תשלח התראה שוב לאחר סימון בוצעה</div>
-        </div>
-        <label class="vis-toggle"><input type="checkbox"/><span class="slider"></span></label>
       </div>
     </div>
 
@@ -7003,18 +6892,6 @@ function taskAvImg(task) {
   return avImg(_taskLegacyAssigneeId(task));
 }
 
-// Single source of truth for the parser — built from FAMILY + I18N.
-// Any new member added to FAMILY is automatically recognized by the parser.
-function buildParserPeople() {
-  return FAMILY.map(f => ({
-    id:    f.id,
-    names: [
-      (I18N.he || {})['family_' + f.id],   // Hebrew name  (e.g. "אמא")
-      (I18N.en || {})['family_' + f.id],   // English name (e.g. "Mom")
-      f.id,                                  // ID itself    (e.g. "mom")
-    ].filter(Boolean),
-  }));
-}
 
 const USER_KEY = 'family-app-user';
 let currentUser = localStorage.getItem(USER_KEY) || 'dad';
@@ -7133,25 +7010,6 @@ function _taskCreatorColor(task) {
   return null;
 }
 
-function openUserSwitcher() {
-  const bg = document.getElementById('uswBg');
-  const rows = document.getElementById('uswRows');
-  rows.innerHTML = '';
-  FAMILY.forEach(f => {
-    const row = document.createElement('div');
-    row.className = 'usw-row' + (f.id === currentUser ? ' active' : '');
-    row.innerHTML = `<span class="usw-em">${avImg(f.id)}</span><span class="usw-name">${t('family_' + f.id)}</span>${f.id === currentUser ? '<span class="usw-check">✓</span>' : ''}`;
-    row.addEventListener('click', () => {
-      currentUser = f.id;
-      saveCurrentUser();
-      closeUserSwitcher();
-      updateHeroPortrait();
-      renderToday();
-    });
-    rows.appendChild(row);
-  });
-  bg.classList.add('open');
-}
 
 function closeUserSwitcher() {
   document.getElementById('uswBg').classList.remove('open');
@@ -7184,7 +7042,6 @@ function _applyLang() {
     if (html) el.innerHTML = val; else el.textContent = val;
   };
   // Voice screen
-  set('vPromptEyebrow', t('voice_eyebrow'));
   set('vPromptText',    t('voice_prompt'), true);
   set('vBackTxt',       t('voice_back'));
   set('sbLabel',        t('voice_listening'));
@@ -7262,58 +7119,6 @@ function setLang(lang) {
   }
 }
 
-// Convert a HebrewParser result → app task shape
-function parsedToTask(p, idx) {
-  const assignedTo = p.assignedTo || _currentDeviceLegacyId();
-  // Wave 2 Fix 2: safe creator fallback — never null. Prevents broken writes
-  // (createdBy:null / empty visibleTo) when identity is only partially hydrated.
-  const creatorId = DataAdapter.userId || DataAdapter.myMemberId || currentUser;
-  // Wave 2A.5: in family mode default ownership to the real creator userId
-  // (so resolveMember finds the real participant). Keep the seed mapping
-  // ONLY when the parser explicitly named an assignee (mom/dad/...).
-  const assignedToMemberId = DataAdapter.isFamily()
-    ? ((p.assignedTo && _memberIdForLegacyId(p.assignedTo)) || DataAdapter.userId || DataAdapter.myMemberId || creatorId)
-    : null;
-  const person       = ID_TO_PERSON[assignedTo] || 'Dad';
-  // Beta: never auto-derive a date from speech. Tasks default to today; the
-  // user sets a date only via the "זמן ותאריך" screen. (p.date is ignored.)
-  const dateStr      = todayDate();
-  // Wave 2B: creator must always see their own task. Default visibility is
-  // creator-only — no one else auto-selected. Plus the assignee if different.
-  const defaultVisibleTo = DataAdapter.isFamily()
-    ? [creatorId, DataAdapter.userId, assignedToMemberId].filter(Boolean).filter((v,i,a) => a.indexOf(v) === i)
-    : _defaultVisibleToIds();
-  // Beta: speech never creates a time/reminder, so a new task always has no
-  // time at creation. (p.mins is ignored; user sets time via "זמן ותאריך".)
-  const hasTime = false;
-  const defaultNotifyTo = DataAdapter.isFamily()
-    ? (hasTime ? [DataAdapter.userId].filter(Boolean) : [])
-    : [assignedToMemberId || assignedTo];
-  return {
-    id:                    DataAdapter.isFamily() ? _genCode(16) : Date.now() + idx,
-    title:                 p.title,
-    person,
-    assignedTo,
-    createdBy:             DataAdapter.isFamily() ? creatorId : currentUser,
-    createdByMemberId:     (() => { const id = DataAdapter.myMemberId; if (!id) console.warn('[Identity] myMemberId not set — createdByMemberId null'); return id; })(),
-    assignedToMemberId,
-    mins:                  null,
-    completed:             false,
-    notify:                true,
-    visibleTo:             defaultVisibleTo,
-    notifyTo:              defaultNotifyTo,
-    reminderOffsetMinutes: 10,
-    reminderOffsets:       (_loadNotifPrefs().defaultReminderMinutes.length ? _loadNotifPrefs().defaultReminderMinutes : [10]),
-    overdueReminderOffsets:[5, 10, 15],
-    sentInitialReminder:   false,
-    sentReminderOffsets:   [],
-    sentReminderStages:    [],
-    lastReminderSentAt:    null,
-    timeSource:            null,
-    date:                  dateStr,
-    recurrence:            { type: 'none' },
-  };
-}
 // Convert AI canonical schema → app task shape
 function aiParsedToTask(t, idx) {
   const assignedTo = t.assignee || _currentDeviceLegacyId();
@@ -8406,10 +8211,6 @@ function switchMode(m) {
   }, {once:true});
 }
 
-function openStyleDrawer() {
-  document.querySelectorAll('.dopt').forEach(o => o.classList.toggle('sel', o.dataset.mode === vMode));
-  document.getElementById('styleBg').classList.add('open');
-}
 
 function closeStyleDrawer() {
   document.getElementById('styleBg').classList.remove('open');
@@ -9448,19 +9249,6 @@ function _attachDpShoppingBtn(task, cardEl) {
   body.appendChild(btn);
 }
 
-function _attachConfShoppingBtn(task, taskEl) {
-  if (taskEl.querySelector('.conf-shop-btn')) return;
-  const colMid = taskEl.querySelector('.col-mid');
-  if (!colMid) return;
-  const btn = document.createElement('button');
-  btn.className = 'conf-shop-btn';
-  btn.textContent = '🛒 רשימת קניות מסודרת';
-  btn.addEventListener('click', function(e) {
-    e.stopPropagation();
-    showTitleTip(task, btn);
-  });
-  colMid.appendChild(btn);
-}
 
 function _attachTodayShoppingBtn(task, taskEl) {
   if (taskEl.querySelector('.conf-shop-btn')) return;
@@ -11079,7 +10867,6 @@ function _ymdPlus(days) {
 // Week view now has a single supported layout: 'cols' (the carousel/timeline
 // of horizontal day columns). The legacy 'list' view was removed; any value
 // previously persisted in localStorage is force-migrated to 'cols' below.
-const _weekViewMode = 'cols';
 try { localStorage.setItem('family-app-week-mode', 'cols'); } catch (_) {}
 
 // Order a day's tasks: timed tasks first by their set time (early→late), then
@@ -11480,7 +11267,6 @@ function renderToday() {
             if (tampm) tampm.textContent = ampm(realT.mins);
             realT.updatedAt = Date.now(); // align local timestamp before Firestore write
             saveState();
-            console.log('[capLN] reschedule after time edit');
             _capRescheduleAll().catch(() => {});
             console.log('[DA] time edit sync start task=' + realT.id);
             _daWriteTask(realT, false)
@@ -11670,7 +11456,6 @@ function undoDelete() {
 // momentary "blank list" flash and the entry-animation vibration
 // users saw after deleting a card.
 function _refreshTodayMetadata() {
-  console.log('[delete] surgical refresh — no list rebuild (smooth-delete v2)');
   const tasks     = activeTasks();
   const container = document.getElementById('tTasks');
   if (!container) return;
@@ -11775,7 +11560,6 @@ function doDelete(task, screen) {
     AppState.previewUserEdited = true;
     state.idx  = idx;
     state.type = 'preview';
-    console.log('[delete] preview — surgical meta refresh (smooth-delete v2)');
     // Surgical: card already removed from DOM by the swipe animation.
     // Just refresh the meta pills — no list rebuild → no flicker / vibration.
     _updateDpMeta();
