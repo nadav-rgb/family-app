@@ -1293,8 +1293,8 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 /* ── Calendar drawer ── */
 .cal-bg{position:absolute;inset:0;z-index:930;background:rgba(28,17,10,.3);display:flex;align-items:flex-end;pointer-events:none;opacity:0;transition:opacity .22s ease;}
 .cal-bg.open{opacity:1;pointer-events:auto;}
-.cal-drawer{width:100%;background:#fff9f5;border-radius:26px 26px 0 0;padding:10px 20px 38px;box-shadow:0 -8px 40px rgba(100,60,20,.16);transform:translateY(100%);transition:transform .32s cubic-bezier(.34,1.1,.64,1);}
-.cal-bg.open .cal-drawer{transform:translateY(0);}
+.cal-drawer{width:100%;background:#fff9f5;border-radius:26px 26px 0 0;padding:10px 20px 38px;box-shadow:0 -8px 40px rgba(100,60,20,.16);transform:translateY(100%) translateZ(0);will-change:transform;backface-visibility:hidden;transition:transform .32s cubic-bezier(.34,1.1,.64,1);}
+.cal-bg.open .cal-drawer{transform:translateY(0) translateZ(0);}
 .cal-nav{display:flex;align-items:center;justify-content:space-between;margin:4px 0 16px;}
 .cal-nav-btn{background:none;border:none;cursor:pointer;font-size:22px;color:#9e8878;padding:4px 10px;border-radius:10px;font-family:'Nunito',sans-serif;transition:background .13s;}
 .cal-nav-btn:active{background:rgba(0,0,0,.06);}
@@ -1375,8 +1375,11 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 .split-sheet-bg.open{opacity:1;pointer-events:auto;}
 .opts-bg{position:fixed;inset:0;z-index:9100;background:rgba(28,17,10,.42);display:flex;align-items:flex-end;pointer-events:none;opacity:0;transition:opacity .22s ease;}
 .opts-bg.open{opacity:1;pointer-events:auto;}
-.opts-sheet{width:100%;background:#fffaf5;border-radius:26px 26px 0 0;padding:10px 0 36px;box-shadow:0 -8px 40px rgba(100,60,20,.16);transform:translateY(100%);transition:transform .28s cubic-bezier(.34,1.1,.64,1);padding-bottom:max(36px,env(safe-area-inset-bottom,36px));}
-.opts-bg.open .opts-sheet{transform:translateY(0);}
+/* Bug 4: pre-promote the sheet to its own GPU layer AT RENDER (will-change +
+   translateZ), so sliding it up over the promoted #v4Home iframe never spawns a
+   fresh composition layer mid-animation — which is what painted the black frame. */
+.opts-sheet{width:100%;background:#fffaf5;border-radius:26px 26px 0 0;padding:10px 0 36px;box-shadow:0 -8px 40px rgba(100,60,20,.16);transform:translateY(100%) translateZ(0);will-change:transform;backface-visibility:hidden;transition:transform .28s cubic-bezier(.34,1.1,.64,1);padding-bottom:max(36px,env(safe-area-inset-bottom,36px));}
+.opts-bg.open .opts-sheet{transform:translateY(0) translateZ(0);}
 .opts-pill{width:36px;height:4px;border-radius:99px;background:#e0d4cc;margin:0 auto 18px;}
 .opts-row{display:flex;align-items:center;gap:14px;width:100%;padding:14px 22px;border:none;background:none;font-family:'Nunito',sans-serif;cursor:pointer;direction:rtl;text-align:right;}
 .opts-row:active{background:rgba(0,0,0,.04);}
@@ -1385,8 +1388,8 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 .opts-row-title{font-size:16px;font-weight:800;color:#1c110a;}
 .opts-row-sub{font-size:12px;font-weight:600;color:#9e8878;}
 .opts-row-chev{color:#c4ae9f;flex-shrink:0;}
-.split-sheet{width:100%;max-width:420px;margin:0 auto;background:#fffaf5;border-radius:26px 26px 0 0;box-shadow:0 -8px 40px rgba(100,60,20,.22);transform:translateY(100%);transition:transform .34s cubic-bezier(.34,1.1,.64,1);max-height:85dvh;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;padding-bottom:env(safe-area-inset-bottom,0);direction:rtl;}
-.split-sheet-bg.open .split-sheet{transform:translateY(0);}
+.split-sheet{width:100%;max-width:420px;margin:0 auto;background:#fffaf5;border-radius:26px 26px 0 0;box-shadow:0 -8px 40px rgba(100,60,20,.22);transform:translateY(100%) translateZ(0);will-change:transform;backface-visibility:hidden;transition:transform .34s cubic-bezier(.34,1.1,.64,1);max-height:85dvh;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;padding-bottom:env(safe-area-inset-bottom,0);direction:rtl;}
+.split-sheet-bg.open .split-sheet{transform:translateY(0) translateZ(0);}
 .split-sh-handle{width:36px;height:4px;background:rgba(100,60,20,.15);border-radius:2px;margin:12px auto 0;flex-shrink:0;}
 .split-sh-hdr{padding:16px 20px 14px;border-bottom:1px solid rgba(224,180,140,.2);flex-shrink:0;}
 .split-sh-title{font-family:'Rubik',sans-serif;font-size:17px;font-weight:900;color:#1c110a;margin-bottom:10px;display:flex;align-items:center;gap:7px;}
@@ -3310,7 +3313,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
 .avcrop-hdr{flex:0 0 auto;padding:18px 18px 6px;color:#fff;text-align:center;}
 .avcrop-hdr .t{font-size:15px;font-weight:800;letter-spacing:.2px;line-height:1.35;}
 .avcrop-hdr .s{font-size:11.5px;font-weight:600;color:rgba(255,255,255,.62);margin-top:4px;letter-spacing:.2px;}
-.avcrop-canvas-wrap{flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;padding:14px 0;overflow:hidden;touch-action:none;}
+.avcrop-canvas-wrap{flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;padding:14px 0;overflow:hidden;touch-action:none;transform:translateZ(0);backface-visibility:hidden;}
 /* Stage = fixed square where cropper.js renders. Constrains the giant default
    container so the circle crop box reads as the focal point (WhatsApp-style). */
 .avcrop-stage{width:min(86vw, 60vh, 380px);height:min(86vw, 60vh, 380px);position:relative;}
@@ -3327,7 +3330,10 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
 .avcrop-canvas-wrap .cropper-face{border-radius:50%;}
 .avcrop-canvas-wrap .cropper-view-box{outline:3px solid #ff9a4e !important;outline-offset:-1px;box-shadow:0 0 0 1200px rgba(0,0,0,.55);}
 .avcrop-canvas-wrap .cropper-face{background-color:transparent !important;}
-.avcrop-canvas-wrap .cropper-modal{opacity:0 !important;}
+/* Bug 4: kill the native black (#000) modal entirely. The warm .avcrop-bg
+   backdrop + the circle box-shadow already supply the dim; an opacity:0 #000
+   layer can still flash black during WebView recompositing. */
+.avcrop-canvas-wrap .cropper-modal{display:none !important;}
 .avcrop-canvas-wrap .cropper-line,
 .avcrop-canvas-wrap .cropper-point{display:none !important;}
 .avcrop-canvas-wrap .cropper-dashed{display:none !important;}
@@ -3617,7 +3623,7 @@ body.av-modal-lock{overflow:hidden;touch-action:none;}
 
 <div class="app-screen active" id="s-today">
   <!-- NEW HOME: user's design (Today v4) rendered verbatim, isolated from app CSS. -->
-  <iframe id="v4Home" src="today-v4-preview.html?v=19" title="Today" style="position:absolute;inset:0;width:100%;height:100%;border:0;z-index:60;background:#FBF6EE;display:block;transform:translateZ(0);backface-visibility:hidden;"></iframe>
+  <iframe id="v4Home" src="today-v4-preview.html?v=20" title="Today" style="position:absolute;inset:0;width:100%;height:100%;border:0;z-index:60;background:#FBF6EE;display:block;transform:translateZ(0);backface-visibility:hidden;"></iframe>
   <div class="t-scroll">
     <!-- ═══ NEW HOME HEADER (Home.html redesign) ═══ -->
     <div class="hm-header">
@@ -13496,7 +13502,24 @@ async function _capInit() {
   } catch (_) {}
 }
 
-async function _capScheduleTask(task) {
+// ─── Idempotent (re)scheduling — Bug 2 fix ───────────────────────────────
+// Re-arming an already-correct alarm resets its inexact-Doze window, which on
+// Samsung made the at-time alarm slip/coalesce until it was swallowed (while the
+// once-fired advance alarm still got through). We remember the exact fire time
+// last armed per notification id, and SKIP ids whose time is unchanged AND still
+// pending — so snapshot/resume churn no longer touches live alarms.
+let _capSchedCache = null;   // { [notifId]: atMs }
+function _loadCapSchedCache(){
+  if (_capSchedCache) return _capSchedCache;
+  try { _capSchedCache = JSON.parse(localStorage.getItem('famCapSched') || '{}') || {}; }
+  catch (_) { _capSchedCache = {}; }
+  return _capSchedCache;
+}
+function _saveCapSchedCache(){
+  try { localStorage.setItem('famCapSched', JSON.stringify(_capSchedCache || {})); } catch (_) {}
+}
+
+async function _capScheduleTask(task, pendingIds) {
   const ln = _getCapLN();
   if (!ln) return;
   if (_loadNotifPrefs().masterOn === false) return;
@@ -13543,19 +13566,54 @@ async function _capScheduleTask(task) {
     });
   }
 
-  if (!notifs.length) { console.log('[capLN] no future notifications for task', task.id, '(all times past)'); return; }
+  // ── Idempotent diff: only (re)arm ids that are NEW or whose time CHANGED.
+  // Unchanged + still-pending ids are left untouched so their Doze window is
+  // never reset by churn — the core of the Bug 2 fix.
+  const cache = _loadCapSchedCache();
+  if (!pendingIds) {
+    try { const p = await ln.getPending(); pendingIds = new Set((p?.notifications || []).map(x => Number(x.id))); }
+    catch (_) { pendingIds = null; }
+  }
+  const desired = new Set();
+  const toSchedule = [];
+  for (const nf of notifs) {
+    desired.add(nf.id);
+    const atMs = nf.schedule.at.getTime();
+    const unchanged = cache[nf.id] === atMs;
+    const armed = pendingIds ? pendingIds.has(nf.id) : false;
+    if (unchanged && armed) continue;          // already correct — leave it alone
+    toSchedule.push(nf);
+    cache[nf.id] = atMs;
+  }
+  // Cancel any of this task's previously-armed ids that are no longer desired
+  // (advance alarm once its time passed, or overdue turned off).
+  [0, 1, 2, 3, 4].forEach(o => {
+    const id = _capNotifId(task.id, o);
+    if (!desired.has(id) && (cache[id] != null || (pendingIds && pendingIds.has(id)))) {
+      ln.cancel({ notifications: [{ id }] }).catch(() => {});
+      delete cache[id];
+    }
+  });
+  _saveCapSchedCache();
+  if (!toSchedule.length) return;              // nothing changed → no re-arm
   try {
-    await ln.schedule({ notifications: notifs });
-    console.log('[capLN] scheduled', notifs.length, 'notification(s) for task', task.id,
-                notifs.map(n => new Date(n.schedule.at).toLocaleTimeString()));
+    await ln.schedule({ notifications: toSchedule });
+    console.log('[capLN] (re)scheduled', toSchedule.length, 'of', notifs.length, 'for task', task.id,
+                toSchedule.map(n => new Date(n.schedule.at).toLocaleTimeString()));
   } catch (e) { AppLog.warn('capLN', 'schedule failed', e.message || e); }
 }
 
 async function _capCancelTask(taskId) {
   const ln = _getCapLN();
   if (!ln) return;
-  try { await ln.cancel({ notifications: [0, 1, 2, 3, 4].map(o => ({ id: _capNotifId(taskId, o) })) }); }
+  const ids = [0, 1, 2, 3, 4].map(o => _capNotifId(taskId, o));
+  try { await ln.cancel({ notifications: ids.map(id => ({ id })) }); }
   catch (e) { AppLog.warn('capLN', 'cancel failed', e.message || e); }
+  try {
+    const cache = _loadCapSchedCache(); let changed = false;
+    ids.forEach(id => { if (cache[id] != null) { delete cache[id]; changed = true; } });
+    if (changed) _saveCapSchedCache();
+  } catch (_) {}
 }
 
 async function _capTestNotif() {
@@ -13584,7 +13642,26 @@ async function _capTestNotif() {
   }
 }
 
-async function _capRescheduleAll() {
+// Debounced entry point. The churn sources (Firestore snapshots, resume,
+// undo/delete/commit, settings toggles) all call this; bursts collapse into a
+// single real pass ~2s later. Callers needing immediate arming (push wake,
+// startup) call _capRescheduleAllNow directly. Returns a thenable so existing
+// `.catch()` call sites keep working unchanged.
+let _capReschedTimer = null, _capReschedRunning = false, _capReschedAgain = false;
+function _capRescheduleAll() {
+  if (_capReschedRunning) { _capReschedAgain = true; return Promise.resolve(); }
+  if (_capReschedTimer)   return Promise.resolve();
+  _capReschedTimer = setTimeout(async () => {
+    _capReschedTimer = null;
+    _capReschedRunning = true;
+    try { await _capRescheduleAllNow(); } catch (_) {}
+    _capReschedRunning = false;
+    if (_capReschedAgain) { _capReschedAgain = false; _capRescheduleAll(); }
+  }, 2000);
+  return Promise.resolve();
+}
+
+async function _capRescheduleAllNow() {
   const ln = _getCapLN();
   console.log('[capLN] rescheduleAll — plugin available:', !!ln);
   if (!ln) return;
@@ -13594,10 +13671,16 @@ async function _capRescheduleAll() {
       const pending = await ln.getPending();
       const ids = (pending?.notifications || []).map(n => ({ id: n.id }));
       if (ids.length) await ln.cancel({ notifications: ids });
+      _capSchedCache = {}; _saveCapSchedCache();
       console.log('[capLN] master off — cancelled', ids.length, 'pending');
     } catch (e) { AppLog.warn('capLN', 'cancel-all failed', e.message || e); }
     return;
   }
+  // Snapshot the pending set ONCE so every task's idempotent diff reuses it
+  // (instead of one getPending per task).
+  let pendingIds = null;
+  try { const p = await ln.getPending(); pendingIds = new Set((p?.notifications || []).map(n => Number(n.id))); }
+  catch (_) { pendingIds = null; }
   const today = todayDate();
   let count = 0;
   for (const task of AppState.tasks) {
@@ -13606,16 +13689,23 @@ async function _capRescheduleAll() {
       continue;
     }
     if ((task.date || today) < today) continue; // skip past-dated; allow today + future
-    await _capScheduleTask(task);
+    await _capScheduleTask(task, pendingIds);
     count++;
   }
-  console.log('[capLN] rescheduleAll done, processed', count, 'task(s)');
+  // Prune the cache to live notifying-task ids only (bounded localStorage).
   try {
-    const pending = await ln.getPending();
-    console.log('[capLN] pending after reschedule:', (pending?.notifications || []).length,
-      (pending?.notifications || []).map(n => ({ id: n.id, at: n.schedule?.at })));
+    const live = new Set();
+    for (const task of AppState.tasks) {
+      if (task.deleted || task.completed || !_taskNotifiesThisDevice(task)) continue;
+      [0, 1, 2, 3, 4].forEach(o => live.add(_capNotifId(task.id, o)));
+    }
+    const cache = _loadCapSchedCache(); let changed = false;
+    Object.keys(cache).forEach(k => { if (!live.has(Number(k))) { delete cache[k]; changed = true; } });
+    if (changed) _saveCapSchedCache();
   } catch (_) {}
+  console.log('[capLN] rescheduleAll done, processed', count, 'task(s)');
 }
+try { window._capRescheduleAllNow = _capRescheduleAllNow; } catch (_) {}
 
 // ─── PushService: cross-platform wake-push (FCM now; iOS-ready) ───────────
 // Platform-neutral abstraction. Method names + the member-doc fields it writes
@@ -13764,7 +13854,7 @@ const PushService = (() => {
   async function _onWake() {
     try {
       if (typeof _daLoadTasksFromCloud === 'function') await _daLoadTasksFromCloud().catch(() => {});
-      if (typeof _capRescheduleAll   === 'function') await _capRescheduleAll().catch(() => {});
+      if (typeof _capRescheduleAllNow === 'function') await _capRescheduleAllNow().catch(() => {});
     } catch (e) { console.warn('[push] onWake failed', e && e.message); }
   }
 
@@ -14810,9 +14900,69 @@ function _v4TaskAudience(t){
     return out;
   } catch (e) { return []; }
 }
+// ─── Weather for the home widget (Bug 6) ─────────────────────────────────
+// Real local weather with NO GPS permission: coarse location by IP (cached ~7d)
+// + Open-Meteo current conditions (free, no API key, CORS-enabled). Any failure
+// (offline / IP-geo blocked by a network filter) leaves the static "22°" intact.
+let _weather = null;          // { temp:Number, text:String, code:Number } | null
+let _weatherAt = 0;           // Date.now() of last successful fetch
+let _weatherInFlight = false;
+function _wmoText(code){
+  const c = Number(code);
+  if (c === 0) return 'בהיר';
+  if (c === 1 || c === 2) return 'מעונן חלקית';
+  if (c === 3) return 'מעונן';
+  if (c === 45 || c === 48) return 'ערפל';
+  if (c >= 51 && c <= 57) return 'טפטוף';
+  if (c >= 61 && c <= 67) return 'גשם';
+  if (c >= 71 && c <= 77) return 'שלג';
+  if (c >= 80 && c <= 82) return 'ממטרים';
+  if (c >= 85 && c <= 86) return 'ממטרי שלג';
+  if (c >= 95) return 'סופת רעמים';
+  return 'מעונן חלקית';
+}
+async function _fetchWeather(){
+  try {
+    if (_weatherInFlight) return;
+    if (_weather && (Date.now() - _weatherAt) < 30 * 60 * 1000) return;   // fresh < 30 min
+    _weatherInFlight = true;
+    // 1. coarse location by IP — cached ~7 days (no GPS, only INTERNET).
+    let loc = null;
+    try { loc = JSON.parse(localStorage.getItem('famWeatherLoc') || 'null'); } catch (_) {}
+    if (!loc || !loc.lat || (Date.now() - (loc.at || 0)) > 7 * 24 * 3600 * 1000) {
+      try {
+        const r = await fetch('https://ipapi.co/json/');
+        if (r.ok) {
+          const j = await r.json();
+          if (j && j.latitude && j.longitude) {
+            loc = { lat: j.latitude, lon: j.longitude, at: Date.now() };
+            try { localStorage.setItem('famWeatherLoc', JSON.stringify(loc)); } catch (_) {}
+          }
+        }
+      } catch (_) {}
+    }
+    if (!loc || !loc.lat) { _weatherInFlight = false; return; }   // silent: keep static
+    // 2. current conditions (free, keyless).
+    const u = 'https://api.open-meteo.com/v1/forecast?latitude=' + loc.lat +
+              '&longitude=' + loc.lon + '&current=temperature_2m,weather_code&timezone=auto';
+    const wr = await fetch(u);
+    if (wr.ok) {
+      const wj = await wr.json();
+      const cur = wj && wj.current;
+      if (cur && typeof cur.temperature_2m === 'number') {
+        _weather   = { temp: Math.round(cur.temperature_2m), text: _wmoText(cur.weather_code), code: Number(cur.weather_code) };
+        _weatherAt = Date.now();
+        try { _v4Push(); } catch (_) {}   // repaint the widget with real data
+      }
+    }
+  } catch (_) { /* silent — static "22°" stays */ }
+  finally { _weatherInFlight = false; }
+}
+
 function _v4Push(){
   const fr = document.getElementById('v4Home');
   if (!fr || !fr.contentWindow) return;
+  try { _fetchWeather(); } catch (_) {}   // internally throttled; repaints when ready
   try {
     // Members from the SAME real-participant pipeline as the old home
     // (_renderTodayMembers): filters seed/phantom members, dedupes re-joins,
@@ -14859,13 +15009,22 @@ function _v4Push(){
     const _hr = new Date().getHours();
     const _part = _hr < 12 ? 'בוקר טוב' : _hr < 17 ? 'צהריים טובים' : _hr < 21 ? 'ערב טוב' : 'לילה טוב';
     const _myName = String((DataAdapter.displayName || '')).trim().split(/\s+/)[0] || '';
+    // Bug 5: the home iframe has no concept of a "viewed date" — derive the label
+    // and the back-to-today flag from the host's activeDate, so a non-today view
+    // shows the correct date + the "↩ חזרה להיום" pill. Tasks already come from
+    // activeTasks(), which is activeDate-scoped, so the list is already correct.
+    const _today    = (typeof todayDate === 'function') ? todayDate() : null;
+    const _isToday  = !_today || activeDate === _today;
+    const _viewDate = (typeof activeDate === 'string' && activeDate) ? new Date(activeDate + 'T00:00:00') : new Date();
     const payload = {
       greetText:  _myName ? (_part + ', ' + _myName) : _part,
-      dateText:   new Date().toLocaleDateString('he-IL', { weekday:'long', day:'numeric', month:'long' }),
+      dateText:   _viewDate.toLocaleDateString('he-IL', { weekday:'long', day:'numeric', month:'long' }),
+      isToday:    _isToday,
       familyName: 'המשפחה',
       members:    members,
       hero:       hero,
       stats:      { eventsHtml: n + ' <small>' + (n === 1 ? 'אירוע' : 'אירועים') + '</small>', together: members.length + '/' + members.length },
+      weather:    _weather ? { temp: _weather.temp + '°', text: _weather.text, code: _weather.code } : null,
       tasks:      tlist
     };
     fr.contentWindow.postMessage({ type: 'familyData', payload: payload }, '*');
@@ -14904,6 +15063,11 @@ function _v4HandleAction(d){
     }
     case 'menu':                          // hamburger (תפריט) → "היומן שלי"
       if (typeof openWeekView === 'function') openWeekView();
+      break;
+    case 'backToToday':                   // "↩ חזרה להיום" pill on a non-today view
+      if (typeof todayDate === 'function') activeDate = todayDate();
+      if (typeof updateDateBadge === 'function') updateDateBadge();
+      if (typeof renderToday === 'function') renderToday();   // re-render + _v4Push → pill hides, today's tasks
       break;
     case 'delete': {                      // swipe-left on a task row → real undoable delete
       const t = (typeof activeTasks === 'function') ? activeTasks().find(x => String(x.id) === String(d.id)) : null;
@@ -16676,7 +16840,7 @@ if (!_getCapLN()) try { checkOverdueReminders(); } catch (e) { console.warn('ini
 localStorage.setItem(LANG_KEY, 'he');
 AppState.lang = 'he';
 _applyLang();
-_capInit().then(() => _capRescheduleAll()).catch(() => {});
+_capInit().then(() => _capRescheduleAllNow()).catch(() => {});
 
 // ── Android hardware Back button ────────────────────────────────────────────
 // Without a handler, Android's WebView default exits the app on every Back

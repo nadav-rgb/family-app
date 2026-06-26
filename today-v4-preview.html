@@ -166,6 +166,19 @@
     font-size:21px;font-weight:400;color:#8A7E6D;
     direction:rtl;text-align:left;
   }
+  /* "Back to today" pill — shown only when viewing another day (isToday===false). */
+  .header .back-today{
+    margin-top:9px;
+    display:inline-flex;align-items:center;gap:7px;
+    font-family:'Rubik',sans-serif;font-size:16px;font-weight:600;
+    color:#fff;background:linear-gradient(135deg,#ff9a4e,#ff5e14);
+    border:none;border-radius:99px;padding:8px 17px;
+    box-shadow:0 5px 16px rgba(255,94,20,.30);
+    cursor:pointer;direction:rtl;letter-spacing:.2px;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .header .back-today:active{transform:scale(.94)}
+  .header .back-today[hidden]{display:none}
   .header .actions{display:flex;gap:18px}
   .circ-btn{
     width:74px;height:74px;border-radius:50%;
@@ -596,6 +609,10 @@
           <img class="logo-img" src="family-logo.webp" alt="Family" decoding="async">
           <div class="greet">בוקר טוב</div>
           <div class="date">יום חמישי, 24 באפריל</div>
+          <button class="back-today" id="backToday" hidden>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-2"/></svg>
+            חזרה להיום
+          </button>
         </div>
         <div class="actions">
           <!-- Calendar: opens the existing app Hebrew+holidays drawer (openCalDrawer) when integrated -->
@@ -784,6 +801,26 @@
   // with the VIBRATE permission). Light for taps, firmer for done/delete.
   function _haptic(ms){ try{ if(navigator.vibrate) navigator.vibrate(ms); }catch(e){} }
 
+  // Weather badge icon by WMO code bucket (same 34px stroke style as the static
+  // markup, so swapping it never breaks the badge's look). Lucide-style paths.
+  function _wxIcon(code){
+    var c=Number(code);
+    var head='<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">';
+    var tail='</svg>';
+    var cloud='<path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>';
+    var body;
+    if(c===0) body='<circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.5M12 19v2.5M21.5 12H19M5 12H2.5M18.4 5.6l-1.8 1.8M7.4 16.6l-1.8 1.8M18.4 18.4l-1.8-1.8M7.4 7.4 5.6 5.6"/>';                         // clear
+    else if(c===1||c===2) body='<path d="M12 2v2M5.2 5.2l1.4 1.4M2 12h2M20 12h2M16 12.5A4 4 0 0 0 9.5 9"/><path d="M13 22H7a5 5 0 1 1 4.9-6H13a3 3 0 0 1 0 6Z"/>'; // partly cloudy
+    else if(c===45||c===48) body='<path d="M4 14.9A7 7 0 1 1 15.7 8h1.8a4.5 4.5 0 0 1 2.5 8.2"/><path d="M16 17H7M17 21H9"/>';                                          // fog
+    else if(c>=51&&c<=67) body='<path d="M4 14.9A7 7 0 1 1 15.7 8h1.8a4.5 4.5 0 0 1 2.5 8.2"/><path d="M16 14v6M8 14v6M12 16v6"/>';                                      // drizzle/rain
+    else if(c>=71&&c<=77) body='<path d="M4 14.9A7 7 0 1 1 15.7 8h1.8a4.5 4.5 0 0 1 2.5 8.2"/><path d="M8 15h.01M8 19h.01M12 17h.01M12 21h.01M16 15h.01M16 19h.01"/>';   // snow
+    else if(c>=80&&c<=82) body='<path d="M4 14.9A7 7 0 1 1 15.7 8h1.8a4.5 4.5 0 0 1 2.5 8.2"/><path d="M16 14v6M8 14v6M12 16v6"/>';                                      // showers
+    else if(c>=85&&c<=86) body='<path d="M4 14.9A7 7 0 1 1 15.7 8h1.8a4.5 4.5 0 0 1 2.5 8.2"/><path d="M8 15h.01M8 19h.01M12 17h.01M12 21h.01M16 15h.01M16 19h.01"/>';   // snow showers
+    else if(c>=95) body='<path d="M6 16.3A7 7 0 1 1 15.7 8h1.8a4.5 4.5 0 0 1 .5 9"/><path d="m13 12-3 5h4l-3 5"/>';                                                      // thunderstorm
+    else body=cloud;                                                                                                                                                    // overcast (3) + fallback
+    return head+body+tail;
+  }
+
   // Swipe a task row left to delete. Posts {name:'delete'} to the host app,
   // which performs the real (undoable, cloud-synced) delete. The .stage uses
   // CSS zoom, so finger px are divided by the zoom factor to track 1:1.
@@ -915,6 +952,9 @@
     if(d.greetText)  _setTxt('.header .greet', d.greetText);
     if(d.dateText)   _setTxt('.header .date', d.dateText);
     if(d.familyName) _setTxt('.fam-title h2', d.familyName);
+    // "Back to today" pill — visible only when the host reports a non-today view.
+    // Undefined isToday (older host) is treated as today → pill stays hidden.
+    var _bt=_q('.header .back-today'); if(_bt) _bt.hidden = (d.isToday === false) ? false : true;
 
     // family arch portraits — rebuild ONLY when the member set/photos change
     // (signature guard), so a done/delete never reloads avatars or reflows.
@@ -966,10 +1006,16 @@
       }
     }
 
-    // stats (weather stays static; events + together are real)
+    // stats (events + together + weather are real; weather falls back to the
+    // static "22°" when the host couldn't fetch it — network off / IP-geo blocked).
     if(d.stats){
       if(d.stats.eventsHtml!=null){ var v1=_q('.stats .stat:nth-child(1) .val'); if(v1) v1.innerHTML=d.stats.eventsHtml; }
       if(d.stats.together!=null){  var v3=_q('.stats .stat:nth-child(5) .val'); if(v3) v3.textContent=d.stats.together; }
+    }
+    if(d.weather){
+      var wv=_q('.stats .stat:nth-child(3) .val'); if(wv && d.weather.temp!=null) wv.textContent=d.weather.temp;
+      var ws=_q('.stats .stat:nth-child(3) .sub'); if(ws && d.weather.text!=null) ws.textContent=d.weather.text;
+      var wb=_q('.stats .stat:nth-child(3) .badge'); if(wb && d.weather.code!=null) wb.innerHTML=_wxIcon(d.weather.code);
     }
 
     // task list — DIFF against existing rows by id. Update in place (toggle
@@ -1006,6 +1052,7 @@
     var bell= _q('.actions .circ-btn[aria-label="התראות"]'); if(bell) bell.onclick=function(){ _haptic(8); _post({type:'action',name:'notifications'}); };
     // hamburger (תפריט) → "היומן שלי" (week/journal view)
     var menu= _q('.actions .circ-btn[aria-label="תפריט"]'); if(menu) menu.onclick=function(){ _haptic(8); _post({type:'action',name:'menu'}); };
+    var bt  = _q('.header .back-today'); if(bt) bt.onclick=function(){ _haptic(10); _post({type:'action',name:'backToToday'}); };
     var sa  = _q('.show-all'); if(sa) sa.onclick=function(){ _haptic(8); _post({type:'action',name:'showAll'}); };
     // hero "next task" card → open the next task's detail (openHeroCard)
     var hero= _q('.next-task'); if(hero) hero.onclick=function(){ _haptic(8); _post({type:'action',name:'hero'}); };
