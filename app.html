@@ -125,6 +125,12 @@ body{background:radial-gradient(ellipse at 40% 30%,#e8ddd4,#d4c8bd);min-height:1
 @keyframes txEnterSoft  {from{opacity:0;}to{opacity:1;}}
 /* א — flat opacity-only leave (no scale → no "jump", no GPU layer flash). */
 @keyframes txLeaveSoftFade {from{opacity:1;}to{opacity:0;}}
+/* Rise & Settle — premium screen motion (GPU transform+opacity only). Enter
+   rises a touch and settles; leave fades and sinks slightly. The strong ease-out
+   curve is applied in goto(), which also pre-promotes both layers so these never
+   flash. translate3d keeps them on the compositor. */
+@keyframes txEnterRise {from{opacity:0;transform:translate3d(0,18px,0);}to{opacity:1;transform:translate3d(0,0,0);}}
+@keyframes txLeaveSink {from{opacity:1;transform:translate3d(0,0,0);}to{opacity:0;transform:translate3d(0,-6px,0);}}
 
 /* ── Warm flash overlay ── */
 #txFlash{position:absolute;inset:0;z-index:999;pointer-events:none;background:radial-gradient(ellipse at 50% 38%,rgba(255,210,130,.5) 0%,transparent 68%);opacity:0;}
@@ -7244,25 +7250,38 @@ function goto(toId, leaveKf, enterKf, onDone) {
   // read as a small jump. Cross-fade in place instead for every entry to it.
   if (toId === 's-confirmation' && (enterKf === 'txEnterFade' || enterKf === 'txEnterFocus')) enterKf = 'txEnterSoft';
   const to   = document.getElementById(toId);
-  // Premium motion: snappier (was 440ms, felt sluggish) + a strong ease-out
-  // curve so screens enter with immediate, intentional movement.
-  // א — black/white flash + "jump" fix. The old transitions scaled the screens
-  // (scale 1.07 / .95) which both read as a jarring jump AND promoted a GPU
-  // compositing layer that flashed black/white for a frame in the Android
-  // WebView (worsened by the backdrop-filter bottom-nav). We now do a flat,
-  // fast, OPACITY-ONLY cross-fade — no transform, no warm-flash overlay.
-  const dur  = 190;
-  const ease = 'ease';
-  leaveKf = 'txLeaveSoftFade';
-  enterKf = 'txEnterSoft';
-  from.style.animation     = `${leaveKf} ${dur}ms ${ease} forwards`;
+  // Premium "Rise & Settle" motion: the entering screen rises a touch and settles
+  // while fading in; the leaving one fades out and sinks slightly. A strong
+  // ease-out curve gives immediate, intentional movement (warm but crisp).
+  //
+  // Black-flash fix (same lesson as the sheets): a transform that first promotes
+  // an element to its own GPU layer makes the Android WebView paint one black
+  // frame. So we PRE-PROMOTE both screens (will-change + a forced reflow) BEFORE
+  // any transform runs. The home (#s-today) hosts the v4 iframe — itself a
+  // promoted layer that can flicker if its container is transformed — so the home
+  // uses an opacity-only crossfade for ITS half of every transition, while the
+  // other screen still gets the full motion. Honour prefers-reduced-motion.
+  const reduce = (() => { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (_) { return false; } })();
+  const fromFlat = reduce || from.id === 's-today';
+  const toFlat   = reduce || toId === 's-today';
+  const ease = 'cubic-bezier(0.23, 1, 0.32, 1)';   // strong ease-out
+  leaveKf = fromFlat ? 'txLeaveSoftFade' : 'txLeaveSink';
+  enterKf = toFlat   ? 'txEnterSoft'     : 'txEnterRise';
+  const leaveDur = fromFlat ? 200 : 180;
+  const enterDur = toFlat   ? 200 : 240;
+  const dur = Math.max(leaveDur, enterDur);
+  from.style.willChange = 'transform, opacity';
+  to.style.willChange   = 'transform, opacity';
+  void to.offsetHeight;            // force layer creation before the transforms run
+  from.style.animation     = `${leaveKf} ${leaveDur}ms ${ease} forwards`;
   from.style.pointerEvents = 'none';
-  to.style.animation       = `${enterKf} ${dur}ms ${ease} forwards`;
+  to.style.animation       = `${enterKf} ${enterDur}ms ${ease} forwards`;
   to.classList.add('active');
   setTimeout(() => {
     from.classList.remove('active');
     from.style.cssText = '';
     to.style.animation = '';
+    to.style.willChange = '';
     busy = false;
     if (toId === 's-family-members' && typeof _renderFamilyMembersScreen === 'function') _renderFamilyMembersScreen();
     if (toId === 's-family-members' && typeof syncFamilyMemberColors === 'function') { syncFamilyMemberColors(); if (typeof _mpApplyAllStripes === 'function') _mpApplyAllStripes(); }
